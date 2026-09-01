@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Icon 图标 v1.1.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+* { box-sizing: border-box; }
+html, body, #root { margin:0; padding:0; }
+body { font: 400 14px/1.5 var(--font-sans); color: var(--color-text-primary); background: var(--color-base-bg); }
+.t-subtitle { font: 500 16px/1.5 var(--font-sans); }
+.t-title    { font: 500 20px/1.2 var(--font-sans); }
+.t-body     { font: 400 14px/1.5 var(--font-sans); }
+@keyframes uink-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="importmap">
+{ "imports": {
+  "react": "https://esm.sh/react@18.3.1",
+  "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+  "lucide-react": "https://esm.sh/lucide-react@0.453.0?deps=react@18.3.1"
+} }
+</script>
+
+<script type="module">
+import React, { forwardRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import * as L from 'lucide-react';
+
+const h = React.createElement;
+
+const SIZE = { xs:12, sm:14, md:16, lg:20, xl:24 };
+const TONE = {
+  inherit:'currentColor',
+  primary:'var(--color-text-primary)', secondary:'var(--color-text-secondary)',
+  tertiary:'var(--color-text-auxiliary)', disabled:'var(--color-text-disable)', inverse:'var(--color-text-constant-normal)',
+  brand:'var(--color-primary-normal)', success:'var(--color-success-normal)', error:'var(--color-error-normal)',
+  warm:'var(--color-warm-normal)', remind:'var(--color-remind)', info:'var(--color-primary-normal)',
+};
+
+const Icon = forwardRef(function Icon(props, ref) {
+  const { as: Component, size='lg', tone='inherit', spin, label, style, strokeWidth, ...rest } = props;
+  const px = typeof size === 'number' ? size : SIZE[size];
+  const a11y = label ? { role:'img', 'aria-label': label } : { 'aria-hidden': true };
+  return h(Component, {
+    ref, size: px,
+    strokeWidth: strokeWidth ?? 1.5,
+    color: TONE[tone],
+    style: {
+      flex: 'none',
+      animation: spin ? 'uink-spin var(--duration-slow) linear infinite' : undefined,
+      ...style,
+    },
+    ...a11y, ...rest,
+  });
+});
+
+const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-16)' } },
+  h('h3', { className:'t-subtitle', style:{ color:'var(--color-text-primary)', margin:0 } }, title),
+  h('div', { style:{
+    display:'grid',
+    gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))',
+    gap:'var(--spacing-12)',
+    padding:'var(--spacing-20)',
+    background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+  } }, children)
+);
+
+const Tile = ({ as, name }) => h('div', {
+  style:{
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+    gap:'var(--spacing-8)', padding:'var(--spacing-12)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-4)',
+    background:'var(--color-bg-card)', minHeight:72,
+  }
+},
+  h(Icon, { as, size:'lg', tone:'secondary' }),
+  h('span', { style:{ font:'400 12px/1.5 var(--font-sans)', color:'var(--color-text-auxiliary)' } }, name),
+);
+
+const Rule = ({ n, children }) => h('li', { className:'t-body', style:{ color:'var(--color-text-auxiliary)', listStyle:'none', display:'flex', gap:'var(--spacing-8)' } },
+  h('span', { style:{ color:'var(--color-text-secondary)' } }, n + '.'),
+  h('span', null, children)
+);
+
+const generalIcons = [
+  ['Plus', L.Plus], ['Minus', L.Minus], ['Search', L.Search], ['Check', L.Check], ['X', L.X],
+  ['ChevronDown', L.ChevronDown], ['ChevronUp', L.ChevronUp], ['ChevronLeft', L.ChevronLeft], ['ChevronRight', L.ChevronRight],
+  ['ArrowUp', L.ArrowUp], ['ArrowDown', L.ArrowDown], ['ArrowLeft', L.ArrowLeft], ['ArrowRight', L.ArrowRight],
+  ['RotateCw', L.RotateCw], ['RefreshCw', L.RefreshCw],
+  ['Menu', L.Menu], ['More', L.MoreHorizontal], ['Home', L.Home],
+];
+const actionIcons = [
+  ['Eye', L.Eye], ['EyeOff', L.EyeOff], ['Edit', L.Edit3], ['Trash', L.Trash2], ['Copy', L.Copy],
+  ['Download', L.Download], ['Upload', L.Upload], ['Save', L.Save], ['Filter', L.Filter], ['Settings', L.Settings],
+  ['Link', L.Link2], ['ExternalLink', L.ExternalLink],
+];
+const objectIcons = [
+  ['User', L.User], ['Users', L.Users], ['Lock', L.Lock], ['Unlock', L.Unlock],
+  ['Bell', L.Bell], ['Mail', L.Mail], ['Calendar', L.Calendar], ['Clock', L.Clock],
+  ['MapPin', L.MapPin], ['Tag', L.Tag], ['Star', L.Star], ['Heart', L.Heart],
+  ['Folder', L.Folder], ['File', L.File], ['FileText', L.FileText], ['Image', L.Image],
+];
+const statusIcons = [
+  ['Info', L.Info], ['AlertCircle', L.AlertCircle], ['AlertTriangle', L.AlertTriangle],
+  ['CheckCircle', L.CheckCircle2], ['XCircle', L.XCircle],
+];
+const cloudIcons = [
+  ['Server', L.Server], ['Database', L.Database], ['Cloud', L.Cloud], ['Cpu', L.Cpu],
+  ['HardDrive', L.HardDrive], ['Network', L.Network], ['Activity', L.Activity],
+  ['BarChart', L.BarChart3], ['PieChart', L.PieChart], ['LineChart', L.LineChart],
+];
+
+const ToneRow = () => h('div', {
+  style:{ display:'flex', gap:'var(--spacing-24)', padding:'var(--spacing-20)', background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)', flexWrap:'wrap' }
+},
+  ...[['brand', L.CheckCircle2], ['success', L.CheckCircle2], ['error', L.XCircle], ['warm', L.AlertTriangle], ['remind', L.AlertCircle], ['info', L.Info]].map(([t, I]) =>
+    h('div', { key:t, style:{ display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--spacing-4)' } },
+      h(Icon, { as: I, size:'xl', tone: t }),
+      h('span', { style:{ font:'400 12px/1.5 var(--font-sans)', color:'var(--color-text-auxiliary)' } }, t)
+    )
+  ),
+  h('div', { style:{ display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--spacing-4)' } },
+    h(Icon, { as: L.Loader2, size:'xl', tone:'brand', spin:true, label:'loading' }),
+    h('span', { style:{ font:'400 12px/1.5 var(--font-sans)', color:'var(--color-text-auxiliary)' } }, 'spin')
+  )
+);
+
+const SizeRow = () => h('div', {
+  style:{ display:'flex', alignItems:'center', gap:'var(--spacing-24)', padding:'var(--spacing-20)', background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)' }
+},
+  ...['xs','sm','md','lg','xl'].map(s =>
+    h('div', { key:s, style:{ display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--spacing-4)' } },
+      h(Icon, { as: L.Search, size: s, tone:'secondary' }),
+      h('span', { style:{ font:'400 12px/1.5 var(--font-sans)', color:'var(--color-text-auxiliary)' } }, s)
+    )
+  )
+);
+
+function App() {
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Icon 图标'),
+      h('span', { className:'t-body', style:{ color:'var(--color-text-auxiliary)' } }, 'Milesight IOT Web · v1.1.0 · Lucide')
+    ),
+    h('main', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-30)', padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)', maxWidth:1200, margin:'0 auto' } },
+      h('section', null,
+        h('h2', { className:'t-title', style:{ margin:'0 0 var(--spacing-12)' } }, '使用规范'),
+        h('ul', { style:{ margin:0, padding:0, display:'flex', flexDirection:'column', gap:'var(--spacing-4)' } },
+          h(Rule, { n:1 }, '统一来源：Lucide，描边 1.5，默认 20px。'),
+          h(Rule, { n:2 }, '尺寸：xs 12 · sm 14 · md 16 · lg 20 · xl 24。'),
+          h(Rule, { n:3 }, '颜色随文本继承（tone="inherit"），或语义化 tone（brand / success / error / warm / info）。'),
+          h(Rule, { n:4 }, '装饰性图标使用 aria-hidden；功能性图标必须传 label。')
+        )
+      ),
+      h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-16)' } },
+        h('h3', { className:'t-subtitle', style:{ color:'var(--color-text-primary)', margin:0 } }, '尺寸 — xs · sm · md · lg · xl'),
+        h(SizeRow)
+      ),
+      h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-16)' } },
+        h('h3', { className:'t-subtitle', style:{ color:'var(--color-text-primary)', margin:0 } }, '语义色 — tone'),
+        h(ToneRow)
+      ),
+      h(Group, { title:'通用 General' }, ...generalIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
+      h(Group, { title:'操作 Action' }, ...actionIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
+      h(Group, { title:'对象 Object' }, ...objectIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
+      h(Group, { title:'状态 Status' }, ...statusIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
+      h(Group, { title:'云资源 Cloud / Infra' }, ...cloudIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n })))
+    )
+  );
+}
+
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

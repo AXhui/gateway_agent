@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Affix 固钉 v1.0.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+button{font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+
+const Affix = ({ offsetTop, offsetBottom, target, onChange, children, style }) => {
+  const useTop = offsetBottom === undefined;
+  const off = useTop ? (offsetTop ?? 0) : offsetBottom;
+  const wrapRef = React.useRef(null);
+  const [affixed, setAffixed] = React.useState(false);
+  const [size, setSize] = React.useState({ w:0, h:0 });
+
+  React.useEffect(() => {
+    const tgt = target?.() ?? window;
+    const onScroll = () => {
+      const el = wrapRef.current; if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const tgtTop = tgt === window ? 0 : tgt.getBoundingClientRect().top;
+      const tgtBottom = tgt === window ? window.innerHeight : tgt.getBoundingClientRect().bottom;
+      const next = useTop ? rect.top - tgtTop <= off : tgtBottom - rect.bottom <= off;
+      if (next !== affixed) {
+        setSize({ w: rect.width, h: rect.height });
+        setAffixed(next);
+        onChange?.(next);
+      }
+    };
+    onScroll();
+    tgt.addEventListener('scroll', onScroll, { passive:true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      tgt.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [affixed, off, useTop, target, onChange]);
+
+  return h('div', {
+    ref: wrapRef,
+    style: { ...(affixed ? { width: size.w, height: size.h } : null), ...style },
+  }, h('div', {
+    style: affixed ? {
+      position:'fixed', [useTop?'top':'bottom']: off,
+      width: size.w, zIndex: 10,
+    } : undefined
+  }, children));
+};
+
+function App() {
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Affix 固钉'),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('main', { style:{ maxWidth:800, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)' } },
+      h('p', { style:{ color:'var(--color-text-auxiliary)' } }, '向下滚动观察「保存」按钮固钉效果。'),
+      h('div', { style:{ height:600, background:'var(--color-bg-hover)', borderRadius:'var(--radius-8)' } }),
+      h('div', { style:{ margin:'var(--spacing-24) 0' } },
+        h(Affix, { offsetTop:64 },
+          h('button', { style:{
+            height:40, padding:'0 var(--spacing-24)',
+            background:'var(--color-bg-page)', color:'var(--color-text-primary)',
+            border:'none', borderRadius:'var(--radius-4)',
+            font:'500 14px/1 var(--font-sans)', cursor:'pointer',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.08)',
+          } }, '保存（固钉到顶部 64px）')
+        )
+      ),
+      h('div', { style:{ height:1200, background:'var(--color-bg-hover)', borderRadius:'var(--radius-8)' } })
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

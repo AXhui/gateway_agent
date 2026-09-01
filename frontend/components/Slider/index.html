@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Slider 滑动输入条 v1.0.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React, { useState, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+const TRACK = 4, HANDLE = 16;
+
+const Slider = ({ min=0, max=100, step=1, value, defaultValue, range, marks, disabled, onChange, style }) => {
+  const init = defaultValue ?? (range ? [min, min] : min);
+  const [inner, setInner] = useState(init);
+  const isControlled = value !== undefined;
+  const v = isControlled ? value : inner;
+  const trackRef = useRef(null);
+  const dragRef = useRef(null);
+
+  const clamp = n => Math.max(min, Math.min(max, Math.round((n - min) / step) * step + min));
+  const pct = n => ((n - min) / (max - min)) * 100;
+  const set = next => { if (!isControlled) setInner(next); onChange?.(next); };
+
+  const eventToVal = e => {
+    const el = trackRef.current; if (!el) return min;
+    const rect = el.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    return clamp(min + Math.max(0, Math.min(1, ratio)) * (max - min));
+  };
+
+  const onPointerDown = idx => e => {
+    if (disabled) return;
+    e.target.setPointerCapture(e.pointerId);
+    dragRef.current = { idx };
+  };
+  const onPointerMove = e => {
+    if (!dragRef.current) return;
+    const nv = eventToVal(e);
+    if (range && Array.isArray(v)) {
+      const next = [...v];
+      next[dragRef.current.idx] = nv;
+      if (next[0] > next[1]) next.reverse();
+      set(next);
+    } else set(nv);
+  };
+  const onPointerUp = () => { dragRef.current = null; };
+
+  const onTrackClick = e => {
+    if (disabled) return;
+    const nv = eventToVal(e);
+    if (range && Array.isArray(v)) {
+      const idx = Math.abs(nv - v[0]) < Math.abs(nv - v[1]) ? 0 : 1;
+      const next = [...v]; next[idx] = nv;
+      if (next[0] > next[1]) next.reverse();
+      set(next);
+    } else set(nv);
+  };
+
+  const handles = range && Array.isArray(v) ? v : [v];
+  const fillStart = range && Array.isArray(v) ? pct(v[0]) : 0;
+  const fillEnd = range && Array.isArray(v) ? pct(v[1]) : pct(v);
+
+  return h('div', { style:{ position:'relative', padding:'12px 0', width:'100%', height:HANDLE, opacity: disabled?0.5:1, ...style } },
+    h('div', {
+      ref: trackRef,
+      onPointerDown: onTrackClick,
+      onPointerMove, onPointerUp,
+      style:{
+        position:'absolute', top:'50%', transform:'translateY(-50%)',
+        left:0, right:0, height: TRACK,
+        background:'var(--color-bg-hover)', borderRadius: TRACK,
+        cursor: disabled?'not-allowed':'pointer',
+      }
+    },
+      h('div', { style:{
+        position:'absolute', left:`${fillStart}%`, width:`${fillEnd - fillStart}%`,
+        height: TRACK, background:'var(--color-primary-normal)', borderRadius: TRACK,
+      } }),
+      handles.map((hv, i) => h('div', {
+        key:i,
+        onPointerDown: onPointerDown(i),
+        onPointerMove, onPointerUp,
+        role:'slider', 'aria-valuemin':min, 'aria-valuemax':max, 'aria-valuenow':hv,
+        style:{
+          position:'absolute', left:`${pct(hv)}%`, top:'50%',
+          transform:'translate(-50%, -50%)',
+          width: HANDLE, height: HANDLE, borderRadius:'50%',
+          background:'var(--color-bg-card)', border:'2px solid var(--color-primary-normal)',
+          boxShadow:'0 2px 4px rgba(0,0,0,0.12)',
+          cursor: disabled?'not-allowed':'grab', touchAction:'none',
+        }
+      })),
+      marks && Object.entries(marks).map(([k, label]) => h('div', {
+        key:k, style:{
+          position:'absolute', left:`${pct(Number(k))}%`, top:16,
+          transform:'translateX(-50%)',
+          font:'400 12px/20px var(--font-sans)', color:'var(--color-text-auxiliary)',
+          whiteSpace:'nowrap',
+        }
+      }, label))
+    )
+  );
+};
+
+const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
+  h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
+  h('div', { style:{ padding:'var(--spacing-30) var(--spacing-24)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+    display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } }, children)
+);
+
+function App() {
+  const [v1, setV1] = useState(40);
+  const [v2, setV2] = useState([20, 70]);
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Slider 滑动输入条'),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('main', { style:{ maxWidth:720, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
+      display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } },
+      h(Group, { title:'基础' },
+        h(Slider, { value:v1, onChange:n => setV1(n) }),
+        h('span', { style:{ color:'var(--color-text-auxiliary)' } }, '当前值：' + v1)),
+      h(Group, { title:'带刻度' },
+        h(Slider, { defaultValue:50, marks:{ 0:'0', 25:'25%', 50:'50%', 75:'75%', 100:'100%' } })),
+      h(Group, { title:'范围 — range' },
+        h(Slider, { range:true, value:v2, onChange:n => setV2(n) }),
+        h('span', { style:{ color:'var(--color-text-auxiliary)' } }, '当前范围：' + v2[0] + ' – ' + v2[1])),
+      h(Group, { title:'禁用' },
+        h(Slider, { defaultValue:30, disabled:true }))
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

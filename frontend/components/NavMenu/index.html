@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — NavMenu 导航菜单 v1.0.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+button{font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+
+const Chevron = ({ open }) => h('svg', {
+  width:12, height:12, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor',
+  strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true,
+  style:{ transform: open?'rotate(90deg)':'none',
+    transition:'transform var(--duration-fast) var(--easing-standard)' }
+}, h('path', { d:'M9 6l6 6-6 6' }));
+
+const PathIcon = ({ d }) => h('svg', {
+  width:16, height:16, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor',
+  strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true,
+}, h('path', { d }));
+
+const NavMenu = ({ items, mode='inline', theme='light',
+  selectedKey: selectedProp, defaultSelectedKey,
+  defaultOpenKeys=[], onSelect, collapsed }) => {
+  const [selState, setSel] = React.useState(defaultSelectedKey);
+  const [openKeys, setOpenKeys] = React.useState(new Set(defaultOpenKeys));
+  const selected = selectedProp ?? selState;
+  const dark = theme === 'dark';
+
+  const onPick = k => {
+    if (selectedProp === undefined) setSel(k);
+    onSelect?.(k);
+  };
+  const toggle = k => setOpenKeys(prev => {
+    const n = new Set(prev);
+    if (n.has(k)) n.delete(k); else n.add(k);
+    return n;
+  });
+
+  const colors = {
+    fg: dark ? 'rgba(255,255,255,0.75)' : 'var(--color-text-secondary)',
+    fgActive: dark ? 'var(--color-text-constant-normal)' : 'var(--color-primary-normal)',
+    bgActive: dark ? 'var(--color-primary-normal)' : 'var(--color-primary-bg)',
+    bgHover: dark ? 'rgba(255,255,255,0.08)' : 'var(--color-bg-page)',
+    disabled: 'var(--color-text-disable)',
+  };
+
+  const renderItem = (it, depth) => {
+    const hasChildren = !!it.children?.length;
+    const isOpen = openKeys.has(it.key);
+    const isActive = selected === it.key;
+
+    if (hasChildren && mode === 'inline') {
+      return h('li', { key: it.key, style:{ listStyle:'none' } },
+        h('div', {
+          role:'button', 'aria-expanded': isOpen,
+          onClick: () => !it.disabled && toggle(it.key),
+          style:{ display:'flex', alignItems:'center', gap:'var(--spacing-8)',
+            height:40, padding:`0 var(--spacing-16) 0 ${16 + depth * 16}px`,
+            color: it.disabled?colors.disabled:colors.fg,
+            cursor: it.disabled?'not-allowed':'pointer',
+            font:'400 14px/22px var(--font-sans)',
+            transition:'background-color var(--duration-fast) var(--easing-standard)' },
+          onMouseEnter: e => { if (!it.disabled) e.currentTarget.style.background = colors.bgHover; },
+          onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; },
+        },
+          it.icon && h('span', { style:{ display:'inline-flex', width:16 } }, it.icon),
+          !collapsed && h('span', { style:{ flex:1 } }, it.label),
+          !collapsed && h(Chevron, { open: isOpen }),
+        ),
+        isOpen && !collapsed && h('ul', {
+          style:{ margin:0, padding:0, background: dark?'rgba(0,0,0,0.15)':'transparent' }
+        }, it.children.map(c => renderItem(c, depth + 1)))
+      );
+    }
+
+    return h('li', { key: it.key, style:{ listStyle:'none' } },
+      h('div', {
+        role:'menuitem', 'aria-current': isActive?'page':undefined,
+        'aria-disabled': it.disabled,
+        onClick: () => { if (!it.disabled) onPick(it.key); },
+        style:{
+          display:'flex', alignItems:'center', gap:'var(--spacing-8)',
+          height: mode==='horizontal'?48:40,
+          padding: mode==='horizontal'
+            ? '0 var(--spacing-16)'
+            : `0 var(--spacing-16) 0 ${16 + depth * 16}px`,
+          color: it.disabled?colors.disabled: isActive?colors.fgActive:colors.fg,
+          background: mode==='inline' && isActive?colors.bgActive:'transparent',
+          borderBottom: mode==='horizontal' && isActive ? `2px solid ${colors.fgActive}` : '2px solid transparent',
+          cursor: it.disabled?'not-allowed':'pointer',
+          font:`${isActive?500:400} 14px/22px var(--font-sans)`,
+          transition:'all var(--duration-fast) var(--easing-standard)',
+        },
+        onMouseEnter: e => { if (!it.disabled && !isActive) e.currentTarget.style.background = colors.bgHover; },
+        onMouseLeave: e => { if (!isActive) e.currentTarget.style.background = 'transparent'; },
+      },
+        it.icon && h('span', { style:{ display:'inline-flex', width:16 } }, it.icon),
+        !collapsed && h('span', { style:{ flex:1 } }, it.label),
+      )
+    );
+  };
+
+  return h('ul', {
+    role:'menu',
+    style:{ listStyle:'none', margin:0, padding:0,
+      display: mode==='horizontal'?'inline-flex':'block',
+      alignItems:'center',
+      background: dark?'var(--color-text-primary)':'var(--color-bg-card)',
+      color: colors.fg,
+      borderRight: mode==='inline' && !dark?'1px solid var(--color-divider-base-1)':'none',
+      borderBottom: mode==='horizontal'?'1px solid var(--color-divider-base-1)':'none',
+      width: mode==='inline'?(collapsed?64:'100%'):'auto' }
+  }, items.map(it => renderItem(it, 0)));
+};
+
+const ICONS = {
+  home:'M3 12l9-9 9 9M5 10v10h14V10',
+  server:'M4 6h16v4H4zM4 14h16v4H4zM8 8h.01M8 16h.01',
+  disk:'M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 8v4l3 3',
+  cog:'M12 15a3 3 0 100-6 3 3 0 000 6z',
+};
+
+const items = [
+  { key:'home', label:'概览', icon: h(PathIcon, { d: ICONS.home }) },
+  { key:'compute', label:'计算', icon: h(PathIcon, { d: ICONS.server }),
+    children:[
+      { key:'ecs', label:'云主机' },
+      { key:'bms', label:'裸金属' },
+      { key:'image', label:'镜像' },
+    ] },
+  { key:'storage', label:'存储', icon: h(PathIcon, { d: ICONS.disk }),
+    children:[
+      { key:'disk', label:'云盘' },
+      { key:'snapshot', label:'快照' },
+      { key:'oss', label:'对象存储' },
+    ] },
+  { key:'settings', label:'设置', icon: h(PathIcon, { d: ICONS.cog }) },
+];
+
+const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
+  h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
+  h('div', { style:{ background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)',
+    borderRadius:'var(--radius-8)', overflow:'hidden' } }, children)
+);
+
+function App() {
+  const [collapsed, setCollapsed] = React.useState(false);
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'NavMenu 导航菜单'),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('main', { style:{ maxWidth:1200, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
+      display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } },
+      h(Group, { title:'水平 — horizontal' },
+        h(NavMenu, { mode:'horizontal', items: items.filter(i => !i.children), defaultSelectedKey:'home' })),
+      h(Group, { title:'侧边 — inline (light)' },
+        h('div', { style:{ display:'flex' } },
+          h('div', { style:{ width: collapsed?64:220 } },
+            h(NavMenu, { mode:'inline', items, defaultSelectedKey:'ecs', defaultOpenKeys:['compute'], collapsed })),
+          h('div', { style:{ padding:'var(--spacing-16)' } },
+            h('button', {
+              onClick: () => setCollapsed(c => !c),
+              style:{ height:28, padding:'0 var(--spacing-12)',
+                border:'1px solid var(--color-border-base)', borderRadius:'var(--radius-4)',
+                background:'var(--color-bg-card)', cursor:'pointer', font:'400 13px/1 var(--font-sans)' }
+            }, collapsed?'展开':'收起'))
+        )),
+      h(Group, { title:'侧边 — inline (dark)' },
+        h('div', { style:{ display:'flex' } },
+          h('div', { style:{ width:220 } },
+            h(NavMenu, { mode:'inline', theme:'dark', items, defaultSelectedKey:'disk', defaultOpenKeys:['storage'] })))),
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

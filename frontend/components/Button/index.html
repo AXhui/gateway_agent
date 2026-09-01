@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Button 按钮 v1.1.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+* { box-sizing: border-box; }
+html, body, #root { margin:0; padding:0; }
+body { font: 400 14px/1.5 var(--font-sans); color: var(--color-text-primary); background: var(--color-base-bg); }
+.t-subtitle { font: 500 16px/1.5 var(--font-sans); }
+.t-title    { font: 500 20px/1.2 var(--font-sans); }
+.t-body     { font: 400 14px/1.5 var(--font-sans); }
+@keyframes uink-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="importmap">
+{ "imports": {
+  "react": "https://esm.sh/react@18.3.1",
+  "react-dom/client": "https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+
+<script type="module">
+import React, { useState, forwardRef } from 'react';
+import { createRoot } from 'react-dom/client';
+
+const h = React.createElement;
+
+const SIZE = {
+  xs: { h:'24px', px:'8px',  gap:'4px', font:'12px/1.5',  icon:14 },
+  sm: { h:'28px', px:'10px', gap:'4px', font:'14px/1.5',  icon:14 },
+  md: { h:'32px', px:'12px', gap:'4px', font:'14px/22px', icon:16 },
+  lg: { h:'40px', px:'16px', gap:'6px', font:'16px/1.5',  icon:18 },
+};
+
+const STATUS_VAR = {
+  standard:    { c:'var(--color-primary-normal)',  h:'var(--color-primary-hover)',  a:'var(--color-primary-active)',  bg:'var(--color-primary-bg)' },
+  danger:      { c:'var(--color-error-normal)',    h:'var(--color-error-hover)',    a:'var(--color-error-active)',    bg:'var(--color-error-bg)'   },
+  success:     { c:'var(--color-success-normal)',  h:'var(--color-success-hover)',  a:'var(--color-success-active)',  bg:'var(--color-success-bg)' },
+  warn:        { c:'var(--color-warm-normal)',     h:'var(--color-warm-hover)',     a:'var(--color-warm-active)',     bg:'var(--color-warm-bg)'    },
+  normal:      { c:'var(--color-text-secondary)', h:'var(--color-text-primary)',         a:'var(--color-text-primary)',          bg:'var(--color-bg-hover)'         },
+  transparent: { c:'var(--color-text-constant-normal)',   h:'var(--color-text-constant-normal)',         a:'var(--color-text-constant-normal)',          bg:'transparent'             },
+};
+
+function styleFor(variant, status) {
+  const s = STATUS_VAR[status];
+  switch (variant) {
+    case 'filled':   return { background:s.c, color:'var(--color-text-constant-normal)', border:'1px solid '+s.c, '--_hover-bg':s.h, '--_active-bg':s.a };
+    case 'outlined': return { background:'var(--color-bg-card)', color:s.c, border:'1px solid '+s.c, '--_hover-bg':s.bg, '--_active-bg':s.bg };
+    case 'dashed':   return { background:'var(--color-bg-card)', color:s.c, border:'1px dashed '+s.c, '--_hover-bg':s.bg, '--_active-bg':s.bg };
+    case 'text':     return { background:'transparent', color:s.c, border:'1px solid transparent', '--_hover-bg':s.bg, '--_active-bg':s.bg };
+    case 'link':     return { background:'transparent', color:s.c, border:'1px solid transparent', textDecoration:'underline', textUnderlineOffset:'2px', '--_hover-bg':'transparent', '--_active-bg':'transparent' };
+  }
+}
+
+const Spinner = ({ size }) => h('span', {
+  'aria-hidden': true,
+  style: { width:size, height:size, border:'2px solid currentColor', borderRightColor:'transparent', borderRadius:'9999px', display:'inline-block', animation:'uink-spin var(--duration-slow) linear infinite' }
+});
+
+const Button = forwardRef(function Button(props, ref) {
+  const {
+    size='md', variant='filled', status='standard', shape='rect',
+    loading=false, disabled, iconLeft, iconRight, htmlType='button',
+    children, style, onMouseEnter, onMouseLeave, onMouseDown, onMouseUp, onFocus, onBlur,
+    ...rest
+  } = props;
+
+  const sz = SIZE[size];
+  const base = styleFor(variant, status);
+  const isIconOnly = !children && (iconLeft || iconRight);
+  const radius = shape === 'pill' ? 'var(--radius-full)' : (size === 'lg' ? 'var(--radius-8)' : 'var(--radius-4)');
+  const [bg, setBg] = useState(undefined);
+  const ringMap = { standard:'primary', danger:'error', warn:'warm', success:'success', normal:'primary', transparent:'primary' };
+
+  return h('button', {
+    ref, type: htmlType, disabled: disabled || loading,
+    'aria-busy': loading || undefined,
+    onMouseEnter: (e) => { setBg('var(--_hover-bg)');  onMouseEnter && onMouseEnter(e); },
+    onMouseLeave: (e) => { setBg(undefined);            onMouseLeave && onMouseLeave(e); },
+    onMouseDown:  (e) => { setBg('var(--_active-bg)'); onMouseDown  && onMouseDown(e);  },
+    onMouseUp:    (e) => { setBg('var(--_hover-bg)');  onMouseUp    && onMouseUp(e);    },
+    onFocus: (e) => { e.currentTarget.style.boxShadow = `var(--shadow-diffusion-${ringMap[status]})`; onFocus && onFocus(e); },
+    onBlur:  (e) => { e.currentTarget.style.boxShadow = ''; onBlur && onBlur(e); },
+    style: {
+      ...base,
+      height: sz.h,
+      padding: isIconOnly ? 0 : `0 ${sz.px}`,
+      width: isIconOnly ? sz.h : undefined,
+      gap: sz.gap,
+      font: `500 ${sz.font} var(--font-sans)`,
+      borderRadius: radius,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+      transition: 'background-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard)',
+      whiteSpace: 'nowrap', userSelect: 'none',
+      ...(bg ? { background: bg } : null),
+      ...style,
+    },
+    ...rest,
+  },
+    loading ? h(Spinner, { size: sz.icon }) : iconLeft,
+    children,
+    !loading && iconRight,
+  );
+});
+
+const PlusIcon = () => h('svg', { width:16, height:16, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.5, strokeLinecap:'round', 'aria-hidden':true },
+  h('path', { d:'M12 5v14M5 12h14' })
+);
+
+const Section = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-16)' } },
+  h('h3', { className:'t-subtitle', style:{ color:'var(--color-text-primary)', margin:0 } }, title),
+  h('div', { style:{ display:'flex', flexWrap:'wrap', gap:'var(--spacing-12)', padding:'var(--spacing-20)', background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)', alignItems:'center' } }, children)
+);
+
+const Rule = ({ n, children }) => h('li', { className:'t-body', style:{ color:'var(--color-text-auxiliary)', listStyle:'none', display:'flex', gap:'var(--spacing-8)' } },
+  h('span', { style:{ color:'var(--color-text-secondary)' } }, n + '.'),
+  h('span', null, children)
+);
+
+function App() {
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Button 按钮'),
+      h('span', { className:'t-body', style:{ color:'var(--color-text-auxiliary)' } }, 'Milesight IOT Web · v1.1.0')
+    ),
+    h('main', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-30)', padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)', maxWidth:1200, margin:'0 auto' } },
+      h('section', null,
+        h('h2', { className:'t-title', style:{ margin:'0 0 var(--spacing-12)' } }, '基础样式'),
+        h('ul', { style:{ margin:0, padding:0, display:'flex', flexDirection:'column', gap:'var(--spacing-4)' } },
+          h(Rule, { n:1 }, '填充按钮：主按钮，最高优先级'),
+          h(Rule, { n:2 }, '描边按钮：白底+文字，弱于填充，常与填充组合'),
+          h(Rule, { n:3 }, '虚框按钮：虚线边框，表单"添加配置项"'),
+          h(Rule, { n:4 }, '文字按钮：纯文字，最弱视觉'),
+          h(Rule, { n:5 }, '链接按钮：跳转/超链接'),
+        )
+      ),
+      h(Section, { title:'图例 — 五种类型 (md)' },
+        h(Button, { variant:'filled' },   '填充按钮'),
+        h(Button, { variant:'outlined' }, '描边按钮'),
+        h(Button, { variant:'dashed' },   '虚框按钮'),
+        h(Button, { variant:'text' },     '文字按钮'),
+        h(Button, { variant:'link' },     '链接按钮'),
+      ),
+      h(Section, { title:'尺寸 — xs · sm · md · lg' },
+        h(Button, { size:'xs' }, 'xs 24'),
+        h(Button, { size:'sm' }, 'sm 28'),
+        h(Button, { size:'md' }, 'md 32'),
+        h(Button, { size:'lg' }, 'lg 40'),
+      ),
+      h(Section, { title:'状态 — Standard / Danger / Success / Warn / Normal' },
+        h(Button, { status:'standard' }, 'Standard'),
+        h(Button, { status:'danger' },   'Danger'),
+        h(Button, { status:'success' },  'Success'),
+        h(Button, { status:'warn' },     'Warn'),
+        h(Button, { status:'normal' },   'Normal'),
+      ),
+      h(Section, { title:'描边 × 状态' },
+        h(Button, { variant:'outlined', status:'standard' }, 'Standard'),
+        h(Button, { variant:'outlined', status:'danger' },   'Danger'),
+        h(Button, { variant:'outlined', status:'success' },  'Success'),
+        h(Button, { variant:'outlined', status:'warn' },     'Warn'),
+        h(Button, { variant:'outlined', status:'normal' },   'Normal'),
+      ),
+      h(Section, { title:'形状 — rect · pill' },
+        h(Button, { shape:'rect' }, 'Rectangle'),
+        h(Button, { shape:'pill' }, 'Pill'),
+        h(Button, { shape:'pill', variant:'outlined' }, 'Pill Outlined'),
+      ),
+      h(Section, { title:'禁用 / 加载' },
+        h(Button, { disabled:true }, 'Disabled'),
+        h(Button, { variant:'outlined', disabled:true }, 'Disabled'),
+        h(Button, { loading:true }, 'Loading'),
+        h(Button, { variant:'outlined', loading:true }, 'Loading'),
+      ),
+      h(Section, { title:'图标按钮' },
+        h(Button, { iconLeft: h(PlusIcon) }, '新建'),
+        h(Button, { variant:'outlined', iconLeft: h(PlusIcon) }, '添加配置项'),
+        h(Button, { variant:'dashed',   iconLeft: h(PlusIcon) }, '添加配置项'),
+        h(Button, { iconLeft: h(PlusIcon), 'aria-label':'add' }),
+      ),
+    )
+  );
+}
+
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

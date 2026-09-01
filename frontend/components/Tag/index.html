@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Tag 标签 v1.0.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+
+const PRESET = {
+  default:    { bg:'var(--color-bg-page)',  fg:'var(--color-text-secondary)', bd:'var(--color-border-base)' },
+  primary:    { bg:'var(--color-primary-bg)', fg:'var(--color-primary-normal)', bd:'rgba(16,129,62,0.24)' },
+  success:    { bg:'#f0f9ff',               fg:'#3491fa',               bd:'rgba(16,129,62,0.24)' },
+  processing: { bg:'#E7F0FE',               fg:'#1A66F2',               bd:'rgba(26,102,242,0.24)' },
+  warning:    { bg:'#FFF4E1',               fg:'#C77700',               bd:'rgba(199,119,0,0.24)' },
+  error:      { bg:'#FDECEC',               fg:'#f13535',               bd:'rgba(217,45,45,0.24)' },
+  magenta:    { bg:'#FCE8F3',               fg:'#B33C8B',               bd:'rgba(179,60,139,0.24)' },
+  gold:       { bg:'#FFF4D9',               fg:'#B47B00',               bd:'rgba(180,123,0,0.24)' },
+  cyan:       { bg:'#E1F4F7',               fg:'#137789',               bd:'rgba(19,119,137,0.24)' },
+  purple:     { bg:'#EDE9FE',               fg:'#6A45C9',               bd:'rgba(106,69,201,0.24)' },
+};
+
+const Tag = ({ color='default', closable, bordered=true, icon, onClose, children, style }) => {
+  const tone = PRESET[color];
+  const bg = tone?.bg ?? color;
+  const fg = tone?.fg ?? 'var(--color-text-constant-normal)';
+  const bd = tone ? tone.bd : 'transparent';
+  return h('span', { style:{
+    display:'inline-flex', alignItems:'center', gap:4,
+    height:22, padding:'0 8px', background:bg, color:fg,
+    border: bordered ? `1px solid ${bd}` : '1px solid transparent',
+    borderRadius:'var(--radius-4)', font:'400 12px/20px var(--font-sans)', whiteSpace:'nowrap', ...style,
+  } },
+    icon && h('span', { style:{ display:'inline-flex' } }, icon),
+    children,
+    closable && h('span', { onClick:onClose, style:{ display:'inline-flex', alignItems:'center',
+      cursor:'pointer', opacity:0.65, marginLeft:2 } },
+      h('svg', { width:10, height:10, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round' },
+        h('path', { d:'M6 6l12 12M18 6L6 18' })))
+  );
+};
+
+const CheckableTag = ({ checked, onChange, children }) => h('span', {
+  onClick:() => onChange?.(!checked),
+  style:{ display:'inline-flex', alignItems:'center', height:22, padding:'0 8px',
+    background: checked ? 'var(--color-primary-normal)' : 'transparent',
+    color: checked ? 'var(--color-text-constant-normal)' : 'var(--color-text-secondary)',
+    border:'1px solid '+(checked ? 'var(--color-primary-normal)' : 'var(--color-border-base)'),
+    borderRadius:'var(--radius-4)', font:'400 12px/20px var(--font-sans)',
+    cursor:'pointer', userSelect:'none' }
+}, children);
+
+const Dot = ({ c }) => h('span', { style:{ display:'inline-block', width:6, height:6, borderRadius:'50%', background:c } });
+
+const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
+  h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
+  h('div', { style:{ padding:'var(--spacing-20)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+    display:'flex', gap:'var(--spacing-8)', flexWrap:'wrap', alignItems:'center' } }, children)
+);
+
+function App() {
+  const [tags, setTags] = useState(['可关闭', '可移除', 'React']);
+  const [topics, setTopics] = useState({ 推荐: true, 最新: false, 热门: false });
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Tag 标签'),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('main', { style:{ maxWidth:720, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
+      display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } },
+      h(Group, { title:'基础' },
+        h(Tag, null, '默认'),
+        h(Tag, { color:'primary' }, 'Primary'),
+        h(Tag, { color:'success' }, 'Success'),
+        h(Tag, { color:'processing' }, 'Processing'),
+        h(Tag, { color:'warning' }, 'Warning'),
+        h(Tag, { color:'error' }, 'Error')),
+      h(Group, { title:'预设色彩' },
+        h(Tag, { color:'magenta' }, 'magenta'),
+        h(Tag, { color:'gold' }, 'gold'),
+        h(Tag, { color:'cyan' }, 'cyan'),
+        h(Tag, { color:'purple' }, 'purple')),
+      h(Group, { title:'状态点 + 文案' },
+        h(Tag, { color:'success', icon:h(Dot, { c:'#3491fa' }) }, '运行中'),
+        h(Tag, { color:'processing', icon:h(Dot, { c:'#1A66F2' }) }, '同步中'),
+        h(Tag, { color:'warning', icon:h(Dot, { c:'#C77700' }) }, '告警'),
+        h(Tag, { color:'error', icon:h(Dot, { c:'#f13535' }) }, '已停止')),
+      h(Group, { title:'可关闭' },
+        tags.map(t => h(Tag, { key:t, closable:true,
+          onClose:() => setTags(prev => prev.filter(x => x !== t)) }, t))),
+      h(Group, { title:'可选择 — CheckableTag' },
+        Object.keys(topics).map(k => h(CheckableTag, { key:k, checked:topics[k],
+          onChange: next => setTopics({ ...topics, [k]: next }) }, k)))
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

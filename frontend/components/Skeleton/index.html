@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Skeleton 骨架屏 v1.0.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+button{font-family:inherit}
+@keyframes uink-skel-pulse { 0% { background-position: 100% 50% } 100% { background-position: 0 50% } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React, { useState, Fragment } from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+
+const ANIM = 'uink-skel-pulse 1.4s ease-in-out infinite';
+const block = (active, extra={}) => ({
+  background:'linear-gradient(90deg, var(--color-divider-base-1) 25%, var(--color-bg-page) 37%, var(--color-divider-base-1) 63%)',
+  backgroundSize:'400% 100%', borderRadius:4,
+  animation: active ? ANIM : 'none', ...extra,
+});
+const SIZE = { sm:24, md:32, lg:48 };
+
+const Avatar = ({ active=true, size='md', shape='circle' }) => {
+  const px = typeof size === 'number' ? size : SIZE[size];
+  return h('span', { style: block(active, { display:'inline-block', width:px, height:px,
+    borderRadius: shape === 'circle' ? '50%' : 4 }) });
+};
+const Image = ({ active=true, width=200, height=120 }) =>
+  h('span', { style: block(active, { display:'inline-block', width, height }) });
+const Btn = ({ active=true, size='md' }) =>
+  h('span', { style: block(active, { display:'inline-block', height: SIZE[size], width:80 }) });
+const Input = ({ active=true, size='md', width=200 }) =>
+  h('span', { style: block(active, { display:'inline-block', height: SIZE[size], width }) });
+
+const Skeleton = ({ loading=true, active=true, avatar=false, title=true, paragraph=true, children, style }) => {
+  if (!loading) return h(Fragment, null, children);
+  const avatarOpts = typeof avatar === 'object' ? avatar : { size:'md', shape:'circle' };
+  const titleOpts = typeof title === 'object' ? title : { width:'38%' };
+  const paraOpts = typeof paragraph === 'object' ? paragraph : { rows:3, width:['100%','100%','60%'] };
+  const rows = paraOpts.rows ?? 3;
+  const widths = paraOpts.width ?? ['100%','100%','60%'];
+  return h('div', { style:{ display:'flex', gap:16, ...style } },
+    avatar && h(Avatar, { active, size: avatarOpts.size, shape: avatarOpts.shape }),
+    h('div', { style:{ flex:1, display:'flex', flexDirection:'column', gap:12 } },
+      title && h('span', { style: block(active, { display:'block', height:16,
+        width: titleOpts.width ?? '38%' }) }),
+      paragraph && h('div', { style:{ display:'flex', flexDirection:'column', gap:8 } },
+        Array.from({ length: rows }).map((_, i) =>
+          h('span', { key:i, style: block(active, { display:'block', height:14, width: widths[i] ?? '100%' }) })))
+    )
+  );
+};
+Skeleton.Avatar = Avatar;
+Skeleton.Image = Image;
+Skeleton.Button = Btn;
+Skeleton.Input = Input;
+
+const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
+  h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
+  h('div', { style:{ padding:'var(--spacing-20)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+    display:'flex', flexDirection:'column', gap:'var(--spacing-20)' } }, children)
+);
+
+function App() {
+  const [loading, setLoading] = useState(true);
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Skeleton 骨架屏'),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('main', { style:{ maxWidth:720, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
+      display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } },
+      h(Group, { title:'基础' }, h(Skeleton)),
+      h(Group, { title:'带头像' }, h(Skeleton, { avatar:true })),
+      h(Group, { title:'原子组件 — Avatar / Image / Button / Input' },
+        h('div', { style:{ display:'flex', gap:16, alignItems:'center', flexWrap:'wrap' } },
+          h(Skeleton.Avatar, { size:'sm' }),
+          h(Skeleton.Avatar, { size:'md' }),
+          h(Skeleton.Avatar, { size:'lg' }),
+          h(Skeleton.Avatar, { shape:'square' }),
+          h(Skeleton.Image),
+          h(Skeleton.Button),
+          h(Skeleton.Input, { width:160 }))),
+      h(Group, { title:'切换 loading 状态' },
+        h('button', { onClick:() => setLoading(v => !v), style:{
+          alignSelf:'flex-start', height:32, padding:'0 16px',
+          border:'1px solid var(--color-border-base)', borderRadius:'var(--radius-4)',
+          background:'var(--color-bg-card)', cursor:'pointer'
+        } }, loading ? '加载完成' : '重新加载'),
+        h(Skeleton, { loading, avatar:true, paragraph:{ rows:4 } },
+          h('div', { style:{ display:'flex', gap:16, alignItems:'center' } },
+            h('div', { style:{ width:48, height:48, borderRadius:'50%',
+              background:'var(--color-bg-page)', color:'var(--color-text-primary)',
+              display:'flex', alignItems:'center', justifyContent:'center' } }, 'U'),
+            h('div', null,
+              h('div', { style:{ font:'500 16px/1.4 var(--font-sans)' } }, 'Milesight IOT Web'),
+              h('p', { style:{ margin:'4px 0 0', color:'var(--color-text-secondary)' } },
+                'IOT 控制台设计系统 — 提供完整的 W3C tokens、组件与示例。')))))
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

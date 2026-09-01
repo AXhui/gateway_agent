@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — 组件库总览</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-border-base:#E5E6EB;
+  --radius-8:8px;
+  --shadow-diffusion-1:0 2px 8px rgba(0,0,0,0.04);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:var(--font-sans);
+  background:var(--color-bg-page);
+  color:var(--color-text-primary);
+  line-height:1.6;
+}
+header {
+  background:var(--color-bg-card);
+  border-bottom:1px solid var(--color-border-base);
+  padding:24px 32px;
+  position:sticky; top:0; z-index:10;
+}
+header h1 {
+  font-size:24px; font-weight:600;
+  display:flex; align-items:center; gap:12px;
+}
+header .subtitle {
+  color:var(--color-text-secondary); font-size:14px; margin-top:4px;
+}
+.nav {
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;
+}
+.nav a {
+  padding:6px 14px; border-radius:var(--radius-8);
+  background:var(--color-bg-page); color:var(--color-text-secondary);
+  text-decoration:none; font-size:13px; transition:all 160ms var(--ease);
+  border:1px solid var(--color-border-base);
+}
+.nav a:hover {
+  background:var(--color-primary-normal); color:#fff; border-color:var(--color-primary-normal);
+}
+main { max-width:1200px; margin:0 auto; padding:32px; }
+.cat-section { margin-bottom:48px; }
+.cat-section h2 {
+  font-size:20px; font-weight:600; margin-bottom:20px;
+  padding-bottom:12px; border-bottom:2px solid var(--color-primary-normal);
+  display:inline-block;
+}
+.comp-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:16px;
+}
+.comp-card {
+  background:var(--color-bg-card);
+  border:1px solid var(--color-border-base);
+  border-radius:var(--radius-8);
+  padding:20px;
+  text-decoration:none; color:inherit;
+  transition:all 200ms var(--ease);
+  box-shadow:var(--shadow-diffusion-1);
+}
+.comp-card:hover {
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  border-color:var(--color-primary-normal);
+}
+.comp-name {
+  font-size:16px; font-weight:600; color:var(--color-primary-normal);
+}
+.comp-cn {
+  font-size:13px; color:var(--color-text-secondary); margin-top:4px;
+}
+.comp-summary {
+  font-size:12px; color:var(--color-text-secondary); margin-top:8px;
+  line-height:1.5;
+}
+.stats {
+  display:flex; gap:24px; margin-top:8px;
+}
+.stat {
+  font-size:13px; color:var(--color-text-secondary);
+}
+.stat strong {
+  color:var(--color-text-primary); font-size:18px;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏗️ Milesight IOT Web 组件库</h1>
+  <div class="subtitle">共 63 个组件，覆盖 7 大分类 · 基于设计令牌体系</div>
+  <div class="stats">
+    <div class="stat"><strong>63</strong> 组件</div>
+    <div class="stat"><strong>7</strong> 分类</div>
+  </div>
+  <nav class="nav">
+    <a href="#cat-基础">基础 (5)</a><a href="#cat-布局">布局 (5)</a><a href="#cat-导航">导航 (8)</a><a href="#cat-数据录入">数据录入 (16)</a><a href="#cat-数据展示">数据展示 (18)</a><a href="#cat-反馈">反馈 (10)</a><a href="#cat-设计资源">设计资源 (1)</a>
+  </nav>
+</header>
+<main>
+  
+        <section class="cat-section" id="cat-基础">
+            <h2>基础</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Button/index.html" target="_blank">
+                <div class="comp-name">Button</div>
+                <div class="comp-cn">按钮</div>
+                <div class="comp-summary">触发即时操作的按钮。提供 5 种类型、3 种尺寸，覆盖主要操作、次要操作、文本操...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Icon/index.html" target="_blank">
+                <div class="comp-name">Icon</div>
+                <div class="comp-cn">图标</div>
+                <div class="comp-summary">基于 Lucide 图标集的统一图标组件，size 默认跟随父级字号。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Typography/index.html" target="_blank">
+                <div class="comp-name">Typography</div>
+                <div class="comp-cn">排版</div>
+                <div class="comp-summary">文本与段落系统。提供 H1-H5 标题、四种段落、链接、行内代码等基础排版能力。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Logo/index.html" target="_blank">
+                <div class="comp-name">Logo</div>
+                <div class="comp-cn">品牌标识</div>
+                <div class="comp-summary">Milesight IOT 品牌 Logo 组件，提供完整版与紧凑版两种 var...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Divider/index.html" target="_blank">
+                <div class="comp-name">Divider</div>
+                <div class="comp-cn">分割线</div>
+                <div class="comp-summary">区隔内容的分割线，支持水平/垂直、虚实线、带文字三类形态。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-布局">
+            <h2>布局</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Grid/index.html" target="_blank">
+                <div class="comp-name">Grid</div>
+                <div class="comp-cn">栅格</div>
+                <div class="comp-summary">24 栅格响应式布局系统，提供 Row / Col 与 5 档 gutter。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Layout/index.html" target="_blank">
+                <div class="comp-name">Layout</div>
+                <div class="comp-cn">布局</div>
+                <div class="comp-summary">应用级页面框架，含 Header / Sider / Content / Foo...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Space/index.html" target="_blank">
+                <div class="comp-name">Space</div>
+                <div class="comp-cn">间距</div>
+                <div class="comp-summary">行内/纵向元素间隔工具，自动处理 wrap 与 split。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Affix/index.html" target="_blank">
+                <div class="comp-name">Affix</div>
+                <div class="comp-cn">固钉</div>
+                <div class="comp-summary">在滚动到边界时将子元素固定，常用于操作栏、回到顶部按钮。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/PageHeader/index.html" target="_blank">
+                <div class="comp-name">PageHeader</div>
+                <div class="comp-cn">页头</div>
+                <div class="comp-summary">页面顶部容器，承载面包屑、返回、标题、副标题、操作区。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-导航">
+            <h2>导航</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Breadcrumb/index.html" target="_blank">
+                <div class="comp-name">Breadcrumb</div>
+                <div class="comp-cn">面包屑</div>
+                <div class="comp-summary">显示当前页面在系统层级中的位置，支持 items 数据驱动。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/NavMenu/index.html" target="_blank">
+                <div class="comp-name">NavMenu</div>
+                <div class="comp-cn">导航菜单</div>
+                <div class="comp-summary">应用主导航，支持 inline / horizontal / vertical ...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Pagination/index.html" target="_blank">
+                <div class="comp-name">Pagination</div>
+                <div class="comp-cn">分页</div>
+                <div class="comp-summary">长列表分页，提供 simple、jumper、size changer 三种增强...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Steps/index.html" target="_blank">
+                <div class="comp-name">Steps</div>
+                <div class="comp-cn">步骤条</div>
+                <div class="comp-summary">任务流程指示器，支持横向/竖向、状态、点状步骤。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/DropdownMenu/index.html" target="_blank">
+                <div class="comp-name">DropdownMenu</div>
+                <div class="comp-cn">下拉菜单</div>
+                <div class="comp-summary">操作收纳菜单，支持 hover / click / contextMenu 三种...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Tabs/index.html" target="_blank">
+                <div class="comp-name">Tabs</div>
+                <div class="comp-cn">标签页</div>
+                <div class="comp-summary">内容分组切换器，line / card / segment 三种风格。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Anchor/index.html" target="_blank">
+                <div class="comp-name">Anchor</div>
+                <div class="comp-cn">锚点</div>
+                <div class="comp-summary">页内导航锚点，自动追踪滚动位置高亮当前章节。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/BackTop/index.html" target="_blank">
+                <div class="comp-name">BackTop</div>
+                <div class="comp-cn">回到顶部</div>
+                <div class="comp-summary">页面右下浮动的回到顶部按钮，滚动 400px 后出现。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-数据录入">
+            <h2>数据录入</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Input/index.html" target="_blank">
+                <div class="comp-name">Input</div>
+                <div class="comp-cn">输入框</div>
+                <div class="comp-summary">基础文本输入框，支持 prefix、suffix、addon、清除、密码切换。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/InputNumber/index.html" target="_blank">
+                <div class="comp-name">InputNumber</div>
+                <div class="comp-cn">数字输入框</div>
+                <div class="comp-summary">严格的数字输入控件，含步进按钮、最小最大值、精度控制。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Select/index.html" target="_blank">
+                <div class="comp-name">Select</div>
+                <div class="comp-cn">选择器</div>
+                <div class="comp-summary">下拉选择框，支持单选、多选、搜索、远程加载。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Checkbox/index.html" target="_blank">
+                <div class="comp-name">Checkbox</div>
+                <div class="comp-cn">复选框</div>
+                <div class="comp-summary">多选项控件，支持半选状态、批量选择、组管理。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Radio/index.html" target="_blank">
+                <div class="comp-name">Radio</div>
+                <div class="comp-cn">单选框</div>
+                <div class="comp-summary">互斥选择控件，支持原生 radio、按钮组、卡片组三种样式。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Switch/index.html" target="_blank">
+                <div class="comp-name">Switch</div>
+                <div class="comp-cn">开关</div>
+                <div class="comp-summary">二态开关，立即生效，无需提交按钮。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Slider/index.html" target="_blank">
+                <div class="comp-name">Slider</div>
+                <div class="comp-cn">滑动输入条</div>
+                <div class="comp-summary">区间内连续值选择，支持双滑块、刻度、提示。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/DatePicker/index.html" target="_blank">
+                <div class="comp-name">DatePicker</div>
+                <div class="comp-cn">日期选择框</div>
+                <div class="comp-summary">日期/时间选择，含 picker 类型、范围选择、预设范围、禁用日期。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Upload/index.html" target="_blank">
+                <div class="comp-name">Upload</div>
+                <div class="comp-cn">上传</div>
+                <div class="comp-summary">文件上传组件，支持点击/拖拽、列表/卡片/头像三种 listType。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Form/index.html" target="_blank">
+                <div class="comp-name">Form</div>
+                <div class="comp-cn">表单</div>
+                <div class="comp-summary">表单容器，处理布局、校验、提交、字段联动。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Segmented/index.html" target="_blank">
+                <div class="comp-name">Segmented</div>
+                <div class="comp-cn">分段控制器</div>
+                <div class="comp-summary">互斥的视图切换控件，比 Radio 更视觉强、比 Tabs 更轻量。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/AutoComplete/index.html" target="_blank">
+                <div class="comp-name">AutoComplete</div>
+                <div class="comp-cn">自动完成</div>
+                <div class="comp-summary">输入框 + 下拉建议，适合海量候选项的搜索式选择。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/TimePicker/index.html" target="_blank">
+                <div class="comp-name">TimePicker</div>
+                <div class="comp-cn">时间选择框</div>
+                <div class="comp-summary">时分秒选择器，支持 12 小时制、步进、范围选择。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/TreeSelect/index.html" target="_blank">
+                <div class="comp-name">TreeSelect</div>
+                <div class="comp-cn">树选择</div>
+                <div class="comp-summary">树形结构选择器，支持级联勾选、严格模式、搜索。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Cascader/index.html" target="_blank">
+                <div class="comp-name">Cascader</div>
+                <div class="comp-cn">级联选择</div>
+                <div class="comp-summary">层级菜单选择器，逐级展开多列展示，适合 3-4 层固定层级。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Transfer/index.html" target="_blank">
+                <div class="comp-name">Transfer</div>
+                <div class="comp-cn">穿梭框</div>
+                <div class="comp-summary">双列对照的多选控件，适合需要批量调整两侧数据的场景。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-数据展示">
+            <h2>数据展示</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Avatar/index.html" target="_blank">
+                <div class="comp-name">Avatar</div>
+                <div class="comp-cn">头像</div>
+                <div class="comp-summary">用户/对象的视觉标识，支持图片、文字、图标、组合。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Badge/index.html" target="_blank">
+                <div class="comp-name">Badge</div>
+                <div class="comp-cn">徽标数</div>
+                <div class="comp-summary">通知红点/数字徽标，可独立使用或附加到子元素。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Calendar/index.html" target="_blank">
+                <div class="comp-name">Calendar</div>
+                <div class="comp-cn">日历</div>
+                <div class="comp-summary">日历视图，支持月/年模式、单元格自定义、选择回调。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Card/index.html" target="_blank">
+                <div class="comp-name">Card</div>
+                <div class="comp-cn">卡片</div>
+                <div class="comp-summary">通用内容容器，含标题、操作、封面、底部操作区。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Collapse/index.html" target="_blank">
+                <div class="comp-name">Collapse</div>
+                <div class="comp-cn">折叠面板</div>
+                <div class="comp-summary">分组内容折叠展示，支持手风琴模式与无边框模式。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Comment/index.html" target="_blank">
+                <div class="comp-name">Comment</div>
+                <div class="comp-cn">评论</div>
+                <div class="comp-summary">评论展示组件，含作者、内容、时间、操作、嵌套回复。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Descriptions/index.html" target="_blank">
+                <div class="comp-name">Descriptions</div>
+                <div class="comp-cn">描述列表</div>
+                <div class="comp-summary">键值对描述列表，常用于详情页只读信息展示。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Empty/index.html" target="_blank">
+                <div class="comp-name">Empty</div>
+                <div class="comp-cn">空状态</div>
+                <div class="comp-summary">无数据展示，提供默认插画与简单插画两种风格。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Image/index.html" target="_blank">
+                <div class="comp-name">Image</div>
+                <div class="comp-cn">图片</div>
+                <div class="comp-summary">图片组件，含预览、缩放、回退、占位。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/List/index.html" target="_blank">
+                <div class="comp-name">List</div>
+                <div class="comp-cn">列表</div>
+                <div class="comp-summary">通用列表，支持基础、栅格、加载、分页、虚拟滚动。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Popover/index.html" target="_blank">
+                <div class="comp-name">Popover</div>
+                <div class="comp-cn">气泡卡片</div>
+                <div class="comp-summary">hover/click 触发的复杂内容浮层，比 Tooltip 容纳更多。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Rate/index.html" target="_blank">
+                <div class="comp-name">Rate</div>
+                <div class="comp-cn">评分</div>
+                <div class="comp-summary">星级评分组件，支持半星、清空、自定义字符。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Statistic/index.html" target="_blank">
+                <div class="comp-name">Statistic</div>
+                <div class="comp-cn">统计数值</div>
+                <div class="comp-summary">数字统计展示，支持精度、前后缀、动画、趋势配色。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Tag/index.html" target="_blank">
+                <div class="comp-name">Tag</div>
+                <div class="comp-cn">标签</div>
+                <div class="comp-summary">分类、状态、标签型小型展示元素，提供 11 种预设色。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Timeline/index.html" target="_blank">
+                <div class="comp-name">Timeline</div>
+                <div class="comp-cn">时间轴</div>
+                <div class="comp-summary">时间维度的事件流展示，支持左右交替、待定状态。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Tooltip/index.html" target="_blank">
+                <div class="comp-name">Tooltip</div>
+                <div class="comp-cn">文字提示</div>
+                <div class="comp-summary">轻量级 hover 文字提示，仅承载补充说明。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Tree/index.html" target="_blank">
+                <div class="comp-name">Tree</div>
+                <div class="comp-cn">树形控件</div>
+                <div class="comp-summary">层级数据可视化，支持选中、勾选、拖拽、虚拟滚动。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Watermark/index.html" target="_blank">
+                <div class="comp-name">Watermark</div>
+                <div class="comp-cn">水印</div>
+                <div class="comp-summary">页面/区块水印，使用 Canvas 绘制，自动监听 DOM 变化防移除。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-反馈">
+            <h2>反馈</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Alert/index.html" target="_blank">
+                <div class="comp-name">Alert</div>
+                <div class="comp-cn">警告提示</div>
+                <div class="comp-summary">页内常驻警告条，4 种状态 + 可关闭 + 可带描述/动作。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Drawer/index.html" target="_blank">
+                <div class="comp-name">Drawer</div>
+                <div class="comp-cn">抽屉</div>
+                <div class="comp-summary">侧边滑入面板，承载详情、表单、配置等中等复杂度内容。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Message/index.html" target="_blank">
+                <div class="comp-name">Message</div>
+                <div class="comp-cn">全局提示</div>
+                <div class="comp-summary">顶部居中的瞬时全局提示，3 秒自动关闭。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Modal/index.html" target="_blank">
+                <div class="comp-name">Modal</div>
+                <div class="comp-cn">对话框</div>
+                <div class="comp-summary">模态对话框，承载需用户聚焦的确认/输入/详情。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Notification/index.html" target="_blank">
+                <div class="comp-name">Notification</div>
+                <div class="comp-cn">通知提醒框</div>
+                <div class="comp-summary">右上角的通知卡片，可承载标题、详细描述、操作按钮。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Popconfirm/index.html" target="_blank">
+                <div class="comp-name">Popconfirm</div>
+                <div class="comp-cn">气泡确认框</div>
+                <div class="comp-summary">轻量级二次确认，从触发元素弹出，不阻断主流程。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Progress/index.html" target="_blank">
+                <div class="comp-name">Progress</div>
+                <div class="comp-cn">进度条</div>
+                <div class="comp-summary">任务进度展示，含线性、圆形、仪表盘三种形态。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Result/index.html" target="_blank">
+                <div class="comp-name">Result</div>
+                <div class="comp-cn">结果</div>
+                <div class="comp-summary">页面级结果反馈，含成功/失败、403/404/500、信息状态。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Skeleton/index.html" target="_blank">
+                <div class="comp-name">Skeleton</div>
+                <div class="comp-cn">骨架屏</div>
+                <div class="comp-summary">加载占位，还原页面骨架，减少首屏空白感。...</div>
+            </a>
+            
+            <a class="comp-card" href="components/Spin/index.html" target="_blank">
+                <div class="comp-name">Spin</div>
+                <div class="comp-cn">加载中</div>
+                <div class="comp-summary">加载指示器，可包裹内容产生遮罩 loading。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="cat-section" id="cat-设计资源">
+            <h2>设计资源</h2>
+            <div class="comp-grid">
+                
+            <a class="comp-card" href="components/Tokens/index.html" target="_blank">
+                <div class="comp-name">Tokens</div>
+                <div class="comp-cn">设计令牌</div>
+                <div class="comp-summary">全部设计令牌总览：颜色、间距、字号、圆角、阴影、字体。...</div>
+            </a>
+            
+            </div>
+        </section>
+        
+</main>
+</body>
+</html>

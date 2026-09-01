@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Grid 栅格 v1.1.0</title>
+<style>
+:root {
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+  --color-remind-normal:#F7BA1E;
+  --color-remind-bg:#FFFDEB;
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-primary-normal:#3491FA;
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --color-remind:var(--color-remind-normal);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --font-sans:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Menlo,Consolas,monospace;
+  --spacing-2:2px; --spacing-4:4px; --spacing-8:8px; --spacing-12:12px;
+  --spacing-16:16px; --spacing-20:20px; --spacing-24:24px; --spacing-30:30px;
+  --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+  --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+  --duration-fast:160ms; --duration-slow:400ms;
+  --easing-standard:cubic-bezier(0.2,0,0,1);
+}
+* { box-sizing: border-box; }
+html, body, #root { margin:0; padding:0; }
+body { font: 400 14px/1.5 var(--font-sans); color: var(--color-text-primary); background: var(--color-base-bg); }
+.t-subtitle { font: 500 16px/1.5 var(--font-sans); }
+.t-body     { font: 400 14px/1.5 var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="importmap">
+{ "imports": {
+  "react": "https://esm.sh/react@18.3.1",
+  "react-dom/client": "https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+
+<script type="module">
+import React, { useState, useEffect, useContext, createContext, forwardRef } from 'react';
+import { createRoot } from 'react-dom/client';
+
+const h = React.createElement;
+
+const ALIGN = { top:'flex-start', middle:'center', bottom:'flex-end', stretch:'stretch' };
+const JUSTIFY = { start:'flex-start', end:'flex-end', center:'center', 'space-around':'space-around', 'space-between':'space-between', 'space-evenly':'space-evenly' };
+const BP = { xs:0, sm:640, md:768, lg:1024, xl:1280, xxl:1536 };
+
+const RowCtx = createContext([0, 0]);
+
+const Row = forwardRef(function Row(props, ref) {
+  const { gutter = 24, align = 'top', justify = 'start', wrap = true, style, children, ...rest } = props;
+  const [gx, gy] = Array.isArray(gutter) ? gutter : [gutter, 0];
+  return h(RowCtx.Provider, { value: [gx, gy] },
+    h('div', {
+      ref,
+      style: {
+        display: 'flex',
+        flexFlow: wrap ? 'row wrap' : 'row nowrap',
+        alignItems: ALIGN[align],
+        justifyContent: JUSTIFY[justify],
+        marginLeft: -gx / 2,
+        marginRight: -gx / 2,
+        rowGap: gy,
+        ...style,
+      },
+      ...rest,
+    }, children)
+  );
+});
+
+function useViewport() {
+  const get = () => (typeof window === 'undefined' ? 1280 : window.innerWidth);
+  const [w, setW] = useState(get);
+  useEffect(() => {
+    const onResize = () => setW(get());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return w;
+}
+
+function resolve(props, w) {
+  let out = { span: props.span, offset: props.offset };
+  for (const k of ['xs','sm','md','lg','xl','xxl']) {
+    if (w >= BP[k] && props[k] != null) {
+      const v = props[k];
+      if (typeof v === 'number') out = { ...out, span: v };
+      else out = { ...out, ...v };
+    }
+  }
+  return out;
+}
+
+const Col = forwardRef(function Col(props, ref) {
+  const { span, offset, flex, xs, sm, md, lg, xl, xxl, style, children, ...rest } = props;
+  const [gx] = useContext(RowCtx);
+  const w = useViewport();
+  const r = resolve(props, w);
+  const cs = { paddingLeft: gx / 2, paddingRight: gx / 2, boxSizing: 'border-box', ...style };
+  if (flex != null) cs.flex = typeof flex === 'number' ? `${flex} ${flex} auto` : flex;
+  else if (r.span != null) {
+    const pct = (r.span / 24) * 100;
+    cs.flex = `0 0 ${pct}%`;
+    cs.maxWidth = `${pct}%`;
+  }
+  if (r.offset) cs.marginLeft = `${(r.offset / 24) * 100}%`;
+  return h('div', { ref, style: cs, ...rest }, children);
+});
+
+const Cell = ({ children, tone = 'a' }) => h('div', {
+  style: {
+    background: tone === 'a' ? 'var(--color-primary-bg)' : 'var(--color-primary-normal)',
+    color: tone === 'a' ? 'var(--color-primary-normal)' : 'var(--color-text-constant-normal)',
+    padding: 'var(--spacing-12) var(--spacing-16)',
+    borderRadius: 'var(--radius-4)',
+    font: '500 14px/1.5 var(--font-sans)',
+    textAlign: 'center',
+  }
+}, children);
+
+const Section = ({ title, note, children }) => h('section', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-16)' } },
+  h('h3', { className: 't-subtitle', style: { color: 'var(--color-text-primary)', margin: 0 } }, title),
+  note && h('div', { style: { background: 'var(--color-bg-page)', padding: 'var(--spacing-20) var(--spacing-24)', font: '400 14px/22px var(--font-sans)', color: 'var(--color-text-auxiliary)' } }, note),
+  h('div', { style: { padding: 'var(--spacing-24)', background: 'var(--color-bg-card)', border: '1px solid var(--color-divider-base-1)', borderRadius: 'var(--radius-8)' } }, children)
+);
+
+function App() {
+  return h('div', { style: { minHeight: '100vh' } },
+    h('header', { style: { background: 'var(--color-primary-normal)', color: 'var(--color-text-constant-normal)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--spacing-20) var(--spacing-24)' } },
+      h('h1', { style: { margin: 0, font: '600 28px/1.2 var(--font-sans)' } }, 'Grid 栅格'),
+      h('span', { className: 't-body', style: { opacity: 0.8 } }, 'Milesight IOT Web · v1.1.0')
+    ),
+    h('main', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-30)', padding: 'var(--spacing-30) var(--spacing-24) var(--spacing-64)', maxWidth: 1440, margin: '0 auto' } },
+
+      h(Section, { title: '基础 24 栏', note: '将容器水平划分为 24 等份，通过 span / offset 组合页面布局。' },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-12)' } },
+          h(Row, { gutter: 24 }, h(Col, { span: 24 }, h(Cell, { tone: 'b' }, 'span = 24'))),
+          h(Row, { gutter: 24 }, h(Col, { span: 12 }, h(Cell, null, 'span = 12')), h(Col, { span: 12 }, h(Cell, null, 'span = 12'))),
+          h(Row, { gutter: 24 }, h(Col, { span: 8 }, h(Cell, null, 'span = 8')), h(Col, { span: 8 }, h(Cell, null, 'span = 8')), h(Col, { span: 8 }, h(Cell, null, 'span = 8'))),
+          h(Row, { gutter: 24 }, ...[6,6,6,6].map((s,i) => h(Col, { key:i, span: s }, h(Cell, null, String(s)))))
+        )
+      ),
+
+      h(Section, { title: '水槽宽度 — 8 / 16 / 24 / 32 / 40', note: '水槽宽度为 24 时视觉效果最佳；不同业务可按 8 的倍数自定义。' },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-16)' } },
+          ...[8,16,24,32,40].map(g => h('div', { key: g },
+            h('div', { style: { font: '500 12px/1.5 var(--font-sans)', color: 'var(--color-text-auxiliary)', marginBottom: 'var(--spacing-8)' } }, 'gutter = ' + g),
+            h(Row, { gutter: g },
+              ...Array.from({ length: 6 }).map((_, i) => h(Col, { key: i, span: 4 }, h(Cell, null, '4')))
+            )
+          ))
+        )
+      ),
+
+      h(Section, { title: '偏移 offset' },
+        h(Row, { gutter: 24 },
+          h(Col, { span: 8 }, h(Cell, null, 'span 8')),
+          h(Col, { span: 8, offset: 8 }, h(Cell, null, 'span 8 · offset 8'))
+        )
+      ),
+
+      h(Section, { title: '对齐 align / justify' },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--spacing-12)' } },
+          h(Row, { gutter: 24, justify: 'space-between', align: 'middle', style: { background: 'var(--color-bg-hover)', padding: 'var(--spacing-12)', borderRadius: 'var(--radius-4)' } },
+            h(Col, { span: 4 }, h(Cell, null, '4')),
+            h(Col, { span: 4 }, h('div', { style: { height: 64 } }, h(Cell, null, 'tall'))),
+            h(Col, { span: 4 }, h(Cell, null, '4'))
+          ),
+          h(Row, { gutter: 24, justify: 'center' },
+            h(Col, { span: 6 }, h(Cell, null, 'center')),
+            h(Col, { span: 6 }, h(Cell, null, 'center'))
+          )
+        )
+      ),
+
+      h(Section, { title: '响应式 — xs · sm · md · lg · xl · xxl', note: '断点：sm 640 · md 768 · lg 1024 · xl 1280 · xxl 1536。调整窗口宽度查看变化。' },
+        h(Row, { gutter: [24, 16] },
+          ...Array.from({ length: 4 }).map((_, i) =>
+            h(Col, { key: i, xs: 24, sm: 12, md: 8, lg: 6 }, h(Cell, null, 'xs24 · sm12 · md8 · lg6'))
+          )
+        )
+      ),
+
+      h(Section, { title: 'Flex 模式' },
+        h(Row, { gutter: 24 },
+          h(Col, { flex: '120px' }, h(Cell, null, '120px')),
+          h(Col, { flex: 1 }, h(Cell, { tone: 'b' }, 'flex 1（自适应）')),
+          h(Col, { flex: '200px' }, h(Cell, null, '200px'))
+        )
+      )
+    )
+  );
+}
+
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>
