@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="xWUkWua8jzCFQJc7KRcCKx">
+<head data-page-node-id="GSgxT2eYRklByGUN4U77c8">
+<meta charset="utf-8" data-page-node-id="Oj7UXkRoJL4xK7XawE7Xjq" />
+<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="jfudWZocinsd9Y7xFSNlTO" />
+<title>Modulor · 一句话生成 100% 还原 Demo 原型</title>
+<link rel="stylesheet" href="assets/css/workbench.css" data-page-node-id="cBgKVClPbcYgOlf9rde1Dr" />
+</head>
+<body data-page-node-id="yX81ydF9DWFPUTdk6SKl1n">
+
+<header class="wb-topbar" data-page-node-id="91jT87XNPjFz73AQeSSBIw">
+  <div class="wb-brand" data-page-node-id="7yH6GFcjMC2qmhx7eYFaDG">
+    <span class="wb-brand-mark" data-page-node-id="0hjf5RN9qsLJidSAAFU9pW">◈</span>
+    <span class="wb-brand-name" data-page-node-id="ioUIdXxtNXMEzO6aHoUfe9">Modulor</span>
+    <span class="wb-brand-sub" data-page-node-id="9IQn667lHBrU1p5sK8XAYX">一句话 → 100% 还原的业务页面 Demo</span>
+  </div>
+  <div class="wb-topbar-right" data-page-node-id="hpUvbNF7QM3JXvyGXHpD0t">
+    <span class="wb-stat" id="stat-atoms" title="已封装基础组件 / 在册基础组件" data-page-node-id="ffDOLJBFr0HGGXnybjbCtn">L2 48/64</span>
+    <span class="wb-stat" id="stat-biz" title="业务组件数量" data-page-node-id="pYywukw4v22lgkB3A1Jhip">L3 14</span>
+    <span class="wb-stat" id="stat-mod" title="页面模块数量" data-page-node-id="tRA7AOpdDzuabFFdNgW3J0">L4 12</span>
+    <span class="wb-stat" id="stat-tpl" title="页面模板数量" data-page-node-id="Q8DjqNu451tRsHJzjv1qFi">L5 11</span>
+    <span class="wb-hairline-v" data-page-node-id="fyhJWhInfRBFGFbZL41T6G"></span>
+    <button class="wb-btn wb-btn--ghost" id="btn-rebuild" title="修改 library/*.css 后，先执行 tools/build-css-bundle.py，再点此重载" data-page-node-id="BqZNqmzNo4SgN7LWMFPZgX">重载</button>
+    <button class="wb-btn" id="btn-download" data-page-node-id="yQvF6bFCAlb45XxuEsox4Q">导出 HTML</button>
+  </div>
+</header>
+
+<section class="wb-prompt" data-page-node-id="ZJM8BO2IU1OWMUANOSSuDt">
+  <div class="wb-prompt-inner" data-page-node-id="vyAkG1pHRCzCHMkkSgBPwP">
+    <div class="wb-prompt-head" data-page-node-id="4csdYf9g5dxBLu7kYWa9un">
+      <span class="wb-mono" data-page-node-id="DzbFwFlHpJMTLDs6J6xtp8">REQUIREMENT</span>
+      <span class="wb-seg" id="seg-mode" data-page-node-id="HD5vVqnmx5pg0rTJIBo6HE">
+        <button class="wb-seg-item is-active" data-mode="match" data-page-node-id="uDGnDBJw0aRnSxARHODmGt">模块匹配复用</button>
+        <button class="wb-seg-item" data-mode="learn" data-page-node-id="A3jiNGrgi3yCnnI81VQ9cl">新业务自主生成</button>
+      </span>
+    </div>
+    <div class="wb-prompt-row" data-page-node-id="Cm8pOyw9OsGAyeFJbEv0V1">
+      <label class="wb-input" data-page-node-id="FK66aMPIa6rYxakLpuTbHG">
+        <span class="wb-input-mark" data-page-node-id="s1hGsLGHIgwitcPlqXRjck">›</span>
+        <input id="inp" autocomplete="off" placeholder="用一句话描述你要的页面，例如：做一个设备概览看板，带指标、遥测图表和设备列表" data-page-node-id="ALFX8atrb6f0kQognSwonu" />
+        <button class="wb-input-clear" id="inp-clear" title="清空" data-page-node-id="ngpn6fAeLUIxohTHAX2OFp">×</button>
+      </label>
+      <button class="wb-btn wb-btn--primary" id="btn-gen" data-page-node-id="Ty8zAFHsOly33qk3bJseB9">生成 Demo</button>
+    </div>
+    <div class="wb-chips" id="examples" data-page-node-id="w4D6zgpdS1VTnqqps5T79w"></div>
+  </div>
+</section>
+
+<main class="wb-main" data-page-node-id="rZEfLQEUX4CP1rnfuwhXZE">
+
+  <!-- 左：资产库 -->
+  <aside class="wb-rail" data-page-node-id="7lO2Bfe7rjmEAHn3NINTOn">
+    <div class="wb-rail-head" data-page-node-id="8RqGaPVl8rNRlCxFGhAHWa">
+      <span class="wb-mono" data-page-node-id="5mAWaEECkQqJR0DbXYpW6p">ASSET LIBRARY</span>
+      <input class="wb-search" id="asset-search" placeholder="搜索组件 / 模块 / 模板" data-page-node-id="G8WAV5HezXeGxv0Pdymsej" />
+    </div>
+    <div class="wb-tree" id="tree" data-page-node-id="MmPsMEmbflEeXBZoHUipaG"></div>
+  </aside>
+
+  <!-- 中：预览 -->
+  <section class="wb-stage" data-page-node-id="RgtdAKY9dq06nfr5IyXHJ0">
+    <div class="wb-stage-head" data-page-node-id="grevn5Sxx2R8Py0cE9EQQ2">
+      <div class="wb-stage-title" data-page-node-id="G57DDkWjghhpqSgSN1cJ0H">
+        <span class="wb-mono" data-page-node-id="yNiIekZBdAY2biynVMFtQx">PREVIEW</span>
+        <span class="wb-stage-name" id="stage-name" data-page-node-id="1HPOKfapQU12WxYg4FzHbO">未生成</span>
+      </div>
+      <div class="wb-stage-tools" data-page-node-id="FdZErLQKGwNxTpt8WXvt5y">
+        <span class="wb-seg" id="seg-device" data-page-node-id="ZRaBp33GU0Gnkrk1AvhJ1v">
+          <button class="wb-seg-item is-active" data-device="desktop" data-page-node-id="9StFcAt99RKfIVX5EgddyE">桌面</button>
+          <button class="wb-seg-item" data-device="tablet" data-page-node-id="WNgTTbaCMeNb8imFrfc0gE">平板</button>
+          <button class="wb-seg-item" data-device="mobile" data-page-node-id="xR5B39Hm5ZVEZjrEzSSKjR">移动</button>
+        </span>
+        <span class="wb-seg" id="seg-theme" data-page-node-id="ASA5eT04GdFBiSibj1lyNe">
+          <button class="wb-seg-item is-active" data-theme="light" data-page-node-id="RY8A6LoxOc5e8tPXWMBE4G">浅色</button>
+          <button class="wb-seg-item" data-theme="dark" data-page-node-id="nnSLE7anVazqMBdLLNV03M">深色</button>
+        </span>
+      </div>
+    </div>
+    <div class="wb-stage-body" id="stage-body" data-page-node-id="rJI03WQbFbWPLJGGgA0CK8">
+      <div class="wb-empty" id="stage-empty" data-page-node-id="ZKoY0zqucvwmCazfLTnLQJ">
+        <div class="wb-empty-mark" data-page-node-id="bWooecgLqE2AfYUVpBz8Yn">◈</div>
+        <div class="wb-empty-title" data-page-node-id="kj7EQu0sFkvP0ajF2y8Us5">输入一句话，开始生成</div>
+        <div class="wb-empty-desc" data-page-node-id="XIKuSbc3d2OzFRA04JTqF2">生成稿与线上产品共用同一套设计令牌与组件实现，因此还原度是可校验的，而不是形容词。</div>
+      </div>
+      <div class="wb-frame-wrap" id="frame-wrap" hidden data-page-node-id="QbldnVSJsBYkmEDPJuuJOn">
+        <iframe id="frame" title="生成预览" data-page-node-id="ItylCx8QKy5foOxA1CuA9F"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- 右：推理链 / 校验 / 资产详情 / 代码 -->
+  <aside class="wb-panel" data-page-node-id="ypBDchO6gtSIKbKX6VBL5t">
+    <div class="wb-tabs" id="tabs" data-page-node-id="z18oYPdsNERO768UuDJmL9">
+      <button class="wb-tab is-active" data-tab="trace" data-page-node-id="qQ0F9hZFQCDcBHFvUd6rCf">推理链</button>
+      <button class="wb-tab" data-tab="report" data-page-node-id="42AtVp7v0gm1CtkxMVEYR6">还原度</button>
+      <button class="wb-tab" data-tab="asset" data-page-node-id="qACeeqdemEQqywGYWhfAXI">资产详情</button>
+      <button class="wb-tab" data-tab="code" data-page-node-id="x8htqzhKhzxnR4vi74LDvP">代码</button>
+    </div>
+    <div class="wb-panel-body" data-page-node-id="I1VKko0Toy1JztwXBZ6pwY">
+      <div class="wb-pane is-active" id="pane-trace" data-page-node-id="OVhzqTCpHzL1HuyHzIppAa"></div>
+      <div class="wb-pane" id="pane-report" data-page-node-id="PC5xSqYjkPMenmCuiUQPTj"></div>
+      <div class="wb-pane" id="pane-asset" data-page-node-id="bJDVMZ6nGPJzqJj3olGeF4"><div class="wb-hint" data-page-node-id="2bwuxqJMdXa3FivJV9JL0H">在左侧资产库选择任意一项，查看它的依赖与交互规范。</div></div>
+      <div class="wb-pane" id="pane-code" data-page-node-id="EuFjNQ2ukuxxurRqxywP4n">
+        <div class="wb-code-head" data-page-node-id="EPVYHM05HSFkdbGsFV6rjP">
+          <span class="wb-mono" id="code-meta" data-page-node-id="Iibp4CkiEkLhtgZvZkX65r">—</span>
+          <button class="wb-btn wb-btn--ghost" id="btn-copy" data-page-node-id="Xbyvb4uE5CHRpLUbZOcDMK">复制</button>
+        </div>
+        <pre class="wb-code" id="code" data-page-node-id="BUNe3gxdFg8oQyGny6CODA"></pre>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<script src="assets/js/registry-base.js"></script>
+<script src="assets/js/registry-entities.js"></script>
+<script src="assets/js/registry-business.js"></script>
+<script src="assets/js/registry-modules.js"></script>
+<script src="assets/js/registry-templates.js"></script>
+<script src="assets/js/library-css.js"></script>
+<script src="assets/js/engine-parser.js"></script>
+<script src="assets/js/engine-planner.js"></script>
+<script src="assets/js/engine-renderer.js"></script>
+<script src="assets/js/engine-validator.js"></script>
+<script src="assets/js/engine-learner.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

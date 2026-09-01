@@ -1,0 +1,95 @@
+/* ==========================================================================
+   L3 · 业务组件层样式 (Business Components)
+   --------------------------------------------------------------------------
+   只允许两件事：
+   ① 引用 L1 令牌（颜色 / 间距 / 圆角 / 阴影 / 动效）
+   ② 对 L2 基础组件做「布局编排」，不得重新定义基础组件的视觉属性
+   ========================================================================== */
+
+/* ---------- 指标卡 ---------- */
+.bc-metric { transition: border-color var(--duration-normal) var(--ease), box-shadow var(--duration-normal) var(--ease); }
+.bc-metric:hover { border-color: var(--color-border-base); box-shadow: var(--shadow-1); }
+.bc-metric-body { display: flex; flex-direction: column; gap: var(--spacing-8); padding: var(--spacing-20); }
+
+/* ---------- 筛选栏 ---------- */
+.bc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-12); }
+.bc-filter-search { width: 260px; }
+.bc-filter-select { width: 140px; }
+.bc-filter-date { width: 220px; }
+.bc-filter-actions { margin-left: auto; display: inline-flex; gap: var(--spacing-8); }
+@media (max-width: 980px) { .bc-filter-search, .bc-filter-date { width: 100%; } .bc-filter-actions { margin-left: 0; } }
+
+/* ---------- 数据表格 ---------- */
+.bc-col-check { width: 44px; }
+.bc-count { margin-left: var(--spacing-8); }
+.bc-table-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12);
+  padding: var(--spacing-12) var(--spacing-16); border-top: 1px solid var(--color-divider-base-1);
+  background: var(--color-base-bg); flex-wrap: wrap;
+}
+.bc-bar { display: inline-flex; align-items: center; gap: var(--spacing-8); }
+.bc-bar-track {
+  display: block; width: 56px; height: 6px; border-radius: var(--radius-full);
+  background: var(--color-fill-base-hover); overflow: hidden; flex: none;
+}
+.bc-bar-track > b { display: block; height: 100%; border-radius: var(--radius-full); }
+.bc-bar-track--success > b { background: var(--color-success-normal); }
+.bc-bar-track--warm > b { background: var(--color-warm-normal); }
+.bc-bar-track--error > b { background: var(--color-error-normal); }
+.bc-bar > em { font-style: normal; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-secondary); }
+
+.bc-code {
+  font: 400 12px/1.5 var(--font-mono); color: var(--color-text-primary);
+  background: var(--color-primary-bg); padding: 2px 6px; border-radius: var(--radius-4);
+}
+.bc-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
+.bc-num em { font-style: normal; color: var(--color-text-auxiliary); font-size: 12px; margin-left: var(--spacing-4); }
+.bc-time { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-secondary); }
+.bc-user { display: inline-flex; align-items: center; gap: var(--spacing-8); min-width: 0; }
+.bc-user .ms-list-desc { display: block; }
+.ms-select--inline { width: auto; display: inline-block; }
+.ms-select--inline::after { right: var(--spacing-8); }
+.ms-select--inline .ms-select-native { height: 28px; font-size: 13px; padding: 0 var(--spacing-24) 0 var(--spacing-8); }
+
+/* ---------- 图表（纯 SVG，无第三方库） ---------- */
+.bc-chart-grid { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: var(--spacing-16); align-items: stretch; }
+.bc-chart-main { display: flex; flex-direction: column; gap: var(--spacing-8); min-width: 0; }
+.bc-chart-svg { width: 100%; height: 200px; display: block; }
+.bc-chart-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-auxiliary); font-family: var(--font-mono); }
+.bc-chart-side { padding-left: var(--spacing-16); border-left: 1px solid var(--color-divider-base-2); }
+.bc-chart-stat { display: flex; align-items: baseline; justify-content: space-between; gap: var(--spacing-8); }
+@media (max-width: 980px) {
+  .bc-chart-grid { grid-template-columns: minmax(0, 1fr); }
+  .bc-chart-side { padding-left: 0; border-left: 0; padding-top: var(--spacing-12); border-top: 1px solid var(--color-divider-base-2); }
+}
+
+/* ---------- 拓扑 ---------- */
+.bc-topo { width: 100%; height: auto; display: block; }
+
+/* ---------- 抽屉 / 弹窗 的静态预览（生成稿需要「所见即所得」） ---------- */
+.bc-drawer-preview, .bc-modal-preview { position: relative; }
+.bc-drawer-static {
+  position: relative; width: 100%; max-width: 520px; margin-left: auto; height: auto;
+  box-shadow: var(--shadow-2); border: 1px solid var(--color-border-base); border-radius: var(--radius-12);
+}
+.bc-drawer-static .ms-drawer-body { max-height: none; }
+.bc-modal-preview .ms-modal { max-width: 100%; box-shadow: var(--shadow-2); border: 1px solid var(--color-border-base); }
+.bc-progress-list { display: flex; flex-direction: column; gap: var(--spacing-12); }
+
+/* ---------- 空态 / 快捷操作 ---------- */
+.bc-empty-actions { display: inline-flex; gap: var(--spacing-8); flex-wrap: wrap; justify-content: center; }
+.bc-quick { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-8); }
+.bc-quick-label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-auxiliary); }
+.bc-quick-spacer { flex: 1; }
+
+/* ---------- 生成稿页面骨架 ---------- */
+.bc-page { min-height: 100vh; }
+.bc-section { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--spacing-12); }
+.bc-section-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
+.bc-section-desc { font-size: 12px; color: var(--color-text-secondary); }
+.bc-generated-badge {
+  display: inline-flex; align-items: center; gap: var(--spacing-4); height: 22px; padding: 0 var(--spacing-8);
+  border-radius: var(--radius-full); background: var(--color-primary-bg); color: var(--color-primary-normal);
+  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+}
