@@ -1,9 +1,6 @@
 # WorkBuddy 内部数据，不纳入版本库
 .workbuddy-ai/
 
-# 原始组件参考文档（810KB 抓取稿），组件已抽取进 library/，非交付源码
-milesight-iot-web-doc.html
-
 # 自动生成的样式打包产物（README：勿手改，由 tools/build-css-bundle.py 重新生成）
 assets/js/library-css.js
 
