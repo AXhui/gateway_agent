@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "pageId": "device-offline-alert-config",
+    "title": "设备离线告警配置",
+    "pageType": "settings",
+    "productLine": "iot-platform",
+    "businessScenario": "为受管设备配置离线告警阈值与邮件通知，并查看最近告警记录",
+    "userRole": "运维人员",
+    "coreFunctions": ["选择设备", "设置离线阈值", "启用邮件通知", "保存告警配置", "查看最近离线告警记录"],
+    "specialRequirements": ["离线状态使用 error 语义", "使用本地 mock 告警记录"],
+    "theme": "light"
+  },
+  "designSystem": {
+    "registry": "component-registry.json",
+    "name": "Milesight IOT Web",
+    "version": "1.0.0",
+    "coverage": { "status": "pending-validation" }
+  },
+  "state": {
+    "config": { "deviceId": "all-gateways", "offlineThreshold": "10", "emailEnabled": true },
+    "alertPage": 1,
+    "pageStatus": "success"
+  },
+  "dataSources": [
+    {
+      "id": "offlineAlerts",
+      "kind": "mock",
+      "entity": "OfflineAlert",
+      "description": "最近设备离线告警记录",
+      "data": [
+        { "id": "alert-001", "name": "Suzhou Factory Edge", "device": "UC300-240903", "status": "offline", "threshold": "10 分钟", "triggeredAt": "今天 09:42", "notification": "已发送邮件" },
+        { "id": "alert-002", "name": "Ningbo Distribution Gateway", "device": "UG67-240914", "status": "offline", "threshold": "10 分钟", "triggeredAt": "昨天 18:16", "notification": "已发送邮件" },
+        { "id": "alert-003", "name": "Xiamen Marine Warehouse", "device": "UG67-240910", "status": "offline", "threshold": "30 分钟", "triggeredAt": "昨天 08:42", "notification": "邮件通知关闭" }
+      ]
+    }
+  ],
+  "root": {
+    "id": "offline-alert-config-root",
+    "kind": "component",
+    "component": "Layout",
+    "props": { "theme": "light" },
+    "children": [
+      {
+        "id": "offline-alert-header",
+        "kind": "component",
+        "component": "PageHeader",
+        "props": { "title": "设备离线告警配置", "subTitle": "设置设备离线告警阈值与通知方式" }
+      },
+      {
+        "id": "offline-alert-config-card",
+        "kind": "component",
+        "component": "Card",
+        "props": { "bordered": false },
+        "children": [
+          { "id": "config-card-title", "kind": "component", "component": "Typography", "props": { "level": 3 }, "content": "告警规则" },
+          {
+            "id": "offline-alert-form",
+            "kind": "component",
+            "component": "Form",
+            "props": { "layout": "vertical" },
+            "children": [
+              { "id": "device-select-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "告警设备" },
+              {
+                "id": "device-select",
+                "kind": "component",
+                "component": "Select",
+                "binding": { "source": "state", "path": "config.deviceId" },
+                "props": {
+                  "showSearch": true,
+                  "options": [
+                    { "label": "全部网关设备", "value": "all-gateways" },
+                    { "label": "Suzhou Factory Edge (UC300-240903)", "value": "UC300-240903" },
+                    { "label": "Ningbo Distribution Gateway (UG67-240914)", "value": "UG67-240914" },
+                    { "label": "Xiamen Marine Warehouse (UG67-240910)", "value": "UG67-240910" }
+                  ]
+                },
+                "events": { "onChange": { "flowId": "set-alert-device", "payload": { "value": "$event" } } }
+              },
+              { "id": "threshold-select-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "设备离线多久后触发告警" },
+              {
+                "id": "threshold-select",
+                "kind": "component",
+                "component": "Select",
+                "binding": { "source": "state", "path": "config.offlineThreshold" },
+                "props": {
+                  "options": [
+                    { "label": "5 分钟", "value": "5" },
+                    { "label": "10 分钟", "value": "10" },
+                    { "label": "30 分钟", "value": "30" },
+                    { "label": "60 分钟", "value": "60" }
+                  ]
+                },
+                "events": { "onChange": { "flowId": "set-offline-threshold", "payload": { "value": "$event" } } }
+              },
+              {
+                "id": "email-notification",
+                "kind": "component",
+                "component": "Checkbox",
+                "props": { "checked": { "$state": "config.emailEnabled" } },
+                "content": "设备离线时发送邮件通知",
+                "events": { "onChange": { "flowId": "set-email-notification", "payload": { "checked": "$event" } } }
+              },
+              {
+                "id": "alert-config-actions",
+                "kind": "component",
+                "component": "Space",
+                "props": { "size": "middle" },
+                "children": [
+                  { "id": "save-alert-config", "kind": "component", "component": "Button", "props": { "type": "primary" }, "content": "保存配置", "events": { "onClick": { "flowId": "save-alert-config" } } },
+                  { "id": "reset-alert-config", "kind": "component", "component": "Button", "props": { "type": "default" }, "content": "恢复默认", "events": { "onClick": { "flowId": "reset-alert-config" } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recent-offline-alerts-card",
+        "kind": "component",
+        "component": "Card",
+        "props": { "bordered": false },
+        "children": [
+          { "id": "recent-alerts-title", "kind": "component", "component": "Typography", "props": { "level": 3 }, "content": "最近离线告警记录" },
+          {
+            "id": "recent-offline-alerts-table",
+            "kind": "component",
+            "component": "Table",
+            "semanticRole": "content-table",
+            "props": {
+              "dataSource": { "$data": "offlineAlerts" },
+              "columns": [
+                { "key": "name", "title": "设备名称" },
+                { "key": "device", "title": "设备标识" },
+                { "key": "status", "title": "状态", "type": "status" },
+                { "key": "threshold", "title": "告警阈值" },
+                { "key": "triggeredAt", "title": "触发时间" },
+                { "key": "notification", "title": "通知结果" }
+              ],
+              "page": { "$state": "alertPage" },
+              "pageSize": 5,
+              "emptyText": "暂无离线告警记录"
+            }
+          },
+          {
+            "id": "recent-alerts-pagination",
+            "kind": "component",
+            "component": "Pagination",
+            "props": { "current": { "$state": "alertPage" }, "total": { "$lengthOf": { "$data": "offlineAlerts" } }, "pageSize": 5, "showSizeChanger": false },
+            "events": { "onChange": { "flowId": "change-alert-page", "payload": { "value": "$event" } } }
+          }
+        ]
+      }
+    ]
+  },
+  "flows": [
+    { "id": "set-alert-device", "description": "更新告警设备", "steps": [{ "type": "set-state", "key": "config.deviceId", "value": "$payload.value" }] },
+    { "id": "set-offline-threshold", "description": "更新离线阈值", "steps": [{ "type": "set-state", "key": "config.offlineThreshold", "value": "$payload.value" }] },
+    { "id": "set-email-notification", "description": "切换邮件通知", "steps": [{ "type": "set-state", "key": "config.emailEnabled", "value": "$payload.checked" }] },
+    { "id": "save-alert-config", "description": "保存告警配置", "steps": [{ "type": "notify", "status": "success", "message": "设备离线告警配置已保存" }] },
+    { "id": "reset-alert-config", "description": "恢复默认告警配置", "steps": [{ "type": "set-state", "key": "config", "value": { "deviceId": "all-gateways", "offlineThreshold": "10", "emailEnabled": true } }, { "type": "notify", "status": "info", "message": "已恢复默认告警配置" }] },
+    { "id": "change-alert-page", "description": "切换告警记录页", "steps": [{ "type": "set-state", "key": "alertPage", "value": "$payload.value" }] }
+  ],
+  "pageStates": {
+    "loading": { "component": "Skeleton", "message": "正在加载离线告警配置" },
+    "empty": { "component": "Empty", "message": "暂无离线告警记录" },
+    "error": { "component": "Result", "props": { "status": "error" }, "message": "离线告警记录加载失败" }
+  },
+  "review": {
+    "assumptions": ["第一版以预设时长选择器设置离线阈值", "邮件收件人沿用平台默认告警联系人", "告警记录使用本地 mock 数据"],
+    "warnings": [],
+    "componentGaps": [],
+    "designDecisions": ["使用 settings 页面模式，将配置表单与最近告警记录放在同一页面", "离线告警使用 Table 的 offline 状态语义"]
+  }
+}

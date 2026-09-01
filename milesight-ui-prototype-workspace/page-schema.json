@@ -1,0 +1,674 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "milesight://ui-demo/page-schema/1.0.0",
+  "title": "Milesight UI Demo Page Schema",
+  "description": "AI 从产品需求生成的中间层页面结构。结构校验由本 schema 完成；组件存在性和 props 合法性由 component-registry.json 做语义校验。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "meta",
+    "designSystem",
+    "root",
+    "review"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "meta": {
+      "$ref": "#/$defs/pageMeta"
+    },
+    "designSystem": {
+      "$ref": "#/$defs/designSystemRef"
+    },
+    "state": {
+      "type": "object",
+      "description": "页面级可变状态，供交互 flow 读写。",
+      "additionalProperties": true,
+      "default": {}
+    },
+    "dataSources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dataSource"
+      },
+      "default": []
+    },
+    "root": {
+      "$ref": "#/$defs/componentNode"
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flow"
+      },
+      "default": []
+    },
+    "pageStates": {
+      "$ref": "#/$defs/pageStates"
+    },
+    "review": {
+      "$ref": "#/$defs/review"
+    }
+  },
+  "$defs": {
+    "pageMeta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pageId",
+        "title",
+        "pageType",
+        "businessScenario",
+        "userRole",
+        "coreFunctions",
+        "theme"
+      ],
+      "properties": {
+        "pageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-_]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pageType": {
+          "type": "string",
+          "enum": [
+            "list",
+            "detail",
+            "form",
+            "dashboard",
+            "settings",
+            "topology",
+            "custom"
+          ]
+        },
+        "productLine": {
+          "type": "string",
+          "enum": [
+            "gateway",
+            "router",
+            "iot-platform",
+            "generic",
+            "other"
+          ],
+          "default": "generic"
+        },
+        "businessScenario": {
+          "type": "string",
+          "minLength": 1
+        },
+        "userRole": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coreFunctions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "specialRequirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "theme": {
+          "type": "string",
+          "enum": [
+            "light",
+            "dark",
+            "dual"
+          ]
+        }
+      }
+    },
+    "designSystemRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registry",
+        "name",
+        "version",
+        "coverage"
+      ],
+      "properties": {
+        "registry": {
+          "const": "component-registry.json"
+        },
+        "name": {
+          "const": "Milesight IOT Web"
+        },
+        "version": {
+          "const": "1.0.0"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending-validation",
+            "valid",
+            "has-gaps"
+          ],
+          "default": "pending-validation"
+        },
+        "matchedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalComponentCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "matchedComponents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unmatchedComponents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "dataSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9-_]*$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "static",
+            "api",
+            "derived"
+          ]
+        },
+        "entity": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "data": {},
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "componentNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "component"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9-_]*$"
+        },
+        "kind": {
+          "const": "component"
+        },
+        "component": {
+          "type": "string",
+          "minLength": 1,
+          "description": "必须在 component-registry.json 中命中；该约束由语义校验器执行。"
+        },
+        "semanticRole": {
+          "type": "string",
+          "description": "可选的人类可读语义，例如 primary-action / filter / status / content-table。"
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": true,
+          "default": {}
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/componentNode"
+          },
+          "default": []
+        },
+        "slots": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/componentNode"
+            }
+          },
+          "default": {}
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "visibility": {
+          "$ref": "#/$defs/condition"
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/eventBinding"
+          },
+          "default": {}
+        },
+        "annotation": {
+          "$ref": "#/$defs/annotation"
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "emptyFallback": {}
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expr"
+      ],
+      "properties": {
+        "expr": {
+          "type": "string",
+          "description": "由 renderer 的安全表达式引擎求值，不执行任意 JS。"
+        },
+        "fallback": {
+          "type": "string",
+          "enum": [
+            "hide",
+            "disable"
+          ],
+          "default": "hide"
+        }
+      }
+    },
+    "eventBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flowId"
+      ],
+      "properties": {
+        "flowId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {
+          "type": "string"
+        },
+        "selectionReason": {
+          "type": "string"
+        },
+        "ruleRefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9-_]*$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "set-state",
+            "open",
+            "close",
+            "navigate",
+            "submit",
+            "refresh",
+            "confirm",
+            "notify",
+            "select",
+            "custom"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "value": {},
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "error",
+            "warn",
+            "info",
+            "loading"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "pageStates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "loading": {
+          "$ref": "#/$defs/statePreset"
+        },
+        "empty": {
+          "$ref": "#/$defs/statePreset"
+        },
+        "error": {
+          "$ref": "#/$defs/statePreset"
+        },
+        "permission": {
+          "$ref": "#/$defs/statePreset"
+        }
+      }
+    },
+    "statePreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component"
+      ],
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assumptions",
+        "warnings",
+        "componentGaps"
+      ],
+      "properties": {
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "componentGaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/componentGap"
+          }
+        },
+        "designDecisions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "componentGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestedComponent",
+        "reason",
+        "status"
+      ],
+      "properties": {
+        "requestedComponent": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "fallback": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "unresolved",
+            "fallback-used",
+            "approved-new-component"
+          ]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "meta": {
+        "pageId": "device-management",
+        "title": "设备管理",
+        "pageType": "list",
+        "productLine": "iot-platform",
+        "businessScenario": "IoT 平台设备管理，运维人员日常使用",
+        "userRole": "运维人员",
+        "coreFunctions": [
+          "搜索设备",
+          "查看设备状态",
+          "批量升级",
+          "导出设备清单"
+        ],
+        "specialRequirements": [
+          "状态实时更新",
+          "万级数据分页"
+        ],
+        "theme": "dual"
+      },
+      "designSystem": {
+        "registry": "component-registry.json",
+        "name": "Milesight IOT Web",
+        "version": "1.0.0",
+        "coverage": {
+          "status": "pending-validation"
+        }
+      },
+      "state": {
+        "selectedDeviceIds": [],
+        "upgradeDrawerOpen": false
+      },
+      "dataSources": [
+        {
+          "id": "devices",
+          "kind": "mock",
+          "entity": "Device",
+          "description": "MVP 演示数据"
+        }
+      ],
+      "root": {
+        "id": "page-root",
+        "kind": "component",
+        "component": "Layout",
+        "children": [
+          {
+            "id": "page-header",
+            "kind": "component",
+            "component": "PageHeader",
+            "props": {
+              "title": "设备管理"
+            }
+          }
+        ]
+      },
+      "flows": [],
+      "pageStates": {
+        "loading": {
+          "component": "Skeleton",
+          "message": "加载设备列表"
+        },
+        "empty": {
+          "component": "Empty",
+          "message": "暂无设备"
+        },
+        "error": {
+          "component": "Result",
+          "props": {
+            "status": "error"
+          },
+          "message": "加载失败"
+        }
+      },
+      "review": {
+        "assumptions": [],
+        "warnings": [
+          "源组件库页面模式引用 Table，但当前 registry 没有 Table 组件条目。"
+        ],
+        "componentGaps": [
+          {
+            "requestedComponent": "Table",
+            "reason": "列表页模式要求 Table，但组件 registry 未包含该条目。",
+            "status": "unresolved"
+          }
+        ],
+        "designDecisions": []
+      }
+    }
+  ]
+}

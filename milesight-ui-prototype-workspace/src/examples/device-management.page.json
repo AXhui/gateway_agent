@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "pageId": "device-management",
+    "title": "设备管理",
+    "pageType": "list",
+    "productLine": "iot-platform",
+    "businessScenario": "IoT 平台设备管理，运维人员日常使用",
+    "userRole": "运维人员",
+    "coreFunctions": ["搜索设备", "状态筛选", "查看设备状态", "批量升级", "查看详情", "导出设备清单"],
+    "specialRequirements": ["分页", "状态语义", "Loading / Empty / Error / Success 状态", "Design System Token Only"],
+    "theme": "light"
+  },
+  "designSystem": {
+    "registry": "component-registry.json",
+    "name": "Milesight IOT Web",
+    "version": "1.0.0",
+    "coverage": { "status": "pending-validation" }
+  },
+  "state": {
+    "filters": { "search": "", "status": "all", "model": "all" },
+    "currentPage": 1,
+    "pageSize": 6,
+    "selectedDeviceIds": [],
+    "selectedDeviceId": "",
+    "openTargets": { "deviceDetail": false, "firmwareUpgrade": false },
+    "detailTab": "basic",
+    "upgrade": { "firmware": "v2.5.0", "fileName": "UG-series-v2.5.0.bin", "scheduleMode": "immediately", "date": "2026-09-02", "time": "02:00", "autoResume": true, "running": false, "progress": 0, "status": "normal" },
+    "pageStatus": "success"
+  },
+  "dataSources": [
+    {
+      "id": "devices",
+      "kind": "mock",
+      "entity": "Device",
+      "description": "设备管理 Golden Demo 的本地数据",
+      "data": [
+        { "id": "dev-001", "name": "Shanghai Warehouse Gateway", "sn": "UG65-240901", "model": "UG65", "status": "online", "firmware": "v2.4.3", "ip": "10.26.4.18", "mac": "64:9B:24:0A:31:01", "lastSeen": "刚刚" },
+        { "id": "dev-002", "name": "Pudong Cold Chain Hub", "sn": "UG67-240902", "model": "UG67", "status": "online", "firmware": "v2.5.0", "ip": "10.26.4.19", "mac": "64:9B:24:0A:31:02", "lastSeen": "2 分钟前" },
+        { "id": "dev-003", "name": "Suzhou Factory Edge", "sn": "UC30-240903", "model": "UC300", "status": "offline", "firmware": "v2.3.8", "ip": "10.26.8.32", "mac": "64:9B:24:0A:31:03", "lastSeen": "18 分钟前" },
+        { "id": "dev-004", "name": "Beijing Office Router", "sn": "UR35-240904", "model": "UR35", "status": "error", "firmware": "v1.9.6", "ip": "10.18.0.5", "mac": "64:9B:24:0A:31:04", "lastSeen": "1 小时前" },
+        { "id": "dev-005", "name": "Shenzhen R&D Gateway", "sn": "UG65-240905", "model": "UG65", "status": "online", "firmware": "v2.4.3", "ip": "10.7.12.40", "mac": "64:9B:24:0A:31:05", "lastSeen": "刚刚" },
+        { "id": "dev-006", "name": "Hangzhou Campus Sensor Hub", "sn": "UC30-240906", "model": "UC300", "status": "offline", "firmware": "v2.3.8", "ip": "10.12.8.14", "mac": "64:9B:24:0A:31:06", "lastSeen": "昨天 19:40" },
+        { "id": "dev-007", "name": "Nanjing Logistics Gateway", "sn": "UG67-240907", "model": "UG67", "status": "online", "firmware": "v2.5.0", "ip": "10.25.19.8", "mac": "64:9B:24:0A:31:07", "lastSeen": "5 分钟前" },
+        { "id": "dev-008", "name": "Chengdu Field Router", "sn": "UR35-240908", "model": "UR35", "status": "error", "firmware": "v1.9.4", "ip": "10.42.3.51", "mac": "64:9B:24:0A:31:08", "lastSeen": "3 小时前" },
+        { "id": "dev-009", "name": "Wuhan Energy Gateway", "sn": "UG65-240909", "model": "UG65", "status": "online", "firmware": "v2.4.3", "ip": "10.27.1.12", "mac": "64:9B:24:0A:31:09", "lastSeen": "刚刚" },
+        { "id": "dev-010", "name": "Xiamen Marine Warehouse", "sn": "UG67-240910", "model": "UG67", "status": "offline", "firmware": "v2.4.1", "ip": "10.16.10.22", "mac": "64:9B:24:0A:31:10", "lastSeen": "昨天 08:12" },
+        { "id": "dev-011", "name": "Guangzhou Retail Router", "sn": "UR35-240911", "model": "UR35", "status": "online", "firmware": "v1.9.6", "ip": "10.21.6.10", "mac": "64:9B:24:0A:31:11", "lastSeen": "8 分钟前" },
+        { "id": "dev-012", "name": "Qingdao Port Gateway", "sn": "UG65-240912", "model": "UG65", "status": "error", "firmware": "v2.2.9", "ip": "10.33.15.2", "mac": "64:9B:24:0A:31:12", "lastSeen": "5 小时前" },
+        { "id": "dev-013", "name": "Tianjin Plant Controller", "sn": "UC30-240913", "model": "UC300", "status": "online", "firmware": "v2.3.8", "ip": "10.12.30.71", "mac": "64:9B:24:0A:31:13", "lastSeen": "11 分钟前" },
+        { "id": "dev-014", "name": "Ningbo Distribution Gateway", "sn": "UG67-240914", "model": "UG67", "status": "offline", "firmware": "v2.4.1", "ip": "10.44.0.39", "mac": "64:9B:24:0A:31:14", "lastSeen": "2 天前" },
+        { "id": "dev-015", "name": "Xi'an Factory Router", "sn": "UR35-240915", "model": "UR35", "status": "online", "firmware": "v1.9.6", "ip": "10.51.3.16", "mac": "64:9B:24:0A:31:15", "lastSeen": "15 分钟前" },
+        { "id": "dev-016", "name": "Jinan Storage Gateway", "sn": "UG65-240916", "model": "UG65", "status": "error", "firmware": "v2.2.9", "ip": "10.9.6.88", "mac": "64:9B:24:0A:31:16", "lastSeen": "昨天 21:13" },
+        { "id": "dev-017", "name": "Kunming Solar Hub", "sn": "UC30-240917", "model": "UC300", "status": "online", "firmware": "v2.3.8", "ip": "10.52.2.27", "mac": "64:9B:24:0A:31:17", "lastSeen": "刚刚" },
+        { "id": "dev-018", "name": "Fuzhou Logistics Gateway", "sn": "UG67-240918", "model": "UG67", "status": "offline", "firmware": "v2.4.1", "ip": "10.34.17.44", "mac": "64:9B:24:0A:31:18", "lastSeen": "昨天 16:28" }
+      ]
+    }
+  ],
+  "root": {
+    "id": "device-management-root",
+    "kind": "component",
+    "component": "Layout",
+    "props": { "theme": "light" },
+    "children": [
+      {
+        "id": "page-header",
+        "kind": "component",
+        "component": "PageHeader",
+        "props": { "title": "设备管理", "subTitle": "共 18 台设备" },
+        "slots": {
+          "extra": [
+            { "id": "add-device", "kind": "component", "component": "Button", "props": { "type": "primary" }, "content": "添加设备", "events": { "onClick": { "flowId": "notify-add-device" } } },
+            { "id": "export-devices", "kind": "component", "component": "Button", "props": { "type": "default" }, "content": "导出", "events": { "onClick": { "flowId": "export-devices" } } }
+          ]
+        }
+      },
+      {
+        "id": "device-summary-grid",
+        "kind": "component",
+        "component": "Grid",
+        "props": { "gutter": [16, 16], "align": "top" },
+        "children": [
+          { "id": "summary-total-grid", "kind": "component", "component": "Grid", "props": { "span": 6 }, "children": [{ "id": "summary-total", "kind": "component", "component": "Card", "props": { "bordered": false }, "children": [{ "id": "stat-total", "kind": "component", "component": "Statistic", "props": { "value": { "$lengthOf": { "$data": "devices" } } }, "content": "设备总数" }] }] },
+          { "id": "summary-online-grid", "kind": "component", "component": "Grid", "props": { "span": 6 }, "children": [{ "id": "summary-online", "kind": "component", "component": "Card", "props": { "bordered": false }, "children": [{ "id": "stat-online", "kind": "component", "component": "Statistic", "props": { "value": { "$countWhere": { "source": "devices", "field": "status", "equals": "online" } } }, "content": "在线设备" }] }] },
+          { "id": "summary-offline-grid", "kind": "component", "component": "Grid", "props": { "span": 6 }, "children": [{ "id": "summary-offline", "kind": "component", "component": "Card", "props": { "bordered": false }, "children": [{ "id": "stat-offline", "kind": "component", "component": "Statistic", "props": { "value": { "$countWhere": { "source": "devices", "field": "status", "equals": "offline" } } }, "content": "离线设备" }] }] },
+          { "id": "summary-error-grid", "kind": "component", "component": "Grid", "props": { "span": 6 }, "children": [{ "id": "summary-error", "kind": "component", "component": "Card", "props": { "bordered": false }, "children": [{ "id": "stat-error", "kind": "component", "component": "Statistic", "props": { "value": { "$countWhere": { "source": "devices", "field": "status", "equals": "error" } } }, "content": "故障设备" }] }] }
+        ]
+      },
+      {
+        "id": "device-table-card",
+        "kind": "component",
+        "component": "Card",
+        "props": { "bordered": false },
+        "children": [
+          {
+            "id": "filter-toolbar",
+            "kind": "component",
+            "component": "Space",
+            "props": { "size": "middle", "wrap": true },
+            "children": [
+              { "id": "device-search", "kind": "component", "component": "Input.Search", "props": { "value": { "$state": "filters.search" }, "placeholder": "搜索设备名称、SN 或 MAC", "allowClear": true }, "events": { "onChange": { "flowId": "set-search", "payload": { "value": "$event" } } } },
+              { "id": "status-filter", "kind": "component", "component": "Select", "binding": { "source": "state", "path": "filters.status" }, "props": { "options": [{ "label": "全部状态", "value": "all" }, { "label": "在线", "value": "online" }, { "label": "离线", "value": "offline" }, { "label": "故障", "value": "error" }] }, "events": { "onChange": { "flowId": "set-status-filter", "payload": { "value": "$event" } } } },
+              { "id": "model-filter", "kind": "component", "component": "Select", "binding": { "source": "state", "path": "filters.model" }, "props": { "options": [{ "label": "全部型号", "value": "all" }, { "label": "UG65", "value": "UG65" }, { "label": "UG67", "value": "UG67" }, { "label": "UC300", "value": "UC300" }, { "label": "UR35", "value": "UR35" }] }, "events": { "onChange": { "flowId": "set-model-filter", "payload": { "value": "$event" } } } },
+              { "id": "reset-filters", "kind": "component", "component": "Button", "props": { "type": "default" }, "content": "重置", "events": { "onClick": { "flowId": "reset-filters" } } }
+            ]
+          },
+          {
+            "id": "selected-action-bar",
+            "kind": "component",
+            "component": "Space",
+            "props": { "size": "middle" },
+            "visibility": { "expr": "state.selectedDeviceIds.length > 0", "fallback": "hide" },
+            "children": [
+              { "id": "selected-count", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "已选择设备" },
+              { "id": "batch-upgrade", "kind": "component", "component": "Button", "props": { "type": "default" }, "content": "批量升级", "events": { "onClick": { "flowId": "open-batch-upgrade" } } },
+              { "id": "export-selected", "kind": "component", "component": "Button", "props": { "type": "link" }, "content": "导出所选", "events": { "onClick": { "flowId": "export-selected" } } },
+              { "id": "clear-selection", "kind": "component", "component": "Button", "props": { "type": "link" }, "content": "取消选择", "events": { "onClick": { "flowId": "clear-selection" } } }
+            ]
+          },
+          {
+            "id": "device-table",
+            "kind": "component",
+            "component": "Table",
+            "semanticRole": "content-table",
+            "props": {
+              "dataSource": { "$query": { "source": "devices", "search": { "statePath": "filters.search", "fields": ["name", "sn", "mac"] }, "equals": [{ "statePath": "filters.status", "field": "status", "ignore": "all" }, { "statePath": "filters.model", "field": "model", "ignore": "all" }] } },
+              "columns": [{ "key": "name", "title": "设备名称" }, { "key": "sn", "title": "SN" }, { "key": "model", "title": "型号" }, { "key": "status", "title": "状态", "type": "status" }, { "key": "firmware", "title": "Firmware Version" }, { "key": "network", "title": "IP / MAC", "type": "network" }, { "key": "lastSeen", "title": "Last Seen" }, { "key": "actions", "title": "操作", "type": "actions" }],
+              "page": { "$state": "currentPage" },
+              "pageSize": { "$state": "pageSize" },
+              "selectedRowKeys": { "$state": "selectedDeviceIds" },
+              "emptyText": "未找到符合条件的设备"
+            },
+            "events": {
+              "onSelectionChange": { "flowId": "select-rows", "payload": { "value": "$event" } },
+              "onRowOpen": { "flowId": "open-device-detail", "payload": { "id": "$event.id" } },
+              "onRowUpgrade": { "flowId": "open-row-upgrade", "payload": { "id": "$event.id" } },
+              "onRowMore": { "flowId": "notify-row-more", "payload": { "name": "$event.name" } }
+            }
+          },
+          { "id": "device-pagination", "kind": "component", "component": "Pagination", "props": { "current": { "$state": "currentPage" }, "total": { "$lengthOf": { "$query": { "source": "devices", "search": { "statePath": "filters.search", "fields": ["name", "sn", "mac"] }, "equals": [{ "statePath": "filters.status", "field": "status", "ignore": "all" }, { "statePath": "filters.model", "field": "model", "ignore": "all" }] } } }, "pageSize": { "$state": "pageSize" }, "showSizeChanger": true }, "events": { "onChange": { "flowId": "change-page", "payload": { "value": "$event" } }, "onPageSizeChange": { "flowId": "change-page-size", "payload": { "value": "$event" } } } }
+        ]
+      },
+      {
+        "id": "device-detail-drawer",
+        "kind": "component",
+        "component": "Drawer",
+        "props": { "open": { "$state": "openTargets.deviceDetail" }, "placement": "right", "size": 480 },
+        "events": { "onClose": { "flowId": "close-device-detail" } },
+        "slots": {
+          "header": [{ "id": "detail-title", "kind": "component", "component": "Typography", "props": { "level": 3 }, "content": "设备详情" }],
+          "content": [
+            { "id": "detail-tabs", "kind": "component", "component": "Tabs", "props": { "type": "line", "activeKey": { "$state": "detailTab" }, "items": [{ "key": "basic", "label": "基本信息" }, { "key": "network", "label": "网络" }, { "key": "firmware", "label": "Firmware" }, { "key": "events", "label": "事件" }] }, "events": { "onChange": { "flowId": "change-detail-tab", "payload": { "value": "$event" } } }, "children": [
+              { "id": "detail-basic", "kind": "component", "component": "Descriptions", "props": { "column": 1, "bordered": false, "items": [{ "label": "设备名称", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "name" } } }, { "label": "SN", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "sn" } } }, { "label": "型号", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "model" } } }, { "label": "状态", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "status" } } }] }, "visibility": { "expr": "state.detailTab === 'basic'" } },
+              { "id": "detail-network", "kind": "component", "component": "Descriptions", "props": { "column": 1, "bordered": false, "items": [{ "label": "IP", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "ip" } } }, { "label": "MAC", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "mac" } } }, { "label": "Last Seen", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "lastSeen" } } }] }, "visibility": { "expr": "state.detailTab === 'network'" } },
+              { "id": "detail-firmware", "kind": "component", "component": "Descriptions", "props": { "column": 1, "bordered": false, "items": [{ "label": "Firmware Version", "value": { "$lookup": { "source": "devices", "id": { "$state": "selectedDeviceId" }, "field": "firmware" } } }, { "label": "升级策略", "value": "自动检查" }] }, "visibility": { "expr": "state.detailTab === 'firmware'" } },
+              { "id": "detail-events", "kind": "component", "component": "Descriptions", "props": { "column": 1, "bordered": false, "items": [{ "label": "最近事件", "value": "状态心跳已同步" }, { "label": "告警", "value": "暂无未处理告警" }] }, "visibility": { "expr": "state.detailTab === 'events'" } }
+            ] }
+          ]
+        }
+      },
+      {
+        "id": "firmware-upgrade-drawer",
+        "kind": "component",
+        "component": "Drawer",
+        "props": { "open": { "$state": "openTargets.firmwareUpgrade" }, "placement": "right", "size": 520 },
+        "events": { "onClose": { "flowId": "close-firmware-upgrade" } },
+        "slots": {
+          "header": [{ "id": "upgrade-title", "kind": "component", "component": "Typography", "props": { "level": 3 }, "content": "Firmware Upgrade" }],
+          "content": [
+            { "id": "upgrade-form", "kind": "component", "component": "Form", "props": { "layout": "vertical" }, "children": [
+              { "id": "upgrade-target-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "目标设备" },
+              { "id": "upgrade-target", "kind": "component", "component": "Typography", "props": {}, "content": "将对已选设备创建升级任务" },
+              { "id": "firmware-version-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "Firmware Version" },
+              { "id": "firmware-version", "kind": "component", "component": "Select", "binding": { "source": "state", "path": "upgrade.firmware" }, "props": { "options": [{ "label": "v2.5.0 (Recommended)", "value": "v2.5.0" }, { "label": "v2.4.3", "value": "v2.4.3" }] }, "events": { "onChange": { "flowId": "set-firmware-version", "payload": { "value": "$event" } } } },
+              { "id": "firmware-file-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "Firmware File" },
+              { "id": "firmware-file", "kind": "component", "component": "Upload", "props": { "accept": ".bin", "multiple": false, "listType": "text", "maxCount": 1 }, "events": { "onChange": { "flowId": "set-firmware-file", "payload": { "value": "$event" } } } },
+              { "id": "upgrade-time-label", "kind": "component", "component": "Typography", "props": { "type": "secondary" }, "content": "Upgrade Time" },
+              { "id": "upgrade-time-mode", "kind": "component", "component": "Select", "binding": { "source": "state", "path": "upgrade.scheduleMode" }, "props": { "options": [{ "label": "Immediately", "value": "immediately" }, { "label": "Schedule", "value": "schedule" }] }, "events": { "onChange": { "flowId": "set-schedule-mode", "payload": { "value": "$event" } } } },
+              { "id": "scheduled-date", "kind": "component", "component": "DatePicker", "props": { "value": { "$state": "upgrade.date" }, "format": "YYYY-MM-DD", "showTime": false, "picker": "date" }, "visibility": { "expr": "state.upgrade.scheduleMode === 'schedule'" }, "events": { "onChange": { "flowId": "set-schedule-date", "payload": { "value": "$event" } } } },
+              { "id": "scheduled-time", "kind": "component", "component": "TimePicker", "props": { "value": { "$state": "upgrade.time" }, "format": "HH:mm", "hourStep": 1, "use12Hours": false }, "visibility": { "expr": "state.upgrade.scheduleMode === 'schedule'" }, "events": { "onChange": { "flowId": "set-schedule-time", "payload": { "value": "$event" } } } },
+              { "id": "upgrade-progress", "kind": "component", "component": "Progress", "props": { "percent": { "$state": "upgrade.progress" }, "status": { "$state": "upgrade.status" }, "showInfo": true }, "visibility": { "expr": "state.upgrade.running === true" } }
+            ] }
+          ],
+          "footer": [
+            { "id": "upgrade-cancel", "kind": "component", "component": "Button", "props": { "type": "default" }, "content": "取消", "events": { "onClick": { "flowId": "close-firmware-upgrade" } } },
+            { "id": "upgrade-submit", "kind": "component", "component": "Button", "props": { "type": "primary", "loading": { "$state": "upgrade.running" } }, "content": "开始升级", "events": { "onClick": { "flowId": "start-upgrade" } } }
+          ]
+        }
+      }
+    ]
+  },
+  "flows": [
+    { "id": "set-search", "steps": [{ "type": "set-state", "key": "filters.search", "value": "$payload.value" }, { "type": "set-state", "key": "currentPage", "value": 1 }] },
+    { "id": "set-status-filter", "steps": [{ "type": "set-state", "key": "filters.status", "value": "$payload.value" }, { "type": "set-state", "key": "currentPage", "value": 1 }] },
+    { "id": "set-model-filter", "steps": [{ "type": "set-state", "key": "filters.model", "value": "$payload.value" }, { "type": "set-state", "key": "currentPage", "value": 1 }] },
+    { "id": "reset-filters", "steps": [{ "type": "set-state", "key": "filters", "value": { "search": "", "status": "all", "model": "all" } }, { "type": "set-state", "key": "currentPage", "value": 1 }] },
+    { "id": "select-rows", "steps": [{ "type": "select", "key": "selectedDeviceIds", "value": "$payload.value" }] },
+    { "id": "change-page", "steps": [{ "type": "set-state", "key": "currentPage", "value": "$payload.value" }] },
+    { "id": "change-page-size", "steps": [{ "type": "set-state", "key": "pageSize", "value": "$payload.value" }, { "type": "set-state", "key": "currentPage", "value": 1 }] },
+    { "id": "clear-selection", "steps": [{ "type": "select", "key": "selectedDeviceIds", "value": [] }] },
+    { "id": "open-device-detail", "steps": [{ "type": "set-state", "key": "selectedDeviceId", "value": "$payload.id" }, { "type": "open", "target": "deviceDetail" }] },
+    { "id": "close-device-detail", "steps": [{ "type": "close", "target": "deviceDetail" }] },
+    { "id": "open-batch-upgrade", "steps": [{ "type": "open", "target": "firmwareUpgrade" }] },
+    { "id": "open-row-upgrade", "steps": [{ "type": "select", "key": "selectedDeviceIds", "value": ["$payload.id"] }, { "type": "open", "target": "firmwareUpgrade" }] },
+    { "id": "close-firmware-upgrade", "steps": [{ "type": "close", "target": "firmwareUpgrade" }, { "type": "set-state", "key": "upgrade.running", "value": false }] },
+    { "id": "set-firmware-version", "steps": [{ "type": "set-state", "key": "upgrade.firmware", "value": "$payload.value" }] },
+    { "id": "set-firmware-file", "steps": [{ "type": "set-state", "key": "upgrade.fileName", "value": "$payload.value" }] },
+    { "id": "set-schedule-mode", "steps": [{ "type": "set-state", "key": "upgrade.scheduleMode", "value": "$payload.value" }] },
+    { "id": "set-schedule-date", "steps": [{ "type": "set-state", "key": "upgrade.date", "value": "$payload.value" }] },
+    { "id": "set-schedule-time", "steps": [{ "type": "set-state", "key": "upgrade.time", "value": "$payload.value" }] },
+    { "id": "change-detail-tab", "steps": [{ "type": "set-state", "key": "detailTab", "value": "$payload.value" }] },
+    { "id": "start-upgrade", "steps": [{ "type": "set-state", "key": "upgrade.running", "value": true }, { "type": "set-state", "key": "upgrade.progress", "value": 8 }, { "type": "set-state", "key": "upgrade.status", "value": "active" }, { "type": "notify", "status": "loading", "message": "正在创建升级任务" }, { "type": "custom", "target": "start-upgrade" }] },
+    { "id": "export-devices", "steps": [{ "type": "custom", "target": "export-devices" }] },
+    { "id": "export-selected", "steps": [{ "type": "custom", "target": "export-selected" }] },
+    { "id": "notify-add-device", "steps": [{ "type": "notify", "status": "info", "message": "添加设备将在下一阶段接入" }] },
+    { "id": "notify-row-more", "steps": [{ "type": "notify", "status": "info", "message": "更多设备操作已收纳" }] }
+  ],
+  "pageStates": {
+    "loading": { "component": "Skeleton", "message": "正在加载设备列表" },
+    "empty": { "component": "Empty", "message": "暂无设备" },
+    "error": { "component": "Result", "props": { "status": "error" }, "message": "设备列表加载失败" }
+  },
+  "review": {
+    "assumptions": ["设备数据为本地 mock 数据，不调用 API", "升级任务使用受控模拟进度"],
+    "warnings": [],
+    "componentGaps": [],
+    "designDecisions": ["所有样式通过 registry token 注入", "覆盖率按 schema 中设计系统相关组件实例计算" ]
+  }
+}
