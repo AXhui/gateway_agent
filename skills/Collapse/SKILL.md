@@ -1,63 +1,108 @@
 # Collapse · 折叠面板
 
-> **分类**：数据展示  
+> **分类**：数据展示
 > **Figma**：1492-29683
+> **组件目录**：`frontend/components/Collapse/`
+> **版本**：v1.1.0（已对齐 antd `Collapse` `items` / `accordion` / `bordered` / `ghost` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-分组内容折叠展示，支持手风琴模式与无边框模式。
+### 组件定位
+**分组内容折叠展示**，支持手风琴模式与无边框/幽灵模式，用于 FAQ、详情分组、长内容收纳。
+
+### 何时用
+- **FAQ / 帮助文档**的问答折叠。
+- **详情分组**（基础/高级配置分组收起）。
+- 需要**默认收起**降低页面长度的内容。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 超过 8 个分组 | `Tabs` |
+| 流程步骤 | `Steps` |
+| 单块卡片 | `Card` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `accordion` | 手风琴（单开） | 需要多开对比时关闭 |
+| `bordered` | 有边框 | 信息密集可关闭 |
+| `ghost` | 幽灵模式 | 背景透明场景 |
+| 默认展开 | 首个展开 | 重要内容默认展开 |
+
+### 无障碍
+- 面板头 `role="button"` + `aria-expanded`；键盘 Enter/Space 切换展开。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 面板头高 | 48px | 标题行 |
+| 内容内边距 | 16px | 展开内容 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 面板头背景 | `--color-bg-page` |
+| 分隔线 | `--color-border-base` |
+| 展开图标 | `--color-text-auxiliary` |
+
+### 过渡
+展开/收起高度过渡 `200ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-border-base`（分隔线）、`--color-bg-page`（面板头背景）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `items` | `CollapseItem[]` | `[]` | 面板项 |
-| `accordion` | `boolean` | `false` | 手风琴模式 |
-| `bordered` | `boolean` | `true` | 有边框 |
-| `ghost` | `boolean` | `false` | 幽灵模式 |
+| `items` | `CollapseItem[]` | `[]` | **antd 同名同值**：面板项 |
+| `accordion` | `boolean` | `false` | **antd 同名同值**：手风琴模式 |
+| `bordered` | `boolean` | `true` | **antd 同名同值**：边框 |
+| `ghost` | `boolean` | `false` | **antd 同名同值**：幽灵模式 |
+| `activeKey` | `string[]` | `-` | **antd 同名同值**：展开项 |
+| `onChange` | `(keys) => void` | `-` | **antd 同名同值**：展开变化 |
 
-### 设计令牌
+### 受控/非受控语义
+- `activeKey` + `onChange` 为**受控**；缺省时内部维护非受控展开状态。
 
-使用的 CSS 变量：
-
-- `--color-border-base`
-- `--color-bg-page`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-FAQ、详情分组使用；超过 8 个分组改用 Tabs。
-
-### 交互 Skill
-
-【Collapse 交互 Skill】
-交互：
-- 点击 header：展开/收起，chevron 旋转 180°，内容高度 transition 240ms
-- accordion=true：同时只展开一个 Panel
-- hover header：bg --color-bg-page
-
-Ghost 模式：无边框无背景，仅 Divider 分隔，用于页面内嵌说明区。
-
-错误状态：Panel header 可加 Badge/Icon 提示内部有错误需处理。
-禁止在 Collapse 内嵌套 Collapse 超过 2 层。
-
+### 事件 / 键盘
+- 面板头可键盘触发；`onChange` 返回展开的 key 数组。
 
 ---
 
 ## 代码示例
 
 ```html
-<Collapse items="[]" bordered />
+<Collapse
+  accordion
+  items={[
+    { key: '1', label: '如何连接设备？', children: <p>...</p> },
+    { key: '2', label: '如何配置网络？', children: <p>...</p> }
+  ]}
+  onChange={setActive}
+/>
 ```
 
 ---
@@ -65,12 +110,5 @@ Ghost 模式：无边框无背景，仅 Divider 分隔，用于页面内嵌说�
 ## 文件映射
 
 - Preview 文件：`collapse-preview.html`
-- 组件目录：`frontend/components/Collapse/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Collapse/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

@@ -1,64 +1,111 @@
 # List · 列表
 
-> **分类**：数据展示  
-> **Figma**：1486-105119
+> **分类**：数据展示
+> **Figma**：1478-137768
+> **组件目录**：`frontend/components/List/`
+> **版本**：v1.1.0（已对齐 antd `List` `dataSource` / `renderItem` / `pagination` / `itemLayout` / `loading` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-通用列表，支持基础、栅格、加载、分页、虚拟滚动。
+### 组件定位
+**通用列表容器**，支持基础列表、带分页列表、栅格列表、加载态，用于通知、消息、结果、设备列表等。
+
+### 何时用
+- **纵向数据列表**（通知、消息、设备、日志）。
+- 需要**分页/加载更多**的列表。
+- 需要**栅格化卡片列表**（`grid`）。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 多列结构化数据 + 排序筛选 | `Table` |
+| 时间线事件 | `Timeline` |
+| 级联层级数据 | `Tree` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `dataSource` + `renderItem` | 标准渲染 | 渲染函数保持轻量 |
+| `pagination` | 分页 | 数据量大时分页/滚动加载二选一 |
+| `grid` | 栅格卡片 | 响应式列数 |
+| `loading` | 加载态 | 空态与加载态分开处理 |
+
+### 无障碍
+- 列表 `ul`/`li` 语义；分页焦点管理；加载态有 `aria-busy`。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 行内边距 | 12px 24px | 纵向列表项 |
+| 项间距 | 8px | 栅格模式 |
+
+### 状态视觉矩阵
+| 元素 | 表现 |
+|------|------|
+| 列表项分隔 | `--color-divider-base-1` |
+| hover 背景 | `--color-fill-base-hover` |
+| 主文案 | `--color-text-primary` |
+| 描述文案 | `--color-text-auxiliary` |
+
+### 过渡
+hover 背景 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-divider-base-1`（分隔）、`--color-fill-base-hover`（hover 背景）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `dataSource` | `any[]` | `[]` | 数据源 |
-| `renderItem` | `(item) => ReactNode` | `-` | 项渲染 |
-| `grid` | `object` | `-` | 栅格配置 |
-| `pagination` | `object | false` | `-` | 分页 |
+| `dataSource` | `T[]` | `[]` | **antd 同名同值**：数据源 |
+| `renderItem` | `(item, index) => ReactNode` | `-` | **antd 同名同值**：渲染项 |
+| `itemLayout` | `'horizontal' \| 'vertical'` | `'horizontal'` | **antd 同名同值**：布局 |
+| `pagination` | `object \| boolean` | `false` | **antd 同名同值**：分页 |
+| `loading` | `boolean` | `false` | **antd 同名同值**：加载态 |
+| `grid` | `object` | `-` | **antd 同名同值**：栅格 |
+| `split` | `boolean` | `true` | **antd 同名同值**：分隔线 |
 
-### 设计令牌
+### 受控/非受控语义
+- 纯展示组件；分页由使用者控制。
 
-使用的 CSS 变量：
-
-- `--color-divider-base-1`
-- `var(--color-bg-card)`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
->100 行考虑虚拟滚动；通用 CRUD 优先用 Table。
-
-### 交互 Skill
-
-【List 交互 Skill】
-grid 模式：等同 Row+Col 卡片布局，Item 为 Card。
-非 grid：垂直列表，Item 间 Divider 分隔。
-
-交互：
-- hover（可点击项）：bg --color-bg-page，cursor pointer
-- Item actions：右侧操作链接（link 类型 Button），hover color --color-primary-normal
-- 加载更多：底部 loadMore 区域，Button default"加载更多" 或 Spin（无限滚动）
-
-虚拟滚动：列表项 > 200 条使用 List.Virtual（固定高度 itemHeight），避免大 DOM。
-空态：dataSource=[] 显示 Empty 组件（内置）。
-
+### 事件 / 键盘
+- 无内置交互；分页组件自身处理键盘。
 
 ---
 
 ## 代码示例
 
 ```html
-<List dataSource="[]" renderItem="-" grid="-" />
+<List
+  dataSource={devices}
+  renderItem={d => (
+    <List.Item>
+      <List.Item.Meta avatar={<Avatar>{d.name[0]}</Avatar>} title={d.name} description={d.status} />
+    </List.Item>
+  )}
+  pagination={{ pageSize: 10 }}
+/>
 ```
 
 ---
@@ -66,12 +113,5 @@ grid 模式：等同 Row+Col 卡片布局，Item 为 Card。
 ## 文件映射
 
 - Preview 文件：`list-preview.html`
-- 组件目录：`frontend/components/List/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/List/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

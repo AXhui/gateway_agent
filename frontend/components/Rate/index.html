@@ -25,6 +25,39 @@
   --color-warm-bg:#FFF7F0;
   --color-remind-normal:#F7BA1E;
   --color-remind-bg:#FFFDEB;
+  /* 原始色阶（Light，来自 Figma 色卡） */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
   --color-text-primary:#272E3B;
   --color-text-secondary:#6B7785;
   --color-text-auxiliary:#A9AEB8;
@@ -93,13 +126,13 @@ const Star = ({ filled, size, id }) =>
   h('svg', { width:size, height:size, viewBox:'0 0 24 24', style:{ display:'block' } },
     h('defs', null,
       h('linearGradient', { id },
-        h('stop', { offset: `${filled*100}%`, stopColor:'#FAAD14' }),
-        h('stop', { offset: `${filled*100}%`, stopColor:'#E5E6EB' })
+        h('stop', { offset: `${filled*100}%`, stopColor:'var(--color-yellow-06)' }),
+        h('stop', { offset: `${filled*100}%`, stopColor:'var(--color-border-base)' })
       )
     ),
     h('path', {
       d: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
-      fill: (filled > 0 && filled < 1) ? `url(#${id})` : (filled >= 1 ? '#FAAD14' : '#E5E6EB')
+      fill: (filled > 0 && filled < 1) ? `url(#${id})` : (filled >= 1 ? 'var(--color-yellow-06)' : 'var(--color-border-base)')
     })
   );
 

@@ -1,80 +1,115 @@
 # PageHeader · 页头
 
-> **分类**：布局  
+> **分类**：导航
 > **Figma**：1363-99512
+> **组件目录**：`frontend/components/PageHeader/`
+> **版本**：v1.1.0（已对齐 antd `PageHeader` `title` / `subTitle` / `onBack` / `extra` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-页面顶部容器，承载面包屑、返回、标题、副标题、操作区。
+### 组件定位
+**页面级头部组件**，承载标题、副标题、面包屑、返回按钮与操作区，用于详情页/二级页的上下文导航。
+
+### 何时用
+- **详情页/二级页**的标题区（返回 + 标题 + 操作）。
+- 需要**面包屑 + 标题**的层级导航页。
+- 页头需要**右侧操作区**（按钮、更多操作）。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 简单单行标题 | `Typography.Title` |
+| 顶部导航栏 | `Layout.Header` + `NavMenu` |
+| 卡片内标题 | `Card` `title` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `onBack` | 返回上一级 | 返回箭头在标题左侧 |
+| `breadcrumb` | 层级路径 | 与标题层级呼应 |
+| `subTitle` | 辅助说明 | 副标题次要色，不抢主标题 |
+| `extra` | 右侧操作区 | 主要操作 + 次要操作分组 |
+
+### 无障碍
+- 返回按钮有 `aria-label`（「返回」）。
+- 标题使用 `h1`/`h2` 语义，读屏可导航。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 页头内边距 | 16px 24px | 内容留白 |
+| 标题字号 | 20px | 主标题 |
+| 副标题字号 | 14px | 次要 |
+
+### 状态视觉矩阵
+| 元素 | 表现 |
+|------|------|
+| 背景 | `--color-bg-card` |
+| 标题 | `--color-text-primary` |
+| 副标题 | `--color-text-secondary` |
+| 底部分隔 | `--color-divider-base-1` |
+
+### 过渡
+返回按钮 hover 背景 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-text-primary`（标题）、`--color-text-secondary`（副标题）、`--color-bg-card`（背景）、`--color-divider-base-1`（底部分隔）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `title` | `ReactNode` | `-` | 主标题 |
-| `subTitle` | `ReactNode` | `-` | 副标题 |
-| `onBack` | `() => void` | `-` | 返回回调 |
-| `extra` | `ReactNode` | `-` | 右侧操作区 |
-| `breadcrumb` | `BreadcrumbProps` | `-` | 面包屑配置 |
+| `title` | `ReactNode` | `-` | **antd 同名同值**：主标题 |
+| `subTitle` | `ReactNode` | `-` | **antd 同名同值**：副标题 |
+| `onBack` | `() => void` | `-` | **antd 同名同值**：返回回调 |
+| `extra` | `ReactNode` | `-` | **antd 同名同值**：右侧操作区 |
+| `breadcrumb` | `ReactNode` | `-` | **antd 同名同值**：面包屑 |
 
-### 设计令牌
+### 受控/非受控语义
+- 纯展示 + 回调组件，无受控语义。
 
-使用的 CSS 变量：
-
-- `--color-text-primary`
-- `var(--color-bg-card)`
-- `--color-divider-base-1`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-详情页一律使用 PageHeader 承载返回 + 操作；列表页省略 onBack。
-
-### 交互 Skill
-
-【PageHeader 交互 Skill】
-结构：[返回箭头] 面包屑 / 标题 [Badge状态] [extra操作区]
-
-交互：
-- onBack：点击左箭头执行，通常 router.back() 或跳指定路由
-- extra：右侧操作区，主操作 Button primary，次操作 Button default，最多 3 个
-- 面包屑：末级不可点，前级 hover underline
-
-页面类型对应：
-- 列表页：无 onBack，title=模块名，extra=新建按钮
-- 详情页：onBack=true，title=记录名，extra=编辑+删除
-- 表单页：onBack=true，title=新建/编辑，extra 在底部 Footer 而非 PageHeader
-
+### 事件 / 键盘
+- `onBack` 返回按钮可键盘触发（Enter/Space）。
 
 ---
 
 ## 代码示例
 
 ```html
-<PageHeader title="-" subTitle="-" onBack="-" />
+<PageHeader
+  title="设备详情"
+  subTitle="设备 ID：MS-1001"
+  onBack={() => history.back()}
+  breadcrumb={<Breadcrumb items={[{title:'设备'},{title:'详情'}]} />}
+  extra={<Space><Button>编辑</Button><Button type="primary">保存</Button></Space>}
+/>
 ```
 
 ---
 
 ## 文件映射
 
-- Preview 文件：`page-header-preview.html`
-- 组件目录：`frontend/components/PageHeader/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- Preview 文件：`pageheader-preview.html`
+- 组件目录：`frontend/components/PageHeader/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

@@ -1,65 +1,108 @@
 # Calendar · 日历
 
-> **分类**：数据展示  
+> **分类**：数据展示
 > **Figma**：1517-2040
+> **组件目录**：`frontend/components/Calendar/`
+> **版本**：v1.1.0（已对齐 antd `Calendar` `value` / `mode` / `cellRender` / `onPanelChange` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-日历视图，支持月/年模式、单元格自定义、选择回调。
+### 组件定位
+**日历视图组件**，支持月/年两种模式、单元格自定义渲染、日期选择回调，用于日程、巡检、计划类页面。
+
+### 何时用
+- **调度/日程/巡检**类页面的日历视图。
+- 需要**日期单元格自定义内容**（任务、事件）的场景。
+- 需要**月/年切换**的时间维度展示。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 仅选一个日期 | `DatePicker` |
+| 选时间范围 | `DatePicker.RangePicker` |
+| 简单月份切换 | `DatePicker` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `mode="month"` | 月视图 | 默认 |
+| `mode="year"` | 年视图 | 年度概览 |
+| `cellRender` | 自定义单元格 | 事件过多要做折叠/提示 |
+| 今天/选中 | 高亮标注 | 今天与选中态区分清楚 |
+
+### 无障碍
+- 日期单元格有 `aria-label`（完整日期）；键盘方向键可切换日期。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 单元格 | 自适应 | 月视图 7 列 |
+| 表头高 | 40px | 星期行 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 选中日期 | `--color-primary-normal` 底 + 白字 |
+| 今天 | 边框 `--color-primary-normal` |
+| 悬浮日期 | 背景 `--color-primary-bg` |
+| 单元格分隔 | `--color-divider-base-1` |
+
+### 过渡
+背景/边框 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-primary-normal`（选中）、`--color-primary-bg`（悬浮背景）、`--color-divider-base-1`（分隔线）。
+
+> **Token 修正**：`--color-brand-50` → `--color-primary-bg`（悬浮/今天背景统一用主色淡背景 token）。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `value` | `Dayjs` | `-` | 显示日期 |
-| `mode` | `'month' | 'year'` | `'month'` | 模式 |
-| `cellRender` | `(date, info) => ReactNode` | `-` | 单元格渲染 |
-| `onPanelChange` | `(date, mode) => void` | `-` | 面板切换 |
+| `value` | `Dayjs` | `-` | **antd 同名同值**：显示日期 |
+| `mode` | `'month' \| 'year'` | `'month'` | **antd 同名同值**：模式 |
+| `cellRender` | `(date, info) => ReactNode` | `-` | **antd 同名同值**：单元格渲染 |
+| `onPanelChange` | `(date, mode) => void` | `-` | **antd 同名同值**：面板切换 |
+| `onSelect` | `(date, info) => void` | `-` | **antd 同名同值**：选择回调 |
 
-### 设计令牌
+### 受控/非受控语义
+- `value` + `onSelect`/`onPanelChange` 为**受控**；缺省 `value` 时内部维护非受控日期。
 
-使用的 CSS 变量：
-
-- `--color-primary-normal`
-- `--color-brand-50`
-- `--color-divider-base-1`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-调度/日程类页面使用 Calendar；只是选日期用 DatePicker。
-
-### 交互 Skill
-
-【Calendar 交互 Skill】
-mode: month（默认）/ year 切换。
-
-交互：
-- 日期 click：onSelect 回调，视觉上选中高亮
-- 月/年切换：header 中 Select 组件切换，不用 < > 箭头翻页
-- 今日：高亮圆圈
-- cellRender：自定义单元格内容（如显示任务数 Badge）
-
-与 DatePicker 区别：Calendar 是全量展示用于内容展示（如排班/日程），DatePicker 是弹层用于选值。
-移动端：Calendar 改为 DatePicker 或精简的周视图。
-
+### 事件 / 键盘
+- 键盘方向键切换日期；`onSelect` 返回选中日期。
 
 ---
 
 ## 代码示例
 
 ```html
-<Calendar value="-" mode="month" cellRender="-" />
+<Calendar
+  value={current}
+  mode="month"
+  cellRender={(date, info) =>
+    info.type === 'date' ? <ScheduleCell date={date} /> : info.originNode
+  }
+  onPanelChange={(d, m) => setMode(m)}
+/>
 ```
 
 ---
@@ -67,12 +110,5 @@ mode: month（默认）/ year 切换。
 ## 文件映射
 
 - Preview 文件：`calendar-preview.html`
-- 组件目录：`frontend/components/Calendar/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Calendar/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

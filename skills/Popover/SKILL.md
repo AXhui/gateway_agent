@@ -1,68 +1,100 @@
 # Popover · 气泡卡片
 
-> **分类**：数据展示  
-> **Figma**：1543-31022
+> **分类**：数据展示
+> **Figma**：1478-138289
+> **组件目录**：`frontend/components/Popover/`
+> **版本**：v1.1.0（已对齐 antd `Popover` `content` / `title` / `trigger` / `placement` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-hover/click 触发的复杂内容浮层，比 Tooltip 容纳更多。
+### 组件定位
+**气泡浮层**，承载较丰富的卡片内容（标题、图文、操作），悬停或点击触发，用于操作说明、详情预览、快捷操作。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 纯文字提示 | `Tooltip` |
+| 需确认操作 | `Popconfirm` |
+| 复杂交互面板 | `Drawer` / `DropdownMenu` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `trigger="hover"` | 详情预览 | 移动端避免 |
+| `trigger="click"` | 操作面板 | 内容含交互时用 click |
+| `title` | 气泡标题 | 标题与内容区分层级 |
+| `placement` | 定位 | 边缘自动翻转 |
+
+### 无障碍
+- 触发元素 `aria-describedby` 关联气泡；Esc 关闭；焦点移入不自动关闭。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 内容内边距 | 12px 16px | 内容留白 |
+| 最小宽 | 依内容 | 自适应 |
+
+### 状态视觉矩阵
+| 元素 | 表现 |
+|------|------|
+| 背景 | `--color-bg-card` |
+| 阴影 | `--shadow-1` |
+| 标题 | `--color-text-primary` |
+| 箭头 | 与背景同色 |
+
+### 过渡
+出现/消失 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-bg-card`（背景）、`--shadow-1`（阴影）。
+
+> **Token 修正**：`--shadow-2` → `--shadow-1`（气泡浮层阴影统一使用 `--shadow-1` 标准层）。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `content` | `ReactNode` | `-` | 内容 |
-| `trigger` | `'hover' | 'click' | 'focus' | 'contextMenu'` | `'hover'` | 触发 |
-| `placement` | `12 种方位` | `'top'` | 位置 |
-| `title` | `ReactNode` | `-` | 标题 |
+| `content` | `ReactNode` | `-` | **antd 同名同值**：内容 |
+| `title` | `ReactNode` | `-` | **antd 同名同值**：标题 |
+| `trigger` | `'hover' \| 'click' \| 'focus'` | `'hover'` | **antd 同名同值**：触发方式 |
+| `placement` | `Placement` | `'top'` | **antd 同名同值**：位置 |
+| `open` | `boolean` | `-` | **antd 同名同值**：受控显隐 |
+| `onOpenChange` | `(open) => void` | `-` | **antd 同名同值**：显隐变化 |
+| `children` | `ReactNode` | `-` | 触发元素 |
 
-### 设计令牌
+### 受控/非受控语义
+- `open` + `onOpenChange` 为**受控**；缺省时内部维护非受控显隐。
 
-使用的 CSS 变量：
-
-- `var(--color-bg-card)`
-- `--shadow-2`
-- `--color-divider-base-1`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-短文字提示用 Tooltip；含按钮等交互内容用 Popover。
-
-### 交互 Skill
-
-【Popover 交互 Skill】
-trigger: hover（信息提示）/ click（富内容操作面板）/ focus。
-
-展开：fade + scale 200ms，placement 自动边界翻转（12个方向）。
-关闭：
-- hover trigger：鼠标离开 trigger 或 content 区域后 150ms 延迟关闭（避免抖动）
-- click trigger：点击外部关闭，再次点击 trigger 切换
-
-content 内容规则：
-- 可放 Button、Link、Form（简单表单）
-- 禁止放 Table 或超过 300px 高内容，改用 Drawer
-- 宽度固定 240-320px，内容自适应高度
-
-与 Tooltip 区别：Popover 有标题+富内容，Tooltip 只有一行文本。
-
+### 事件 / 键盘
+- Esc 关闭；`trigger="focus"` 时聚焦触发。
 
 ---
 
 ## 代码示例
 
 ```html
-<Popover content="-" trigger="hover" placement="top" />
+<Popover title="设备详情" content={<DeviceInfo />} trigger="click" placement="right">
+  <Button>查看</Button>
+</Popover>
 ```
 
 ---
@@ -70,12 +102,5 @@ content 内容规则：
 ## 文件映射
 
 - Preview 文件：`popover-preview.html`
-- 组件目录：`frontend/components/Popover/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Popover/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

@@ -1,68 +1,110 @@
 # Steps · 步骤条
 
-> **分类**：导航  
+> **分类**：导航
 > **Figma**：1400-35527
+> **组件目录**：`frontend/components/Steps/`
+> **版本**：v1.1.0（已对齐 antd `Steps` `current` / `items` / `direction` / `status` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-任务流程指示器，支持横向/竖向、状态、点状步骤。
+### 组件定位
+**流程进度指示组件**，展示多步任务的当前进度与状态，用于引导式表单、审批流、向导。
+
+### 何时用
+- **多步表单/向导**（分步填写）。
+- **审批/流转流程**的状态展示。
+- 需要**可视化进度**的线性任务。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 单步或并列项 | 无需步骤条 |
+| 百分比进度 | `Progress` |
+| 时间线事件流 | `Timeline` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `direction="horizontal"` | 横向步骤 | 步骤 ≤ 5 为宜 |
+| `direction="vertical"` | 纵向步骤 | 步骤多或空间窄 |
+| `status` | 完成/进行中/错误 | 错误态用 `--color-error-normal` |
+| 步骤数 | 3-5 步 | 过多需拆分或竖向 |
+
+### 无障碍
+- 步骤条有 `aria-label` 描述流程；当前步 `aria-current="step"`。
+- 状态不只靠颜色，配合图标/文字。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 步骤圆点 | 32px | 横向 |
+| 连线 | 1px | 步骤间 |
+| 标题字号 | 14px | 步骤名 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 完成 | `--color-primary-normal`（或 `--color-success-normal`） |
+| 进行中 | `--color-primary-normal` |
+| 错误 | `--color-error-normal` |
+| 待处理 | `--color-border-base` 灰态 |
+
+### 过渡
+状态切换颜色 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-primary-normal`（完成/进行中）、`--color-success-normal`（完成成功态）、`--color-error-normal`（错误）、`--color-border-base`（待处理）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `current` | `number` | `0` | 当前步骤 |
-| `items` | `StepItem[]` | `[]` | 步骤项 |
-| `direction` | `'horizontal' | 'vertical'` | `'horizontal'` | 方向 |
-| `status` | `'wait' | 'process' | 'finish' | 'error'` | `'process'` | 当前状态 |
+| `current` | `number` | `0` | **antd 同名同值**：当前步骤 |
+| `items` | `Array<{title, description?, status?}>` | `[]` | **antd 同名同值**：步骤项 |
+| `direction` | `'horizontal' \| 'vertical'` | `'horizontal'` | **antd 同名同值**：方向 |
+| `status` | `'wait' \| 'process' \| 'finish' \| 'error'` | `'process'` | **antd 同名同值**：状态 |
+| `onChange` | `(current) => void` | `-` | **antd 同名同值**：步骤变化 |
 
-### 设计令牌
+### 受控/非受控语义
+- `current` + `onChange` 为**受控**；缺省时内部维护非受控状态。
 
-使用的 CSS 变量：
-
-- `--color-primary-normal`
-- `--color-success-normal`
-- `--color-error-normal`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-步骤数控制在 3-5 个；超过 5 步考虑改为表单分组。
-
-### 交互 Skill
-
-【Steps 交互 Skill】
-status: wait(灰) / process(品牌蓝，pulse 动画) / finish(绿色对勾) / error(红色叹号)。
-
-交互：
-- 可点击步骤（clickable=true）：hover cursor pointer，已完成步骤可回退
-- 不可点击：cursor default
-- 步骤切换：Content 区域 fade 过渡 240ms
-
-方向：
-- horizontal（默认）：步骤数 ≤ 5
-- vertical：步骤数 > 5 或步骤描述文字较长
-- 移动端强制 vertical
-
-错误步骤：status=error + description 说明原因，操作区显示重试按钮。
-
+### 事件 / 键盘
+- 可点击步骤可键盘触发；`onChange` 返回当前步。
 
 ---
 
 ## 代码示例
 
 ```html
-<Steps current="0" items="[]" direction="horizontal" />
+<Steps
+  current={1}
+  items={[
+    { title: '基础信息' },
+    { title: '网络配置', status: 'process' },
+    { title: '完成' }
+  ]}
+/>
 ```
 
 ---
@@ -70,12 +112,5 @@ status: wait(灰) / process(品牌蓝，pulse 动画) / finish(绿色对勾) / e
 ## 文件映射
 
 - Preview 文件：`steps-preview.html`
-- 组件目录：`frontend/components/Steps/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Steps/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

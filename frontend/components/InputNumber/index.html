@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Milesight IOT Web — InputNumber 数字输入框 v1.0.0</title>
+<title>Milesight IOT Web — InputNumber 数字输入框 v1.1.0</title>
 <style>
 :root {
   --color-primary-normal:#3491FA;
@@ -25,6 +25,39 @@
   --color-warm-bg:#FFF7F0;
   --color-remind-normal:#F7BA1E;
   --color-remind-bg:#FFFDEB;
+  /* 原始色阶（Light，来自 Figma 色卡） */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
   --color-text-primary:#272E3B;
   --color-text-secondary:#6B7785;
   --color-text-auxiliary:#A9AEB8;
@@ -85,10 +118,11 @@ input,button{font-family:inherit}
 } }
 </script>
 <script type="module">
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { createRoot } from 'react-dom/client';
 const h = React.createElement;
 
+const SIZE_ALIAS = { small:'sm', middle:'md', large:'lg' };
 const HEIGHT = { sm:24, md:32, lg:40 };
 const FONT = {
   sm:'400 12px/20px var(--font-sans)',
@@ -105,8 +139,11 @@ const stepBtn = (height, dis, top) => ({
   display:'inline-flex', alignItems:'center', justifyContent:'center', padding:0,
 });
 
-const InputNumber = ({ value, defaultValue, min, max, step=1, size='md', status='default',
-  precision, formatter, parser, disabled, onChange, style, className, ...rest }) => {
+const InputNumber = forwardRef(function InputNumber(
+  { value, defaultValue, min, max, step=1, size='md', status='default',
+    precision, formatter, parser, controls=true, keyboard=true, placeholder,
+    disabled, onChange, onFocus, onBlur, style, className, ...rest }, ref) {
+  const sz = SIZE_ALIAS[size] || size;
   const [inner, setInner] = useState(defaultValue);
   const [focus, setFocus] = useState(false);
   const [text, setText] = useState('');
@@ -114,6 +151,7 @@ const InputNumber = ({ value, defaultValue, min, max, step=1, size='md', status=
   const v = isControlled ? value : inner;
 
   const clamp = n => {
+    if (n === undefined || Number.isNaN(n)) return n;
     if (min !== undefined && n < min) n = min;
     if (max !== undefined && n > max) n = max;
     if (precision !== undefined) n = Number(n.toFixed(precision));
@@ -134,10 +172,24 @@ const InputNumber = ({ value, defaultValue, min, max, step=1, size='md', status=
     if (disabled) return;
     set(clamp((v ?? 0) + dir * step));
   };
+  const onKeyDown = e => {
+    if (keyboard && !disabled) {
+      if (e.key === 'ArrowUp') { e.preventDefault(); bump(1); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); bump(-1); }
+    }
+    rest.onKeyDown?.(e);
+  };
+  const onWheel = e => {
+    if (keyboard && !disabled && focus) {
+      e.preventDefault();
+      bump(e.deltaY < 0 ? 1 : -1);
+    }
+    rest.onWheel?.(e);
+  };
 
   const borderColor = status==='error' ? 'var(--color-error-normal)'
     : focus ? 'var(--color-primary-normal)' : 'var(--color-border-base)';
-  const ht = HEIGHT[size];
+  const ht = HEIGHT[sz];
   const btnH = ht / 2;
   const upDisabled = disabled || (max !== undefined && (v ?? 0) >= max);
   const downDisabled = disabled || (min !== undefined && (v ?? 0) <= min);
@@ -147,24 +199,24 @@ const InputNumber = ({ value, defaultValue, min, max, step=1, size='md', status=
     background: disabled?'var(--color-bg-hover)':'var(--color-bg-card)',
     border:`1px solid ${borderColor}`, borderRadius:'var(--radius-4)',
     boxShadow: focus
-      ? `0 0 0 2px ${status==='error'?'rgba(217,45,45,0.12)':'rgba(16,129,62,0.12)'}`
+      ? `0 0 0 2px ${status==='error'?'rgba(241,53,53,0.12)':'rgba(52,145,250,0.12)'}`
       : 'none',
-    transition:'border-color var(--duration-fast), box-shadow var(--duration-fast)',
+    transition:'border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard)',
     overflow:'hidden', minWidth:96, ...style,
   } },
     h('input', {
-      type:'text', inputMode:'decimal', value: display, disabled,
-      onFocus: e => { setFocus(true); setText(format(v)); rest.onFocus?.(e); },
-      onBlur: e => { setFocus(false); rest.onBlur?.(e); },
-      onChange: onInput,
+      ref, type:'text', inputMode:'decimal', value: display, disabled, placeholder,
+      onFocus: e => { setFocus(true); setText(format(v)); onFocus?.(e); },
+      onBlur: e => { setFocus(false); onBlur?.(e); },
+      onChange: onInput, onKeyDown, onWheel,
       style:{
         flex:1, minWidth:0, padding:'0 var(--spacing-12)',
         border:'none', outline:'none', background:'transparent',
         color: disabled?'var(--color-text-disable)':'var(--color-text-primary)',
-        font: FONT[size],
+        font: FONT[sz],
       }, ...rest,
     }),
-    h('div', { style:{ display:'flex', flexDirection:'column',
+    controls && h('div', { style:{ display:'flex', flexDirection:'column',
       borderLeft:'1px solid var(--color-divider-base-1)', width:22, flex:'none' } },
       h('button', { type:'button', disabled:upDisabled, onClick: () => bump(1),
         style: stepBtn(btnH, upDisabled, true) },
@@ -178,38 +230,48 @@ const InputNumber = ({ value, defaultValue, min, max, step=1, size='md', status=
           h('path', { d:'M6 9l6 6 6-6' })))
     )
   );
-};
+});
 
 const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
   h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
   h('div', { style:{ padding:'var(--spacing-20)', background:'var(--color-bg-card)',
     border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
-    display:'flex', flexDirection:'row', gap:'var(--spacing-12)', flexWrap:'wrap' } }, children)
+    display:'flex', flexDirection:'row', gap:'var(--spacing-12)', flexWrap:'wrap', alignItems:'center' } }, children)
 );
 
 function App() {
   return h('div', { style:{ minHeight:'100vh' } },
     h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
       h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'InputNumber 数字输入框'),
-      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.1.0')
     ),
     h('main', { style:{ maxWidth:720, margin:'0 auto',
       padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
       display:'flex', flexDirection:'column', gap:'var(--spacing-30)' } },
-      h(Group, { title:'尺寸' },
+      h(Group, { title:'尺寸 — sm 24 · md 32 · lg 40' },
         h(InputNumber, { size:'sm', defaultValue:1 }),
         h(InputNumber, { size:'md', defaultValue:1 }),
         h(InputNumber, { size:'lg', defaultValue:1 })),
+      h(Group, { title:'antd size 别名 — small · middle · large' },
+        h(InputNumber, { size:'small', defaultValue:2 }),
+        h(InputNumber, { size:'middle', defaultValue:2 }),
+        h(InputNumber, { size:'large', defaultValue:2 })),
       h(Group, { title:'范围 — min / max / step' },
         h(InputNumber, { min:0, max:10, step:1, defaultValue:5 }),
         h(InputNumber, { min:0, max:1, step:0.1, precision:1, defaultValue:0.5 })),
-      h(Group, { title:'带格式化（货币）' },
+      h(Group, { title:'精度 — precision' },
+        h(InputNumber, { precision:2, defaultValue:12.345, placeholder:'金额' }),
+        h(InputNumber, { precision:1, min:0, max:100, defaultValue:33.33, placeholder:'百分比' })),
+      h(Group, { title:'格式化 — formatter + parser（货币）' },
         h(InputNumber, {
           defaultValue:1280,
           formatter: n => n === undefined ? '' : `¥ ${n.toLocaleString()}`,
           parser: s => Number(s.replace(/[^\d.-]/g, '')),
           style:{ minWidth:160 }
         })),
+      h(Group, { title:'controls / keyboard' },
+        h(InputNumber, { controls:false, defaultValue:1001, placeholder:'纯输入（无步进）' }),
+        h(InputNumber, { keyboard:false, defaultValue:42, placeholder:'禁用滚轮/键盘' })),
       h(Group, { title:'状态' },
         h(InputNumber, { defaultValue:42, status:'error' }),
         h(InputNumber, { defaultValue:42, disabled:true }))

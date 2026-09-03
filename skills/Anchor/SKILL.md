@@ -1,62 +1,107 @@
 # Anchor · 锚点
 
-> **分类**：导航  
+> **分类**：导航
 > **Figma**：1424-143764
+> **组件目录**：`frontend/components/Anchor/`
+> **版本**：v1.1.0（已对齐 antd `Anchor` `items` / `offsetTop` / `bounds` / `onChange` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-页内导航锚点，自动追踪滚动位置高亮当前章节。
+### 组件定位
+**页面内锚点导航组件**，高亮当前滚动位置对应的章节，点击平滑滚动到目标，用于长文档/详情页目录导航。
+
+### 何时用
+- **长文档/详情页**的章节目录导航。
+- 需要**快速跳转**到页面内某节。
+- 需要**滚动高亮**当前章节的场景。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 跨页面导航 | `NavMenu` |
+| 同页标签切换 | `Tabs` |
+| 简短内容 | 无需锚点 |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `items` | 章节项 | 章节 ID 唯一 |
+| `offsetTop` | 偏移顶部距离 | 需避开固定 Header |
+| 高亮当前项 | 滚动联动 | 滚动高亮与点击互斥冲突要处理 |
+| 层级 | 支持多级 | 层级过深反而难扫读 |
+
+### 无障碍
+- 锚点链接可键盘聚焦；高亮项 `aria-current` 标注。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 锚点项高 | 28px | 紧凑 |
+| 指示条宽 | 2px | 当前项左侧 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 默认 | `--color-text-primary` |
+| 当前项 | `--color-primary-normal` + 左指示条 |
+| 分隔线 | `--color-border-base` |
+
+### 过渡
+指示条/颜色 `160ms var(--easing-standard)`；滚动平滑。
+
+### 使用的设计令牌
+`--color-primary-normal`（当前项/指示条）、`--color-border-base`（分隔线）、`--color-text-primary`（默认）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `items` | `AnchorItem[]` | `[]` | 锚点项 |
-| `offsetTop` | `number` | `0` | 距顶偏移 |
-| `bounds` | `number` | `5` | 判定边界 |
-| `onChange` | `(activeLink: string) => void` | `-` | 切换回调 |
+| `items` | `Array<{key, href, title}>` | `[]` | **antd 同名同值**：锚点项 |
+| `offsetTop` | `number` | `0` | **antd 同名同值**：偏移距离 |
+| `bounds` | `number` | `5` | **antd 同名同值**：判断范围 |
+| `onChange` | `(key) => void` | `-` | **antd 同名同值**：高亮变化 |
 
-### 设计令牌
+### 受控/非受控语义
+- 内部滚动监听维护高亮，`onChange` 返回当前 `key`（通知型）。
 
-使用的 CSS 变量：
-
-- `--color-primary-normal`
-- `--color-border-base`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-超过 4 屏长度的页面建议加锚点。
-
-### 交互 Skill
-
-【Anchor 交互 Skill】
-交互：
-- 点击：平滑滚动到目标 (scroll-behavior: smooth)，URL hash 更新
-- 激活（scroll spy）：距视口顶部 offsetTop 内的标题对应 Anchor item 高亮，color --color-primary-normal，left border 2px
-- hover: color --color-text-primary
-
-位置：固定在内容区右侧，position sticky top 80px，z-index 10。
-层级：只处理 H2/H3，H4 以下不进 Anchor。
-移动端：隐藏 Anchor，改为 ScrollTop 按钮。
-
+### 事件 / 键盘
+- 锚点链接可键盘触发；点击平滑滚动至目标。
 
 ---
 
 ## 代码示例
 
 ```html
-<Anchor items="[]" offsetTop="0" bounds="5" />
+<Anchor
+  offsetTop={64}
+  items={[
+    { key: 'base', href: '#base', title: '基础信息' },
+    { key: 'network', href: '#network', title: '网络配置' },
+    { key: 'event', href: '#event', title: '事件记录' }
+  ]}
+  onChange={setCurrent}
+/>
 ```
 
 ---
@@ -64,12 +109,5 @@
 ## 文件映射
 
 - Preview 文件：`anchor-preview.html`
-- 组件目录：`frontend/components/Anchor/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Anchor/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

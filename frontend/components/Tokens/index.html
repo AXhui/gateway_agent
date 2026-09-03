@@ -25,6 +25,39 @@
   --color-warm-bg:#FFF7F0;
   --color-remind-normal:#F7BA1E;
   --color-remind-bg:#FFFDEB;
+  /* 原始色阶（Light，来自 Figma 色卡） */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
   --color-text-primary:#272E3B;
   --color-text-secondary:#6B7785;
   --color-text-auxiliary:#A9AEB8;
@@ -64,6 +97,9 @@
   --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
   --radius-2:2px; --radius-4:4px; --radius-8:8px; --radius-12:12px; --radius-full:9999px;
   --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-2:0 2px 8px 0 rgba(0,0,0,0.10);
+  --shadow-3:0 8px 24px 0 rgba(0,0,0,0.14);
+  --shadow-4:0 16px 48px 0 rgba(0,0,0,0.18);
   --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
   --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
   --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
@@ -75,7 +111,7 @@
 body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
 button{font-family:inherit}
 .copy-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:var(--color-text-primary);color:#FFFFFF;
+  background:var(--color-text-primary);color:var(--color-text-constant-normal);
   padding:8px 14px;border-radius:var(--radius-4);font-size:13px;
   box-shadow:0 4px 16px rgba(0,0,0,0.2);opacity:0;transition:opacity 200ms;
   pointer-events:none;z-index:9999}
@@ -112,41 +148,37 @@ const copy = txt => {
 
 /* ------- Color palette ------- */
 const PALETTE = {
-  Brand: ['brand-50','brand-100','brand-200','brand-300','brand-400','brand-500','brand-600','brand-700','brand-800','brand-900'],
-  Blue: ['blue-50','blue-100','blue-200','blue-300','blue-400','blue-500','blue-600','blue-700','blue-800','blue-900'],
-  Green: ['green-50','green-100','green-200','green-300','green-400','green-500','green-600','green-700','green-800','green-900'],
-  Red: ['red-50','red-100','red-200','red-300','red-400','red-500','red-600','red-700','red-800','red-900'],
-  Orange: ['orange-50','orange-100','orange-200','orange-300','orange-400','orange-500','orange-600','orange-700','orange-800','orange-900'],
-  Yellow: ['yellow-50','yellow-100','yellow-200','yellow-300','yellow-400','yellow-500','yellow-600','yellow-700','yellow-800','yellow-900'],
-  Gray: ['gray-50','gray-100','gray-200','gray-300','gray-400','gray-500','gray-600','gray-700','gray-800','gray-900'],
+  Blue: ['blue-01','blue-02','blue-03','blue-04','blue-05','blue-06','blue-07','blue-08','blue-09','blue-10'],
+  Green: ['green-01','green-02','green-03','green-04','green-05','green-06','green-07','green-08','green-09','green-10'],
+  Red: ['red-01','red-02','red-03','red-04','red-05','red-06','red-07','red-08','red-09','red-10'],
+  Orange: ['orange-01','orange-02','orange-03','orange-04','orange-05','orange-06','orange-07','orange-08','orange-09','orange-10'],
+  Yellow: ['yellow-01','yellow-02','yellow-03','yellow-04','yellow-05','yellow-06','yellow-07','yellow-08','yellow-09','yellow-10'],
+  Gray: ['gray-01','gray-02','gray-03','gray-04','gray-05','gray-06','gray-07','gray-08','gray-09','gray-10'],
+  DarkBlue: ['darkblue-01','darkblue-02','darkblue-03','darkblue-04','darkblue-05','darkblue-06','darkblue-07','darkblue-08','darkblue-09','darkblue-10'],
+  Cyan: ['cyan-01','cyan-02','cyan-03','cyan-04','cyan-05','cyan-06','cyan-07','cyan-08','cyan-09','cyan-10'],
 };
 const HEX = {
-  'brand-50':'#f0f9ff','brand-100':'#C2E6CE','brand-200':'#8FD2A8','brand-300':'#5CBE82',
-  'brand-400':'#5eafff','brand-500':'#3491fa','brand-600':'#226fd4','brand-700':'#094F26',
-  'brand-800':'#06371A','brand-900':'#031E0E',
-  'blue-50':'#E6F0FF','blue-100':'#BFD7FF','blue-200':'#8FB8FF','blue-300':'#5E95FF',
-  'blue-400':'#2E72FF','blue-500':'#3491fa','blue-600':'#0E4E99','blue-700':'#0A3B73',
-  'blue-800':'#07284D','blue-900':'#041528',
-  'green-50':'#E8F7EE','green-100':'#C5EAD3','green-200':'#9BDAB4','green-300':'#6DC892',
-  'green-400':'#3FB56F','green-500':'#1eba62','green-600':'#188048','green-700':'#115E35',
-  'green-800':'#0B3C22','green-900':'#051A0F',
-  'red-50':'#FDECEC','red-100':'#F9C8C8','red-200':'#F39C9C','red-300':'#ED7070',
-  'red-400':'#E74444','red-500':'#f13535','red-600':'#AE2424','red-700':'#821B1B',
-  'red-800':'#571212','red-900':'#2B0909',
-  'orange-50':'#FFF3E6','orange-100':'#FFDCB3','orange-200':'#FFC080','orange-300':'#FFA44D',
-  'orange-400':'#FF881A','orange-500':'#f77234','orange-600':'#B35A08','orange-700':'#804106',
-  'orange-800':'#4D2704','orange-900':'#1A0D01',
-  'yellow-50':'#FFF9E6','yellow-100':'#FFEFB3','yellow-200':'#FFE480','yellow-300':'#FFD84D',
-  'yellow-400':'#FFCC1A','yellow-500':'#E6B400','yellow-600':'#B38D00','yellow-700':'#806600',
-  'yellow-800':'#4D3D00','yellow-900':'#1A1400',
-  'gray-50':'#f7f8fa','gray-100':'#f7f8fa','gray-200':'#e5e6eb','gray-300':'#C2C8D1',
-  'gray-400':'#c9cdd4','gray-500':'#a9aeb8','gray-600':'#4B5563','gray-700':'#6b7785',
-  'gray-800':'#1F2937','gray-900':'#272e3b',
+  'blue-01':'#f0f9ff','blue-02':'#d9f0ff','blue-03':'#b0ddff','blue-04':'#87c7ff','blue-05':'#5eafff',
+  'blue-06':'#3491fa','blue-07':'#226fd4','blue-08':'#1351ad','blue-09':'#083787','blue-10':'#052461',
+  'green-01':'#ebfaef','green-02':'#beedcc','green-03':'#90e0ab','green-04':'#66d48e','green-05':'#40c776',
+  'green-06':'#1eba62','green-07':'#10944e','green-08':'#076e3a','green-09':'#014726','green-10':'#002113',
+  'red-01':'#fff2f0','red-02':'#ffe0db','red-03':'#ffbab3','red-04':'#ff928a','red-05':'#ff6661',
+  'red-06':'#f13535','red-07':'#cc2328','red-08':'#a6141e','red-09':'#800915','red-10':'#590511',
+  'orange-01':'#fff7f0','orange-02':'#ffead9','orange-03':'#ffd1b0','orange-04':'#ffb587','orange-05':'#ff975e',
+  'orange-06':'#f77234','orange-07':'#d15321','orange-08':'#ab3913','orange-09':'#832308','orange-10':'#5e1505',
+  'yellow-01':'#fffdeb','yellow-02':'#fff6c2','yellow-03':'#ffec99','yellow-04':'#ffe070','yellow-05':'#ffd147',
+  'yellow-06':'#f7ba1e','yellow-07':'#d1940f','yellow-08':'#ab7003','yellow-09':'#855200','yellow-10':'#5e3700',
+  'gray-01':'#f7f8fa','gray-02':'#f2f3f5','gray-03':'#e5e6eb','gray-04':'#c9cdd4','gray-05':'#a9aeb8',
+  'gray-06':'#86909c','gray-07':'#6b7785','gray-08':'#4e5969','gray-09':'#272e3b','gray-10':'#1d2129',
+  'darkblue-01':'#e6f6ff','darkblue-02':'#b1d8f2','darkblue-03':'#83bbe6','darkblue-04':'#599dd9','darkblue-05':'#3380cc',
+  'darkblue-06':'#1261be','darkblue-07':'#064699','darkblue-08':'#002e73','darkblue-09':'#001c4d','darkblue-10':'#000d26',
+  'cyan-01':'#e6fffe','cyan-02':'#b8ffff','cyan-03':'#8ffbff','cyan-04':'#66f5ff','cyan-05':'#3ce7fa',
+  'cyan-06':'#12d1ee','cyan-07':'#06a7c7','cyan-08':'#0081a1','cyan-09':'#005e7a','cyan-10':'#003e54',
 };
 
 const Swatch = ({ name }) => {
   const hex = HEX[name];
-  const dark = parseInt(name.split('-')[1]) >= 400;
+  const dark = parseInt(name.split('-')[1]) >= 7;
   return h('div', {
     className:'swatch',
     onClick: () => copy(`var(--color-${name})`),
@@ -175,8 +207,7 @@ const SEMANTIC = [
   { name:'--color-success-normal',     hex:'#1eba62' },
   { name:'--color-error-normal',       hex:'#f13535' },
   { name:'--color-warm',        hex:'#f77234' },
-  { name:'--color-remind',      hex:'#E6B400' },
-  { name:'--color-primary-normal',        hex:'#3491fa' },
+  { name:'--color-remind',      hex:'#f7ba1e' },
   { name:'--color-text-primary',      hex:'#272e3b' },
   { name:'--color-text-secondary',    hex:'#6b7785' },
   { name:'--color-text-auxiliary',     hex:'#a9aeb8' },
@@ -184,10 +215,10 @@ const SEMANTIC = [
   { name:'--color-text-constant-normal',      hex:'#FFFFFF' },
   { name:'var(--color-bg-card)',           hex:'#FFFFFF' },
   { name:'--color-base-bg',         hex:'#f7f8fa' },
-  { name:'--color-base-hover',          hex:'#f7f8fa' },
+  { name:'--color-base-hover',          hex:'#f2f3f5' },
   { name:'--color-divider-base-1',     hex:'#f7f8fa' },
   { name:'--color-border-base',    hex:'#e5e6eb' },
-  { name:'--color-border-base-disable',     hex:'#C2C8D1' },
+  { name:'--color-border-base-disable',     hex:'#c9cdd4' },
 ];
 
 const SemanticTile = ({ token }) => h('div', {
@@ -254,7 +285,7 @@ const RadiusTile = ({ token, px }) => h('div', {
 
 /* ------- Shadow ------- */
 const SHADOW = [
-  '--shadow-0', '--shadow-1', '--shadow-2', '--shadow-3', '--shadow-4', '--shadow-diffusion-primary',
+  '--shadow-1', '--shadow-2', '--shadow-3', '--shadow-4', '--shadow-diffusion-primary',
 ];
 const ShadowTile = ({ token }) => h('div', {
   className:'swatch',
@@ -335,7 +366,7 @@ function App() {
     h('main', { style:{ maxWidth:1100, margin:'0 auto',
       padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
       display:'flex', flexDirection:'column', gap:'var(--spacing-40)' } },
-      h(Section, { id:'palette', title:'调色板', sub:'Brand · Blue · Green · Red · Orange · Yellow · Gray，每色 50–900 共 10 阶' },
+      h(Section, { id:'palette', title:'调色板', sub:'Blue · Green · Red · Orange · Yellow · Gray · DarkBlue · Cyan，每色 01–10 共 10 阶' },
         Object.entries(PALETTE).map(([k, names]) => h(PaletteRow, { key:k, title:k, names }))
       ),
       h(Section, { id:'semantic', title:'语义颜色', sub:'按用途映射的语义 token，业务代码优先使用这些值' },

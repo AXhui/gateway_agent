@@ -1,67 +1,115 @@
 # Tabs · 标签页
 
-> **分类**：导航  
+> **分类**：导航
 > **Figma**：1481-170977
+> **组件目录**：`frontend/components/Tabs/`
+> **版本**：v1.1.0（已对齐 antd `Tabs` `type` / `items` / `activeKey` / `centered` / `tabPosition` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-内容分组切换器，line / card / segment 三种风格。
+### 组件定位
+**内容分区切换组件**，在同一区域通过标签切换不同内容视图，用于详情页多维度信息、多视图切换。
+
+### 何时用
+- **同一内容区**切换不同视图（概览/日志/告警）。
+- 详情页**多维度信息**分块（基础信息/配置/事件）。
+- 需要**并行视图**但空间受限时。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 应用级页面导航 | `NavMenu` |
+| 流程步骤 | `Steps` |
+| 简单开关切换 | `Switch` / `Segmented` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `type="line"` | 下划线式 | 默认，最常用 |
+| `type="card"` | 卡片式 | 需要块状分区时 |
+| `tabPosition="left"` | 左侧竖排 | 标签多或名称长时 |
+| `centered` | 居中标签 | 标签少且居中更美观 |
+| 内容懒加载 | 首次切换才渲染 | 性能优化 |
+
+### 无障碍
+- `role="tablist"` / `role="tab"` / `role="tabpanel"` 语义。
+- 键盘左右键切换标签，`aria-selected` 标注选中态。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 标签高 | 40px | 标准 |
+| 标签间距 | 24px | line 型 |
+| 激活下划线 | 2px | line 型 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 背景 | `--color-bg-page` |
+| 默认标签 | `--color-text-primary` |
+| 选中标签 | `--color-primary-normal` |
+| 激活下划线 | `--color-primary-normal` |
+| 分隔线 | `--color-border-base` |
+
+### 过渡
+下划线/颜色 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-primary-normal`（选中/下划线）、`--color-border-base`（分隔线）、`--color-bg-page`（背景）、`--color-text-primary`（默认标签）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `type` | `'line' | 'card' | 'segment'` | `'line'` | 类型 |
-| `items` | `TabItem[]` | `[]` | 标签项 |
-| `activeKey` | `string` | `-` | 激活项 |
-| `centered` | `boolean` | `false` | 居中 |
-| `tabPosition` | `'top' | 'right' | 'bottom' | 'left'` | `'top'` | 位置 |
+| `type` | `'line' \| 'card' \| 'editable-card'` | `'line'` | **antd 同名同值**：类型 |
+| `items` | `Array<{key, label, children?}>` | `[]` | **antd 同名同值**：标签项 |
+| `activeKey` | `string` | `-` | **antd 同名同值**：选中标签 |
+| `defaultActiveKey` | `string` | `-` | **antd 同名同值**：默认选中 |
+| `centered` | `boolean` | `false` | **antd 同名同值**：居中 |
+| `tabPosition` | `'top' \| 'left' \| 'right' \| 'bottom'` | `'top'` | **antd 同名同值**：位置 |
+| `onChange` | `(key) => void` | `-` | **antd 同名同值**：切换回调 |
 
-### 设计令牌
+### 受控/非受控语义
+- `activeKey` + `onChange` 为**受控**；`defaultActiveKey` 为非受控初始值。
 
-使用的 CSS 变量：
-
-- `--color-primary-normal`
-- `--color-border-base`
-- `--color-bg-page`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-页面级用 line；卡片内分组用 segment。
-
-### 交互 Skill
-
-【Tabs 交互 Skill】
-type: line（默认，下划线）/ card（标签卡）/ segment（分段控制器，等宽）。
-
-交互：
-- 切换：Content 区 fade 200ms，不做 slide（避免跨屏跳动）
-- 激活态（line）：border-bottom 2px --color-primary-normal，color --color-primary-normal
-- hover（未激活）：color --color-text-primary
-- 可关闭（closable）：hover 显示 × icon，click 移除 tab + confirm 弹窗（如有未保存内容）
-- 超出宽度：左右箭头滚动，不换行
-
-Badge：未读消息在 tab label 右侧加 Badge count/dot。
-禁止超过 8 个 tab；超过用 DropdownMenu 折叠。
-
+### 事件 / 键盘
+- 键盘左右键切换标签；`onChange` 返回选中 `key`。
 
 ---
 
 ## 代码示例
 
 ```html
-<Tabs type="line" items="[]" activeKey="-" />
+<Tabs
+  activeKey={key}
+  onChange={setKey}
+  items={[
+    { key: 'overview', label: '概览', children: <Overview /> },
+    { key: 'log', label: '日志', children: <Log /> },
+    { key: 'alarm', label: '告警', children: <Alarm /> }
+  ]}
+/>
 ```
 
 ---
@@ -69,12 +117,5 @@ Badge：未读消息在 tab label 右侧加 Badge count/dot。
 ## 文件映射
 
 - Preview 文件：`tabs-preview.html`
-- 组件目录：`frontend/components/Tabs/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Tabs/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

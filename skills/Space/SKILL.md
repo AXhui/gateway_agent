@@ -1,65 +1,103 @@
 # Space · 间距
 
-> **分类**：布局  
+> **分类**：布局
 > **Figma**：-
+> **组件目录**：`frontend/components/Space/`
+> **版本**：v1.1.0（已对齐 antd `Space` `size` / `direction` / `wrap` / `split` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-行内/纵向元素间隔工具，自动处理 wrap 与 split。
+### 组件定位
+**行内元素间距容器**，统一一组相邻元素的水平/垂直间距，支持换行与分隔符，避免手工加 margin。
+
+### 何时用
+- 一组**行内元素**（按钮组、标签组、操作链接组）的间距。
+- 需要**统一间距**并可整体调整的场景。
+- 需要元素间**分隔符**（如面包屑、操作列 `|` 分隔）。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 多列布局 | `Grid` / `Flex` |
+| 上下堆叠区块 | `Flex` `vertical` 或块级 |
+| 列表项布局 | `List` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `size` | 间距（8/12/16） | 全站间距档位用 `--spacing-*` 对齐 |
+| `direction` | 水平/垂直 | 表单行内用 horizontal |
+| `wrap` | 空间不足换行 | 移动端务必开 wrap |
+| `split` | 元素间分隔符 | 分隔符要轻（竖线/逗号） |
+
+### 无障碍
+- 纯布局容器；分隔符 `aria-hidden="true"`，不干扰读屏。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| size | 8/12/16 | 对应 `--spacing-8/12/16` |
+| 默认 | 8px | 小间距 |
+| 垂直方向间距 | 同 size | 上下 |
+
+### 状态视觉矩阵
+无状态，纯布局。
+
+### 过渡
+无动画。
+
+### 使用的设计令牌
+`--spacing-8`、`--spacing-12`、`--spacing-16`（间距档位）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `size` | `'small' | 'middle' | 'large' | number` | `'small'` | 间距大小 |
-| `direction` | `'horizontal' | 'vertical'` | `'horizontal'` | 排列方向 |
-| `wrap` | `boolean` | `false` | 自动换行 |
-| `split` | `ReactNode` | `-` | 分隔节点 |
+| `size` | `number \| 'small' \| 'middle' \| 'large'` | `'small'` | **antd 同名同值**：间距 |
+| `direction` | `'horizontal' \| 'vertical'` | `'horizontal'` | **antd 同名同值**：方向 |
+| `wrap` | `boolean` | `false` | **antd 同名同值**：自动换行 |
+| `split` | `ReactNode` | `-` | **antd 同名同值**：分隔符 |
+| `children` | `ReactNode` | `-` | 内容 |
 
-### 设计令牌
+### 受控/非受控语义
+- 纯布局组件，无受控语义。
 
-使用的 CSS 变量：
-
-- `--spacing-8`
-- `--spacing-12`
-- `--spacing-16`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-按钮组优先使用 Space 而非手动 margin。
-
-### 交互 Skill
-
-【Space 交互 Skill】
-direction=horizontal（默认）/ vertical。
-size: small(8px) / middle(16px) / large(24px) 或自定义数字。
-
-使用场景：
-- 按钮组：Space size=8，wrap=false
-- 表单字段组：Space direction=vertical size=16
-- 标签组：Space size=4 wrap=true
-- 页头操作区：Space size=12
-
-禁止用 Space 模拟 Grid 布局；超过 3 列改用 Grid。wrap=true 时注意 align=start 避免拉伸。
-
+### 事件 / 键盘
+- 布局容器，无交互。
 
 ---
 
 ## 代码示例
 
 ```html
-<Space size="small" direction="horizontal" />
+<Space size="middle">
+  <Button>取消</Button>
+  <Button type="primary">确定</Button>
+</Space>
+<Space split={<Divider type="vertical" />}>
+  <a>编辑</a><a>删除</a><a>复制</a>
+</Space>
 ```
 
 ---
@@ -67,12 +105,5 @@ size: small(8px) / middle(16px) / large(24px) 或自定义数字。
 ## 文件映射
 
 - Preview 文件：`space-preview.html`
-- 组件目录：`frontend/components/Space/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Space/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

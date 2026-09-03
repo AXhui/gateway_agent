@@ -1,64 +1,102 @@
 # Image · 图片
 
-> **分类**：数据展示  
+> **分类**：数据展示
 > **Figma**：1491-53161
+> **组件目录**：`frontend/components/Image/`
+> **版本**：v1.1.0（已对齐 antd `Image` `src` / `preview` / `fallback` / `width` / `height` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-图片组件，含预览、缩放、回退、占位。
+### 组件定位
+**图片展示组件**，含预览、缩放、回退占位，用于产品图、截图、缩略图等场景。
+
+### 何时用
+- **产品图/截图**的展示与放大预览。
+- 需要**加载失败回退**的图片。
+- **多图预览组**（`Image.PreviewGroup`）。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 纯装饰背景图 | CSS `background-image` |
+| 头像 | `Avatar` |
+| 品牌标识 | `Logo` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `preview` | 可放大预览 | 必须设 `fallback` 兜底 |
+| `fallback` | 失败占位 | 失败态有明确占位图 |
+| 列表多图 | `Image.PreviewGroup` | 组内图片可连续预览 |
+
+### 无障碍
+- 图片有 `alt` 描述；预览浮层可键盘关闭（Esc）。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 默认宽 | 自适应 | 可 `width`/`height` 固定 |
+| 预览遮罩 | 全屏 | 深色遮罩 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 正常 | 原图 |
+| hover 预览 | 遮罩 `--color-bg-hover` |
+| 占位边框 | `--color-divider-base-1` |
+
+### 过渡
+预览淡入 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-divider-base-1`（占位边框）、`--color-bg-hover`（hover 遮罩）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `src` | `string` | `-` | 图片源 |
-| `preview` | `boolean | object` | `true` | 预览能力 |
-| `fallback` | `string` | `-` | 失败兜底 |
-| `width` | `number` | `-` | 宽度 |
-| `height` | `number` | `-` | 高度 |
+| `src` | `string` | `-` | **antd 同名同值**：图片源 |
+| `preview` | `boolean \| object` | `true` | **antd 同名同值**：预览能力 |
+| `fallback` | `string` | `-` | **antd 同名同值**：失败兜底 |
+| `width` | `number` | `-` | **antd 同名同值**：宽度 |
+| `height` | `number` | `-` | **antd 同名同值**：高度 |
 
-### 设计令牌
+### 受控/非受控语义
+- 纯展示组件；预览浮层内部维护显隐（非受控）。
 
-使用的 CSS 变量：
-
-- `--color-divider-base-1`
-- `--color-bg-hover`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-必须设置 fallback；列表图片用 Image.PreviewGroup。
-
-### 交互 Skill
-
-【Image 交互 Skill】
-交互：
-- preview=true（默认）：click 打开全屏预览 Modal，背景 rgba(0,0,0,0.85)
-- 预览内：← → 切换（PreviewGroup），滚轮缩放，拖拽移动，Esc/× 关闭
-- 加载中：Skeleton 占位，宽高同最终图片
-- 加载失败：fallback 图（broken image icon）
-
-PreviewGroup：多图共享预览上下文，左右箭头翻页，右上角显示 n/total。
-
-lazy loading：默认开启（intersection observer），viewport 外图片不加载。
-
+### 事件 / 键盘
+- 预览浮层 Esc 关闭；点击遮罩关闭。
 
 ---
 
 ## 代码示例
 
 ```html
-<Image src="-" preview="true" fallback="-" />
+<Image src={url} fallback={placeholder} width={200} />
+<Image.PreviewGroup>
+  <Image src={a} /><Image src={b} />
+</Image.PreviewGroup>
 ```
 
 ---
@@ -66,12 +104,5 @@ lazy loading：默认开启（intersection observer），viewport 外图片不�
 ## 文件映射
 
 - Preview 文件：`image-preview.html`
-- 组件目录：`frontend/components/Image/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Image/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

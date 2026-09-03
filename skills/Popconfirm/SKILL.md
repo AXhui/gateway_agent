@@ -1,71 +1,121 @@
 # Popconfirm · 气泡确认框
 
-> **分类**：反馈  
+> **分类**：反馈
 > **Figma**：1439-12926
+> **组件目录**：`frontend/components/Popconfirm/`
+> **版本**：v1.1.0（已对齐 antd `Popconfirm` `title` / `onConfirm` / `okText` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-轻量级二次确认，从触发元素弹出，不阻断主流程。
+### 组件定位
+**轻量级二次确认**，从触发元素旁弹出气泡，用于确认后执行的小范围操作。相比 Modal 更轻，不阻断整个页面，只围绕目标元素。
+
+### 何时用
+- **删除/不可逆操作**（删除记录、清空配置、移除成员）。
+- 单条记录的**轻量确认**，无需整页 Modal。
+- 操作结果影响**局部**、无需输入补充信息的场景。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 非破坏性操作（可直接执行） | 直接执行，无需确认 |
+| 需输入补充信息 | `Modal` |
+| 表单字段 >5 个 | `Drawer` |
+| 需结构化确认（多步骤） | `Modal` |
+| 批量操作确认 | `Modal` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `title` | 明确说明影响（「删除后不可恢复」） | 不要含糊的「确定？」 |
+| `onConfirm` | 执行操作 | 确认后要有结果反馈（Message） |
+| `okText` | 动词化（「删除」「移除」） | 不要默认「确定」掩盖破坏性 |
+| `placement` | 默认 `top`，避免遮挡目标 | 靠近边缘自动翻转 |
+| 危险确认 | 确认按钮 error 色 | 破坏操作必须标红 |
+
+### 无障碍
+- 气泡 `role="dialog"` 或 `role="tooltip"` + 触发元素 `aria-describedby`。
+- 触发元素可键盘聚焦，`Enter`/`Space` 打开气泡。
+- 打开后焦点移入气泡，`Esc` 关闭，关闭后焦点还原。
+- 确认/取消按钮语义清晰，读屏可感知确认文案。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 气泡宽 | 自适应（min 240px） | 标题 + 按钮 |
+| 内边距 | `12px 16px` | 气泡内容 |
+| 按钮尺寸 | 24px 高（small） | 确认/取消 |
+| 圆角 | `var(--radius-8)` | 气泡 |
+| 箭头 | 8px | 指向触发元素 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 气泡 | bg `var(--color-bg-card)` |
+| 标题 | `--color-text-primary` |
+| 确认按钮 | bg `--color-error-normal`（危险），hover `--color-error-hover` |
+| 取消按钮 | 边框 `var(--color-border-base)` |
+| 图标 | `--color-warm-normal`（警示） |
+| 投影 | `var(--shadow-1)` |
+
+### 过渡
+气泡展开淡入 + 位移 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-bg-card`（气泡底）、`--color-error-normal`/`--color-error-hover`（危险确认）、`--color-warm-normal`（警示图标）、`--color-text-primary`、`--color-border-base`（取消按钮）、`--shadow-1`、`--radius-8`、`--duration-fast`、`--easing-standard`。
+
+> **Token 修正**：旧版 Skill 引用非规范 `--color-warm-normaling`（警示图标，笔误）与 `--shadow-2`（气泡投影），已分别统一为 `--color-warm-normal` 与 `--shadow-1`。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `title` | `ReactNode` | `-` | 标题 |
-| `onConfirm` | `() => void` | `-` | 确认回调 |
-| `okText` | `string` | `'确定'` | 确认文案 |
-| `cancelText` | `string` | `'取消'` | 取消文案 |
-| `placement` | `12 种方位` | `'top'` | 位置 |
+| `title` | `ReactNode` | `-` | **antd 同名同义**：确认提示文案 |
+| `onConfirm` | `() => void` | `-` | **antd 同名同义**：确认回调 |
+| `onCancel` | `() => void` | `-` | **antd 同名同义**：取消回调 |
+| `okText` | `string` | `'确定'` | **antd 同名同值**：确认文案 |
+| `cancelText` | `string` | `'取消'` | **antd 同名同值**：取消文案 |
+| `placement` | `12 种方位` | `'top'` | **antd 同名同值**：气泡位置 |
+| `children` | `ReactNode` | `-` | 触发元素 |
 
-### 设计令牌
+### 受控/非受控语义
+- 气泡显隐由内部维护，点击触发元素展开；`onConfirm` 执行后关闭，`onCancel` 或点击外部关闭。
+- 可通过 `open` + `onOpenChange` 受控（对齐 antd）。
 
-使用的 CSS 变量：
-
-- `--color-warm-normaling`
-- `--shadow-2`
-- `var(--color-bg-card)`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-删除等不可逆操作必须使用；非破坏操作直接执行无需确认。
-
-### 交互 Skill
-
-【Popconfirm 交互 Skill】
-触发：click 触发元素（默认 click），展开 fade 200ms，placement bottomLeft。
-
-结构：问号 icon + 文字 + [取消][确认] 按钮。
-
-使用规则：
-- 危险操作必须用 Popconfirm（删除/重置/停用）
-- title 明确说明后果（"确认删除设备「xxx」？删除后不可恢复"）
-- onConfirm：执行操作，确认按钮 loading=true，完成后 message.success
-- onCancel：关闭面板，不执行任何操作
-
-样式：
-- 确认按钮：okButtonProps={{ danger:true }}，danger 红色
-- 取消按钮：default
-
-禁止：轻量操作不用 Popconfirm（Toggle Switch / 切换状态）；超过 2 个操作用 Modal。
-
+### 事件 / 键盘
+- 触发元素 `Enter`/`Space` 打开气泡；`Esc` 关闭。
+- 确认按钮 `Enter` 触发 `onConfirm`；`onConfirm` 支持异步（Promise 结束前按钮 loading）。
 
 ---
 
 ## 代码示例
 
 ```html
-<Popconfirm title="-" onConfirm="-" okText="确定" />
+<Popconfirm title="删除后不可恢复，确定删除？" okText="删除" onConfirm={handleDelete}>
+  <Button danger type="text">删除</Button>
+</Popconfirm>
+<Popconfirm title="移除该成员？" okText="移除" onConfirm={removeMember}>
+  <a>移除</a>
+</Popconfirm>
 ```
 
 ---
@@ -73,12 +123,5 @@
 ## 文件映射
 
 - Preview 文件：`popconfirm-preview.html`
-- 组件目录：`frontend/components/Popconfirm/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Popconfirm/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

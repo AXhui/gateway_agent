@@ -31,7 +31,14 @@ window.MS_ICONS = {
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V6M4 20h16"/><path d="m8 16 3.5-5 3 3L20 8"/></svg>',
   topology: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5 6.5 17M12 7.5 17.5 17M7.5 19h9"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m14 6 4 4"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>'
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+  chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>',
+  moreHoriz: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>',
+  data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
+  app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 6.5h.01M12 6.5h.01"/></svg>'
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -566,6 +573,74 @@ window.MS_BIZ_UTIL = (function () {
             <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 14)}新增${esc(e.cn)}</button>
           </div>
         </div></div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-sidenav', cn: '网关侧边导航', cat: '管理员',
+      desc: 'Milesight 网关管理后台侧边导航（Dashboard / Data Services / Network / Platform / System Setting / APP 完整子菜单 + Admin 账户下拉操作菜单，含 Language 二级语言子菜单），编排 L2 导航菜单 / 下拉菜单 / Logo / 头像 / 按钮基础组件；侧边栏宽度固定绑定 --sidebar-w（.ms-sidebar），不自行定义。',
+      atoms: ['nav-menu', 'dropdown-menu', 'logo', 'avatar', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['侧边栏', '导航', '菜单', '下拉菜单', '管理员', 'EG71', '网关', '后台'],
+      render(ctx) {
+        // 调用 nav-menu（mode=vertical）：items / selectedKeys / openKeys
+        const navItems = [
+          { label: 'Dashboard', icon: 'dashboard', selected: true },
+          { label: 'Data Services', icon: 'data', open: true, children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
+          { label: 'Network', icon: 'topology', open: true, children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
+          { label: 'Platform', icon: 'layers' },
+          { label: 'System Setting', icon: 'settings', open: true, children: [{ label: 'General', selected: true }, 'User', 'Server', 'Maintenance', 'Log', 'SNMP', 'Events'] },
+          { label: 'APP', icon: 'app', open: true, children: ['Python', 'Node-RED'] }
+        ];
+        const navItem = (it) => {
+          if (it.children) {
+            const subs = it.children.map((c) => {
+              const label = typeof c === 'string' ? c : c.label;
+              const selected = typeof c === 'object' && c.selected;
+              return `<div class="ms-nav-item bc-eg71-sub${selected ? ' ms-nav-item--active' : ''}"><span>${esc(label)}</span></div>`;
+            }).join('');
+            return `<div class="ms-nav-item bc-eg71-group${it.open ? ' is-open' : ''}">${ico(it.icon, 16)}<span>${esc(it.label)}</span><span class="bc-eg71-chevron">${ico('chevronDown', 14)}</span></div>${subs}`;
+          }
+          return `<div class="ms-nav-item${it.selected ? ' ms-nav-item--active' : ''}">${ico(it.icon, 16)}<span>${esc(it.label)}</span></div>`;
+        };
+        // 调用 dropdown-menu（trigger=click / placement=bottomRight）：items 含危险项与二级 Language 子菜单
+        const adminItems = [
+          { icon: 'user', label: 'Change Account Info' },
+          { label: 'Language', children: [{ icon: 'check', label: 'Chinese' }, { label: 'English' }] },
+          { type: 'divider' },
+          { label: 'Log out', danger: true }
+        ];
+        const dropdownItem = (it) => {
+          if (it.type === 'divider') return `<div class="ms-dropdown-sep"></div>`;
+          if (it.children) {
+            return `<div class="ms-dropdown-item bc-eg71-lang">
+              <span>${esc(it.label)}</span>
+              <span class="bc-eg71-chevron">${ico('chevronDown', 14)}</span>
+              <div class="ms-dropdown bc-eg71-lang-menu">
+                ${it.children.map((c) => `<div class="ms-dropdown-item">${c.icon ? ico(c.icon, 14) : ''}<span>${esc(c.label)}</span></div>`).join('')}
+              </div>
+            </div>`;
+          }
+          return `<div class="ms-dropdown-item${it.danger ? ' ms-dropdown-item--danger' : ''}">${it.icon ? ico(it.icon, 14) : ''}<span>${esc(it.label)}</span></div>`;
+        };
+        return `<aside class="ms-sidebar">
+          <div class="ms-sidebar-brand">
+            <span class="ms-logo ms-logo--dark"><span class="ms-logo-mark">M</span><span class="ms-logo-text">Milesight</span></span>
+            <button class="ms-btn ms-btn--xs bc-eg71-add" aria-label="新增">${ico('plus', 14)}</button>
+          </div>
+          <nav class="ms-sidebar-body"><div class="ms-nav">
+            ${navItems.map(navItem).join('')}
+          </div></nav>
+          <div class="ms-sidebar-foot">
+            <div class="bc-eg71-foot">
+              <span class="ms-avatar">${ico('user', 16)}</span>
+              <span class="bc-eg71-foot-name">Admin</span>
+              <button class="ms-btn ms-btn--xs ms-btn--text bc-eg71-more" aria-label="账户操作菜单">${ico('moreHoriz', 14)}</button>
+            </div>
+            <div class="ms-dropdown bc-eg71-admin-menu">
+              ${adminItems.map(dropdownItem).join('')}
+            </div>
+          </div>
+        </aside>`;
       }
     }
   ];

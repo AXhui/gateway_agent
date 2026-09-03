@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Milesight IOT Web — Input 输入框 v1.0.0</title>
+<title>Milesight IOT Web — Input 输入框 v1.1.0</title>
 <style>
 :root {
   --color-primary-normal:#3491FA;
@@ -25,6 +25,39 @@
   --color-warm-bg:#FFF7F0;
   --color-remind-normal:#F7BA1E;
   --color-remind-bg:#FFFDEB;
+  /* 原始色阶（Light，来自 Figma 色卡） */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
   --color-text-primary:#272E3B;
   --color-text-secondary:#6B7785;
   --color-text-auxiliary:#A9AEB8;
@@ -89,6 +122,7 @@ import React, { forwardRef } from 'react';
 import { createRoot } from 'react-dom/client';
 const h = React.createElement;
 
+const SIZE_ALIAS = { small:'sm', middle:'md', large:'lg' };
 const HEIGHT = { sm:24, md:32, lg:40 };
 const FONT = {
   sm:'400 12px/20px var(--font-sans)',
@@ -107,13 +141,29 @@ const ClearIcon = ({ onClick }) => h('span', {
   stroke:'currentColor', strokeWidth:3, strokeLinecap:'round', strokeLinejoin:'round' },
   h('path', { d:'M6 6l12 12M18 6L6 18' })));
 
+const EyeIcon = ({ off }) => h('svg', { width:16, height:16, viewBox:'0 0 24 24', fill:'none',
+  stroke:'currentColor', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true },
+  off
+    ? h('g', null,
+        h('path', { d:'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94' }),
+        h('path', { d:'M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19' }),
+        h('path', { d:'M1 1l22 22' }))
+    : h('g', null,
+        h('path', { d:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' }),
+        h('circle', { cx:12, cy:12, r:3 })));
+
 const Input = forwardRef(function Input(
-  { size='md', status='default', prefix, suffix, addonBefore, addonAfter,
-    allowClear, onClear, disabled, value, defaultValue, onChange, style, ...rest }, ref) {
+  { size='md', status='default', type='text', prefix, suffix, addonBefore, addonAfter,
+    allowClear, onClear, disabled, value, defaultValue, onChange, onPressEnter,
+    showCount, maxLength, style, ...rest }, ref) {
+  const sz = SIZE_ALIAS[size] || size;
   const [focus, setFocus] = React.useState(false);
   const [innerVal, setInnerVal] = React.useState(defaultValue ?? '');
+  const [visible, setVisible] = React.useState(false);
   const isControlled = value !== undefined;
   const v = isControlled ? value : innerVal;
+  const isPassword = type === 'password';
+  const inputType = isPassword ? (visible ? 'text' : 'password') : type;
 
   const borderColor =
     status === 'error' ? 'var(--color-error-normal)'
@@ -122,66 +172,108 @@ const Input = forwardRef(function Input(
 
   const wrapStyle = {
     display:'inline-flex', alignItems:'center', gap:'var(--spacing-8)',
-    height: HEIGHT[size], padding:'0 var(--spacing-12)',
+    height: HEIGHT[sz], padding:'0 var(--spacing-12)',
     background: disabled?'var(--color-bg-hover)':'var(--color-bg-card)',
     border: `1px solid ${borderColor}`,
     borderRadius: addonBefore || addonAfter ? 0 : 'var(--radius-4)',
     color: disabled?'var(--color-text-disable)':'var(--color-text-primary)',
     transition:'border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard)',
     boxShadow: focus
-      ? `0 0 0 2px ${status==='error'?'rgba(217,45,45,0.12)':'rgba(16,129,62,0.12)'}`
+      ? `0 0 0 2px ${status==='error'?'rgba(241,53,53,0.12)':'rgba(52,145,250,0.12)'}`
       : 'none',
     flex:1, minWidth:0,
   };
 
+  const setVal = next => { if (!isControlled) setInnerVal(next); };
+
   const inputEl = h('span', { style: wrapStyle },
     prefix && h('span', { style:{ display:'inline-flex', color:'var(--color-text-auxiliary)' } }, prefix),
     h('input', {
-      ref, disabled, value: v,
+      ref, disabled, value: v, type: inputType,
+      maxLength,
       onFocus: e => { setFocus(true); rest.onFocus?.(e); },
       onBlur: e => { setFocus(false); rest.onBlur?.(e); },
       onChange: e => {
-        if (!isControlled) setInnerVal(e.target.value);
+        setVal(e.target.value);
         onChange?.(e);
       },
+      onKeyDown: e => {
+        if (e.key === 'Enter') onPressEnter?.(e);
+        rest.onKeyDown?.(e);
+      },
       style:{ flex:1, minWidth:0, border:'none', outline:'none',
-        background:'transparent', color:'inherit', font: FONT[size],
+        background:'transparent', color:'inherit', font: FONT[sz],
         padding:0, ...style },
       ...rest,
     }),
     allowClear && v && !disabled && h(ClearIcon, {
       onClick: () => {
-        if (!isControlled) setInnerVal('');
+        setVal('');
         onClear?.();
         onChange?.({ target:{ value:'' } });
       }
     }),
+    isPassword && h('span', {
+      onClick: () => setVisible(o => !o),
+      style:{ display:'inline-flex', color:'var(--color-text-auxiliary)', cursor:'pointer', flex:'none' },
+      'aria-label': visible ? '隐藏密码' : '显示密码',
+    }, h(EyeIcon, { off: !visible })),
     suffix && h('span', { style:{ display:'inline-flex', color:'var(--color-text-auxiliary)' } }, suffix),
   );
 
-  if (!addonBefore && !addonAfter) return inputEl;
+  let node = inputEl;
+  if (addonBefore || addonAfter) {
+    const addonStyle = {
+      display:'inline-flex', alignItems:'center', height: HEIGHT[sz],
+      padding:'0 var(--spacing-12)',
+      background:'var(--color-bg-page)', color:'var(--color-text-secondary)',
+      border:'1px solid var(--color-border-base)', font: FONT[sz],
+    };
+    node = h('span', { style:{ display:'inline-flex', width:'100%' } },
+      addonBefore && h('span', { style:{ ...addonStyle, borderRight:'none',
+        borderTopLeftRadius:'var(--radius-4)', borderBottomLeftRadius:'var(--radius-4)' } }, addonBefore),
+      h('span', { style:{ flex:1, display:'inline-flex',
+        ...(addonBefore?{}:{ borderTopLeftRadius:'var(--radius-4)', borderBottomLeftRadius:'var(--radius-4)' }),
+        ...(addonAfter?{}:{ borderTopRightRadius:'var(--radius-4)', borderBottomRightRadius:'var(--radius-4)' }) } }, inputEl),
+      addonAfter && h('span', { style:{ ...addonStyle, borderLeft:'none',
+        borderTopRightRadius:'var(--radius-4)', borderBottomRightRadius:'var(--radius-4)' } }, addonAfter)
+    );
+  }
 
-  const addonStyle = {
-    display:'inline-flex', alignItems:'center', height: HEIGHT[size],
-    padding:'0 var(--spacing-12)',
-    background:'var(--color-bg-page)', color:'var(--color-text-secondary)',
-    border:'1px solid var(--color-border-base)', font: FONT[size],
-  };
+  if (showCount) {
+    const len = (v ?? '').length;
+    node = h('div', { style:{ display:'inline-flex', flexDirection:'column', gap:4 } },
+      node,
+      h('span', { style:{ font:'400 12px/1.5 var(--font-sans)', textAlign:'right',
+        color: maxLength && len > maxLength ? 'var(--color-error-normal)' : 'var(--color-text-auxiliary)' } },
+        `${len}/${maxLength ?? 0}`)
+    );
+  }
 
-  return h('span', { style:{ display:'inline-flex', width:'100%' } },
-    addonBefore && h('span', { style:{ ...addonStyle, borderRight:'none',
-      borderTopLeftRadius:'var(--radius-4)', borderBottomLeftRadius:'var(--radius-4)' } }, addonBefore),
-    h('span', { style:{ flex:1, display:'inline-flex',
-      ...(addonBefore?{}:{ borderTopLeftRadius:'var(--radius-4)', borderBottomLeftRadius:'var(--radius-4)' }),
-      ...(addonAfter?{}:{ borderTopRightRadius:'var(--radius-4)', borderBottomRightRadius:'var(--radius-4)' }) } }, inputEl),
-    addonAfter && h('span', { style:{ ...addonStyle, borderLeft:'none',
-      borderTopRightRadius:'var(--radius-4)', borderBottomRightRadius:'var(--radius-4)' } }, addonAfter)
-  );
+  return node;
 });
 
 const SearchIcon = () => h('svg', { width:14, height:14, viewBox:'0 0 24 24', fill:'none',
   stroke:'currentColor', strokeWidth:1.5, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true },
   h('circle', { cx:11, cy:11, r:7 }), h('path', { d:'M21 21l-4.3-4.3' }));
+
+const Search = ({ onSearch, defaultValue, placeholder='搜索', enterButton, ...rest }) => {
+  const [val, setVal] = React.useState(defaultValue ?? '');
+  const trigger = () => onSearch?.(val);
+  return h(Input, {
+    ...rest,
+    value: val,
+    onChange: e => setVal(e.target.value),
+    onPressEnter: trigger,
+    prefix: enterButton ? null : h(SearchIcon),
+    suffix: enterButton ? h('button', {
+      onClick: trigger,
+      style:{ height:24, padding:'0 12px', border:'none', borderRadius:'var(--radius-4)',
+        background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)',
+        cursor:'pointer', font:'400 12px/1.5 var(--font-sans)' }
+    }, '搜索') : null,
+  });
+};
 
 const Group = ({ title, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },
   h('h3', { style:{ margin:0, font:'500 16px/1.5 var(--font-sans)' } }, title),
@@ -194,7 +286,7 @@ function App() {
   return h('div', { style:{ minHeight:'100vh' } },
     h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
       h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Input 输入框'),
-      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.1.0')
     ),
     h('main', { style:{ maxWidth:720, margin:'0 auto',
       padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
@@ -203,6 +295,10 @@ function App() {
         h(Input, { size:'sm', placeholder:'小尺寸 24px' }),
         h(Input, { size:'md', placeholder:'默认 32px' }),
         h(Input, { size:'lg', placeholder:'大尺寸 40px' })),
+      h(Group, { title:'antd size 别名 — small · middle · large' },
+        h(Input, { size:'small', placeholder:'small → sm' }),
+        h(Input, { size:'middle', placeholder:'middle → md' }),
+        h(Input, { size:'large', placeholder:'large → lg' })),
       h(Group, { title:'状态' },
         h(Input, { placeholder:'默认' }),
         h(Input, { placeholder:'禁用', disabled:true }),
@@ -211,9 +307,17 @@ function App() {
         h(Input, { prefix: h(SearchIcon), placeholder:'搜索实例 ID' }),
         h(Input, { suffix: h('span', null, 'RMB'), placeholder:'0.00' }),
         h(Input, { allowClear:true, defaultValue:'可清除内容' })),
+      h(Group, { title:'密码切换 — type="password" + 眼睛图标' },
+        h(Input, { type:'password', placeholder:'请输入密码' }),
+        h(Input, { type:'password', defaultValue:'secret123', placeholder:'已有值' })),
+      h(Group, { title:'字数限制 — showCount + maxLength' },
+        h(Input, { showCount:true, maxLength:20, placeholder:'最多 20 字', defaultValue:'IOT 设备' })),
       h(Group, { title:'前后置标签 — addonBefore / addonAfter' },
         h(Input, { addonBefore:'https://', addonAfter:'.com', defaultValue:'uink' }),
-        h(Input, { addonBefore:'账号', placeholder:'请输入账号' }))
+        h(Input, { addonBefore:'账号', placeholder:'请输入账号' })),
+      h(Group, { title:'搜索框 — Input.Search' },
+        h(Search, { placeholder:'搜索实例 ID' }),
+        h(Search, { enterButton:true, placeholder:'输入关键字', onSearch:v => console.log('search:', v) }))
     )
   );
 }

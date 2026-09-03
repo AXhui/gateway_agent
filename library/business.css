@@ -93,3 +93,19 @@
   border-radius: var(--radius-full); background: var(--color-primary-bg); color: var(--color-primary-normal);
   font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
 }
+
+/* ---------- EG71 侧边导航 ---------- */
+/* 侧边栏宽度固定：由 .ms-sidebar 绑定 --sidebar-w（248px），此处不覆盖 */
+.bc-eg71-add { margin-left: auto; }
+.bc-eg71-sub { margin-left: var(--spacing-16); }
+.bc-eg71-chevron {
+  margin-left: auto; display: inline-flex; color: var(--color-text-auxiliary);
+  transition: transform var(--duration-normal) var(--ease);
+}
+.bc-eg71-group.is-open .bc-eg71-chevron { transform: rotate(180deg); }
+.bc-eg71-foot { display: flex; align-items: center; gap: var(--spacing-8); position: relative; }
+.bc-eg71-foot-name { flex: 1; min-width: 0; font-weight: 500; color: var(--color-text-constant-normal); }
+.bc-eg71-more { flex: none; }
+.bc-eg71-admin-menu { position: absolute; right: 0; bottom: calc(100% + var(--spacing-8)); }
+.bc-eg71-lang { position: relative; }
+.bc-eg71-lang-menu { position: absolute; right: calc(100% + var(--spacing-4)); top: 0; }

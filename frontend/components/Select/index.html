@@ -25,6 +25,39 @@
   --color-warm-bg:#FFF7F0;
   --color-remind-normal:#F7BA1E;
   --color-remind-bg:#FFFDEB;
+  /* 原始色阶（Light，来自 Figma 色卡） */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
   --color-text-primary:#272E3B;
   --color-text-secondary:#6B7785;
   --color-text-auxiliary:#A9AEB8;
@@ -107,13 +140,19 @@ const TagX = ({ onClick }) => h('svg', { onClick, width:10, height:10, viewBox:'
   style:{ cursor:'pointer', flex:'none' } }, h('path', { d:'M6 6l12 12M18 6L6 18' }));
 
 const Select = ({ options, value, defaultValue, placeholder='请选择',
-  size='md', status='default', multiple, showSearch, allowClear, disabled, onChange, style, className }) => {
-  const [inner, setInner] = useState(defaultValue ?? (multiple ? [] : undefined));
-  const [open, setOpen] = useState(false);
+  size='md', status='default', mode, multiple, tags, showSearch, allowClear,
+  open: openProp, defaultOpen, disabled, onOpenChange, onChange, style, className }) => {
+  const isMultiple = mode === 'multiple' || mode === 'tags' || multiple || tags;
+  const [inner, setInner] = useState(defaultValue ?? (isMultiple ? [] : undefined));
+  const [innerOpen, setInnerOpen] = useState(!!defaultOpen);
   const [query, setQuery] = useState('');
+  const [hi, setHi] = useState(-1);
   const isControlled = value !== undefined;
   const v = isControlled ? value : inner;
   const ref = useRef(null);
+
+  const open = openProp !== undefined ? openProp : innerOpen;
+  const setOpen = o => { if (openProp === undefined) setInnerOpen(o); onOpenChange?.(o); };
 
   useEffect(() => {
     const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -122,20 +161,50 @@ const Select = ({ options, value, defaultValue, placeholder='请选择',
   }, []);
 
   const set = val => { if (!isControlled) setInner(val); onChange?.(val); };
-  const selectedArr = multiple ? (v ?? []) : (v ? [v] : []);
+  const selectedArr = isMultiple ? (v ?? []) : (v ? [v] : []);
+  const hasValue = isMultiple ? selectedArr.length > 0 : v !== undefined && v !== null;
   const filtered = showSearch && query
     ? options.filter(o => String(o.label).toLowerCase().includes(query.toLowerCase()))
     : options;
+
+  const pickOption = o => {
+    if (o.disabled) return;
+    if (isMultiple) {
+      const next = selectedArr.includes(o.value)
+        ? selectedArr.filter(x => x !== o.value)
+        : [...selectedArr, o.value];
+      set(next);
+      setHi(-1);
+    } else { set(o.value); setOpen(false); }
+  };
 
   const borderColor = status==='error' ? 'var(--color-error-normal)'
     : open ? 'var(--color-primary-normal)' : 'var(--color-border-base)';
 
   return h('div', { ref, className, style:{ position:'relative', display:'inline-block', minWidth:160, ...style } },
     h('div', {
+      className,
+      tabIndex: disabled ? undefined : 0,
+      role: 'combobox',
+      'aria-expanded': open,
+      'aria-haspopup': 'listbox',
       onClick: () => !disabled && setOpen(o => !o),
+      onKeyDown: e => {
+        if (disabled) return;
+        if (!open && (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ')) { e.preventDefault(); setOpen(true); return; }
+        if (!open) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); setHi(i => (i + 1) % Math.max(filtered.length, 1)); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(i => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1)); }
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          const o = filtered[hi];
+          if (o) pickOption(o);
+        }
+        else if (e.key === 'Escape') { setOpen(false); }
+      },
       style:{
         minHeight: HEIGHT[size],
-        padding: multiple ? '2px 28px 2px 8px' : `0 28px 0 var(--spacing-12)`,
+        padding: isMultiple ? '2px 28px 2px 8px' : `0 28px 0 var(--spacing-12)`,
         background: disabled?'var(--color-bg-hover)':'var(--color-bg-card)',
         border:`1px solid ${borderColor}`,
         borderRadius:'var(--radius-4)',
@@ -144,13 +213,13 @@ const Select = ({ options, value, defaultValue, placeholder='请选择',
         cursor: disabled?'not-allowed':'pointer',
         display:'flex', alignItems:'center', flexWrap:'wrap', gap:4,
         boxShadow: open
-          ? `0 0 0 2px ${status==='error'?'rgba(217,45,45,0.12)':'rgba(16,129,62,0.12)'}`
+          ? `0 0 0 2px ${status==='error'?'rgba(241,53,53,0.12)':'rgba(52,145,250,0.12)'}`
           : 'none',
         transition:'border-color var(--duration-fast), box-shadow var(--duration-fast)',
-        position:'relative',
+        position:'relative', outline:'none',
       }
     },
-      multiple && selectedArr.length > 0
+      isMultiple && selectedArr.length > 0
         ? selectedArr.map(val => {
             const opt = options.find(o => o.value === val);
             return h('span', { key:val, style:{
@@ -166,6 +235,12 @@ const Select = ({ options, value, defaultValue, placeholder='请选择',
         : selectedArr.length === 0
           ? h('span', { style:{ color:'var(--color-text-auxiliary)' } }, placeholder)
           : h('span', null, options.find(o => o.value === selectedArr[0])?.label ?? selectedArr[0]),
+      allowClear && hasValue && !disabled && h('svg', {
+        width:12, height:12, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor',
+        strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round',
+        onClick: e => { e.stopPropagation(); set(isMultiple ? [] : undefined); },
+        style:{ position:'absolute', right:24, top:'50%', transform:'translateY(-50%)', color:'var(--color-text-auxiliary)', cursor:'pointer', flex:'none' },
+      }, h('path', { d:'M6 6l12 12M18 6L6 18' })),
       h('span', { style:{
         position:'absolute', right:8, top:'50%', transform:'translateY(-50%)',
         display:'inline-flex', color:'var(--color-text-auxiliary)',
@@ -184,24 +259,19 @@ const Select = ({ options, value, defaultValue, placeholder='请选择',
           font: FONT.sm, outline:'none' }
       }),
       filtered.length === 0 && h('div', { style:{ padding:12, color:'var(--color-text-auxiliary)', textAlign:'center' } }, '无数据'),
-      filtered.map(o => {
+      filtered.map((o, idx) => {
         const active = selectedArr.includes(o.value);
+        const highlighted = idx === hi;
         return h('div', {
           key:o.value,
-          onClick: () => {
-            if (o.disabled) return;
-            if (multiple) {
-              const next = active ? selectedArr.filter(x => x !== o.value) : [...selectedArr, o.value];
-              set(next);
-            } else { set(o.value); setOpen(false); }
-          },
-          onMouseEnter: e => !o.disabled && !active && (e.currentTarget.style.background='var(--color-bg-page)'),
-          onMouseLeave: e => !active && (e.currentTarget.style.background='transparent'),
+          onClick: () => pickOption(o),
+          onMouseEnter: e => { setHi(idx); !o.disabled && !active && (e.currentTarget.style.background='var(--color-bg-page)'); },
+          onMouseLeave: e => { !active && (e.currentTarget.style.background='transparent'); },
           style:{
             padding:'6px 12px', borderRadius:'var(--radius-4)',
             cursor: o.disabled?'not-allowed':'pointer', font: FONT[size],
             color: o.disabled?'var(--color-text-disable)':active?'var(--color-primary-normal)':'var(--color-text-primary)',
-            background: active?'rgba(16,129,62,0.08)':'transparent',
+            background: active ? 'var(--color-primary-bg)' : (highlighted ? 'var(--color-bg-page)' : 'transparent'),
             display:'flex', alignItems:'center', justifyContent:'space-between',
           }
         },
@@ -248,9 +318,13 @@ function App() {
         h(Select, { options:regions, defaultValue:'cn-east-1', status:'error', style:{ minWidth:240 } }),
         h(Select, { options:regions, placeholder:'禁用', disabled:true, style:{ minWidth:240 } })),
       h(Group, { title:'可搜索' },
-        h(Select, { showSearch:true, options:regions, placeholder:'搜索区域', style:{ minWidth:280 } })),
+        h(Select, { showSearch:true, options:regions, placeholder:'搜索区域', style:{ minWidth:280 } }),
+        h(Select, { showSearch:true, allowClear:true, options:regions, placeholder:'可搜索 + 可清空', style:{ minWidth:280 } })),
       h(Group, { title:'多选' },
-        h(Select, { multiple:true, options:regions, defaultValue:['cn-east-1','cn-north-2'], style:{ minWidth:320 } }))
+        h(Select, { multiple:true, options:regions, defaultValue:['cn-east-1','cn-north-2'], style:{ minWidth:320 } }),
+        h(Select, { mode:'multiple', allowClear:true, options:regions, defaultValue:['ap-sg-1'], placeholder:'antd mode 多选', style:{ minWidth:320 } })),
+      h(Group, { title:'antd 受控 open / onOpenChange' },
+        h(Select, { defaultOpen:true, options:regions, defaultValue:'cn-east-1', onOpenChange:o => console.log('open:', o), style:{ minWidth:240 } }))
     )
   );
 }

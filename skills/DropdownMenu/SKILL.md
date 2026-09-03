@@ -1,79 +1,118 @@
 # DropdownMenu · 下拉菜单
 
-> **分类**：导航  
+> **分类**：导航
 > **Figma**：-
+> **组件目录**：`frontend/components/DropdownMenu/`
+> **版本**：v1.1.0（已对齐 antd `Dropdown` `trigger` / `items` / `placement` / `disabled` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-操作收纳菜单，支持 hover / click / contextMenu 三种触发。
+### 组件定位
+**下拉菜单组件**，将一组操作收纳进悬浮面板，点击触发器展开，用于操作菜单、更多操作、右键菜单。
+
+### 何时用
+- **表格/列表操作列**的「更多」下拉。
+- 收纳**次要操作**，避免操作按钮堆叠。
+- **右键菜单**、筛选器、排序器。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 应用主导航 | `NavMenu` |
+| 级联选项选择 | `Cascader` / `Select` |
+| 快速切换标签 | `Tabs` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| `trigger="hover"` | 悬浮展开 | 移动端用 click |
+| `trigger="click"` | 点击展开 | 桌面端「更多」用 click |
+| 危险操作 | 红色项 | 危险操作放最后并标红 |
+| 菜单项 | 图 + 文 | 图标统一 16px |
+
+### 无障碍
+- `role="menu"` / `role="menuitem"`；键盘上下导航、Enter 触发、Esc 关闭。
+- 触发器 `aria-haspopup="true"`、`aria-expanded` 标注展开态。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 面板宽 | 160px 起 | 随内容 |
+| 菜单项高 | 32px | 紧凑 |
+
+### 状态视觉矩阵
+| 状态 | 表现 |
+|------|------|
+| 面板背景 | `--color-bg-card` |
+| 面板阴影 | `--shadow-1` |
+| 菜单项 hover/选中 | 背景 `--color-primary-bg` |
+| 危险项 | `--color-error-normal` |
+
+### 过渡
+面板展开 `160ms var(--easing-standard)` 缩放淡入。
+
+### 使用的设计令牌
+`--color-bg-card`（面板）、`--shadow-1`（阴影）、`--color-primary-bg`（hover/选中背景）、`--color-error-normal`（危险项）。
+
+> **Token 修正**：`--shadow-2` → `--shadow-1`（面板阴影统一用标准一级阴影）；`--color-brand-50` → `--color-primary-bg`（hover/选中背景统一用主色淡背景 token）。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `trigger` | `('hover' | 'click' | 'contextMenu')[]` | `['hover']` | 触发方式 |
-| `items` | `MenuItem[]` | `[]` | 菜单项 |
-| `placement` | `'bottom' | 'bottomLeft' | 'bottomRight'` | `'bottomLeft'` | 弹出位置 |
-| `disabled` | `boolean` | `false` | 禁用 |
+| `trigger` | `'click' \| 'hover' \| 'contextMenu'` | `'click'` | **antd 同名同值**：触发方式 |
+| `items` | `Array<MenuItem>` | `[]` | **antd 同名同值**（menu）：菜单项 |
+| `placement` | `'bottomLeft' \| 'bottomRight' \| ...` | `'bottomLeft'` | **antd 同名同值**：弹出位置 |
+| `disabled` | `boolean` | `false` | **antd 同名同值**：禁用 |
+| `onOpenChange` | `(open) => void` | `-` | **antd 同名同值**：展开变化 |
+| `children` | `ReactNode` | `-` | 触发器 |
 
-### 设计令牌
+### 受控/非受控语义
+- `open`（可选）+ `onOpenChange` 为**受控**；缺省时内部维护非受控展开态。
 
-使用的 CSS 变量：
-
-- `var(--color-bg-card)`
-- `--shadow-2`
-- `--color-brand-50`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-操作 ≤2 个直接展示；3-5 个用 Dropdown 收纳。
-
-### 交互 Skill
-
-【DropdownMenu 交互 Skill】
-trigger: click（默认，移动端友好）/ hover（桌面快捷）/ contextMenu（右键菜单）。
-
-交互：
-- 展开：fade + scale(0.95→1) from 触发点，200ms
-- 菜单项 hover: bg --color-bg-page
-- 危险操作项：color --color-error-normal，点击后 Popconfirm 确认
-- disabled 项：opacity 0.4，cursor not-allowed，不响应 click
-- 键盘：↑↓ 导航，Enter 确认，Esc 关闭
-
-placement: bottomLeft（默认）/ bottomRight / topLeft / topRight，根据边界自动翻转。
-层级：z-index 1050（高于 Modal 1000 不超过 Toast 9999）。
-
+### 事件 / 键盘
+- 键盘上下导航、Enter 触发、Esc 关闭；点击外部关闭。
 
 ---
 
 ## 代码示例
 
 ```html
-<DropdownMenu trigger="['hover']" items="[]" placement="bottomLeft" />
+<DropdownMenu
+  trigger="click"
+  items={[
+    { key: 'edit', label: '编辑' },
+    { key: 'delete', label: '删除', danger: true }
+  ]}
+  onClick={({key}) => handle(key)}
+>
+  <Button icon={<Icon name="more" />}>更多</Button>
+</DropdownMenu>
 ```
 
 ---
 
 ## 文件映射
 
-- Preview 文件：`dropdown-menu-preview.html`
-- 组件目录：`frontend/components/DropdownMenu/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- Preview 文件：`dropdownmenu-preview.html`
+- 组件目录：`frontend/components/DropdownMenu/index.html`
+- 令牌文件：`frontend/shared/tokens.css`

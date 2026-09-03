@@ -1,65 +1,107 @@
 # Avatar · 头像
 
-> **分类**：数据展示  
+> **分类**：数据展示
 > **Figma**：1496-37413
+> **组件目录**：`frontend/components/Avatar/`
+> **版本**：v1.1.0（已对齐 antd `Avatar` `src` / `size` / `shape` / `icon` / `Avatar.Group` API，统一 token）
 
 ---
 
-## 概述
+## 一、产品层（何时用 / 何时不用）
 
-用户/对象的视觉标识，支持图片、文字、图标、组合。
+### 组件定位
+**用户/对象的视觉标识**，支持图片、文字（首字符）、图标三种形态，并支持组合展示。
+
+### 何时用
+- 用户**头像/昵称首字符**展示。
+- 列表、评论、通知中的**对象标识**。
+- 多人**组合头像**（重叠展示）。
+
+### 何时不用（改用其他组件）
+| 场景 | 改用 |
+|------|------|
+| 品牌/LOGO | `Logo` |
+| 状态标识 | `Badge` / `Tag` |
+| 功能性图标 | `Icon` |
+
+### 变体选择建议（Do / Don't）
+| 形态 | 用法 | 禁忌 |
+|------|------|------|
+| 图片 `src` | 有头像图时 | 加载失败要 fallback 到首字符 |
+| 文字首字符 | 无图时 | 取姓名首字符，不要全名 |
+| 图标 `icon` | 系统/对象 | 图标语义明确 |
+| `Avatar.Group` | 多人重叠 | 重叠数量有上限（默认 +N） |
+
+### 无障碍
+- 纯装饰头像 `aria-hidden="true"`；承载身份信息时用 `alt`/`aria-label`。
 
 ---
 
-## 用法
+## 二、UED 层（视觉规格 / 统一 Token）
 
-### Props
+### 尺寸矩阵
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| default | 32×32 | 默认 |
+| small | 24×24 | 小 |
+| large | 40×40 | 大 |
+| number | 自定义 | 精确控制 |
+
+### 状态视觉矩阵
+| 形态 | 表现 |
+|------|------|
+| 文字头像背景 | `--color-bg-hover` |
+| 文字头像文字 | `--color-primary-normal` |
+| 组合重叠边框 | `--color-bg-card` |
+
+### 过渡
+组合头像 hover 上浮 `160ms var(--easing-standard)`。
+
+### 使用的设计令牌
+`--color-bg-hover`（文字头像背景）、`--color-primary-normal`（文字）、`--color-bg-card`（组合边框）。
+
+> **Token 修正**：无。旧版 Skill 已符合规范。
+
+---
+
+## 三、研发层（代码架构 / Props 契约）
+
+### 导入方式
+组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+
+```html
+<script type="importmap">
+{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
+</script>
+```
+
+### Props 契约（含 antd 别名）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `src` | `string` | `-` | 图片地址 |
-| `size` | `'large' | 'small' | 'default' | number` | `'default'` | 尺寸 |
-| `shape` | `'circle' | 'square'` | `'circle'` | 形状 |
-| `icon` | `ReactNode` | `-` | 图标 |
-| `group` | `boolean` | `false` | 组合模式 |
+| `src` | `string` | `-` | **antd 同名同值**：图片地址 |
+| `size` | `'large' \| 'small' \| 'default' \| number` | `'default'` | **antd 同名同值**：尺寸 |
+| `shape` | `'circle' \| 'square'` | `'circle'` | **antd 同名同值**：形状 |
+| `icon` | `ReactNode` | `-` | **antd 同名同值**：图标 |
+| `group` | `boolean` | `false` | **antd 别名**（对应 `Avatar.Group`）：组合模式 |
 
-### 设计令牌
+### 受控/非受控语义
+- 纯展示组件，无受控语义。
 
-使用的 CSS 变量：
-
-- `--color-bg-hover`
-- `--color-primary-normal`
-
-
----
-
-## 交互规则
-
-### 设计指引
-
-无图时显示姓名首字符；多用户使用 Avatar.Group 重叠。
-
-### 交互 Skill
-
-【Avatar 交互 Skill】
-尺寸：xs=24 / sm=32 / md=40（默认）/ lg=48 / xl=64，shape=circle/square。
-
-Fallback 顺序：图片 → src 加载失败显示 alt 首字符 → 显示 UserIcon。
-
-交互：
-- 可点击（如进入个人页）：hover 添加 overlay rgba(0,0,0,0.15)，cursor pointer
-- Avatar.Group：超出 maxCount 显示 "+N" 气泡，hover 展开 Tooltip 列表
-
-Badge 组合：在线状态用 Badge status=processing（绿色脉冲点）叠加在右下角。
-图片失败：onError 回调切换为文字/图标模式。
-
+### 事件 / 键盘
+- 无交互；承载身份时可作为链接聚焦。
 
 ---
 
 ## 代码示例
 
 ```html
-<Avatar src="-" size="default" shape="circle" />
+<Avatar src={user.avatar} />
+<Avatar>{user.name[0]}</Avatar>
+<Avatar icon={<Icon name="user" />} />
+<Avatar.Group maxCount={3}>
+  <Avatar src={a} /><Avatar src={b} /><Avatar src={c} />
+</Avatar.Group>
 ```
 
 ---
@@ -67,12 +109,5 @@ Badge 组合：在线状态用 Badge status=processing（绿色脉冲点）叠�
 ## 文件映射
 
 - Preview 文件：`avatar-preview.html`
-- 组件目录：`frontend/components/Avatar/`
-
----
-
-## 注意事项
-
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `frontend/shared/tokens.css`
-2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
-3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
+- 组件目录：`frontend/components/Avatar/index.html`
+- 令牌文件：`frontend/shared/tokens.css`
