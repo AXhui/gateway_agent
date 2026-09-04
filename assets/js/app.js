@@ -99,7 +99,7 @@
     if (type === 'tokens') {
       const css = MS_CSS.tokens;
       const defs = (css.match(/--[a-z0-9-]+\s*:/g) || []).length;
-      html = `<div class="wb-asset-title">设计令牌层<span class="wb-asset-en">library/tokens.css</span></div>
+      html = `<div class="wb-asset-title">设计令牌层<span class="wb-asset-en">req2demo/00_skills/Tokens/tokens.css</span></div>
         <div class="wb-asset-desc">从线上组件文档原样抽取的唯一真源。所有组件层与业务层只允许引用这里的令牌，禁止裸值 —— 这是还原度可校验的前提。</div>
         <dl class="wb-kv">
           <dt>令牌定义</dt><dd>${defs} 条</dd>

@@ -5,6 +5,20 @@
 
 ---
 
+## 〇、需求背景与文档目标
+
+**总目标**：把线上平台**已有的组件**沉淀为一套**组件 Skill**，供不同平台（工作台 / 飞书 / 各 Agent）统一调用，从而"一句话"装配出与线上版本**还原度 100%** 的业务页面。
+
+**组件搭建规则（三层递进）**：
+
+1. **基础组件 Skill**（L1 令牌 + L2 原子）—— 从线上组件文档原样抽取，只引用令牌、不写裸值，这是还原度可计算的前提；
+2. **业务组件封装**（L3）—— 声明 `atoms` 依赖序列 + `render` 骨架，调用基础组件拼出业务块，零新增样式；
+3. **Demo 拼装成页面**（L4 模块 + L5 模板）—— 按一句话识别出的形态与动作，把业务组件有序装配成完整页面。
+
+> 本文件后续一切内容 —— 五层架构、两种生成模式、还原度算法、目录结构 —— 都围绕这一总目标与搭建规则展开，不作它途。
+
+---
+
 ## 一、要解决的问题
 
 产品线上的真实页面和 AI 生成的"演示稿"之间，长期存在一道还原度鸿沟：
@@ -98,9 +112,22 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 ├── index.html                 工作台（三栏：资产库 / 预览 / 推理链·还原度·代码）
 ├── README.md
 ├── library/                   ← 样式真源（改这里）
-│   ├── tokens.css                L1 令牌，从线上文档原样抽取
 │   ├── base.css                  L2 基础组件
 │   └── business.css              L3 业务组件（只做布局编排）
+├── req2demo/                   ← agent 能力根目录（首查 _index.json）
+│   ├── _index.json                全局注册表：S_* 组件 / B_* 业务 / 知识 / 命名规范
+│   ├── README.md                  五层含义 + 命名规范 + 使用入口
+│   ├── 00_skills/                 L0 源头 · 唯一真源 · 只读
+│   │   ├── Tokens/
+│   │   │   ├── SKILL.md              L1 令牌交互 skill
+│   │   │   ├── tokens.css            L1 令牌唯一真源，从线上文档原样抽取
+│   │   │   └── tokens-preview.html   L1 令牌预览页
+│   │   └── src_components/         62 个基础组件 Skill（Button/ Input/ ...）
+│   ├── 01_biz_skills/             L1 业务 · 仅封装 00（B_{业务域}_{组件} 约定）
+│   ├── 02_knowledge/              L2 知识 · 需求→组件映射（K_mapping / K_patterns / K_validation）
+│   ├── 03_requirements/           L3 输入 · 产品需求文档（R_* 命名）
+│   ├── 04_pages/                  L4 输出 · 页面 demo（REQ-* / P_* 约定）
+│   └── 05_release/                L5 交付 · 打包 + 校验报告
 ├── assets/
 │   ├── css/workbench.css         工作台外壳样式（与产物视觉刻意区分）
 │   └── js/
@@ -116,7 +143,7 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 │       ├── engine-validator.js    引擎④ 还原度校验
 │       ├── engine-learner.js      引擎⑤ 新业务组件学习生成
 │       └── app.js                 界面装配
-├── tools/build-css-bundle.py   把 library/*.css 打包成 JS 常量
+├── tools/build-css-bundle.py   把 req2demo/00_skills/Tokens/tokens.css + library/*.css 打包成 JS 常量
 └── output/                     导出的 demo 落盘位置
 ```
 
@@ -129,7 +156,7 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 修改样式后的流程：
 
 ```bash
-python3 tools/build-css-bundle.py   # library/*.css → assets/js/library-css.js
+python3 tools/build-css-bundle.py   # req2demo/00_skills/Tokens/tokens.css + library/*.css → assets/js/library-css.js
 # 然后刷新页面
 ```
 

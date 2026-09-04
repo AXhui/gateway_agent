@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Milesight IOT Web — Design Tokens v1.0.0</title>
+<link rel="stylesheet" href="tokens.css" />
+<style>
+*{box-sizing:border-box}html,body,#root{margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);background:var(--color-base-bg)}
+button{font-family:inherit}
+.copy-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--color-text-primary);color:var(--color-text-constant-normal);
+  padding:8px 14px;border-radius:var(--radius-4);font-size:13px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);opacity:0;transition:opacity 200ms;
+  pointer-events:none;z-index:9999}
+.copy-toast.show{opacity:1}
+.swatch{cursor:pointer;transition:transform 120ms}
+.swatch:hover{transform:translateY(-2px)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast" class="copy-toast"></div>
+<script type="importmap">
+{ "imports": {
+  "react":"https://esm.sh/react@18.3.1",
+  "react-dom/client":"https://esm.sh/react-dom@18.3.1/client"
+} }
+</script>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+const h = React.createElement;
+
+const toast = msg => {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+};
+const copy = txt => {
+  navigator.clipboard?.writeText(txt);
+  toast(`已复制：${txt}`);
+};
+
+/* ------- Color palette ------- */
+const PALETTE = {
+  Blue: ['blue-01','blue-02','blue-03','blue-04','blue-05','blue-06','blue-07','blue-08','blue-09','blue-10'],
+  Green: ['green-01','green-02','green-03','green-04','green-05','green-06','green-07','green-08','green-09','green-10'],
+  Red: ['red-01','red-02','red-03','red-04','red-05','red-06','red-07','red-08','red-09','red-10'],
+  Orange: ['orange-01','orange-02','orange-03','orange-04','orange-05','orange-06','orange-07','orange-08','orange-09','orange-10'],
+  Yellow: ['yellow-01','yellow-02','yellow-03','yellow-04','yellow-05','yellow-06','yellow-07','yellow-08','yellow-09','yellow-10'],
+  Gray: ['gray-01','gray-02','gray-03','gray-04','gray-05','gray-06','gray-07','gray-08','gray-09','gray-10'],
+  DarkBlue: ['darkblue-01','darkblue-02','darkblue-03','darkblue-04','darkblue-05','darkblue-06','darkblue-07','darkblue-08','darkblue-09','darkblue-10'],
+  Cyan: ['cyan-01','cyan-02','cyan-03','cyan-04','cyan-05','cyan-06','cyan-07','cyan-08','cyan-09','cyan-10'],
+};
+const HEX = {
+  'blue-01':'#f0f9ff','blue-02':'#d9f0ff','blue-03':'#b0ddff','blue-04':'#87c7ff','blue-05':'#5eafff',
+  'blue-06':'#3491fa','blue-07':'#226fd4','blue-08':'#1351ad','blue-09':'#083787','blue-10':'#052461',
+  'green-01':'#ebfaef','green-02':'#beedcc','green-03':'#90e0ab','green-04':'#66d48e','green-05':'#40c776',
+  'green-06':'#1eba62','green-07':'#10944e','green-08':'#076e3a','green-09':'#014726','green-10':'#002113',
+  'red-01':'#fff2f0','red-02':'#ffe0db','red-03':'#ffbab3','red-04':'#ff928a','red-05':'#ff6661',
+  'red-06':'#f13535','red-07':'#cc2328','red-08':'#a6141e','red-09':'#800915','red-10':'#590511',
+  'orange-01':'#fff7f0','orange-02':'#ffead9','orange-03':'#ffd1b0','orange-04':'#ffb587','orange-05':'#ff975e',
+  'orange-06':'#f77234','orange-07':'#d15321','orange-08':'#ab3913','orange-09':'#832308','orange-10':'#5e1505',
+  'yellow-01':'#fffdeb','yellow-02':'#fff6c2','yellow-03':'#ffec99','yellow-04':'#ffe070','yellow-05':'#ffd147',
+  'yellow-06':'#f7ba1e','yellow-07':'#d1940f','yellow-08':'#ab7003','yellow-09':'#855200','yellow-10':'#5e3700',
+  'gray-01':'#f7f8fa','gray-02':'#f2f3f5','gray-03':'#e5e6eb','gray-04':'#c9cdd4','gray-05':'#a9aeb8',
+  'gray-06':'#86909c','gray-07':'#6b7785','gray-08':'#4e5969','gray-09':'#272e3b','gray-10':'#1d2129',
+  'darkblue-01':'#e6f6ff','darkblue-02':'#b1d8f2','darkblue-03':'#83bbe6','darkblue-04':'#599dd9','darkblue-05':'#3380cc',
+  'darkblue-06':'#1261be','darkblue-07':'#064699','darkblue-08':'#002e73','darkblue-09':'#001c4d','darkblue-10':'#000d26',
+  'cyan-01':'#e6fffe','cyan-02':'#b8ffff','cyan-03':'#8ffbff','cyan-04':'#66f5ff','cyan-05':'#3ce7fa',
+  'cyan-06':'#12d1ee','cyan-07':'#06a7c7','cyan-08':'#0081a1','cyan-09':'#005e7a','cyan-10':'#003e54',
+};
+
+const Swatch = ({ name }) => {
+  const hex = HEX[name];
+  const dark = parseInt(name.split('-')[1]) >= 7;
+  return h('div', {
+    className:'swatch',
+    onClick: () => copy(`var(--color-${name})`),
+    style:{
+      height:80, padding:'12px', borderRadius:'var(--radius-8)',
+      background: hex, color: dark?'#FFFFFF':'var(--color-text-primary)',
+      display:'flex', flexDirection:'column', justifyContent:'space-between',
+      boxShadow:'var(--shadow-1)',
+    }
+  },
+    h('div', { style:{ font:'500 13px/1 var(--font-sans)' } }, name),
+    h('div', { style:{ font:'400 11px/1 var(--font-mono)', opacity:0.85 } }, hex)
+  );
+};
+
+const PaletteRow = ({ title, names }) => h('div', { style:{ marginBottom:'var(--spacing-20)' } },
+  h('div', { style:{ font:'500 14px/1 var(--font-sans)', color:'var(--color-text-secondary)',
+    marginBottom:'var(--spacing-8)' } }, title),
+  h('div', { style:{ display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:'var(--spacing-8)' } },
+    names.map(n => h(Swatch, { key:n, name:n })))
+);
+
+/* ------- Semantic tokens ------- */
+const SEMANTIC = [
+  { name:'--color-primary-normal',     hex:'#3491fa' },
+  { name:'--color-success-normal',     hex:'#1eba62' },
+  { name:'--color-error-normal',       hex:'#f13535' },
+  { name:'--color-warm',        hex:'#f77234' },
+  { name:'--color-remind',      hex:'#f7ba1e' },
+  { name:'--color-text-primary',      hex:'#272e3b' },
+  { name:'--color-text-secondary',    hex:'#6b7785' },
+  { name:'--color-text-auxiliary',     hex:'#a9aeb8' },
+  { name:'--color-text-disable',     hex:'#c9cdd4' },
+  { name:'--color-text-constant-normal',      hex:'#FFFFFF' },
+  { name:'var(--color-bg-card)',           hex:'#FFFFFF' },
+  { name:'--color-base-bg',         hex:'#f7f8fa' },
+  { name:'--color-base-hover',          hex:'#f2f3f5' },
+  { name:'--color-divider-base-1',     hex:'#f7f8fa' },
+  { name:'--color-border-base',    hex:'#e5e6eb' },
+  { name:'--color-border-base-disable',     hex:'#c9cdd4' },
+];
+
+const SemanticTile = ({ token }) => h('div', {
+  className:'swatch',
+  onClick: () => copy(`var(${token.name})`),
+  style:{
+    background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)',
+    borderRadius:'var(--radius-8)', padding:'var(--spacing-12)',
+    display:'flex', alignItems:'center', gap:'var(--spacing-12)',
+  }
+},
+  h('div', { style:{ width:32, height:32, borderRadius:'var(--radius-4)',
+    background: token.hex, border:'1px solid var(--color-border-base)' } }),
+  h('div', { style:{ flex:1, minWidth:0 } },
+    h('div', { style:{ font:'400 13px/1 var(--font-mono)', color:'var(--color-text-primary)',
+      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, token.name),
+    h('div', { style:{ font:'400 11px/1 var(--font-mono)', color:'var(--color-text-auxiliary)',
+      marginTop:4 } }, token.hex))
+);
+
+/* ------- Spacing ------- */
+const SPACING = [
+  { token:'--spacing-2',  px:2 }, { token:'--spacing-4',  px:4 },
+  { token:'--spacing-8',  px:8 }, { token:'--spacing-12', px:12 },
+  { token:'--spacing-16', px:16 }, { token:'--spacing-20', px:20 },
+  { token:'--spacing-24', px:24 }, { token:'--spacing-30', px:30 },
+  { token:'--spacing-40', px:40 }, { token:'--spacing-48', px:48 },
+  { token:'--spacing-64', px:64 },
+];
+const SpacingRow = ({ token, px }) => h('div', {
+  className:'swatch',
+  onClick: () => copy(`var(${token})`),
+  style:{
+    display:'flex', alignItems:'center', gap:'var(--spacing-12)',
+    padding:'var(--spacing-12)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+  }
+},
+  h('span', { style:{ width:60, font:'400 13px/1 var(--font-mono)', color:'var(--color-text-secondary)' } }, `${px}px`),
+  h('span', { style:{ flex:1, minWidth:0, font:'400 13px/1 var(--font-mono)', color:'var(--color-text-primary)' } }, token),
+  h('span', { style:{ width: px, height:12, background:'var(--color-primary-normal)', borderRadius:2 } })
+);
+
+/* ------- Radius ------- */
+const RADIUS = [
+  { token:'--radius-2', px:2 }, { token:'--radius-4', px:4 },
+  { token:'--radius-8', px:8 }, { token:'--radius-12', px:12 },
+  { token:'--radius-full', px:'full' },
+];
+const RadiusTile = ({ token, px }) => h('div', {
+  className:'swatch',
+  onClick: () => copy(`var(${token})`),
+  style:{
+    padding:'var(--spacing-12)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+    display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--spacing-8)',
+  }
+},
+  h('div', { style:{ width:64, height:64, background:'var(--color-bg-hover)',
+    border:'1px solid var(--color-border-base)',
+    borderRadius: px === 'full' ? '50%' : `${px}px` } }),
+  h('span', { style:{ font:'400 12px/1 var(--font-mono)' } }, token)
+);
+
+/* ------- Shadow ------- */
+const SHADOW = [
+  '--shadow-1', '--shadow-2', '--shadow-3', '--shadow-4', '--shadow-diffusion-primary',
+];
+const ShadowTile = ({ token }) => h('div', {
+  className:'swatch',
+  onClick: () => copy(`var(${token})`),
+  style:{
+    padding:'var(--spacing-20)', background:'var(--color-bg-card)',
+    borderRadius:'var(--radius-8)', boxShadow:`var(${token})`,
+    display:'flex', flexDirection:'column', alignItems:'center', gap:'var(--spacing-8)',
+    margin:'var(--spacing-8)',
+  }
+},
+  h('div', { style:{ width:64, height:64, background:'var(--color-bg-hover)', borderRadius:'var(--radius-4)' } }),
+  h('span', { style:{ font:'400 12px/1 var(--font-mono)' } }, token)
+);
+
+/* ------- Typography ------- */
+const TYPE_SCALE = [
+  { token:'h1', font:'600 30px/40px var(--font-sans)' },
+  { token:'h2', font:'600 24px/32px var(--font-sans)' },
+  { token:'h3', font:'600 20px/28px var(--font-sans)' },
+  { token:'h4', font:'600 16px/24px var(--font-sans)' },
+  { token:'body', font:'400 14px/22px var(--font-sans)' },
+  { token:'small', font:'400 12px/20px var(--font-sans)' },
+];
+const TypeRow = ({ token, font }) => h('div', {
+  className:'swatch',
+  onClick: () => copy(font),
+  style:{
+    padding:'var(--spacing-16)', background:'var(--color-bg-card)',
+    border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)',
+    display:'flex', alignItems:'center', justifyContent:'space-between',
+  }
+},
+  h('span', { style:{ font } }, 'IOT 控制台 Milesight IOT Web · A B C 1 2 3'),
+  h('span', { style:{ font:'400 12px/1 var(--font-mono)', color:'var(--color-text-auxiliary)' } }, token)
+);
+
+/* ------- Section header ------- */
+const Section = ({ id, title, sub, children }) => h('section', { id, style:{
+  display:'flex', flexDirection:'column', gap:'var(--spacing-16)',
+  scrollMarginTop:'var(--spacing-24)',
+} },
+  h('div', null,
+    h('h2', { style:{ margin:0, font:'600 22px/30px var(--font-sans)' } }, title),
+    sub && h('div', { style:{ marginTop:4, color:'var(--color-text-auxiliary)' } }, sub)
+  ),
+  children
+);
+
+const NAV = [
+  { id:'palette', label:'调色板' },
+  { id:'semantic', label:'语义颜色' },
+  { id:'spacing', label:'间距' },
+  { id:'radius', label:'圆角' },
+  { id:'shadow', label:'阴影' },
+  { id:'typography', label:'字体' },
+];
+
+function App() {
+  return h('div', { style:{ minHeight:'100vh' } },
+    h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
+      h('div', null,
+        h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Design Tokens 设计令牌'),
+        h('div', { style:{ marginTop:4, opacity:0.85 } }, '点击任意 token 复制 CSS 变量名')),
+      h('span', { style:{ color:'var(--color-text-auxiliary)', fontSize:'12px' } }, 'Milesight IOT Web · v1.0.0')
+    ),
+    h('nav', { style:{ position:'sticky', top:0, zIndex:10,
+      background:'var(--color-bg-card)', borderBottom:'1px solid var(--color-divider-base-1)',
+      padding:'var(--spacing-12) var(--spacing-24)',
+      display:'flex', gap:'var(--spacing-16)', flexWrap:'wrap',
+    } },
+      NAV.map(n => h('a', {
+        key:n.id, href:`#${n.id}`,
+        style:{ color:'var(--color-text-secondary)', textDecoration:'none',
+          font:'500 13px/1 var(--font-sans)' }
+      }, n.label))
+    ),
+    h('main', { style:{ maxWidth:1100, margin:'0 auto',
+      padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)',
+      display:'flex', flexDirection:'column', gap:'var(--spacing-40)' } },
+      h(Section, { id:'palette', title:'调色板', sub:'Blue · Green · Red · Orange · Yellow · Gray · DarkBlue · Cyan，每色 01–10 共 10 阶' },
+        Object.entries(PALETTE).map(([k, names]) => h(PaletteRow, { key:k, title:k, names }))
+      ),
+      h(Section, { id:'semantic', title:'语义颜色', sub:'按用途映射的语义 token，业务代码优先使用这些值' },
+        h('div', { style:{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px,1fr))',
+          gap:'var(--spacing-12)' } }, SEMANTIC.map(t => h(SemanticTile, { key:t.name, token:t })))
+      ),
+      h(Section, { id:'spacing', title:'间距', sub:'4 / 8 / 12 / 16 ... 64 — 控件间距统一使用这些 token' },
+        h('div', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-8)' } },
+          SPACING.map(s => h(SpacingRow, { key:s.token, ...s })))
+      ),
+      h(Section, { id:'radius', title:'圆角', sub:'2 / 4 / 8 / 12 / full' },
+        h('div', { style:{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px,1fr))',
+          gap:'var(--spacing-12)' } }, RADIUS.map(r => h(RadiusTile, { key:r.token, ...r })))
+      ),
+      h(Section, { id:'shadow', title:'阴影', sub:'层级越高高度越大，弥散阴影用于焦点环' },
+        h('div', { style:{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px,1fr))',
+          gap:'var(--spacing-12)' } }, SHADOW.map(t => h(ShadowTile, { key:t, token:t })))
+      ),
+      h(Section, { id:'typography', title:'字体', sub:'PingFang SC + 系统回退 — 控件字号统一使用 12 / 14 / 16 / 20 / 24 / 30' },
+        h('div', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-8)' } },
+          TYPE_SCALE.map(t => h(TypeRow, { key:t.token, ...t })))
+      )
+    )
+  );
+}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>

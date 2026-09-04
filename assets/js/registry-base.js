@@ -2731,25 +2731,6 @@ window.MS_BASE_COMPONENTS = [
   ],
   "skill": "【Upload 交互 Skill】\ntype=button：按钮形态，点击打开文件选择器。\ntype=dragger：拖拽区域，drag over 时 border-color --color-primary-normal bg --color-primary-bg。\n\n上传流程：\n- 选文件 → beforeUpload 校验（类型/大小）→ 失败显示 error 状态 + message\n- 上传中：Progress bar（line类型），status=active\n- 成功：status=done，thumbnail/icon + 文件名 + 删除按钮\n- 失败：status=error，红色提示 + 重试按钮\n\nlistType=picture-card：n×n 缩略图网格，最后一格为上传触发区。\nmultiple=true：支持多选，maxCount 限制数量，超出禁止继续上传并提示。",
   "implemented": true
- },
- {
-  "id": "tokens",
-  "name": "Tokens",
-  "cn": "设计令牌",
-  "cat": "设计资源",
-  "figma": "-",
-  "summary": "全部设计令牌总览：颜色、间距、字号、圆角、阴影、字体。",
-  "guidance": "所有组件样式必须使用 token 变量，禁止硬编码颜色/间距。",
-  "props": [],
-  "tokens": [
-   "--color-*",
-   "--spacing-*",
-   "--radius-*",
-   "--shadow-*",
-   "--text-*"
-  ],
-  "skill": "【Design Tokens 交互 Skill】\nToken 使用原则：\n- 禁止直接写 hex 颜色，必须引用 CSS 变量（--color-primary-normal 而非 #3491fa）\n- 优先使用语义 token（--color-text-primary）而非基础 token（--color-gray-900）\n\n颜色层级：\n- 品牌色：--color-primary-normal / hover / active / bg（bg 用于轻量背景）\n- 语义色：success / error / warn / info，各含 bg 变体\n- 文字：primary(正文) > secondary(辅助) > tertiary(占位/注释) > disabled\n- 背景：base(白) > subtle(页面底色) > muted(禁用/tag底色)\n- 边框：subtle(卡片内) > default(卡片边) > strong(输入框focus前) > focus(聚焦环)\n\n间距用 --spacing-N，圆角用 --radius-N，阴影用 --shadow-N。\n新增自定义组件必须只用 token，不写硬编码值。",
-  "implemented": false
  }
 ];
 window.MS_BASE_INDEX = Object.fromEntries(window.MS_BASE_COMPONENTS.map(c => [c.id, c]));

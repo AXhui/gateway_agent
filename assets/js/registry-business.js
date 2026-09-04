@@ -38,7 +38,10 @@ window.MS_ICONS = {
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>',
   data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg>',
   layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
-  app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 6.5h.01M12 6.5h.01"/></svg>'
+  app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 6.5h.01M12 6.5h.01"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>',
+  question: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2.3-2.6 3.8"/><path d="M12 17h.01"/></svg>'
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -577,32 +580,40 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-sidenav', cn: '网关侧边导航', cat: '管理员',
-      desc: 'Milesight 网关管理后台侧边导航（Dashboard / Data Services / Network / Platform / System Setting / APP 完整子菜单 + Admin 账户下拉操作菜单，含 Language 二级语言子菜单），编排 L2 导航菜单 / 下拉菜单 / Logo / 头像 / 按钮基础组件；侧边栏宽度固定绑定 --sidebar-w（.ms-sidebar），不自行定义。',
+      desc: 'Milesight 网关管理后台侧边导航（220px 深色侧边栏 · Figma 2016:89103）：Logo 区（Milesight 字标 + 白色描边新增按钮）+ 一级导航菜单（Dashboard 选中态 / Data Services / Network / Platform / System Setting / APP 各带 chevron 展开箭头，默认折叠）+ 底部 Admin 账户入口（头像 + 名称 + 更多操作下拉，含 Language 二级语言子菜单），编排 L2 Logo / 导航菜单 / 头像 / 按钮 / 下拉菜单基础组件；深色配色「基本固定」按 Figma 写死（bg #182032 / 选中 #052461·#5eafff / 未选中 #d6d6d8 / 常量白），不绑主题切换。',
       atoms: ['nav-menu', 'dropdown-menu', 'logo', 'avatar', 'button', 'icon'],
       entityHint: 'gateway',
       tags: ['侧边栏', '导航', '菜单', '下拉菜单', '管理员', 'EG71', '网关', '后台'],
       render(ctx) {
-        // 调用 nav-menu（mode=vertical）：items / selectedKeys / openKeys
-        const navItems = [
-          { label: 'Dashboard', icon: 'dashboard', selected: true },
-          { label: 'Data Services', icon: 'data', open: true, children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
-          { label: 'Network', icon: 'topology', open: true, children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
-          { label: 'Platform', icon: 'layers' },
-          { label: 'System Setting', icon: 'settings', open: true, children: [{ label: 'General', selected: true }, 'User', 'Server', 'Maintenance', 'Log', 'SNMP', 'Events'] },
-          { label: 'APP', icon: 'app', open: true, children: ['Python', 'Node-RED'] }
+        // 一级导航（mode=vertical）：单一路由源 ctx.route 决定选中态；Dashboard 直达 /dashboard，
+        // 其余带 chevron 可展开，子条目带各自路由（父级 route 即分组路由，子条目 = 分组路由 + slug）。
+        const route = ctx.route || '/dashboard';
+        const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const groups = [
+          { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+          { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
+          { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
+          { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
+          { label: 'System Setting', icon: 'settings', route: '/system-setting', children: ['General', 'User', 'Server', 'Maintenance', 'Log', 'SNMP', 'Events'] },
+          { label: 'APP', icon: 'app', route: '/app', children: ['Python', 'Node-RED'] }
         ];
-        const navItem = (it) => {
-          if (it.children) {
-            const subs = it.children.map((c) => {
-              const label = typeof c === 'string' ? c : c.label;
-              const selected = typeof c === 'object' && c.selected;
-              return `<div class="ms-nav-item bc-eg71-sub${selected ? ' ms-nav-item--active' : ''}"><span>${esc(label)}</span></div>`;
-            }).join('');
-            return `<div class="ms-nav-item bc-eg71-group${it.open ? ' is-open' : ''}">${ico(it.icon, 16)}<span>${esc(it.label)}</span><span class="bc-eg71-chevron">${ico('chevronDown', 14)}</span></div>${subs}`;
-          }
-          return `<div class="ms-nav-item${it.selected ? ' ms-nav-item--active' : ''}">${ico(it.icon, 16)}<span>${esc(it.label)}</span></div>`;
+        const navItem = (g) => {
+          const has = g.children && g.children.length;
+          const active = route === g.route || route.indexOf(g.route + '/') === 0;
+          const subActive = has && route.indexOf(g.route + '/') === 0;
+          const chevron = has ? `<span class="bc-eg71-chevron">${ico('chevronDown', 16)}</span>` : '';
+          const sub = has
+            ? `<div class="bc-eg71-sub"${subActive ? '' : ' hidden'}>${g.children.map(c => {
+                const cr = g.route + '/' + slug(c);
+                return `<div class="ms-nav-item ms-nav-item--sub${route === cr ? ' ms-nav-item--active' : ''}" data-sub="${esc(c)}" data-route="${esc(cr)}"><span>${esc(c)}</span></div>`;
+              }).join('')}</div>`
+            : '';
+          return `<div class="bc-eg71-nav" data-nav="${esc(g.label)}">
+            <div class="ms-nav-item${active ? ' ms-nav-item--active' : ''}" data-nav-trigger data-route="${esc(g.route)}"${has ? ` aria-expanded="${subActive}"` : ''}>${ico(g.icon, 16)}<span>${esc(g.label)}</span>${chevron}</div>
+            ${sub}
+          </div>`;
         };
-        // 调用 dropdown-menu（trigger=click / placement=bottomRight）：items 含危险项与二级 Language 子菜单
+        // 账户下拉菜单（trigger=click / placement=topRight）：含危险项 + Language 二级语言子菜单
         const adminItems = [
           { icon: 'user', label: 'Change Account Info' },
           { label: 'Language', children: [{ icon: 'check', label: 'Chinese' }, { label: 'English' }] },
@@ -612,38 +623,385 @@ window.MS_BIZ_UTIL = (function () {
         const dropdownItem = (it) => {
           if (it.type === 'divider') return `<div class="ms-dropdown-sep"></div>`;
           if (it.children) {
-            return `<div class="ms-dropdown-item bc-eg71-lang">
+            return `<div class="ms-dropdown-item bc-eg71-lang" data-eg71-lang>
               <span>${esc(it.label)}</span>
               <span class="bc-eg71-chevron">${ico('chevronDown', 14)}</span>
-              <div class="ms-dropdown bc-eg71-lang-menu">
+              <div class="ms-dropdown bc-eg71-lang-menu" hidden>
                 ${it.children.map((c) => `<div class="ms-dropdown-item">${c.icon ? ico(c.icon, 14) : ''}<span>${esc(c.label)}</span></div>`).join('')}
               </div>
             </div>`;
           }
           return `<div class="ms-dropdown-item${it.danger ? ' ms-dropdown-item--danger' : ''}">${it.icon ? ico(it.icon, 14) : ''}<span>${esc(it.label)}</span></div>`;
         };
-        return `<aside class="ms-sidebar">
+        return `<aside class="ms-sidebar bc-eg71-sidenav">
           <div class="ms-sidebar-brand">
             <span class="ms-logo ms-logo--dark"><span class="ms-logo-mark">M</span><span class="ms-logo-text">Milesight</span></span>
             <button class="ms-btn ms-btn--xs bc-eg71-add" aria-label="新增">${ico('plus', 14)}</button>
           </div>
           <nav class="ms-sidebar-body"><div class="ms-nav">
-            ${navItems.map(navItem).join('')}
+            ${groups.map(navItem).join('')}
           </div></nav>
           <div class="ms-sidebar-foot">
             <div class="bc-eg71-foot">
-              <span class="ms-avatar">${ico('user', 16)}</span>
+              <span class="ms-avatar ms-avatar--lg">${ico('user', 20)}</span>
               <span class="bc-eg71-foot-name">Admin</span>
-              <button class="ms-btn ms-btn--xs ms-btn--text bc-eg71-more" aria-label="账户操作菜单">${ico('moreHoriz', 14)}</button>
+              <button class="ms-btn ms-btn--xs ms-btn--text bc-eg71-more" aria-label="账户操作菜单" aria-expanded="false">${ico('moreHoriz', 16)}</button>
             </div>
-            <div class="ms-dropdown bc-eg71-admin-menu">
+            <div class="ms-dropdown bc-eg71-admin-menu" hidden>
               ${adminItems.map(dropdownItem).join('')}
             </div>
           </div>
         </aside>`;
+      },
+      bind(root) {
+        const rootEl = root.querySelector('.bc-eg71-sidenav') || root;
+        // 一级导航展开/收起：点击切换 open，chevron 旋转，仅展开当前项（accordion）
+        rootEl.querySelectorAll('[data-nav]').forEach(nav => {
+          const t = nav.querySelector('[data-nav-trigger]');
+          const sub = nav.querySelector('.bc-eg71-sub');
+          if (!t || !sub) return;
+          t.addEventListener('click', () => {
+            const willOpen = sub.hidden;
+            rootEl.querySelectorAll('.bc-eg71-sub').forEach(s => { s.hidden = true; });
+            rootEl.querySelectorAll('[data-nav-trigger]').forEach(x => {
+              x.classList.remove('is-open');
+              x.setAttribute('aria-expanded', 'false');
+            });
+            if (willOpen) {
+              sub.hidden = false;
+              t.classList.add('is-open');
+              t.setAttribute('aria-expanded', 'true');
+            }
+          });
+        });
+        // 子条目点击 → 设为主选中态
+        rootEl.querySelectorAll('.ms-nav-item--sub').forEach(item => {
+          item.addEventListener('click', () => {
+            rootEl.querySelectorAll('.ms-nav-item--sub').forEach(x => x.classList.remove('ms-nav-item--active'));
+            item.classList.add('ms-nav-item--active');
+          });
+        });
+        // Admin 账户下拉：点击 more 开关，点击空白处关闭
+        const more = rootEl.querySelector('.bc-eg71-more');
+        const adminMenu = rootEl.querySelector('.bc-eg71-admin-menu');
+        const toggleAdmin = (open) => {
+          if (!more || !adminMenu) return;
+          adminMenu.hidden = !open;
+          more.classList.toggle('is-open', open);
+          more.setAttribute('aria-expanded', String(open));
+        };
+        if (more && adminMenu) {
+          more.addEventListener('click', (e) => { e.stopPropagation(); toggleAdmin(adminMenu.hidden); });
+          adminMenu.addEventListener('click', (e) => e.stopPropagation());
+        }
+        // Language 二级子菜单：点击展开
+        const lang = rootEl.querySelector('[data-eg71-lang]');
+        const langMenu = rootEl.querySelector('.bc-eg71-lang-menu');
+        if (lang && langMenu) {
+          lang.addEventListener('click', (e) => {
+            e.stopPropagation();
+            langMenu.hidden = !langMenu.hidden;
+            lang.classList.toggle('is-open', !langMenu.hidden);
+          });
+        }
+        // 点击侧边栏外任意处关闭账户下拉 + 语言子菜单
+        document.addEventListener('click', () => {
+          toggleAdmin(false);
+          if (langMenu) langMenu.hidden = true;
+          if (lang) lang.classList.remove('is-open');
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-topnav', cn: '顶部导航', cat: '概览',
+      desc: 'Milesight 网关管理后台顶部导航（Header）：以路由为单一源，/dashboard 渲染 Dashboard 版（模块图标 + 网关名称 + 序列号复制 + Guide 帮助），其余路由渲染通用版（面包屑 Home > Channel > Users > News + 网关名称只读/可编辑双态 + 序列号复制 + 收藏 + 更多操作下拉 + 扫描进度），编排 L2 面包屑 / 按钮 / 图标 / 下拉菜单 / 进度条基础组件。',
+      atoms: ['breadcrumb', 'button', 'icon', 'dropdown-menu', 'progress', 'input', 'modal', 'message'],
+      entityHint: 'gateway',
+      tags: ['顶部导航', 'Header', '面包屑', '网关', 'EG71', '后台', '导航'],
+      render(ctx) {
+        const e = ctx.entity, r = (ctx.rows || MS_DATA.build(e, 1))[0];
+        const route = ctx.route || '/channel/users/news';
+        const isDashboard = route === '/dashboard' || route.indexOf('/dashboard/') === 0;
+        const cap = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+        // 分组 A：Dashboard 导航（/dashboard）——模块图标 + 网关名称 + 序列号复制 + Guide 帮助
+        if (isDashboard) {
+          return `<header class="ms-header">
+            <div class="ms-header-left">
+              ${ico('gateway', 24)}
+              <span class="ms-text ms-text--strong">${esc(r.name)}</span>
+              <span class="bc-eg71-hostid">
+                <span class="ms-text ms-text--code ms-text--secondary">${esc(r.sn)}</span>
+                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="复制设备 ID">${ico('copy', 14)}</button>
+              </span>
+            </div>
+            <div class="ms-header-right">
+              <button class="ms-btn ms-btn--sm">${ico('question', 14)}Guide</button>
+            </div>
+          </header>`;
+        }
+
+        // 分组 B：通用页导航（非 /dashboard）——面包屑（末级不可点）+ 名称/序列号 + 动作组
+        const segs = route.split('/').filter(Boolean);
+        let acc = '';
+        const crumbs = ['<a href="/">Home</a>'];
+        segs.forEach((s, i) => {
+          acc += '/' + s;
+          const label = cap(s);
+          crumbs.push(i === segs.length - 1 ? `<span>${esc(label)}</span>` : `<a href="${esc(acc)}">${esc(label)}</a>`);
+        });
+        const breadcrumb = crumbs.join('<span class="ms-breadcrumb-sep">/</span>');
+
+        return `<header class="ms-header">
+          <div class="ms-header-left">
+            <div class="bc-eg71-title">
+              <nav class="ms-breadcrumb">${breadcrumb}</nav>
+              <div class="bc-eg71-hostline">
+                <span class="ms-text ms-text--strong">${esc(r.name)}</span>
+                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="编辑名称">${ico('edit', 14)}</button>
+                <span class="ms-text ms-text--code ms-text--secondary">${esc(r.sn)}</span>
+                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="复制设备 ID">${ico('copy', 14)}</button>
+              </div>
+            </div>
+          </div>
+          <div class="ms-header-right">
+            <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="收藏">${ico('star', 14)}</button>
+            <div class="bc-eg71-more-wrap">
+              <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="更多操作">${ico('moreHoriz', 14)}</button>
+              <div class="ms-dropdown bc-eg71-more-menu">
+                <div class="ms-dropdown-item">${ico('info', 14)}详情</div>
+                <div class="ms-dropdown-item">${ico('settings', 14)}配置</div>
+                <div class="ms-dropdown-item">${ico('refresh', 14)}重启</div>
+                <div class="ms-dropdown-sep"></div>
+                <div class="ms-dropdown-item ms-dropdown-item--danger">${ico('trash', 14)}删除</div>
+              </div>
+            </div>
+            <div class="ms-progress bc-eg71-scan">
+              <div class="ms-progress-line"><div class="ms-progress-bar" style="width:64%"></div></div>
+              <span class="ms-progress-text">Scanning 64%</span>
+            </div>
+          </div>
+        </header>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-footer', cn: '表单底部操作栏', cat: '系统设置',
+      desc: 'Milesight 网关配置表单底部固定悬浮操作栏：Affix 固钉吸底（offsetBottom=0）+ 左侧弹性占位把 取消/重置/保存 按钮靠右排列（保存为主按钮）；只读模式整体不渲染，弹窗内部表单禁用本栏。',
+      atoms: ['affix', 'space', 'button'],
+      entityHint: 'gateway',
+      tags: ['表单', '操作栏', '底部固定', '固钉', '保存', '取消', '重置', 'EG71'],
+      render(ctx) {
+        if (ctx.readonly) return '';
+        return `<div class="ms-affix ms-affix--fixed ms-affix--bottom">
+          <div class="ms-affix-body bc-eg71-formfooter">
+            <span class="bc-eg71-formfooter-spacer"></span>
+            <div class="ms-space ms-space--12">
+              <button class="ms-btn">取消</button>
+              <button class="ms-btn">重置</button>
+              <button class="ms-btn ms-btn--filled">保存</button>
+            </div>
+          </div>
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-content', cn: '内容容器', cat: '系统设置',
+      desc: 'Milesight 网关配置页内容容器：一张张 ms-card 区块卡竖排堆叠，每张卡 = 标题行（标题 + 尾部 Switch 开关或 Add/导入按钮组）+ 卡体。卡体编排五种通用形态：两列表单栅格（ms-form-item 内联标签 + Input/Select 控件）、Radio 单选组、Checkbox 多选内嵌子区、可编辑 ms-table + Add 按钮、ms-empty 空态，全部由基础组件组合。',
+      atoms: ['card', 'form', 'input', 'select', 'radio', 'checkbox', 'switch', 'button', 'tag', 'table', 'empty'],
+      entityHint: 'gateway',
+      tags: ['内容容器', '区块卡', '表单', '设置', '网络', '开关', '单选', '多选', '可编辑表格', '空态', 'EG71'],
+      render(ctx) {
+        const e = ctx.entity, r = (ctx.rows || MS_DATA.build(e, 1))[0];
+        const input = (v, ph) => `<span class="ms-input"><input type="text" value="${esc(v || '')}" placeholder="${esc(ph || '')}"></span>`;
+        const select = opts => `<span class="ms-select"><select>${opts.map(o => `<option${o[1] ? ' selected' : ''}>${esc(o[0])}</option>`).join('')}</select></span>`;
+        const field = (label, required, control) => `
+          <div class="ms-form-item ms-form-item--inline">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}</label>
+            <div class="ms-form-control">${control}</div>
+          </div>`;
+        const head = (title, extra) => `
+          <div class="ms-card-head">
+            <div class="ms-card-title">${esc(title)}</div>
+            ${extra || ''}
+          </div>`;
+        const sw = on => `<label class="ms-switch"><input type="checkbox"${on ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+
+        return `<div class="bc-eg71-content">
+          <section class="ms-card">
+            ${head('Basic Settings', sw(true))}
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="bc-eg71-formgrid">
+                  ${field('Device Name', true, input(r.name))}
+                  ${field('Host ID', false, input(r.sn))}
+                  ${field('Model', false, input(r.model))}
+                  ${field('Firmware', false, input(r.firmware || '1.2.3'))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Network Interface')}
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="ms-form-item ms-form-item--inline">
+                  <label class="ms-form-label">IP Assignment</label>
+                  <div class="ms-form-control">
+                    <div class="bc-eg71-options">
+                      <label class="ms-radio"><input type="radio" name="eg71-ip" checked><span class="ms-radio-dot"></span>DHCP</label>
+                      <label class="ms-radio"><input type="radio" name="eg71-ip"><span class="ms-radio-dot"></span>Static</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="bc-eg71-formgrid">
+                  ${field('IP Address', false, input('192.168.1.1'))}
+                  ${field('Netmask', false, input('255.255.255.0'))}
+                  ${field('Gateway', false, input('192.168.1.254'))}
+                  ${field('DNS Server', false, input('8.8.8.8'))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Features')}
+            <div class="ms-card-body">
+              <div class="bc-eg71-subarea">
+                <label class="ms-checkbox"><input type="checkbox" checked><span class="ms-checkbox-box"></span>Enable LoRaWAN</label>
+                <label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span>Enable Wi-Fi</label>
+                <label class="ms-checkbox"><input type="checkbox" checked><span class="ms-checkbox-box"></span>Enable GPS</label>
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Data Forwarding', `<div class="ms-card-extra"><button class="ms-btn ms-btn--sm">${ico('plus', 14)}Add</button></div>`)}
+            <div class="ms-card-body ms-card-body--flush">
+              <table class="ms-table">
+                <thead><tr><th>Rule</th><th>Protocol</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Uplink → MQTT</td>
+                    <td>${select([['MQTT', true], ['HTTP', false], ['HTTPS', false]])}</td>
+                    <td>${U.statusTag(U.statusOf(e, '在线'))}</td>
+                    <td class="ms-table-ops"><button class="ms-btn ms-btn--link">${ico('edit', 14)}</button><button class="ms-btn ms-btn--link ms-btn--danger">${ico('trash', 14)}</button></td>
+                  </tr>
+                  <tr>
+                    <td>Downlink bridge</td>
+                    <td>${select([['HTTP', true], ['MQTT', false], ['HTTPS', false]])}</td>
+                    <td>${U.statusTag(U.statusOf(e, '离线'))}</td>
+                    <td class="ms-table-ops"><button class="ms-btn ms-btn--link">${ico('edit', 14)}</button><button class="ms-btn ms-btn--link ms-btn--danger">${ico('trash', 14)}</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Applications')}
+            <div class="ms-card-body">
+              <div class="ms-empty">
+                <svg class="ms-empty-illu" viewBox="0 0 88 64" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="10" y="12" width="68" height="40" rx="6"/><path d="M10 22h68M22 34h44"/></svg>
+                <span class="ms-empty-text">No data</span>
+              </div>
+            </div>
+          </section>
+        </div>`;
       }
     }
   ];
+
+  /* ---------- EG71 侧-导航栏双重结构（L5 页面模板 · 捆绑） ----------
+     规则：路由是唯一源。侧边栏（bc-eg71-sidenav）+ 顶栏（bc-eg71-topnav）捆绑为
+     双重结构：每次侧边栏点击 → 读 data-route → 以新路由同源重渲染顶栏并同步侧边栏
+     选中态。顶栏只在「Dashboard」与「通用面包屑」两种形态间切换（其余路由都走通用版）。
+     调用方式（EG71 需求直接调双重结构，不再手动拼侧栏/顶栏）：
+       const html = window.MS_EG71_SHELL.render(ctx);
+       app.innerHTML = html;
+       window.MS_EG71_SHELL.bind(app); */
+  window.MS_EG71_SHELL = (function () {
+    const BIZ = () => window.MS_BIZ_INDEX;
+    let ctx = null, opts = {};
+
+    function render(c, o) {
+      ctx = Object.assign({}, c || {});
+      ctx.route = ctx.route || '/dashboard';
+      opts = o || {};
+      const B = BIZ();
+      const content = opts.content !== undefined ? opts.content
+        : (B['bc-eg71-content'] ? B['bc-eg71-content'].render(ctx) : '');
+      const footer = opts.footer !== undefined ? opts.footer
+        : (B['bc-eg71-form-footer'] ? B['bc-eg71-form-footer'].render(ctx) : '');
+      return '<div class="ms-shell">'
+        + B['bc-eg71-sidenav'].render(ctx)
+        + '<div class="ms-main">'
+        + B['bc-eg71-topnav'].render(ctx)
+        + '<div class="ms-content">' + content + '</div>'
+        + '</div>'
+        + footer
+        + '</div>';
+    }
+
+    // 路由切换：只换顶栏 .ms-header，再原地同步侧边栏选中态（不重渲染、不重 bind）
+    function navigate(route, root) {
+      if (!route || route === ctx.route) return;
+      ctx = Object.assign({}, ctx, { route });
+      const rootEl = (root && root.querySelector) ? root : document.getElementById('app');
+      const main = rootEl && rootEl.querySelector('.ms-main');
+      const header = main && main.querySelector('.ms-header');
+      const html = BIZ()['bc-eg71-topnav'].render(ctx);
+      if (header) header.outerHTML = html;
+      else if (main) main.insertAdjacentHTML('afterbegin', html);
+      syncSidebar(rootEl, route);
+    }
+
+    // 侧边栏选中态：一级项前缀匹配（Dashboard 直达 /dashboard），子项精确匹配，路由所属分组展开
+    function syncSidebar(rootEl, route) {
+      const side = (rootEl && rootEl.querySelector('.bc-eg71-sidenav')) || rootEl;
+      if (!side) return;
+      side.querySelectorAll('[data-nav-trigger]').forEach(t => {
+        const r = t.getAttribute('data-route');
+        const active = route === r || route.indexOf(r + '/') === 0;
+        t.classList.toggle('ms-nav-item--active', active);
+      });
+      side.querySelectorAll('.ms-nav-item--sub').forEach(s => {
+        s.classList.toggle('ms-nav-item--active', s.getAttribute('data-route') === route);
+      });
+      side.querySelectorAll('[data-nav]').forEach(nav => {
+        const t = nav.querySelector('[data-nav-trigger]');
+        const sub = nav.querySelector('.bc-eg71-sub');
+        if (!t || !sub) return;
+        const r = t.getAttribute('data-route');
+        const inGroup = route === r || route.indexOf(r + '/') === 0;
+        sub.hidden = !inGroup;
+        t.classList.toggle('is-open', inGroup);
+        t.setAttribute('aria-expanded', String(inGroup));
+      });
+    }
+
+    function bind(root) {
+      const B = BIZ();
+      const rootEl = (root && root.querySelector) ? root : document.getElementById('app');
+      if (!rootEl) return;
+      // 1) 侧边栏自身交互（手风琴 + Admin 账户下拉 + 语言子菜单）
+      if (typeof B['bc-eg71-sidenav'].bind === 'function') B['bc-eg71-sidenav'].bind(rootEl);
+      // 2) 双重结构捆绑：侧边栏点击 [data-route] → 路由导航 → 顶栏切换 + 选中态同步
+      const side = rootEl.querySelector('.bc-eg71-sidenav') || rootEl;
+      side.addEventListener('click', (e) => {
+        const t = e.target && e.target.closest ? e.target.closest('[data-route]') : null;
+        if (!t) return;
+        const nav = t.closest('.bc-eg71-nav');
+        // 仅「叶子导航」触发路由切换：无子菜单的一级项（Dashboard）或 .ms-nav-item--sub。
+        // 带子菜单的一级项（Data Services / Network / …）点击只做手风琴展开，不导航。
+        const isLeafTrigger = nav && !nav.querySelector('.bc-eg71-sub');
+        const isSub = t.classList.contains('ms-nav-item--sub');
+        if (isLeafTrigger || isSub) navigate(t.getAttribute('data-route'), rootEl);
+      });
+    }
+
+    return { render, navigate, bind, get route() { return ctx && ctx.route; } };
+  })();
 
   window.MS_BIZ_INDEX = Object.fromEntries(window.MS_BIZ_COMPONENTS.map(c => [c.id, c]));
 })();

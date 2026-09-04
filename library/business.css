@@ -95,17 +95,84 @@
 }
 
 /* ---------- EG71 侧边导航 ---------- */
-/* 侧边栏宽度固定：由 .ms-sidebar 绑定 --sidebar-w（248px），此处不覆盖 */
-.bc-eg71-add { margin-left: auto; }
-.bc-eg71-sub { margin-left: var(--spacing-16); }
+/* Figma 2016:89103：220px 深色侧边栏。深色配色「基本固定」按 Figma 写死
+   （不随 [data-theme] 切换），仅本组件作用域内覆盖，不动全局 --sidebar-w。 */
+.bc-eg71-sidenav {
+  width: 220px;
+  background: #182032;                              /* Figma color-bg-6 */
+  border-right: 1px solid #1c1c1c;
+}
+.bc-eg71-sidenav .ms-sidebar-brand { border-bottom: 1px solid #1c1c1c; }
+.bc-eg71-sidenav .ms-sidebar-foot { border-top: 1px solid #1c1c1c; }
+.bc-eg71-sidenav .ms-logo-mark { background: #5eafff; color: #052461; }
+.bc-eg71-sidenav .ms-logo-text { color: #ffffff; }
+.bc-eg71-sidenav .ms-nav-item { color: #d6d6d8; }
+.bc-eg71-sidenav .ms-nav-item:hover { background: #1c1c1c; color: #ffffff; }
+.bc-eg71-sidenav .ms-nav-item--active { background: #052461; color: #5eafff; font-weight: 500; }
+.bc-eg71-sidenav .ms-nav-item--active:hover { background: #052461; color: #5eafff; }
+.bc-eg71-sidenav .ms-avatar { background: #052461; color: #5eafff; }
+.bc-eg71-sidenav .bc-eg71-foot-name { color: #ffffff; }
+.bc-eg71-sidenav .bc-eg71-chevron { color: #5eafff; }
+.bc-eg71-sidenav .ms-dropdown { background: #1c1c1c; border-color: #2c2c2c; }
+.bc-eg71-sidenav .ms-dropdown-item { color: #d6d6d8; }
+.bc-eg71-sidenav .ms-dropdown-item:hover { background: #2c2c2c; color: #ffffff; }
+.bc-eg71-sidenav .ms-dropdown-item--danger { color: #f53f3f; }
+.bc-eg71-sidenav .ms-dropdown-item--danger:hover { background: #2c2c2c; color: #f53f3f; }
+.bc-eg71-sidenav .ms-dropdown-sep { background: #2c2c2c; }
+
+/* 间距对齐 Figma 2016:89103：覆写基础组件默认间距（调用 .ms-sidebar/.ms-nav/.ms-nav-item 基础控件，
+   仅本作用域改写封装）。能命中令牌的引令牌；9px / 10px 为 Figma 指定且令牌无命中，写死。 */
+.bc-eg71-sidenav .ms-sidebar-brand { padding: 10px var(--spacing-12); gap: 10px; }                              /* Logo 区 px-12 py-10 gap-10 */
+.bc-eg71-sidenav .ms-sidebar-body { padding: var(--spacing-12) 0 0; }                                            /* 菜单区 pt-12 */
+.bc-eg71-sidenav .ms-nav { padding: var(--spacing-4) var(--spacing-8); gap: var(--spacing-8); }                  /* arco-menu-inner px-8 py-4 gap-8 */
+.bc-eg71-sidenav .ms-nav-item { padding: 9px var(--spacing-12); border-radius: var(--radius-2); gap: var(--spacing-8); } /* 一级项 px-12 py-9 rounded-2 gap-8 */
+.bc-eg71-sidenav .ms-sidebar-foot { padding: var(--spacing-20) var(--spacing-12); }                              /* 账户区 px-12 py-20 */
+.bc-eg71-sidenav .bc-eg71-foot { gap: 10px; }                                                                    /* 账户区 gap-10 */
+
+.bc-eg71-add { margin-left: auto; color: #ffffff; border-color: #5eafff; background: transparent; }
+.bc-eg71-add:hover { background: #052461; }
 .bc-eg71-chevron {
-  margin-left: auto; display: inline-flex; color: var(--color-text-auxiliary);
+  margin-left: auto; display: inline-flex;
   transition: transform var(--duration-normal) var(--ease);
 }
-.bc-eg71-group.is-open .bc-eg71-chevron { transform: rotate(180deg); }
+/* 交互：导航子菜单 + 下拉开关态（配合 bind() 的 hidden / is-open 切换） */
+.bc-eg71-sidenav [hidden] { display: none !important; }
+.bc-eg71-nav { display: flex; flex-direction: column; gap: var(--spacing-4); }  /* Figma 菜单组 gap-4 */
+.bc-eg71-sub { display: flex; flex-direction: column; gap: var(--spacing-4); padding-left: var(--spacing-24); }
+.bc-eg71-sub .ms-nav-item { font-size: 13px; }
+.bc-eg71-nav .ms-nav-item.is-open .bc-eg71-chevron { transform: rotate(180deg); }
 .bc-eg71-foot { display: flex; align-items: center; gap: var(--spacing-8); position: relative; }
-.bc-eg71-foot-name { flex: 1; min-width: 0; font-weight: 500; color: var(--color-text-constant-normal); }
-.bc-eg71-more { flex: none; }
+.bc-eg71-foot-name { flex: 1; min-width: 0; font-weight: 500; }
+.bc-eg71-more { flex: none; color: #d6d6d8; }
 .bc-eg71-admin-menu { position: absolute; right: 0; bottom: calc(100% + var(--spacing-8)); }
 .bc-eg71-lang { position: relative; }
 .bc-eg71-lang-menu { position: absolute; right: calc(100% + var(--spacing-4)); top: 0; }
+
+/* ---------- EG71 顶部导航 ---------- */
+/* 高度由 .ms-header 绑定 --header-h（56px），此处不覆盖 */
+.bc-eg71-hostid { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-title { display: flex; flex-direction: column; gap: var(--spacing-4); }
+.bc-eg71-hostline { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-more-wrap { position: relative; }
+.bc-eg71-more-menu { position: absolute; right: 0; top: calc(100% + var(--spacing-4)); }
+.bc-eg71-scan { width: var(--spacing-64); }
+
+/* ---------- EG71 表单底部操作栏 ---------- */
+/* 吸底由 .ms-affix--fixed > .ms-affix-body（fixed + bottom:0）承担，此处不重定义 */
+.bc-eg71-formfooter {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: var(--spacing-12) var(--spacing-24);
+  background: var(--color-bg-card); border-top: 1px solid var(--color-divider-base-2);
+}
+.bc-eg71-formfooter-spacer { flex-grow: 1; }
+
+/* ---------- EG71 内容容器 ---------- */
+/* 区块卡本体复用 .ms-card（白底/边框/圆角），此处只编排「竖排堆叠 + 栅格 + 内嵌区」 */
+.bc-eg71-content { display: flex; flex-direction: column; gap: var(--spacing-20); }
+.bc-eg71-formgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) var(--spacing-24); }
+.bc-eg71-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-16); }
+.bc-eg71-subarea {
+  display: flex; flex-direction: column; gap: var(--spacing-12); padding: var(--spacing-16);
+  background: var(--color-fill-base-normal); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8);
+}
+@media (max-width: 980px) { .bc-eg71-formgrid { grid-template-columns: 1fr; } }

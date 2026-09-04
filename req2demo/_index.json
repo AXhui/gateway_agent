@@ -1,0 +1,702 @@
+{
+  "schema": "req2demo",
+  "version": "1.0.0",
+  "layers": {
+    "00_skills": "L0 源头·只读（Tokens + 62 基础组件）",
+    "01_biz_skills": "L1 业务封装（仅组合 00，零新增样式）",
+    "02_knowledge": "L2 需求→组件映射",
+    "03_requirements": "L3 PRD 输入（R_* 命名）",
+    "04_pages": "L4 页面 demo（P_* / REQ-*）",
+    "05_release": "L5 交付（REQ-*）"
+  },
+  "components": {
+    "S_Alert": {
+      "dir": "00_skills/src_components/Alert",
+      "id": "alert",
+      "cn": "警告提示",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Drawer": {
+      "dir": "00_skills/src_components/Drawer",
+      "id": "drawer",
+      "cn": "抽屉",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Message": {
+      "dir": "00_skills/src_components/Message",
+      "id": "message",
+      "cn": "全局提示",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Modal": {
+      "dir": "00_skills/src_components/Modal",
+      "id": "modal",
+      "cn": "对话框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Notification": {
+      "dir": "00_skills/src_components/Notification",
+      "id": "notification",
+      "cn": "通知提醒框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Popconfirm": {
+      "dir": "00_skills/src_components/Popconfirm",
+      "id": "popconfirm",
+      "cn": "气泡确认框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Progress": {
+      "dir": "00_skills/src_components/Progress",
+      "id": "progress",
+      "cn": "进度条",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Result": {
+      "dir": "00_skills/src_components/Result",
+      "id": "result",
+      "cn": "结果",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Skeleton": {
+      "dir": "00_skills/src_components/Skeleton",
+      "id": "skeleton",
+      "cn": "骨架屏",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Spin": {
+      "dir": "00_skills/src_components/Spin",
+      "id": "spin",
+      "cn": "加载中",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Button": {
+      "dir": "00_skills/src_components/Button",
+      "id": "button",
+      "cn": "按钮",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Divider": {
+      "dir": "00_skills/src_components/Divider",
+      "id": "divider",
+      "cn": "分割线",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Icon": {
+      "dir": "00_skills/src_components/Icon",
+      "id": "icon",
+      "cn": "图标",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Logo": {
+      "dir": "00_skills/src_components/Logo",
+      "id": "logo",
+      "cn": "品牌标识",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Typography": {
+      "dir": "00_skills/src_components/Typography",
+      "id": "typography",
+      "cn": "排版",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Anchor": {
+      "dir": "00_skills/src_components/Anchor",
+      "id": "anchor",
+      "cn": "锚点",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_BackTop": {
+      "dir": "00_skills/src_components/BackTop",
+      "id": "back-top",
+      "cn": "回到顶部",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Breadcrumb": {
+      "dir": "00_skills/src_components/Breadcrumb",
+      "id": "breadcrumb",
+      "cn": "面包屑",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_DropdownMenu": {
+      "dir": "00_skills/src_components/DropdownMenu",
+      "id": "dropdown-menu",
+      "cn": "下拉菜单",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_NavMenu": {
+      "dir": "00_skills/src_components/NavMenu",
+      "id": "nav-menu",
+      "cn": "导航菜单",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Pagination": {
+      "dir": "00_skills/src_components/Pagination",
+      "id": "pagination",
+      "cn": "分页",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Steps": {
+      "dir": "00_skills/src_components/Steps",
+      "id": "steps",
+      "cn": "步骤条",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Tabs": {
+      "dir": "00_skills/src_components/Tabs",
+      "id": "tabs",
+      "cn": "标签页",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Affix": {
+      "dir": "00_skills/src_components/Affix",
+      "id": "affix",
+      "cn": "固钉",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Grid": {
+      "dir": "00_skills/src_components/Grid",
+      "id": "grid",
+      "cn": "栅格",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Layout": {
+      "dir": "00_skills/src_components/Layout",
+      "id": "layout",
+      "cn": "布局",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_PageHeader": {
+      "dir": "00_skills/src_components/PageHeader",
+      "id": "page-header",
+      "cn": "页头",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Space": {
+      "dir": "00_skills/src_components/Space",
+      "id": "space",
+      "cn": "间距",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Avatar": {
+      "dir": "00_skills/src_components/Avatar",
+      "id": "avatar",
+      "cn": "头像",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Badge": {
+      "dir": "00_skills/src_components/Badge",
+      "id": "badge",
+      "cn": "徽标数",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Calendar": {
+      "dir": "00_skills/src_components/Calendar",
+      "id": "calendar",
+      "cn": "日历",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Card": {
+      "dir": "00_skills/src_components/Card",
+      "id": "card",
+      "cn": "卡片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Collapse": {
+      "dir": "00_skills/src_components/Collapse",
+      "id": "collapse",
+      "cn": "折叠面板",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Comment": {
+      "dir": "00_skills/src_components/Comment",
+      "id": "comment",
+      "cn": "评论",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Descriptions": {
+      "dir": "00_skills/src_components/Descriptions",
+      "id": "descriptions",
+      "cn": "描述列表",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Empty": {
+      "dir": "00_skills/src_components/Empty",
+      "id": "empty",
+      "cn": "空状态",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Image": {
+      "dir": "00_skills/src_components/Image",
+      "id": "image",
+      "cn": "图片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_List": {
+      "dir": "00_skills/src_components/List",
+      "id": "list",
+      "cn": "列表",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Popover": {
+      "dir": "00_skills/src_components/Popover",
+      "id": "popover",
+      "cn": "气泡卡片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Rate": {
+      "dir": "00_skills/src_components/Rate",
+      "id": "rate",
+      "cn": "评分",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Statistic": {
+      "dir": "00_skills/src_components/Statistic",
+      "id": "statistic",
+      "cn": "统计数值",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Table": {
+      "dir": null,
+      "id": "table",
+      "cn": "表格",
+      "cat": "数据展示",
+      "derived": true
+    },
+    "S_Tag": {
+      "dir": "00_skills/src_components/Tag",
+      "id": "tag",
+      "cn": "标签",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Timeline": {
+      "dir": "00_skills/src_components/Timeline",
+      "id": "timeline",
+      "cn": "时间轴",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Tooltip": {
+      "dir": "00_skills/src_components/Tooltip",
+      "id": "tooltip",
+      "cn": "文字提示",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Tree": {
+      "dir": "00_skills/src_components/Tree",
+      "id": "tree",
+      "cn": "树形控件",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Watermark": {
+      "dir": "00_skills/src_components/Watermark",
+      "id": "watermark",
+      "cn": "水印",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_AutoComplete": {
+      "dir": "00_skills/src_components/AutoComplete",
+      "id": "auto-complete",
+      "cn": "自动完成",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Cascader": {
+      "dir": "00_skills/src_components/Cascader",
+      "id": "cascader",
+      "cn": "级联选择",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Checkbox": {
+      "dir": "00_skills/src_components/Checkbox",
+      "id": "checkbox",
+      "cn": "复选框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_DatePicker": {
+      "dir": "00_skills/src_components/DatePicker",
+      "id": "date-picker",
+      "cn": "日期选择框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Form": {
+      "dir": "00_skills/src_components/Form",
+      "id": "form",
+      "cn": "表单",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Input": {
+      "dir": "00_skills/src_components/Input",
+      "id": "input",
+      "cn": "输入框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_InputNumber": {
+      "dir": "00_skills/src_components/InputNumber",
+      "id": "input-number",
+      "cn": "数字输入框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Radio": {
+      "dir": "00_skills/src_components/Radio",
+      "id": "radio",
+      "cn": "单选框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Segmented": {
+      "dir": "00_skills/src_components/Segmented",
+      "id": "segmented",
+      "cn": "分段控制器",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Select": {
+      "dir": "00_skills/src_components/Select",
+      "id": "select",
+      "cn": "选择器",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Slider": {
+      "dir": "00_skills/src_components/Slider",
+      "id": "slider",
+      "cn": "滑动输入条",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Switch": {
+      "dir": "00_skills/src_components/Switch",
+      "id": "switch",
+      "cn": "开关",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_TimePicker": {
+      "dir": "00_skills/src_components/TimePicker",
+      "id": "time-picker",
+      "cn": "时间选择框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Transfer": {
+      "dir": "00_skills/src_components/Transfer",
+      "id": "transfer",
+      "cn": "穿梭框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_TreeSelect": {
+      "dir": "00_skills/src_components/TreeSelect",
+      "id": "tree-select",
+      "cn": "树选择",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Upload": {
+      "dir": "00_skills/src_components/Upload",
+      "id": "upload",
+      "cn": "上传",
+      "cat": "数据录入",
+      "derived": false
+    }
+  },
+  "business": {
+    "B_MetricCard": {
+      "id": "bc-metric-card",
+      "cn": "指标卡组",
+      "src": "assets/js/registry-business.js#bc-metric-card",
+      "status": "待固化"
+    },
+    "B_StatusTag": {
+      "id": "bc-status-tag",
+      "cn": "状态标签",
+      "src": "assets/js/registry-business.js#bc-status-tag",
+      "status": "待固化"
+    },
+    "B_FilterBar": {
+      "id": "bc-filter-bar",
+      "cn": "筛选栏",
+      "src": "assets/js/registry-business.js#bc-filter-bar",
+      "status": "待固化"
+    },
+    "B_DataTable": {
+      "id": "bc-data-table",
+      "cn": "数据表格",
+      "src": "assets/js/registry-business.js#bc-data-table",
+      "status": "待固化"
+    },
+    "B_EntityCard": {
+      "id": "bc-entity-card",
+      "cn": "实体卡片",
+      "src": "assets/js/registry-business.js#bc-entity-card",
+      "status": "待固化"
+    },
+    "B_TelemetryPanel": {
+      "id": "bc-telemetry-panel",
+      "cn": "遥测面板",
+      "src": "assets/js/registry-business.js#bc-telemetry-panel",
+      "status": "待固化"
+    },
+    "B_RuleForm": {
+      "id": "bc-rule-form",
+      "cn": "规则配置表单",
+      "src": "assets/js/registry-business.js#bc-rule-form",
+      "status": "待固化"
+    },
+    "B_DetailDrawer": {
+      "id": "bc-detail-drawer",
+      "cn": "详情抽屉",
+      "src": "assets/js/registry-business.js#bc-detail-drawer",
+      "status": "待固化"
+    },
+    "B_UpgradeModal": {
+      "id": "bc-upgrade-modal",
+      "cn": "批量任务弹窗",
+      "src": "assets/js/registry-business.js#bc-upgrade-modal",
+      "status": "待固化"
+    },
+    "B_Topology": {
+      "id": "bc-topology",
+      "cn": "网络拓扑",
+      "src": "assets/js/registry-business.js#bc-topology",
+      "status": "待固化"
+    },
+    "B_MemberTable": {
+      "id": "bc-member-table",
+      "cn": "成员权限表",
+      "src": "assets/js/registry-business.js#bc-member-table",
+      "status": "待固化"
+    },
+    "B_LogTimeline": {
+      "id": "bc-log-timeline",
+      "cn": "操作日志时间轴",
+      "src": "assets/js/registry-business.js#bc-log-timeline",
+      "status": "待固化"
+    },
+    "B_EmptyState": {
+      "id": "bc-empty-state",
+      "cn": "空态引导",
+      "src": "assets/js/registry-business.js#bc-empty-state",
+      "status": "待固化"
+    },
+    "B_QuickActions": {
+      "id": "bc-quick-actions",
+      "cn": "快捷操作区",
+      "src": "assets/js/registry-business.js#bc-quick-actions",
+      "status": "待固化"
+    },
+    "B_Eg71Sidenav": {
+      "id": "bc-eg71-sidenav",
+      "cn": "网关侧边导航",
+      "src": "assets/js/registry-business.js#bc-eg71-sidenav",
+      "status": "待固化"
+    },
+    "B_Eg71Topnav": {
+      "id": "bc-eg71-topnav",
+      "cn": "顶部导航",
+      "src": "assets/js/registry-business.js#bc-eg71-topnav",
+      "status": "待固化"
+    },
+    "B_Eg71FormFooter": {
+      "id": "bc-eg71-form-footer",
+      "cn": "表单底部操作栏",
+      "src": "assets/js/registry-business.js#bc-eg71-form-footer",
+      "status": "待固化"
+    },
+    "B_Eg71Content": {
+      "id": "bc-eg71-content",
+      "cn": "内容容器",
+      "src": "assets/js/registry-business.js#bc-eg71-content",
+      "status": "待固化"
+    }
+  },
+  "modules": {
+    "M_QuickActions": {
+      "id": "mod-quick-actions",
+      "cn": "快捷操作区",
+      "src": "assets/js/registry-modules.js#mod-quick-actions"
+    },
+    "M_Metrics": {
+      "id": "mod-metrics",
+      "cn": "指标概览区",
+      "src": "assets/js/registry-modules.js#mod-metrics"
+    },
+    "M_FilterList": {
+      "id": "mod-filter-list",
+      "cn": "列表管理区",
+      "src": "assets/js/registry-modules.js#mod-filter-list"
+    },
+    "M_EntityCards": {
+      "id": "mod-entity-cards",
+      "cn": "卡片墙区",
+      "src": "assets/js/registry-modules.js#mod-entity-cards"
+    },
+    "M_Telemetry": {
+      "id": "mod-telemetry",
+      "cn": "遥测数据区",
+      "src": "assets/js/registry-modules.js#mod-telemetry"
+    },
+    "M_RuleConfig": {
+      "id": "mod-rule-config",
+      "cn": "规则配置区",
+      "src": "assets/js/registry-modules.js#mod-rule-config"
+    },
+    "M_DetailDrawer": {
+      "id": "mod-detail-drawer",
+      "cn": "详情抽屉区",
+      "src": "assets/js/registry-modules.js#mod-detail-drawer"
+    },
+    "M_UpgradeTask": {
+      "id": "mod-upgrade-task",
+      "cn": "批量任务区",
+      "src": "assets/js/registry-modules.js#mod-upgrade-task"
+    },
+    "M_Topology": {
+      "id": "mod-topology",
+      "cn": "网络拓扑区",
+      "src": "assets/js/registry-modules.js#mod-topology"
+    },
+    "M_Member": {
+      "id": "mod-member",
+      "cn": "成员权限区",
+      "src": "assets/js/registry-modules.js#mod-member"
+    },
+    "M_Log": {
+      "id": "mod-log",
+      "cn": "日志审计区",
+      "src": "assets/js/registry-modules.js#mod-log"
+    },
+    "M_Empty": {
+      "id": "mod-empty",
+      "cn": "空态引导区",
+      "src": "assets/js/registry-modules.js#mod-empty"
+    }
+  },
+  "templates": {
+    "T_Overview": {
+      "id": "tpl-overview",
+      "cn": "概览看板",
+      "src": "assets/js/registry-templates.js#tpl-overview"
+    },
+    "T_List": {
+      "id": "tpl-list",
+      "cn": "列表管理",
+      "src": "assets/js/registry-templates.js#tpl-list"
+    },
+    "T_Detail": {
+      "id": "tpl-detail",
+      "cn": "详情页",
+      "src": "assets/js/registry-templates.js#tpl-detail"
+    },
+    "T_Alarm": {
+      "id": "tpl-alarm",
+      "cn": "告警中心",
+      "src": "assets/js/registry-templates.js#tpl-alarm"
+    },
+    "T_Upgrade": {
+      "id": "tpl-upgrade",
+      "cn": "固件升级",
+      "src": "assets/js/registry-templates.js#tpl-upgrade"
+    },
+    "T_Dashboard": {
+      "id": "tpl-dashboard",
+      "cn": "数据分析",
+      "src": "assets/js/registry-templates.js#tpl-dashboard"
+    },
+    "T_Topology": {
+      "id": "tpl-topology",
+      "cn": "网关拓扑",
+      "src": "assets/js/registry-templates.js#tpl-topology"
+    },
+    "T_Permission": {
+      "id": "tpl-permission",
+      "cn": "权限管理",
+      "src": "assets/js/registry-templates.js#tpl-permission"
+    },
+    "T_Config": {
+      "id": "tpl-config",
+      "cn": "配置页",
+      "src": "assets/js/registry-templates.js#tpl-config"
+    },
+    "T_Audit": {
+      "id": "tpl-audit",
+      "cn": "审计日志",
+      "src": "assets/js/registry-templates.js#tpl-audit"
+    },
+    "T_Onboard": {
+      "id": "tpl-onboard",
+      "cn": "空态引导",
+      "src": "assets/js/registry-templates.js#tpl-onboard"
+    }
+  },
+  "knowledge": {
+    "K_mapping": "02_knowledge/K_mapping.md",
+    "K_patterns": "02_knowledge/K_patterns/",
+    "K_validation": "02_knowledge/K_validation.md",
+    "iot_fundamentals": "02_knowledge/iot-fundamentals/",
+    "milesight_products": "02_knowledge/milesight-products/",
+    "competitor_research": "02_knowledge/competitor-research/"
+  },
+  "conventions": {
+    "requirement": "R_YYYYMMDD_REQ-###_<域>_<页>",
+    "page": "P_<PageName>",
+    "release": "REQ-###",
+    "component": "S_<PascalCase>",
+    "business": "B_<域>_<组件>",
+    "module": "M_<PascalCase>",
+    "template": "T_<PascalCase>"
+  },
+  "entry": "README.md"
+}
