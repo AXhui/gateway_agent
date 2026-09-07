@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EG71 四组件拼装核实页</title>
+
+<!-- 单一源：直接加载 L1 令牌 / L2 基础 / L3 业务 三层真实 CSS，零复制 -->
+<link rel="stylesheet" href=".claude/tokens/tokens.css" />
+<link rel="stylesheet" href="library/base.css" />
+<link rel="stylesheet" href="library/business.css" />
+
+<!-- 组装脚本：仅做 L5 页面模板该做的「布局编排」，不改动任何组件本体 -->
+<style>
+  /* 组装编排（非业务组件，属于页面模板层） */
+  .verify-content {
+    /* 表单底部操作栏约束 #2：主体 bottom padding = 组件高度，避免内容被遮挡 */
+    padding-bottom: 72px;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- 单一源：加载真实实体词典 + 业务组件注册表（含 4 个 EG71 组件 render） -->
+<script src="assets/js/registry-entities.js"></script>
+<script src="assets/js/registry-business.js"></script>
+
+<script>
+(function () {
+  // 组装上下文：与 engine-renderer.js 的 ctx 同构
+  //   ctx = { entity: 网关实体, rows: 造数样例, route: 当前路由 }
+  var entity = window.MS_ENTITIES.gateway;
+  var ctx = {
+    entity: entity,
+    rows: window.MS_DATA.build(entity, 1),
+    route: '/system-setting/general'   // 非 /dashboard → 顶栏渲染通用版（面包屑 + 名称/序列号 + 动作组）
+  };
+
+  // 侧-导航栏双重结构（捆绑）：EG71 需求直接调用 MS_EG71_SHELL，不再手动拼侧栏/顶栏。
+  // 每次侧边栏点击 → 读 data-route → 同源重渲染顶栏并同步侧边栏选中态；
+  // 顶栏只在「Dashboard」与「通用面包屑」两种形态间切换。
+  document.getElementById('app').innerHTML = window.MS_EG71_SHELL.render(ctx);
+  window.MS_EG71_SHELL.bind(document.getElementById('app'));
+})();
+</script>
+</body>
+</html>

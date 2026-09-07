@@ -101,6 +101,7 @@
   width: 220px;
   background: #182032;                              /* Figma color-bg-6 */
   border-right: 1px solid #1c1c1c;
+  transition: width var(--duration-normal) var(--ease);
 }
 .bc-eg71-sidenav .ms-sidebar-brand { border-bottom: 1px solid #1c1c1c; }
 .bc-eg71-sidenav .ms-sidebar-foot { border-top: 1px solid #1c1c1c; }
@@ -122,15 +123,17 @@
 
 /* 间距对齐 Figma 2016:89103：覆写基础组件默认间距（调用 .ms-sidebar/.ms-nav/.ms-nav-item 基础控件，
    仅本作用域改写封装）。能命中令牌的引令牌；9px / 10px 为 Figma 指定且令牌无命中，写死。 */
-.bc-eg71-sidenav .ms-sidebar-brand { padding: 10px var(--spacing-12); gap: 10px; }                              /* Logo 区 px-12 py-10 gap-10 */
+.bc-eg71-sidenav .ms-sidebar-brand { position: relative; padding: 10px var(--spacing-12); gap: 10px; }            /* Logo 区 px-12 py-10 gap-10；relative 供 collapse 按钮定位 */
 .bc-eg71-sidenav .ms-sidebar-body { padding: var(--spacing-12) 0 0; }                                            /* 菜单区 pt-12 */
 .bc-eg71-sidenav .ms-nav { padding: var(--spacing-4) var(--spacing-8); gap: var(--spacing-8); }                  /* arco-menu-inner px-8 py-4 gap-8 */
 .bc-eg71-sidenav .ms-nav-item { padding: 9px var(--spacing-12); border-radius: var(--radius-2); gap: var(--spacing-8); } /* 一级项 px-12 py-9 rounded-2 gap-8 */
 .bc-eg71-sidenav .ms-sidebar-foot { padding: var(--spacing-20) var(--spacing-12); }                              /* 账户区 px-12 py-20 */
 .bc-eg71-sidenav .bc-eg71-foot { gap: 10px; }                                                                    /* 账户区 gap-10 */
 
-.bc-eg71-add { margin-left: auto; color: #ffffff; border-color: #5eafff; background: transparent; }
-.bc-eg71-add:hover { background: #052461; }
+.bc-eg71-collapse { flex: none; margin-left: auto; color: #ffffff; border-color: transparent; background: transparent; }
+.bc-eg71-collapse:hover { background: #1c1c1c; }
+/* 展开态：按钮距右侧 8px（brand 右 padding 12px，按钮靠右 margin-left:auto，再向右贴 4px 使右缘距边 8px） */
+.bc-eg71-sidenav:not(.is-collapsed) .bc-eg71-collapse { margin-right: calc(var(--spacing-8) - var(--spacing-12)); }
 .bc-eg71-chevron {
   margin-left: auto; display: inline-flex;
   transition: transform var(--duration-normal) var(--ease);
@@ -148,14 +151,84 @@
 .bc-eg71-lang { position: relative; }
 .bc-eg71-lang-menu { position: absolute; right: calc(100% + var(--spacing-4)); top: 0; }
 
-/* ---------- EG71 顶部导航 ---------- */
-/* 高度由 .ms-header 绑定 --header-h（56px），此处不覆盖 */
-.bc-eg71-hostid { display: inline-flex; align-items: center; gap: var(--spacing-4); }
-.bc-eg71-title { display: flex; flex-direction: column; gap: var(--spacing-4); }
-.bc-eg71-hostline { display: flex; align-items: center; gap: var(--spacing-8); }
-.bc-eg71-more-wrap { position: relative; }
-.bc-eg71-more-menu { position: absolute; right: 0; top: calc(100% + var(--spacing-4)); }
-.bc-eg71-scan { width: var(--spacing-64); }
+/* 展开/收起态：宽 220px → 80px，logo 文字 / 一级 label / chevron / 子菜单 / 账户名 / more 全隐藏，
+   仅留 icon 居中；collapse 按钮图标由 bind() 在 arrowLeft ↔ arrowRight 间互换（点按即变，无需 CSS 旋转）。 */
+.bc-eg71-sidenav.is-collapsed { width: 80px; }
+.bc-eg71-sidenav.is-collapsed .ms-sidebar-brand { gap: 0; }
+/* 收起态：collapse 按钮 50% 悬浮在侧边栏右缘外，并按 Figma basic2Button 加底框
+   （bg #182032 + 边框 #38393b + 圆角 4px + 高 20px + 内边距 2px 8px；#38393b 为 Figma 指定且无令牌命中，写死） */
+.bc-eg71-sidenav.is-collapsed .bc-eg71-collapse {
+  position: absolute; right: calc(var(--spacing-16) * -1); top: 50%; transform: translateY(-50%);
+  margin-left: 0; margin-right: 0;
+  height: var(--spacing-20);
+  padding: var(--spacing-2) var(--spacing-8);
+  border-radius: var(--radius-4);
+  background: #182032;
+  border: 1px solid #38393b;
+}
+.bc-eg71-sidenav.is-collapsed .ms-logo-text,
+.bc-eg71-sidenav.is-collapsed .ms-nav-item > span:not(.ms-ico),
+.bc-eg71-sidenav.is-collapsed .bc-eg71-chevron,
+.bc-eg71-sidenav.is-collapsed .bc-eg71-sub,
+.bc-eg71-sidenav.is-collapsed .bc-eg71-foot-name,
+.bc-eg71-sidenav.is-collapsed .bc-eg71-more { display: none !important; }
+.bc-eg71-sidenav.is-collapsed .ms-nav-item { justify-content: center; padding: 9px 0; }
+.bc-eg71-sidenav.is-collapsed .bc-eg71-foot { justify-content: center; gap: 0; }
+
+/* ---------- EG71 顶部导航（通用版，非 /dashboard） ---------- */
+/* Figma 2016:88258（默认）：56px 骨架，px-20、右灰底胶囊 + 40px 更多按钮。
+   高度由 .ms-header 绑定 --header-h（56px），此处不覆盖；
+   40px 按钮尺寸 / 16px 名称字 / 14px 面包屑字为 Figma 指定，40px 命中 --spacing-40，其余写死。 */
+.bc-eg71-topnav--general { padding: 0 var(--spacing-20); }
+.bc-eg71-general-crumbs { gap: var(--spacing-4); font-size: 14px; line-height: 22px; }
+.bc-eg71-general-crumbs a { color: var(--color-text-auxiliary); }
+.bc-eg71-general-crumbs a:hover { color: var(--color-primary-normal); }
+.bc-eg71-crumb-sep { display: inline-flex; align-items: center; color: var(--color-text-auxiliary); }
+.bc-eg71-crumb-sep .ms-ico { width: var(--spacing-12); height: var(--spacing-12); }
+.bc-eg71-crumb-last { color: var(--color-text-primary); }
+.bc-eg71-general-right { gap: var(--spacing-20); }
+.bc-eg71-general-host {
+  display: inline-flex; align-items: center; gap: var(--spacing-16);
+  background: var(--color-fill-base-normal);
+  padding: var(--spacing-2) var(--spacing-8) var(--spacing-2) var(--spacing-12);
+  border-radius: var(--radius-4);
+}
+.bc-eg71-general-hostname {
+  height: auto; padding: 0; gap: 0;
+  font-size: 16px; line-height: 24px; font-weight: 500;
+  color: var(--color-text-primary);
+}
+.bc-eg71-general-hostname:hover { color: var(--color-primary-normal); }
+.bc-eg71-general-sn { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-general-sn-text { line-height: 22px; }
+.bc-eg71-general-copy { width: auto; height: auto; padding: 0; gap: 0; color: var(--color-text-secondary); }
+.bc-eg71-general-more {
+  width: var(--spacing-40); height: var(--spacing-40); padding: 0; gap: 0;
+  border-radius: var(--radius-4); flex: none;
+}
+
+/* ---------- EG71 Dashboard 顶部导航（/dashboard） ---------- */
+/* Figma 2016:88209（V3 只读）/ 2016:88233（Variant5 名称可编辑）同骨架：84px 高、灰底、左模块图标 + HostName/序列号 + 右 Guide。 */
+/* 写死仅限 Figma 无令牌命中的值：84px 高度、44px 圆形图标、20px/28px 标题字、14px/22px 序列号字（配色走令牌，间距能命中即令牌）。 */
+.bc-eg71-topnav--dashboard {
+  height: 84px;
+  padding: 0 var(--spacing-20);
+  background: var(--color-bg-page);
+}
+.bc-eg71-topnav--dashboard .ms-header-left { gap: var(--spacing-16); }
+.bc-eg71-dash-left { flex: 1; min-width: 0; }
+.bc-eg71-dash-logo {
+  width: 44px; height: 44px; flex: none;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-card); color: var(--color-primary-normal);
+  display: flex; align-items: center; justify-content: center;
+}
+.bc-eg71-dash-title { display: flex; flex-direction: column; justify-content: center; gap: var(--spacing-4); }
+.bc-eg71-dash-host { font-size: 20px; line-height: 28px; font-weight: 600; color: var(--color-text-primary); white-space: nowrap; }
+.bc-eg71-dash-sn { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-dash-sn-text { line-height: 22px; }
+.bc-eg71-dash-copy { width: auto; height: auto; padding: 0; gap: 0; color: var(--color-text-secondary); }
+.bc-eg71-dash-guide { border-radius: var(--radius-4); gap: var(--spacing-4); font-weight: 400; }
 
 /* ---------- EG71 表单底部操作栏 ---------- */
 /* 吸底由 .ms-affix--fixed > .ms-affix-body（fixed + bottom:0）承担，此处不重定义 */
@@ -176,3 +249,33 @@
   background: var(--color-fill-base-normal); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8);
 }
 @media (max-width: 980px) { .bc-eg71-formgrid { grid-template-columns: 1fr; } }
+
+/* ---------- EG71 表单输入项（FormItem input） ---------- */
+/* 标签行：必填星号/标签/单位/info 图标靠左，字数统计靠右；错误态文案走 error-normal 令牌 */
+.bc-eg71-form-item-labelrow { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-8); }
+.bc-eg71-form-item-labelrow .ms-form-label { color: var(--color-text-secondary); font-weight: 400; }
+.bc-eg71-form-item-unit { color: var(--color-text-auxiliary); }
+.bc-eg71-form-item-count { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); white-space: nowrap; }
+.bc-eg71-form-item-msg { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); }
+.bc-eg71-form-item-msg--error { color: var(--color-text-error-normal); }
+
+/* ---------- EG71 表单下拉项（FormItem select） ---------- */
+/* L2 无 .ms-select--lg，此处仅做尺寸编排：40px 高 + 16px 字，错误态边框走 ms-select--error 令牌 */
+.bc-eg71-form-item-select > select { height: var(--spacing-40); font-size: 16px; }
+
+/* ---------- EG71 表单「输入 + 按钮」行 ---------- */
+/* 下拉框与主/次按钮组横向排列，间距用 L1 令牌 */
+.bc-eg71-form-item-btnrow { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-form-item-btnrow .ms-select { flex: 1; min-width: 0; }
+.bc-eg71-form-item-btnrow .ms-btn-group { flex: none; }
+
+/* ---------- EG71 表单日期范围项（FormItem date-picker range） ---------- */
+/* 起始/结束输入与分隔符、日历图标横排，复用 .ms-input--lg 外壳 */
+.bc-eg71-form-item-range { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-form-item-range > input { flex: 1; min-width: 0; border: 0; padding: 0; height: auto; background: transparent; }
+.bc-eg71-form-item-range .ms-ico { flex: none; color: var(--color-text-auxiliary); }
+
+/* ---------- EG71 表单单选按钮组（FormItem radio group） ---------- */
+/* 线框单选按钮组占满宽度，横向排布互斥选项；视觉由 L2 .ms-radio-btn 承担，此处仅编排布局 */
+.bc-eg71-form-item-radio-group { width: 100%; }
+.bc-eg71-form-item-radio-group .ms-radio-btn { flex: 1; }

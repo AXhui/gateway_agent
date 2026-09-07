@@ -10,38 +10,45 @@
 
 /* ---------- 图标（内联 SVG，随生成页面一起导出，零外部依赖） ---------- */
 window.MS_ICONS = {
-  device: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 7h4"/></svg>',
-  gateway: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 17h.01M12 10V7a4 4 0 0 1 8 0v3"/></svg>',
-  alarm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
-  firmware: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
-  member: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.5a3 3 0 0 1 0 5.5M18 20c0-2.5-1-4.6-2.6-5.7"/></svg>',
-  sensor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 16h4l2-5 3 9 2.5-7 2 3h4.5"/></svg>',
-  log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
-  dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
-  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
-  filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
-  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>',
-  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>',
-  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
-  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>',
-  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/></svg>',
-  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
-  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>',
-  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V6M4 20h16"/><path d="m8 16 3.5-5 3 3L20 8"/></svg>',
-  topology: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5 6.5 17M12 7.5 17.5 17M7.5 19h9"/></svg>',
-  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m14 6 4 4"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
-  chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>',
-  moreHoriz: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>',
-  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>',
-  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>',
-  data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg>',
-  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
-  app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 6.5h.01M12 6.5h.01"/></svg>',
-  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
-  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>',
-  question: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2.3-2.6 3.8"/><path d="M12 17h.01"/></svg>'
+  device: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>',
+  gateway: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6.01 18H6"/><path d="M10.01 18H10"/><path d="M15 10v4"/><path d="M17.84 7.17a4 4 0 0 0-5.66 0"/><path d="M20.66 4.34a8 8 0 0 0-11.31 0"/></svg>',
+  alarm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  firmware: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg>',
+  member: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  sensor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>',
+  log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+  dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>',
+  topology: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
+  chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  moreHoriz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>',
+  app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  question: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  chevronRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+  arrowLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+  arrowRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+  menuFold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7h9"/><path d="M11 12h9"/><path d="M11 17h9"/><path d="M9 7l-5 5 5 5"/></svg>',
+  menuUnfold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9"/><path d="M4 12h9"/><path d="M4 17h9"/><path d="M15 7l5 5-5 5"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>'
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -109,7 +116,17 @@ window.MS_BIZ_UTIL = (function () {
       ${data.map((v, i) => `<rect x="${(i * gap + (gap - bw) / 2).toFixed(1)}" y="${(o.h - (v / max) * o.h).toFixed(1)}" width="${bw.toFixed(1)}" height="${((v / max) * o.h).toFixed(1)}" rx="3" fill="${o.color}" fill-opacity="0.82"/>`).join('')}
     </svg>`;
   }
-  return { esc, ico, statusTag, statusOf, cellHtml, svgLine, svgBars, DOT };
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // EG71 一级侧边导航分组（侧栏与顶栏面包屑共享的唯一源，避免两处各写一份）
+  const navGroups = [
+    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+    { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
+    { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
+    { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
+    { label: 'System Setting', icon: 'settings', route: '/system-setting', children: ['General', 'User', 'Server', 'Maintenance', 'Log', 'SNMP', 'Events'] },
+    { label: 'APP', icon: 'app', route: '/app', children: ['Python', 'Node-RED'] }
+  ];
+  return { esc, ico, statusTag, statusOf, cellHtml, svgLine, svgBars, DOT, slug, navGroups };
 })();
 
 /* ---------- 业务组件定义 ---------- */
@@ -588,15 +605,8 @@ window.MS_BIZ_UTIL = (function () {
         // 一级导航（mode=vertical）：单一路由源 ctx.route 决定选中态；Dashboard 直达 /dashboard，
         // 其余带 chevron 可展开，子条目带各自路由（父级 route 即分组路由，子条目 = 分组路由 + slug）。
         const route = ctx.route || '/dashboard';
-        const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        const groups = [
-          { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-          { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
-          { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
-          { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
-          { label: 'System Setting', icon: 'settings', route: '/system-setting', children: ['General', 'User', 'Server', 'Maintenance', 'Log', 'SNMP', 'Events'] },
-          { label: 'APP', icon: 'app', route: '/app', children: ['Python', 'Node-RED'] }
-        ];
+        const slug = U.slug;
+        const groups = U.navGroups;
         const navItem = (g) => {
           const has = g.children && g.children.length;
           const active = route === g.route || route.indexOf(g.route + '/') === 0;
@@ -636,7 +646,7 @@ window.MS_BIZ_UTIL = (function () {
         return `<aside class="ms-sidebar bc-eg71-sidenav">
           <div class="ms-sidebar-brand">
             <span class="ms-logo ms-logo--dark"><span class="ms-logo-mark">M</span><span class="ms-logo-text">Milesight</span></span>
-            <button class="ms-btn ms-btn--xs bc-eg71-add" aria-label="新增">${ico('plus', 14)}</button>
+            <button class="ms-btn ms-btn--xs ms-btn--text bc-eg71-collapse" aria-label="收起侧边栏" aria-expanded="true">${ico('arrowLeft', 16)}</button>
           </div>
           <nav class="ms-sidebar-body"><div class="ms-nav">
             ${groups.map(navItem).join('')}
@@ -655,6 +665,16 @@ window.MS_BIZ_UTIL = (function () {
       },
       bind(root) {
         const rootEl = root.querySelector('.bc-eg71-sidenav') || root;
+        // 展开/收起：点击 collapse 按钮切换 is-collapsed，折叠/展开图标随状态互换（arrowLeft ↔ arrowRight）
+        const collapseBtn = rootEl.querySelector('.bc-eg71-collapse');
+        if (collapseBtn) {
+          collapseBtn.addEventListener('click', () => {
+            const collapsed = rootEl.classList.toggle('is-collapsed');
+            collapseBtn.innerHTML = ico(collapsed ? 'arrowRight' : 'arrowLeft', 16);
+            collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+            collapseBtn.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
+          });
+        }
         // 一级导航展开/收起：点击切换 open，chevron 旋转，仅展开当前项（accordion）
         rootEl.querySelectorAll('[data-nav]').forEach(nav => {
           const t = nav.querySelector('[data-nav-trigger]');
@@ -714,72 +734,71 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-topnav', cn: '顶部导航', cat: '概览',
-      desc: 'Milesight 网关管理后台顶部导航（Header）：以路由为单一源，/dashboard 渲染 Dashboard 版（模块图标 + 网关名称 + 序列号复制 + Guide 帮助），其余路由渲染通用版（面包屑 Home > Channel > Users > News + 网关名称只读/可编辑双态 + 序列号复制 + 收藏 + 更多操作下拉 + 扫描进度），编排 L2 面包屑 / 按钮 / 图标 / 下拉菜单 / 进度条基础组件。',
-      atoms: ['breadcrumb', 'button', 'icon', 'dropdown-menu', 'progress', 'input', 'modal', 'message'],
+      desc: 'Milesight 网关管理后台顶部导航（Header）：以路由为单一源，/dashboard 渲染 Dashboard 版（44px 模块图标 + 网关名称 + 序列号复制 + Guide 帮助），其余路由渲染通用版（面包屑 Home > Channel > Users > News chevron 分隔 + 灰底 HostName 胶囊含 16px Medium 名称 + 序列号复制 + 40px 更多按钮），编排 L2 面包屑 / 按钮 / 图标基础组件。',
+      atoms: ['breadcrumb', 'button', 'icon'],
       entityHint: 'gateway',
       tags: ['顶部导航', 'Header', '面包屑', '网关', 'EG71', '后台', '导航'],
       render(ctx) {
         const e = ctx.entity, r = (ctx.rows || MS_DATA.build(e, 1))[0];
-        const route = ctx.route || '/channel/users/news';
+        const route = ctx.route || '/system-setting/general';
         const isDashboard = route === '/dashboard' || route.indexOf('/dashboard/') === 0;
         const cap = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-        // 分组 A：Dashboard 导航（/dashboard）——模块图标 + 网关名称 + 序列号复制 + Guide 帮助
+        // 分组 A：Dashboard 导航（/dashboard）——44px 圆形模块图标 + HostName + 序列号复制 + Guide 帮助
+        // Figma 2016:88209（V3 只读）/ 2016:88233（Variant5 名称可编辑）两个状态同骨架；间距/字号写死在 business.css 的 .bc-eg71-dash-* 作用域。
         if (isDashboard) {
-          return `<header class="ms-header">
-            <div class="ms-header-left">
-              ${ico('gateway', 24)}
-              <span class="ms-text ms-text--strong">${esc(r.name)}</span>
-              <span class="bc-eg71-hostid">
-                <span class="ms-text ms-text--code ms-text--secondary">${esc(r.sn)}</span>
-                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="复制设备 ID">${ico('copy', 14)}</button>
-              </span>
+          return `<header class="ms-header bc-eg71-topnav--dashboard">
+            <div class="ms-header-left bc-eg71-dash-left">
+              <span class="bc-eg71-dash-logo">${ico('gateway', 24)}</span>
+              <div class="bc-eg71-dash-title">
+                <span class="bc-eg71-dash-host">${esc(r.name)}</span>
+                <span class="bc-eg71-dash-sn">
+                  <span class="ms-text bc-eg71-dash-sn-text">${esc(r.sn)}</span>
+                  <button class="ms-btn ms-btn--text bc-eg71-dash-copy" aria-label="复制序列号">${ico('copy', 20)}</button>
+                </span>
+              </div>
             </div>
             <div class="ms-header-right">
-              <button class="ms-btn ms-btn--sm">${ico('question', 14)}Guide</button>
+              <button class="ms-btn bc-eg71-dash-guide">${ico('question', 16)}Guide</button>
             </div>
           </header>`;
         }
 
-        // 分组 B：通用页导航（非 /dashboard）——面包屑（末级不可点）+ 名称/序列号 + 动作组
+        // 分组 B：通用页导航（非 /dashboard）——面包屑（chevron 分隔，末级不可点）+ 灰底 HostName 胶囊 + 更多按钮
+        // Figma 2016:88258（默认）：56px 骨架，左面包屑 Home > Channel > Users > News（chevron 分隔，非末级 auxiliary、末级 primary），
+        // 右灰底胶囊（HostName 16px Medium + 序列号 + 复制 20px）+ 40px 更多按钮。间距/字号写死在 business.css 的 .bc-eg71-topnav--general 作用域。
         const segs = route.split('/').filter(Boolean);
-        let acc = '';
-        const crumbs = ['<a href="/">Home</a>'];
-        segs.forEach((s, i) => {
-          acc += '/' + s;
-          const label = cap(s);
-          crumbs.push(i === segs.length - 1 ? `<span>${esc(label)}</span>` : `<a href="${esc(acc)}">${esc(label)}</a>`);
-        });
-        const breadcrumb = crumbs.join('<span class="ms-breadcrumb-sep">/</span>');
+        const crumbSep = `<span class="bc-eg71-crumb-sep">${ico('chevronRight', 12)}</span>`;
+        // 面包屑从一级侧边导航开始排（无 Home）：route 第一段 → 分组，第二段 → 子项
+        const group = U.navGroups.find(g => segs[0] && ('/' + segs[0]) === g.route);
+        let crumbs = [];
+        if (group) {
+          const isGroupOnly = !segs[1];
+          crumbs.push(isGroupOnly
+            ? `<span class="bc-eg71-crumb-last">${esc(group.label)}</span>`
+            : `<a href="${esc(group.route)}">${esc(group.label)}</a>`);
+          if (segs[1]) {
+            const childLabel = (group.children || []).find(c => U.slug(c) === segs[1]) || cap(segs[1]);
+            crumbs.push(`<span class="bc-eg71-crumb-last">${esc(childLabel)}</span>`);
+          }
+        } else {
+          crumbs.push(`<span class="bc-eg71-crumb-last">${esc(cap(segs[segs.length - 1] || 'Home'))}</span>`);
+        }
+        const breadcrumb = crumbs.join(crumbSep);
 
-        return `<header class="ms-header">
+        return `<header class="ms-header bc-eg71-topnav--general">
           <div class="ms-header-left">
-            <div class="bc-eg71-title">
-              <nav class="ms-breadcrumb">${breadcrumb}</nav>
-              <div class="bc-eg71-hostline">
-                <span class="ms-text ms-text--strong">${esc(r.name)}</span>
-                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="编辑名称">${ico('edit', 14)}</button>
-                <span class="ms-text ms-text--code ms-text--secondary">${esc(r.sn)}</span>
-                <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="复制设备 ID">${ico('copy', 14)}</button>
-              </div>
-            </div>
+            <nav class="ms-breadcrumb bc-eg71-general-crumbs">${breadcrumb}</nav>
           </div>
-          <div class="ms-header-right">
-            <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="收藏">${ico('star', 14)}</button>
-            <div class="bc-eg71-more-wrap">
-              <button class="ms-btn ms-btn--xs ms-btn--text" aria-label="更多操作">${ico('moreHoriz', 14)}</button>
-              <div class="ms-dropdown bc-eg71-more-menu">
-                <div class="ms-dropdown-item">${ico('info', 14)}详情</div>
-                <div class="ms-dropdown-item">${ico('settings', 14)}配置</div>
-                <div class="ms-dropdown-item">${ico('refresh', 14)}重启</div>
-                <div class="ms-dropdown-sep"></div>
-                <div class="ms-dropdown-item ms-dropdown-item--danger">${ico('trash', 14)}删除</div>
-              </div>
+          <div class="ms-header-right bc-eg71-general-right">
+            <div class="bc-eg71-general-host">
+              <button class="ms-btn ms-btn--text bc-eg71-general-hostname">${esc(r.name)}</button>
+              <span class="bc-eg71-general-sn">
+                <span class="ms-text bc-eg71-general-sn-text">${esc(r.sn)}</span>
+                <button class="ms-btn ms-btn--text bc-eg71-general-copy" aria-label="复制序列号">${ico('copy', 20)}</button>
+              </span>
             </div>
-            <div class="ms-progress bc-eg71-scan">
-              <div class="ms-progress-line"><div class="ms-progress-bar" style="width:64%"></div></div>
-              <span class="ms-progress-text">Scanning 64%</span>
-            </div>
+            <button class="ms-btn ms-btn--text bc-eg71-general-more" aria-label="更多操作">${ico('moreHoriz', 20)}</button>
           </div>
         </header>`;
       }
@@ -806,19 +825,14 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-content', cn: '内容容器', cat: '系统设置',
-      desc: 'Milesight 网关配置页内容容器：一张张 ms-card 区块卡竖排堆叠，每张卡 = 标题行（标题 + 尾部 Switch 开关或 Add/导入按钮组）+ 卡体。卡体编排五种通用形态：两列表单栅格（ms-form-item 内联标签 + Input/Select 控件）、Radio 单选组、Checkbox 多选内嵌子区、可编辑 ms-table + Add 按钮、ms-empty 空态，全部由基础组件组合。',
+      desc: 'Milesight 网关配置页内容容器：一张张 ms-card 区块卡竖排堆叠，每张卡 = 标题行（标题 + 尾部 Switch 开关或 Add/导入按钮组）+ 卡体。表单字段统一引用 bc-eg71-form-item-* 表单业务组件（input / radio-group），Checkbox 多选内嵌子区、可编辑 ms-table + Add 按钮、ms-empty 空态则由基础组件直接编排。',
       atoms: ['card', 'form', 'input', 'select', 'radio', 'checkbox', 'switch', 'button', 'tag', 'table', 'empty'],
       entityHint: 'gateway',
       tags: ['内容容器', '区块卡', '表单', '设置', '网络', '开关', '单选', '多选', '可编辑表格', '空态', 'EG71'],
       render(ctx) {
         const e = ctx.entity, r = (ctx.rows || MS_DATA.build(e, 1))[0];
-        const input = (v, ph) => `<span class="ms-input"><input type="text" value="${esc(v || '')}" placeholder="${esc(ph || '')}"></span>`;
+        const fitem = (id, c) => (window.MS_BIZ_INDEX && window.MS_BIZ_INDEX[id] ? window.MS_BIZ_INDEX[id].render(c) : '');
         const select = opts => `<span class="ms-select"><select>${opts.map(o => `<option${o[1] ? ' selected' : ''}>${esc(o[0])}</option>`).join('')}</select></span>`;
-        const field = (label, required, control) => `
-          <div class="ms-form-item ms-form-item--inline">
-            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}</label>
-            <div class="ms-form-control">${control}</div>
-          </div>`;
         const head = (title, extra) => `
           <div class="ms-card-head">
             <div class="ms-card-title">${esc(title)}</div>
@@ -832,10 +846,10 @@ window.MS_BIZ_UTIL = (function () {
             <div class="ms-card-body">
               <div class="ms-form">
                 <div class="bc-eg71-formgrid">
-                  ${field('Device Name', true, input(r.name))}
-                  ${field('Host ID', false, input(r.sn))}
-                  ${field('Model', false, input(r.model))}
-                  ${field('Firmware', false, input(r.firmware || '1.2.3'))}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Device Name', required: true, value: r.name, showCount: true, msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Host ID', required: false, value: r.sn, msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Model', required: false, value: r.model, msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Firmware', required: false, value: r.firmware || '1.2.3', msg: '' })}
                 </div>
               </div>
             </div>
@@ -845,20 +859,12 @@ window.MS_BIZ_UTIL = (function () {
             ${head('Network Interface')}
             <div class="ms-card-body">
               <div class="ms-form">
-                <div class="ms-form-item ms-form-item--inline">
-                  <label class="ms-form-label">IP Assignment</label>
-                  <div class="ms-form-control">
-                    <div class="bc-eg71-options">
-                      <label class="ms-radio"><input type="radio" name="eg71-ip" checked><span class="ms-radio-dot"></span>DHCP</label>
-                      <label class="ms-radio"><input type="radio" name="eg71-ip"><span class="ms-radio-dot"></span>Static</label>
-                    </div>
-                  </div>
-                </div>
+                ${fitem('bc-eg71-form-item-radio-group', { label: 'IP Assignment', required: false, options: ['DHCP', 'Static'], value: 'DHCP', msg: '' })}
                 <div class="bc-eg71-formgrid">
-                  ${field('IP Address', false, input('192.168.1.1'))}
-                  ${field('Netmask', false, input('255.255.255.0'))}
-                  ${field('Gateway', false, input('192.168.1.254'))}
-                  ${field('DNS Server', false, input('8.8.8.8'))}
+                  ${fitem('bc-eg71-form-item-input', { label: 'IP Address', required: false, value: '192.168.1.1', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Netmask', required: false, value: '255.255.255.0', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Gateway', required: false, value: '192.168.1.254', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'DNS Server', required: false, value: '8.8.8.8', msg: '' })}
                 </div>
               </div>
             </div>
@@ -907,6 +913,250 @@ window.MS_BIZ_UTIL = (function () {
               </div>
             </div>
           </section>
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-alarm', cn: '告警事件列表', cat: '系统设置',
+      desc: 'Milesight 网关管理后台「System Setting → Events」告警事件页：指标卡组（未处理 / 紧急 / 今日已处理 / 平均响应）+ 筛选栏（关键词 / 级别 / 处理状态 / 时间范围）+ 告警数据表（规则名称 / 级别 / 触发条件 / 触发对象 / 触发时间 / 处理状态，行内 处理·指派·忽略·详情 动作），全部编排 L2 卡片 / 统计 / 输入 / 选择器 / 按钮 / 表格 / 分页 / 标签基础组件；行内「处理 / 忽略」动作在 bind 里把该行处理状态原地切换为「已关闭」。',
+      atoms: ['card', 'statistic', 'input', 'select', 'button', 'table', 'checkbox', 'tag', 'pagination', 'icon'],
+      entityHint: 'alarm',
+      tags: ['告警', '报警', '事件', 'Events', '预警', '规则', '列表', 'EG71', '告警列表'],
+      render(ctx) {
+        const e = ctx.entity, rows = ctx.rows || MS_DATA.build(e, 6);
+        const cols = e.fields;
+        const levels = ['紧急', '重要', '提示', '配置变更'];
+        const metrics = `<div class="ms-grid-4">${e.metrics.map(m => `
+          <div class="ms-card bc-metric">
+            <div class="ms-card-body bc-metric-body">
+              <div class="ms-stat-title">${esc(m.cn)}</div>
+              <div class="ms-stat-value">${esc(m.value)}<span class="ms-stat-suffix">${esc(m.suffix || '')}</span></div>
+              <div class="ms-stat-trend ms-stat-trend--${m.dir || 'flat'}">${m.dir === 'down' ? '↓' : (m.dir === 'up' ? '↑' : '—')} ${esc(m.trend || '')}<span class="ms-text--auxiliary ms-text--sm"> 较昨日</span></div>
+            </div>
+          </div>`).join('')}</div>`;
+        const filter = `<div class="ms-card"><div class="ms-card-body ms-card-body--tight">
+          <div class="bc-filter">
+            <label class="ms-input ms-input--sm bc-filter-search">${ico('search', 14)}<input placeholder="搜索规则名称 / 触发对象"></label>
+            <span class="ms-select ms-select--sm bc-filter-select"><select><option>全部级别</option>${levels.map(l => `<option>${esc(l)}</option>`).join('')}</select></span>
+            <span class="ms-select ms-select--sm bc-filter-select"><select><option>全部状态</option>${e.statuses.map(s => `<option>${esc(s.cn)}</option>`).join('')}</select></span>
+            <span class="bc-filter-date"><label class="ms-input ms-input--sm">${ico('log', 14)}<input value="2026-08-01 ~ 2026-09-04" readonly></label></span>
+            <span class="bc-filter-actions">
+              <button class="ms-btn ms-btn--sm">${ico('refresh', 14)}重置</button>
+              <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('search', 14)}查询</button>
+            </span>
+          </div></div></div>`;
+        const opBtn = a => `<button class="ms-btn ms-btn--link${a === '忽略' ? ' ms-btn--danger' : ''}" data-alarm-op="${esc(a)}">${esc(a)}</button>`;
+        const table = `<div class="ms-table-wrap">
+          <div class="ms-table-toolbar">
+            <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">共 1,286 条</span></div>
+            <div class="ms-space ms-space--8">
+              <button class="ms-btn ms-btn--sm ms-btn--dashed">${ico('filter', 14)}列设置</button>
+              <button class="ms-btn ms-btn--sm">${ico('download', 14)}导出</button>
+              <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 14)}新增规则</button>
+            </div>
+          </div>
+          <table class="ms-table">
+            <thead><tr>
+              <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span></label></th>
+              ${cols.map(c => `<th>${esc(c.cn)}</th>`).join('')}
+              <th class="ms-table-ops">操作</th>
+            </tr></thead>
+            <tbody>${rows.map((r, i) => `<tr${i === 0 ? ' class="ms-table-row--active"' : ''}>
+              <td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"${i < 2 ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>
+              ${cols.map(c => c.type === 'status'
+                ? `<td data-col="status">${U.cellHtml(c, r, e)}</td>`
+                : `<td${c.type === 'num' || c.type === 'percent' ? ' class="ms-table-num"' : ''}>${U.cellHtml(c, r, e)}</td>`).join('')}
+              <td class="ms-table-ops">${e.actions.map(opBtn).join('')}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+          <div class="bc-table-foot">
+            <span class="ms-text--secondary ms-text--sm">已选 <b>2</b> 项</span>
+            <div class="ms-space ms-space--8">
+              <button class="ms-btn ms-btn--sm ms-btn--dashed">批量处理</button>
+              <button class="ms-btn ms-btn--sm ms-btn--danger">批量忽略</button>
+              <span class="ms-pagination">
+                <span class="ms-page-item" disabled>‹</span>
+                <span class="ms-page-item ms-page-item--active">1</span>
+                <span class="ms-page-item">2</span><span class="ms-page-item">3</span>
+                <span class="ms-page-item">…</span><span class="ms-page-item">18</span>
+                <span class="ms-page-item">›</span>
+                <span class="ms-page-jump">跳至<input value="1">页</span>
+              </span>
+            </div>
+          </div>
+        </div>`;
+        return `<div class="bc-eg71-content bc-eg71-alarm">${metrics}${filter}${table}</div>`;
+      },
+      bind(root) {
+        const rootEl = root.querySelector('.bc-eg71-alarm') || root;
+        const closed = { cn: '已关闭', tone: 'muted' };
+        rootEl.querySelectorAll('[data-alarm-op]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const op = btn.getAttribute('data-alarm-op');
+            if (op !== '处理' && op !== '忽略') return;
+            const tr = btn.closest('tr');
+            const sc = tr && tr.querySelector('td[data-col="status"]');
+            if (sc) sc.innerHTML = U.statusTag(closed);
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-input', cn: '表单输入项', cat: '表单',
+      desc: 'Milesight 网关配置表单输入项：标签 + 输入框 + 提示文案，支持 normal/error 状态与 0/32 字数统计开关。',
+      atoms: ['form', 'input'],
+      entityHint: 'gateway',
+      tags: ['表单', '输入', '校验', '字数', 'FormItem', '设置', 'EG71'],
+      render(ctx) {
+        const err = ctx.status === 'error';
+        const showCount = !!ctx.showCount;
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : "Please input passenger's name or delete this field.";
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+            ${showCount ? '<span class="bc-eg71-form-item-count">0/32</span>' : ''}
+          </div>
+          <label class="ms-input${err ? ' ms-input--error' : ' ms-input--lg'}"><input value="${esc(ctx.value || '')}" placeholder="${esc(ctx.placeholder || 'Example')}"></label>
+          ${msg ? `<div class="bc-eg71-form-item-msg${err ? ' bc-eg71-form-item-msg--error' : ''}">${esc(msg)}</div>` : ''}
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-select', cn: '表单下拉项', cat: '表单',
+      desc: 'Milesight 网关配置表单下拉项：标签 + 下拉选择框 + 提示文案，支持 normal/error 状态。',
+      atoms: ['form', 'select'],
+      entityHint: 'gateway',
+      tags: ['表单', '下拉', '选择', '校验', 'FormItem', '设置', 'EG71'],
+      render(ctx) {
+        const err = ctx.status === 'error';
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : 'Please select a time zone.';
+        const opts = ctx.options || ['Please select'];
+        const value = ctx.value;
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <span class="ms-select bc-eg71-form-item-select${err ? ' ms-select--error' : ''}">
+            <select>${opts.map(o => `<option${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>
+          </span>
+          ${msg ? `<div class="bc-eg71-form-item-msg${err ? ' bc-eg71-form-item-msg--error' : ''}">${esc(msg)}</div>` : ''}
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-input-button', cn: '表单输入按钮项', cat: '表单',
+      desc: 'Milesight 网关配置表单「输入 + 按钮」项：下拉框 + 主/次按钮组，用于选择后触发动作。',
+      atoms: ['form', 'select', 'button'],
+      entityHint: 'gateway',
+      tags: ['表单', '下拉', '按钮组', '主次按钮', 'FormItem', '设置', 'EG71'],
+      render(ctx) {
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : 'Supportive text';
+        const opts = ctx.options || ['Please select'];
+        const value = ctx.value;
+        const primary = ctx.primaryLabel || 'Button';
+        const secondary = ctx.secondaryLabel || 'Button';
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <div class="bc-eg71-form-item-btnrow">
+            <span class="ms-select bc-eg71-form-item-select"><select>${opts.map(o => `<option${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+            <span class="ms-btn-group">
+              <button class="ms-btn ms-btn--filled ms-btn--lg">${esc(primary)}</button>
+              <button class="ms-btn ms-btn--lg">${esc(secondary)}</button>
+            </span>
+          </div>
+          ${msg ? `<div class="bc-eg71-form-item-msg">${esc(msg)}</div>` : ''}
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-date-picker', cn: '表单日期范围项', cat: '表单',
+      desc: 'Milesight 网关配置表单日期范围项：标签 + 起始/结束日期选择框，用于时间范围录入。',
+      atoms: ['form', 'input', 'date-picker'],
+      entityHint: 'gateway',
+      tags: ['表单', '日期', '时间', '范围', 'DatePicker', '设置', 'EG71'],
+      render(ctx) {
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : 'Supportive text';
+        const startPlaceholder = ctx.startPlaceholder || 'Start date';
+        const endPlaceholder = ctx.endPlaceholder || 'End date';
+        const startValue = ctx.startValue || '';
+        const endValue = ctx.endValue || '';
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <span class="ms-datepicker">
+            <label class="ms-input ms-input--lg bc-eg71-form-item-range">
+              <input placeholder="${esc(startPlaceholder)}" value="${esc(startValue)}">
+              ${ico('minus', 16)}
+              <input placeholder="${esc(endPlaceholder)}" value="${esc(endValue)}">
+              ${ico('calendar', 16)}
+            </label>
+          </span>
+          ${msg ? `<div class="bc-eg71-form-item-msg">${esc(msg)}</div>` : ''}
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-radio-group', cn: '表单单选按钮组', cat: '表单',
+      desc: 'Milesight 网关配置表单单选按钮组：标签 + 线框单选按钮组（optionType=button, buttonStyle=outline），用于 2-3 个互斥选项切换。',
+      atoms: ['form', 'radio'],
+      entityHint: 'gateway',
+      tags: ['表单', '单选', '按钮组', 'Radio', 'FormItem', '设置', 'EG71'],
+      render(ctx) {
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : 'Supportive text';
+        const opts = ctx.options || ['Option 1', 'Option 2', 'Option 3'];
+        const value = ctx.value;
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <div class="ms-radio-btn-group bc-eg71-form-item-radio-group" role="radiogroup" aria-label="${esc(label)}">
+            ${opts.map((o, i) => {
+              const checked = o === value || (value == null && i === 1);
+              return `<span class="ms-radio-btn${checked ? ' ms-radio-btn--checked' : ''}" role="radio" aria-checked="${checked}" tabindex="${checked ? '-1' : '0'}">${esc(o)}</span>`;
+            }).join('')}
+          </div>
+          ${msg ? `<div class="bc-eg71-form-item-msg">${esc(msg)}</div>` : ''}
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-button', cn: '表单按钮项', cat: '表单',
+      desc: 'Milesight 网关配置表单按钮项：标签 + 主按钮，用于触发单一动作。',
+      atoms: ['form', 'button'],
+      entityHint: 'gateway',
+      tags: ['表单', '按钮', '主按钮', 'FormItem', '设置', 'EG71'],
+      render(ctx) {
+        const label = ctx.label || 'Label';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : 'Supportive text';
+        const btn = ctx.buttonLabel || 'Button';
+        return `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <div class="bc-eg71-form-item-btnrow">
+            <button class="ms-btn ms-btn--filled ms-btn--lg">${esc(btn)}</button>
+          </div>
+          ${msg ? `<div class="bc-eg71-form-item-msg">${esc(msg)}</div>` : ''}
         </div>`;
       }
     }

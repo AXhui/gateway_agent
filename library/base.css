@@ -176,6 +176,21 @@ body {
 .ms-radio input:checked + .ms-radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-text-constant-normal); }
 .ms-checkbox input:indeterminate + .ms-checkbox-box::after { content: ''; width: 8px; height: 2px; background: var(--color-text-constant-normal); }
 .ms-checkbox input:disabled + .ms-checkbox-box, .ms-radio input:disabled + .ms-radio-dot { background: var(--color-fill-base-normal); border-color: var(--color-border-base-disable); cursor: not-allowed; }
+
+/* ---------- Radio 按钮组（optionType="button" buttonStyle="outline"） ---------- */
+/* 线框形态：选中 border+text --color-primary-normal，未选 --color-border-base + --color-text-primary */
+.ms-radio-btn-group { display: inline-flex; align-items: center; }
+.ms-radio-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 var(--spacing-12); margin-left: -1px;
+  border: 1px solid var(--color-border-base); background: var(--color-bg-card); color: var(--color-text-primary);
+  font: 500 14px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.ms-radio-btn:first-child { margin-left: 0; border-radius: var(--radius-6) 0 0 var(--radius-6); }
+.ms-radio-btn:last-child { border-radius: 0 var(--radius-6) var(--radius-6) 0; }
+.ms-radio-btn:hover { border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
+.ms-radio-btn--checked { border-color: var(--color-primary-normal); color: var(--color-primary-normal); z-index: 1; }
 .ms-switch { position: relative; display: inline-flex; width: 40px; height: 20px; flex: none; }
 .ms-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .ms-switch-track { position: absolute; inset: 0; border-radius: var(--radius-full); background: var(--color-fill-base-hover); border: 1px solid var(--color-border-base); transition: all var(--duration-fast) var(--ease); }
