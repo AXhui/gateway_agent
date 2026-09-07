@@ -1,11 +1,11 @@
 ---
 name: iot-track-routers
-description: 物联网「工业路由器 / 蜂窝接入」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中路由器（路由器/Router/蜂窝/4G/5G/CPE/Dongle/VPN/专线/工业路由/WAN），或用户直接提路由/蜂窝接入需求时，进入本赛道：按「蜂窝接入 → 网络能力 → 可靠性与冗余 → 安全与专网」四段审 PRD 合理性，并对标 Milesight 路由（UR41/32/35/75/UF31/UF51）。知识文件：knowledge/iot-fundamentals/connectivity.md + knowledge/milesight-products/routers.md。
+description: 物联网「工业路由器 / 蜂窝接入」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中路由器（路由器/Router/蜂窝/4G/5G/CPE/Dongle/VPN/专线/工业路由/WAN），或用户直接提路由/蜂窝接入需求时，进入本赛道：按「蜂窝接入 → 网络能力 → 可靠性与冗余 → 安全与专网」四段审 PRD 合理性，并对标 Milesight 路由（UR41/32/35/75/UF31/UF51）。知识文件：.claude/knowledge/iot-fundamentals/connectivity.md + .claude/knowledge/milesight-products/routers.md。
 ---
 
 # 工业路由器 / 蜂窝接入赛道 — 判断与思考方向
 
-> 知识真源：`knowledge/iot-fundamentals/connectivity.md`（蜂窝 4G/5G/频谱/eSIM）+ `knowledge/milesight-products/routers.md`（UR/UF 系列参数基线）。审 PRD 前先读这两份。
+> 知识真源：`.claude/knowledge/iot-fundamentals/connectivity.md`（蜂窝 4G/5G/频谱/eSIM）+ `.claude/knowledge/milesight-products/routers.md`（UR/UF 系列参数基线）。审 PRD 前先读这两份。
 
 ## 一句话定位
 
@@ -40,7 +40,7 @@ description: 物联网「工业路由器 / 蜂窝接入」赛道判断与思考�
 4. 要不要 VPN/专网/双链路冗余？
 
 ## 竞品对标
-主对标 Milesight 路由（UR41 mini / UR32/35 Pro / UR75 5G / UF31 Dongle / UF51 CPE，参数见 knowledge/milesight-products/routers.md）；必要时补 Cisco/Sierra Wireless/Teltonika 工业路由基线。
+主对标 Milesight 路由（UR41 mini / UR32/35 Pro / UR75 5G / UF31 Dongle / UF51 CPE，参数见 .claude/knowledge/milesight-products/routers.md）；必要时补 Cisco/Sierra Wireless/Teltonika 工业路由基线。
 
 ## 产出物
 制式与频段选型 + 带宽/接口核对 + 可靠性清单 + 安全专网 + 竞品基线 + 风险（频段/认证错配、带宽不足、链路单点）。

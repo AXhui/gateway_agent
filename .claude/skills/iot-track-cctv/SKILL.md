@@ -1,12 +1,12 @@
 ---
 name: iot-track-cctv
-description: 物联网「CCTV 视频监控」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中 CCTV（摄像头/IPC/NVR/DVR/监控/录像/PTZ/视频流/安防），或用户直接提视频监控产品需求时，进入本赛道：按「成像链 → 存储链 → 传输链 → 平台链」四段审 PRD 合理性，核对分辨率/码率/低照度/宽动态/红外/防护/存储/带宽/时延等关键参数，并对标海外竞品（Axis/Bosch/Hanwha/Hikvision/Dahua/Milesight 安防线）。知识文件：knowledge/milesight-products/security-cctv.md。
+description: 物联网「CCTV 视频监控」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中 CCTV（摄像头/IPC/NVR/DVR/监控/录像/PTZ/视频流/安防），或用户直接提视频监控产品需求时，进入本赛道：按「成像链 → 存储链 → 传输链 → 平台链」四段审 PRD 合理性，核对分辨率/码率/低照度/宽动态/红外/防护/存储/带宽/时延等关键参数，并对标海外竞品（Axis/Bosch/Hanwha/Hikvision/Dahua/Milesight 安防线）。知识文件：.claude/knowledge/milesight-products/security-cctv.md。
 ---
 
 # CCTV 视频监控赛道 — 判断与思考方向
 
-> 知识真源：`knowledge/milesight-products/security-cctv.md`（Milesight VIR-2026 安防线全景：IPC 全系列/NVR/OpenVision + AI 能力 + 参数基线）。审 PRD 前先读这份。
-> 竞品对标再叠加 `knowledge/competitor-research/README.md` 的 7 维对标框架。
+> 知识真源：`.claude/knowledge/milesight-products/security-cctv.md`（Milesight VIR-2026 安防线全景：IPC 全系列/NVR/OpenVision + AI 能力 + 参数基线）。审 PRD 前先读这份。
+> 竞品对标再叠加 `.claude/knowledge/competitor-research/README.md` 的 7 维对标框架。
 
 ## 一句话定位
 
@@ -45,7 +45,7 @@ CCTV = 以「成像 → 编码 → 存储/传输 → 回看/告警」为闭环�
 
 ## 竞品对标方向（触发时调研，别硬答）
 - 海外一线：Axis（瑞典，行业标杆）、Bosch、Hanwha（韩，原三星）、Hikvision/Dahua（中，出货量第一梯队）。
-- 同源参考：Milesight 安防线（VIR-2026：Q/Pro/Panoramic/PTZ/5G/OpenVision/TrafficX 系列，参数见 knowledge/milesight-products/security-cctv.md）。
+- 同源参考：Milesight 安防线（VIR-2026：Q/Pro/Panoramic/PTZ/5G/OpenVision/TrafficX 系列，参数见 .claude/knowledge/milesight-products/security-cctv.md）。
 - 对标维度：分辨率/码率(H.265+)/低照度全彩/防护(IP67·IK10)/ONVIF 兼容/AI 精度(ANPR 98%·0.1s 作参照)/离网供电/单路成本。
 
 ## 产出物

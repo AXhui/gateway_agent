@@ -1,11 +1,11 @@
 ---
 name: iot-track-software
-description: 物联网「软件平台 / 设备管理 / 数据可视化」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中软件平台（云平台/设备管理/IoT Cloud/SaaS/Dashboard/告警/API/可视化/数据看板/私有化），或用户直接提平台需求时，进入本赛道：按「设备接入 → 数据与规则 → 应用与可视化 → 部署与商业化」四段审 PRD 合理性，并对标 Milesight 软件（IoT Cloud/DeviceHub/MilesightVPN/Beaver IoT/Dev Platform）与 AWS IoT/Azure IoT。知识文件：knowledge/milesight-products/software.md + knowledge/iot-fundamentals/cloud-platforms.md。
+description: 物联网「软件平台 / 设备管理 / 数据可视化」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中软件平台（云平台/设备管理/IoT Cloud/SaaS/Dashboard/告警/API/可视化/数据看板/私有化），或用户直接提平台需求时，进入本赛道：按「设备接入 → 数据与规则 → 应用与可视化 → 部署与商业化」四段审 PRD 合理性，并对标 Milesight 软件（IoT Cloud/DeviceHub/MilesightVPN/Beaver IoT/Dev Platform）与 AWS IoT/Azure IoT。知识文件：.claude/knowledge/milesight-products/software.md + .claude/knowledge/iot-fundamentals/cloud-platforms.md。
 ---
 
 # 软件平台 / 设备管理赛道 — 判断与思考方向
 
-> 知识真源：`knowledge/milesight-products/software.md`（Milesight 5 平台 + 计费）+ `knowledge/iot-fundamentals/cloud-platforms.md`（AWS IoT/Azure IoT/设备影子/设备管理）。审 PRD 前先读这两份。
+> 知识真源：`.claude/knowledge/milesight-products/software.md`（Milesight 5 平台 + 计费）+ `.claude/knowledge/iot-fundamentals/cloud-platforms.md`（AWS IoT/Azure IoT/设备影子/设备管理）。审 PRD 前先读这两份。
 
 ## 一句话定位
 
@@ -40,7 +40,7 @@ description: 物联网「软件平台 / 设备管理 / 数据可视化」赛道�
 4. 计费模式想清楚了吗？（决定能不能赚钱）
 
 ## 竞品对标
-主对标 Milesight 软件（IoT Cloud 分层计费/DeviceHub 本地工具/Beaver IoT 开源/Dev Platform 价格，参数见 knowledge/milesight-products/software.md）；必要时补 AWS IoT Core/Azure IoT Hub 基线。
+主对标 Milesight 软件（IoT Cloud 分层计费/DeviceHub 本地工具/Beaver IoT 开源/Dev Platform 价格，参数见 .claude/knowledge/milesight-products/software.md）；必要时补 AWS IoT Core/Azure IoT Hub 基线。
 
 ## 产出物
 接入协议与规模核对 + 物模型/数据模型核对 + 规则告警设计 + 部署与计费 + 竞品基线 + 风险（规模预估失真/告警疲劳/商业化不清晰）。

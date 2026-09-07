@@ -1,0 +1,725 @@
+{
+  "schema": "modulor",
+  "version": "1.0.0",
+  "layers": {
+    "base": "基础组件 · 唯一真源只读（.claude/tokens/ + .claude/skills/base/，152 令牌 + 63 组件）",
+    "business": "业务组件 · 仅组合基础组件零新增样式（.claude/skills/business/）",
+    "rules": "治理规则 · 基础/业务共用一份（.claude/rules/）",
+    "agents": "Agent 规则 · 驱动链路 + 页面装配知识（.claude/agents/ + .claude/knowledge/）"
+  },
+  "components": {
+    "S_Alert": {
+      "dir": ".claude/skills/base/Alert",
+      "id": "alert",
+      "cn": "警告提示",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Drawer": {
+      "dir": ".claude/skills/base/Drawer",
+      "id": "drawer",
+      "cn": "抽屉",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Message": {
+      "dir": ".claude/skills/base/Message",
+      "id": "message",
+      "cn": "全局提示",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Modal": {
+      "dir": ".claude/skills/base/Modal",
+      "id": "modal",
+      "cn": "对话框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Notification": {
+      "dir": ".claude/skills/base/Notification",
+      "id": "notification",
+      "cn": "通知提醒框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Popconfirm": {
+      "dir": ".claude/skills/base/Popconfirm",
+      "id": "popconfirm",
+      "cn": "气泡确认框",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Progress": {
+      "dir": ".claude/skills/base/Progress",
+      "id": "progress",
+      "cn": "进度条",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Result": {
+      "dir": ".claude/skills/base/Result",
+      "id": "result",
+      "cn": "结果",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Skeleton": {
+      "dir": ".claude/skills/base/Skeleton",
+      "id": "skeleton",
+      "cn": "骨架屏",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Spin": {
+      "dir": ".claude/skills/base/Spin",
+      "id": "spin",
+      "cn": "加载中",
+      "cat": "反馈",
+      "derived": false
+    },
+    "S_Button": {
+      "dir": ".claude/skills/base/Button",
+      "id": "button",
+      "cn": "按钮",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Divider": {
+      "dir": ".claude/skills/base/Divider",
+      "id": "divider",
+      "cn": "分割线",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Icon": {
+      "dir": ".claude/skills/base/Icon",
+      "id": "icon",
+      "cn": "图标",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Logo": {
+      "dir": ".claude/skills/base/Logo",
+      "id": "logo",
+      "cn": "品牌标识",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Typography": {
+      "dir": ".claude/skills/base/Typography",
+      "id": "typography",
+      "cn": "排版",
+      "cat": "基础",
+      "derived": false
+    },
+    "S_Anchor": {
+      "dir": ".claude/skills/base/Anchor",
+      "id": "anchor",
+      "cn": "锚点",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_BackTop": {
+      "dir": ".claude/skills/base/BackTop",
+      "id": "back-top",
+      "cn": "回到顶部",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Breadcrumb": {
+      "dir": ".claude/skills/base/Breadcrumb",
+      "id": "breadcrumb",
+      "cn": "面包屑",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_DropdownMenu": {
+      "dir": ".claude/skills/base/DropdownMenu",
+      "id": "dropdown-menu",
+      "cn": "下拉菜单",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_NavMenu": {
+      "dir": ".claude/skills/base/NavMenu",
+      "id": "nav-menu",
+      "cn": "导航菜单",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Pagination": {
+      "dir": ".claude/skills/base/Pagination",
+      "id": "pagination",
+      "cn": "分页",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Steps": {
+      "dir": ".claude/skills/base/Steps",
+      "id": "steps",
+      "cn": "步骤条",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Tabs": {
+      "dir": ".claude/skills/base/Tabs",
+      "id": "tabs",
+      "cn": "标签页",
+      "cat": "导航",
+      "derived": false
+    },
+    "S_Affix": {
+      "dir": ".claude/skills/base/Affix",
+      "id": "affix",
+      "cn": "固钉",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Grid": {
+      "dir": ".claude/skills/base/Grid",
+      "id": "grid",
+      "cn": "栅格",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Layout": {
+      "dir": ".claude/skills/base/Layout",
+      "id": "layout",
+      "cn": "布局",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_PageHeader": {
+      "dir": ".claude/skills/base/PageHeader",
+      "id": "page-header",
+      "cn": "页头",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Space": {
+      "dir": ".claude/skills/base/Space",
+      "id": "space",
+      "cn": "间距",
+      "cat": "布局",
+      "derived": false
+    },
+    "S_Avatar": {
+      "dir": ".claude/skills/base/Avatar",
+      "id": "avatar",
+      "cn": "头像",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Badge": {
+      "dir": ".claude/skills/base/Badge",
+      "id": "badge",
+      "cn": "徽标数",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Calendar": {
+      "dir": ".claude/skills/base/Calendar",
+      "id": "calendar",
+      "cn": "日历",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Card": {
+      "dir": ".claude/skills/base/Card",
+      "id": "card",
+      "cn": "卡片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Collapse": {
+      "dir": ".claude/skills/base/Collapse",
+      "id": "collapse",
+      "cn": "折叠面板",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Comment": {
+      "dir": ".claude/skills/base/Comment",
+      "id": "comment",
+      "cn": "评论",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Descriptions": {
+      "dir": ".claude/skills/base/Descriptions",
+      "id": "descriptions",
+      "cn": "描述列表",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Empty": {
+      "dir": ".claude/skills/base/Empty",
+      "id": "empty",
+      "cn": "空状态",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Image": {
+      "dir": ".claude/skills/base/Image",
+      "id": "image",
+      "cn": "图片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_List": {
+      "dir": ".claude/skills/base/List",
+      "id": "list",
+      "cn": "列表",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Popover": {
+      "dir": ".claude/skills/base/Popover",
+      "id": "popover",
+      "cn": "气泡卡片",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Rate": {
+      "dir": ".claude/skills/base/Rate",
+      "id": "rate",
+      "cn": "评分",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Statistic": {
+      "dir": ".claude/skills/base/Statistic",
+      "id": "statistic",
+      "cn": "统计数值",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Table": {
+      "dir": null,
+      "id": "table",
+      "cn": "表格",
+      "cat": "数据展示",
+      "derived": true
+    },
+    "S_Tag": {
+      "dir": ".claude/skills/base/Tag",
+      "id": "tag",
+      "cn": "标签",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Timeline": {
+      "dir": ".claude/skills/base/Timeline",
+      "id": "timeline",
+      "cn": "时间轴",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Tooltip": {
+      "dir": ".claude/skills/base/Tooltip",
+      "id": "tooltip",
+      "cn": "文字提示",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Tree": {
+      "dir": ".claude/skills/base/Tree",
+      "id": "tree",
+      "cn": "树形控件",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_Watermark": {
+      "dir": ".claude/skills/base/Watermark",
+      "id": "watermark",
+      "cn": "水印",
+      "cat": "数据展示",
+      "derived": false
+    },
+    "S_AutoComplete": {
+      "dir": ".claude/skills/base/AutoComplete",
+      "id": "auto-complete",
+      "cn": "自动完成",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Cascader": {
+      "dir": ".claude/skills/base/Cascader",
+      "id": "cascader",
+      "cn": "级联选择",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Checkbox": {
+      "dir": ".claude/skills/base/Checkbox",
+      "id": "checkbox",
+      "cn": "复选框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_DatePicker": {
+      "dir": ".claude/skills/base/DatePicker",
+      "id": "date-picker",
+      "cn": "日期选择框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Form": {
+      "dir": ".claude/skills/base/Form",
+      "id": "form",
+      "cn": "表单",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Input": {
+      "dir": ".claude/skills/base/Input",
+      "id": "input",
+      "cn": "输入框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_InputNumber": {
+      "dir": ".claude/skills/base/InputNumber",
+      "id": "input-number",
+      "cn": "数字输入框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Radio": {
+      "dir": ".claude/skills/base/Radio",
+      "id": "radio",
+      "cn": "单选框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Segmented": {
+      "dir": ".claude/skills/base/Segmented",
+      "id": "segmented",
+      "cn": "分段控制器",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Select": {
+      "dir": ".claude/skills/base/Select",
+      "id": "select",
+      "cn": "选择器",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Slider": {
+      "dir": ".claude/skills/base/Slider",
+      "id": "slider",
+      "cn": "滑动输入条",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Switch": {
+      "dir": ".claude/skills/base/Switch",
+      "id": "switch",
+      "cn": "开关",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_TimePicker": {
+      "dir": ".claude/skills/base/TimePicker",
+      "id": "time-picker",
+      "cn": "时间选择框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Transfer": {
+      "dir": ".claude/skills/base/Transfer",
+      "id": "transfer",
+      "cn": "穿梭框",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_TreeSelect": {
+      "dir": ".claude/skills/base/TreeSelect",
+      "id": "tree-select",
+      "cn": "树选择",
+      "cat": "数据录入",
+      "derived": false
+    },
+    "S_Upload": {
+      "dir": ".claude/skills/base/Upload",
+      "id": "upload",
+      "cn": "上传",
+      "cat": "数据录入",
+      "derived": false
+    }
+  },
+  "business": {
+    "B_MetricCard": {
+      "id": "bc-metric-card",
+      "cn": "指标卡组",
+      "dir": ".claude/skills/business/_shared/B_MetricCard",
+      "src": "assets/js/registry-business.js#bc-metric-card",
+      "status": "已固化"
+    },
+    "B_StatusTag": {
+      "id": "bc-status-tag",
+      "cn": "状态标签",
+      "dir": ".claude/skills/business/_shared/B_StatusTag",
+      "src": "assets/js/registry-business.js#bc-status-tag",
+      "status": "已固化"
+    },
+    "B_FilterBar": {
+      "id": "bc-filter-bar",
+      "cn": "筛选栏",
+      "dir": ".claude/skills/business/_shared/B_FilterBar",
+      "src": "assets/js/registry-business.js#bc-filter-bar",
+      "status": "已固化"
+    },
+    "B_DataTable": {
+      "id": "bc-data-table",
+      "cn": "数据表格",
+      "dir": ".claude/skills/business/_shared/B_DataTable",
+      "src": "assets/js/registry-business.js#bc-data-table",
+      "status": "已固化"
+    },
+    "B_EntityCard": {
+      "id": "bc-entity-card",
+      "cn": "实体卡片",
+      "dir": ".claude/skills/business/_shared/B_EntityCard",
+      "src": "assets/js/registry-business.js#bc-entity-card",
+      "status": "已固化"
+    },
+    "B_TelemetryPanel": {
+      "id": "bc-telemetry-panel",
+      "cn": "遥测面板",
+      "dir": ".claude/skills/business/_shared/B_TelemetryPanel",
+      "src": "assets/js/registry-business.js#bc-telemetry-panel",
+      "status": "已固化"
+    },
+    "B_RuleForm": {
+      "id": "bc-rule-form",
+      "cn": "规则配置表单",
+      "dir": ".claude/skills/business/_shared/B_RuleForm",
+      "src": "assets/js/registry-business.js#bc-rule-form",
+      "status": "已固化"
+    },
+    "B_DetailDrawer": {
+      "id": "bc-detail-drawer",
+      "cn": "详情抽屉",
+      "dir": ".claude/skills/business/_shared/B_DetailDrawer",
+      "src": "assets/js/registry-business.js#bc-detail-drawer",
+      "status": "已固化"
+    },
+    "B_UpgradeModal": {
+      "id": "bc-upgrade-modal",
+      "cn": "批量任务弹窗",
+      "dir": ".claude/skills/business/_shared/B_UpgradeModal",
+      "src": "assets/js/registry-business.js#bc-upgrade-modal",
+      "status": "已固化"
+    },
+    "B_Topology": {
+      "id": "bc-topology",
+      "cn": "网络拓扑",
+      "dir": ".claude/skills/business/_shared/B_Topology",
+      "src": "assets/js/registry-business.js#bc-topology",
+      "status": "已固化"
+    },
+    "B_MemberTable": {
+      "id": "bc-member-table",
+      "cn": "成员权限表",
+      "dir": ".claude/skills/business/_shared/B_MemberTable",
+      "src": "assets/js/registry-business.js#bc-member-table",
+      "status": "已固化"
+    },
+    "B_LogTimeline": {
+      "id": "bc-log-timeline",
+      "cn": "操作日志时间轴",
+      "dir": ".claude/skills/business/_shared/B_LogTimeline",
+      "src": "assets/js/registry-business.js#bc-log-timeline",
+      "status": "已固化"
+    },
+    "B_EmptyState": {
+      "id": "bc-empty-state",
+      "cn": "空态引导",
+      "dir": ".claude/skills/business/_shared/B_EmptyState",
+      "src": "assets/js/registry-business.js#bc-empty-state",
+      "status": "已固化"
+    },
+    "B_QuickActions": {
+      "id": "bc-quick-actions",
+      "cn": "快捷操作区",
+      "dir": ".claude/skills/business/_shared/B_QuickActions",
+      "src": "assets/js/registry-business.js#bc-quick-actions",
+      "status": "已固化"
+    },
+    "B_Eg71Sidenav": {
+      "id": "bc-eg71-sidenav",
+      "cn": "网关侧边导航",
+      "dir": ".claude/skills/business/eg71/B_Eg71Sidenav",
+      "src": "assets/js/registry-business.js#bc-eg71-sidenav",
+      "status": "已固化"
+    },
+    "B_Eg71Topnav": {
+      "id": "bc-eg71-topnav",
+      "cn": "顶部导航",
+      "dir": ".claude/skills/business/eg71/B_Eg71Topnav",
+      "src": "assets/js/registry-business.js#bc-eg71-topnav",
+      "status": "已固化"
+    },
+    "B_Eg71FormFooter": {
+      "id": "bc-eg71-form-footer",
+      "cn": "表单底部操作栏",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormFooter",
+      "src": "assets/js/registry-business.js#bc-eg71-form-footer",
+      "status": "已固化"
+    },
+    "B_Eg71Content": {
+      "id": "bc-eg71-content",
+      "cn": "内容容器",
+      "dir": ".claude/skills/business/eg71/B_Eg71Content",
+      "src": "assets/js/registry-business.js#bc-eg71-content",
+      "status": "已固化"
+    },
+    "B_Eg71Alarm": {
+      "id": "bc-eg71-alarm",
+      "cn": "告警事件列表",
+      "dir": ".claude/skills/business/eg71/B_Eg71Alarm",
+      "src": "assets/js/registry-business.js#bc-eg71-alarm",
+      "status": "已固化"
+    }
+  },
+  "modules": {
+    "M_QuickActions": {
+      "id": "mod-quick-actions",
+      "cn": "快捷操作区",
+      "src": "assets/js/registry-modules.js#mod-quick-actions"
+    },
+    "M_Metrics": {
+      "id": "mod-metrics",
+      "cn": "指标概览区",
+      "src": "assets/js/registry-modules.js#mod-metrics"
+    },
+    "M_FilterList": {
+      "id": "mod-filter-list",
+      "cn": "列表管理区",
+      "src": "assets/js/registry-modules.js#mod-filter-list"
+    },
+    "M_EntityCards": {
+      "id": "mod-entity-cards",
+      "cn": "卡片墙区",
+      "src": "assets/js/registry-modules.js#mod-entity-cards"
+    },
+    "M_Telemetry": {
+      "id": "mod-telemetry",
+      "cn": "遥测数据区",
+      "src": "assets/js/registry-modules.js#mod-telemetry"
+    },
+    "M_RuleConfig": {
+      "id": "mod-rule-config",
+      "cn": "规则配置区",
+      "src": "assets/js/registry-modules.js#mod-rule-config"
+    },
+    "M_DetailDrawer": {
+      "id": "mod-detail-drawer",
+      "cn": "详情抽屉区",
+      "src": "assets/js/registry-modules.js#mod-detail-drawer"
+    },
+    "M_UpgradeTask": {
+      "id": "mod-upgrade-task",
+      "cn": "批量任务区",
+      "src": "assets/js/registry-modules.js#mod-upgrade-task"
+    },
+    "M_Topology": {
+      "id": "mod-topology",
+      "cn": "网络拓扑区",
+      "src": "assets/js/registry-modules.js#mod-topology"
+    },
+    "M_Member": {
+      "id": "mod-member",
+      "cn": "成员权限区",
+      "src": "assets/js/registry-modules.js#mod-member"
+    },
+    "M_Log": {
+      "id": "mod-log",
+      "cn": "日志审计区",
+      "src": "assets/js/registry-modules.js#mod-log"
+    },
+    "M_Empty": {
+      "id": "mod-empty",
+      "cn": "空态引导区",
+      "src": "assets/js/registry-modules.js#mod-empty"
+    }
+  },
+  "templates": {
+    "T_Overview": {
+      "id": "tpl-overview",
+      "cn": "概览看板",
+      "src": "assets/js/registry-templates.js#tpl-overview"
+    },
+    "T_List": {
+      "id": "tpl-list",
+      "cn": "列表管理",
+      "src": "assets/js/registry-templates.js#tpl-list"
+    },
+    "T_Detail": {
+      "id": "tpl-detail",
+      "cn": "详情页",
+      "src": "assets/js/registry-templates.js#tpl-detail"
+    },
+    "T_Alarm": {
+      "id": "tpl-alarm",
+      "cn": "告警中心",
+      "src": "assets/js/registry-templates.js#tpl-alarm"
+    },
+    "T_Upgrade": {
+      "id": "tpl-upgrade",
+      "cn": "固件升级",
+      "src": "assets/js/registry-templates.js#tpl-upgrade"
+    },
+    "T_Dashboard": {
+      "id": "tpl-dashboard",
+      "cn": "数据分析",
+      "src": "assets/js/registry-templates.js#tpl-dashboard"
+    },
+    "T_Topology": {
+      "id": "tpl-topology",
+      "cn": "网关拓扑",
+      "src": "assets/js/registry-templates.js#tpl-topology"
+    },
+    "T_Permission": {
+      "id": "tpl-permission",
+      "cn": "权限管理",
+      "src": "assets/js/registry-templates.js#tpl-permission"
+    },
+    "T_Config": {
+      "id": "tpl-config",
+      "cn": "配置页",
+      "src": "assets/js/registry-templates.js#tpl-config"
+    },
+    "T_Audit": {
+      "id": "tpl-audit",
+      "cn": "审计日志",
+      "src": "assets/js/registry-templates.js#tpl-audit"
+    },
+    "T_Onboard": {
+      "id": "tpl-onboard",
+      "cn": "空态引导",
+      "src": "assets/js/registry-templates.js#tpl-onboard"
+    }
+  },
+  "knowledge": {
+    "K_mapping": ".claude/knowledge/K_mapping.md",
+    "K_patterns": ".claude/knowledge/K_patterns/",
+    "K_validation": ".claude/knowledge/K_validation.md",
+    "iot_fundamentals": ".claude/knowledge/iot-fundamentals/",
+    "milesight_products": ".claude/knowledge/milesight-products/",
+    "competitor_research": ".claude/knowledge/competitor-research/"
+  },
+  "conventions": {
+    "requirement": "R_YYYYMMDD_REQ-###_<域>_<页>",
+    "page": "P_<PageName>",
+    "release": "REQ-###",
+    "component": "S_<PascalCase>",
+    "business": "B_<域>_<组件>",
+    "module": "M_<PascalCase>",
+    "template": "T_<PascalCase>"
+  },
+  "entry": ".claude/README.md"
+}

@@ -1,11 +1,11 @@
 ---
 name: iot-track-sensors
-description: 物联网「传感器」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中传感器（温度/湿度/CO2/PM2.5/气体/环境/采集/探头/测量/监测/传感/水位/振动/占位/追踪），或用户直接提传感产品需求时，进入本赛道：按「测量对象 → 精度量程 → 供电续航 → 通信上报」四段审 PRD 合理性，并对标 Milesight 传感全系列（AM/EM300/400/500/VS/WS/GS/AT/CT）。知识文件：knowledge/iot-fundamentals/hardware.md + knowledge/milesight-products/sensors.md。
+description: 物联网「传感器」赛道判断与思考方向。当 iot-track-router 判定 PRD 主/副赛道命中传感器（温度/湿度/CO2/PM2.5/气体/环境/采集/探头/测量/监测/传感/水位/振动/占位/追踪），或用户直接提传感产品需求时，进入本赛道：按「测量对象 → 精度量程 → 供电续航 → 通信上报」四段审 PRD 合理性，并对标 Milesight 传感全系列（AM/EM300/400/500/VS/WS/GS/AT/CT）。知识文件：.claude/knowledge/iot-fundamentals/hardware.md + .claude/knowledge/milesight-products/sensors.md。
 ---
 
 # 传感器赛道 — 判断与思考方向
 
-> 知识真源：`knowledge/iot-fundamentals/hardware.md`（硬件/感知/AI·AO/单位换算）+ `knowledge/milesight-products/sensors.md`（Milesight 13 系列参数基线）。审 PRD 前先读这两份。
+> 知识真源：`.claude/knowledge/iot-fundamentals/hardware.md`（硬件/感知/AI·AO/单位换算）+ `.claude/knowledge/milesight-products/sensors.md`（Milesight 13 系列参数基线）。审 PRD 前先读这两份。
 
 ## 一句话定位
 
@@ -19,7 +19,7 @@ description: 物联网「传感器」赛道判断与思考方向。当 iot-track
 
 ### 2. 精度 / 量程 / 分辨率（参数诚实性）
 - 量程是否覆盖场景极值？精度给的是「±x」还是「满量程的 x%」？分辨率够不够用？
-- 对照 Milesight 基线（knowledge/milesight-products/sensors.md 有各系列参数）识别「拍脑袋」参数。
+- 对照 Milesight 基线（.claude/knowledge/milesight-products/sensors.md 有各系列参数）识别「拍脑袋」参数。
 - 漂移/长期稳定性、温度补偿、标定方式（是否需要现场标定）。
 
 ### 3. 供电与续航（电池/太阳能设备的核心）
@@ -28,7 +28,7 @@ description: 物联网「传感器」赛道判断与思考方向。当 iot-track
 - 低功耗机制：省电模式、上报间隔可配、睡眠唤醒。
 
 ### 4. 通信与上报
-- 连接：LoRaWAN/NB-IoT/LTE-M/蜂窝/短距（对照 knowledge/iot-fundamentals/connectivity.md 选型速查表）。
+- 连接：LoRaWAN/NB-IoT/LTE-M/蜂窝/短距（对照 .claude/knowledge/iot-fundamentals/connectivity.md 选型速查表）。
 - 上报频次 vs 通信能力是否匹配：低频传感器(温湿度)配 LoRaWAN 合理；高频/实时配蜂窝或本地有线。
 - 数据格式/单位换算/阈值告警/本地缓存（断网补传）。
 
@@ -39,7 +39,7 @@ description: 物联网「传感器」赛道判断与思考方向。当 iot-track
 4. 室内/室外？防护等级？批量规模（决定成本与运维）？
 
 ## 竞品对标
-主对标 Milesight 传感全系列（本仓库 knowledge/milesight-products/sensors.md 已有参数基线）；必要时横向补 Sensirion/Bosch/EnOcean 芯片与模块级基线。
+主对标 Milesight 传感全系列（本仓库 .claude/knowledge/milesight-products/sensors.md 已有参数基线）；必要时横向补 Sensirion/Bosch/EnOcean 芯片与模块级基线。
 
 ## 产出物
 测量原理选型 + 参数诚实性核对 + 续航测算 + 通信匹配 + 竞品基线 + 风险（原理错配/参数拍脑袋/续航自洽性）。

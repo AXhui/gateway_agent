@@ -94,7 +94,7 @@ window.MSRenderer = (function () {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>${esc(plan.title)} · Milesight IoT</title>
-<!-- 样式来源：req2demo/00_skills/Tokens/tokens.css（L1 令牌）+ library/base.css（L2 基础组件）+ library/business.css（L3 业务组件） -->
+<!-- 样式来源：.claude/tokens/tokens.css（L1 令牌）+ library/base.css（L2 基础组件）+ library/business.css（L3 业务组件） -->
 <style>
 ${css}
 </style>

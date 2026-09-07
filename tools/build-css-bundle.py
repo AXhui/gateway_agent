@@ -8,17 +8,17 @@
 网络或服务端请求，双击 index.html 也能完整工作。
 
 ⚠️ 本文件自动生成，请勿手工编辑。
-样式真源：tokens → req2demo/00_skills/Tokens/tokens.css（L1 唯一真源）；base/business → library/*.css。
+样式真源：tokens → .claude/tokens/tokens.css（L1 唯一真源）；base/business → library/*.css。
 """
 import json
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIB = os.path.join(ROOT, "library")
-TOKENS_CSS = os.path.join(ROOT, "req2demo", "00_skills", "Tokens", "tokens.css")
+TOKENS_CSS = os.path.join(ROOT, ".claude", "tokens", "tokens.css")
 OUT = os.path.join(ROOT, "assets", "js", "library-css.js")
 
-# (key, 绝对路径) —— tokens 来自 req2demo/00_skills/Tokens/，其余留在 library/
+# (key, 绝对路径) —— tokens 来自 .claude/tokens/，其余留在 library/
 FILES = [
     ("tokens", TOKENS_CSS),
     ("base", os.path.join(LIB, "base.css")),
@@ -31,7 +31,7 @@ for key, path in FILES:
         parts.append('  %s: %s' % (key, json.dumps(f.read(), ensure_ascii=False)))
 
 content = (
-    "/* 自动生成，请勿手工编辑 —— 源文件：req2demo/00_skills/Tokens/tokens.css / library/base.css / library/business.css\n"
+    "/* 自动生成，请勿手工编辑 —— 源文件：.claude/tokens/tokens.css / library/base.css / library/business.css\n"
     "   生成脚本：tools/build-css-bundle.py */\n"
     "window.MS_CSS = {\n" + ",\n".join(parts) + "\n};\n"
 )

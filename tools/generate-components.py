@@ -3,7 +3,7 @@
 批量生成组件文件和 Skill 文档
 从 milesight-iot-web-doc.html 提取的 COMPONENTS 和 PREVIEWS 数据生成：
 - frontend/components/{Name}/index.html  (组件实现，来自 preview HTML)
-- req2demo/00_skills/src_components/{Name}/SKILL.md  (组件 Skill 文档)
+- .claude/skills/base/{Name}/SKILL.md  (组件 Skill 文档)
 - frontend/index.html  (组件总览导航页)
 """
 
@@ -13,7 +13,7 @@ import re
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
-SKILLS_DIR = os.path.join(BASE_DIR, 'req2demo', '00_skills', 'src_components')
+SKILLS_DIR = os.path.join(BASE_DIR, '.claude', 'skills', 'base')
 
 
 def slugify(name):
@@ -104,7 +104,7 @@ def generate_skill_md(component):
 
 ## 注意事项
 
-1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `../../Tokens/tokens.css`
+1. 本组件基于 Milesight IOT Web 设计系统，样式变量引用 `../../../tokens/tokens.css`
 2. 组件实现为独立 HTML 文件，可直接在浏览器中打开预览
 3. Preview 中的交互示例使用 React + esm.sh CDN 渲染
 """
@@ -329,7 +329,7 @@ def main():
         skill_path = os.path.join(skill_dir, 'SKILL.md')
         with open(skill_path, 'w', encoding='utf-8') as f:
             f.write(skill_md)
-        print(f"  [OK] req2demo/00_skills/src_components/{name}/SKILL.md")
+        print(f"  [OK] .claude/skills/base/{name}/SKILL.md")
 
     # 3. 组件总览页
     overview_html = generate_overview_html(components)
