@@ -71,7 +71,7 @@ window.MS_ENTITIES = {
       { cn: '平均响应', value: '4.2', trend: '-0.8', dir: 'down', suffix: '分钟' }
     ],
     actions: ['处理', '指派', '忽略', '详情'],
-    statuses: [{ cn: '未处理', tone: 'error' }, { cn: '处理中', tone: 'warm' }, { cn: '已关闭', tone: 'muted' }]
+    statuses: [{ cn: '未处理', tone: 'error' }, { cn: '处理中', tone: 'primary' }, { cn: '已关闭', tone: 'muted' }]
   },
   firmware: {
     key: 'firmware', cn: '固件', aliases: ['固件', 'OTA', '升级', '版本', '固件升级', 'firmware', '批处理'],
@@ -91,7 +91,7 @@ window.MS_ENTITIES = {
       { cn: '待推送', value: '1,912', trend: '+58', dir: 'up', suffix: '台' }
     ],
     actions: ['推送', '重试', '暂停', '详情'],
-    statuses: [{ cn: '升级中', tone: 'primary' }, { cn: '已完成', tone: 'success' }, { cn: '失败', tone: 'error' }, { cn: '待推送', tone: 'muted' }]
+    statuses: [{ cn: '升级中', tone: 'primary' }, { cn: '已完成', tone: 'success' }, { cn: '失败', tone: 'error' }, { cn: '待推送', tone: 'primary' }]
   },
   member: {
     key: 'member', cn: '成员', aliases: ['成员', '用户', '人员', '账号', '角色', '权限', '组织', '团队', 'member', 'user'],
@@ -111,7 +111,7 @@ window.MS_ENTITIES = {
       { cn: '本月新增', value: '27', trend: '+11', dir: 'up', suffix: '人' }
     ],
     actions: ['编辑权限', '重置密码', '停用', '移除'],
-    statuses: [{ cn: '已激活', tone: 'success' }, { cn: '待激活', tone: 'warm' }, { cn: '已停用', tone: 'muted' }]
+    statuses: [{ cn: '已激活', tone: 'success' }, { cn: '待激活', tone: 'primary' }, { cn: '已停用', tone: 'muted' }]
   },
   sensor: {
     key: 'sensor', cn: '测点', aliases: ['测点', '传感器', '遥测数据', '数据点', 'sensor', '采集点'],
@@ -150,7 +150,7 @@ window.MS_ENTITIES = {
       { cn: '活跃操作人', value: '86', trend: '+9', dir: 'up', suffix: '人' }
     ],
     actions: ['查看详情', '导出', '标记'],
-    statuses: [{ cn: '成功', tone: 'success' }, { cn: '失败', tone: 'error' }, { cn: '待审', tone: 'warm' }]
+    statuses: [{ cn: '成功', tone: 'success' }, { cn: '失败', tone: 'error' }, { cn: '待审', tone: 'primary' }]
   }
 };
 
@@ -172,7 +172,7 @@ window.MS_ENTITY_FALLBACK = {
     { cn: '异常', value: '12', trend: '-5', dir: 'down', suffix: '条' }
   ],
   actions: ['详情', '编辑', '删除'],
-  statuses: [{ cn: '正常', tone: 'success' }, { cn: '异常', tone: 'error' }, { cn: '待处理', tone: 'warm' }]
+  statuses: [{ cn: '正常', tone: 'success' }, { cn: '异常', tone: 'error' }, { cn: '待处理', tone: 'primary' }]
 };
 
 /* ---------- 确定性造数：同一实体永远产出同一批样例数据，便于回归比对 ---------- */

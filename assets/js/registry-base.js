@@ -626,10 +626,10 @@ window.MS_BASE_COMPONENTS = [
     "desc": "完整或紧凑"
    },
    {
-    "name": "size",
+    "name": "height",
     "type": "number",
     "default": "32",
-    "desc": "高度（px）"
+    "desc": "高度（px），宽度按宽高比自适应"
    },
    {
     "name": "color",
@@ -638,11 +638,8 @@ window.MS_BASE_COMPONENTS = [
     "desc": "颜色版本"
    }
   ],
-  "tokens": [
-   "--color-primary-normal",
-   "--color-text-constant-normal"
-  ],
-  "skill": "【Logo 交互 Skill】\n变体：\n- variant=full: 82×32，含图标+文字，用于顶栏/登录页\n- variant=icon: 32×32，仅图标，用于侧边栏收起态/favicon\n\n主题：\n- theme=light（默认）: 绿色图标 + 深色文字，用于白色/浅灰背景\n- theme=dark: 白色版本，用于深色背景/顶栏\n\n点击行为：始终 href=\"/\" 跳首页，无其他交互状态。\n禁止在 Logo 上加 hover 效果或 border。",
+  "tokens": [],
+  "skill": "【Logo 交互 Skill】\n变体：\n- variant=full: 120×32，M 图形 + \"Milesight\" 文字，用于顶栏/登录页/官网首页等空间充足场景\n- variant=compact: 32×32，仅 M 图形，用于侧边栏收起态/favicon/头像占位\n\n颜色版本：\n- color=brand（默认）: 深蓝 M + 主蓝 M + 深灰文字，用于浅色背景\n- color=white: 全白，用于深色背景/顶栏\n\n图形数据：直接引用官方 SVG 原图（frontend/components/Logo/assets/），属外部品牌资产，保留官方原色、不走 token 变量。禁止拉伸/压缩/倾斜、更改颜色或加描边、拆分图形与文字。\n点击行为：始终 href=\"/\" 跳首页，无其他交互状态。\n禁止在 Logo 上加 hover 效果或 border。",
   "implemented": true
  },
  {
@@ -2733,4 +2730,44 @@ window.MS_BASE_COMPONENTS = [
   "implemented": true
  }
 ];
+
+/* ==========================================================================
+   L2 · 品牌 Logo 图形资源（S_Logo 唯一权威源）
+   --------------------------------------------------------------------------
+   直接引用公司官方 Logo SVG 原图文件（frontend/components/Logo/assets/），
+   不再用 token 拼色的内联 path 数据。字符串渲染器 MS_BASE_LOGO_SVG（供
+   registry-business.js 等 innerHTML 替换场景使用）与 React 演示
+   （frontend/components/Logo）共用同一份资产文件。
+
+   资产路径锚定本脚本自身位置（document.currentScript.src），不锚定宿主页面
+   路径：宿主页面可能在仓库根（index.html）也可能在任意子目录（output/*.html），
+   若用相对路径拼字符串，宿主页面深度一变就会 404。用 URL 解析绝对定位，
+   保证任何深度的宿主页面调用 MS_BASE_LOGO_SVG() 都能正确出图。
+   ========================================================================== */
+window.MS_BASE_LOGO_ASSET_BASE = (function () {
+  var scriptEl = document.currentScript;
+  if (scriptEl && scriptEl.src) {
+    // registry-base.js 固定位于 assets/js/ 下，向上两级回到仓库根
+    return new URL('../../frontend/components/Logo/assets/', scriptEl.src).href;
+  }
+  return 'frontend/components/Logo/assets/';
+})();
+window.MS_BASE_LOGO_ASSETS = {
+  'full:brand': 'Type=Logo, Color=Default.svg',
+  'full:white': 'Type=Logo, Color=White.svg',
+  'compact:brand': 'Type=Logo M, Color=Default.svg',
+  'compact:white': 'Type=Logo M, Color=White.svg'
+};
+window.MS_BASE_LOGO_SVG = function (opts) {
+  opts = opts || {};
+  var variant = opts.variant === "compact" ? "compact" : "full";
+  var color = opts.color === "white" ? "white" : "brand";
+  var height = opts.height || 32;
+  var viewW = variant === "full" ? 120 : 32;
+  var width = opts.width || Math.round(height * viewW / 32);
+  var file = window.MS_BASE_LOGO_ASSETS[variant + ':' + color];
+  var src = window.MS_BASE_LOGO_ASSET_BASE + encodeURI(file);
+  return '<img src="' + src + '" width="' + width + '" height="' + height + '" alt="Milesight" draggable="false" style="display:block" />';
+};
+
 window.MS_BASE_INDEX = Object.fromEntries(window.MS_BASE_COMPONENTS.map(c => [c.id, c]));

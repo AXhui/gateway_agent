@@ -48,7 +48,15 @@ window.MS_ICONS = {
   menuFold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7h9"/><path d="M11 12h9"/><path d="M11 17h9"/><path d="M9 7l-5 5 5 5"/></svg>',
   menuUnfold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9"/><path d="M4 12h9"/><path d="M4 17h9"/><path d="M15 7l5 5-5 5"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
-  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>'
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+  cellular: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 20V4"/></svg>',
+  wlan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>',
+  ethernet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="4" y="10" rx="2"/><path d="M9 10V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/><path d="M9 20v-4"/><path d="M15 20v-4"/></svg>',
+  lorawan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>',
+  rs485: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 17h16"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>',
+  io: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>',
+  knx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
+  mbus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-6"/><path d="M12 8V2"/><circle cx="12" cy="12" r="4"/></svg>'
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -572,6 +580,23 @@ window.MS_BIZ_UTIL = (function () {
       }
     },
     {
+      id: 'bc-empty', cn: '空状态', cat: '空态',
+      desc: '纯空状态：固定插画 + 随业务适配的可变文案，无行动按钮。',
+      atoms: ['empty'],
+      entityHint: 'device',
+      tags: ['空态', '空状态', '无数据', '占位', '暂无'],
+      render(ctx) {
+        const e = ctx.entity;
+        const title = ctx.empty && ctx.empty.cn ? ctx.empty.cn : `暂无${esc(e.cn)}数据`;
+        const sub = ctx.empty && ctx.empty.sub ? ctx.empty.sub : '';
+        return `<div class="ms-card"><div class="ms-empty bc-empty">
+          <img class="ms-empty-illu bc-empty-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJIAAABgCAYAAAD2ISucAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAALjVJREFUeAHtfQt8XGWZ93Muc0smyUySSZO0hfRCW1qKSBVYwCWoC1QuoksUrwu6ouDu4q6X5dNvabrK+qHuwq6XBV1vu+ruZxUVFHURiBaKAoECTS/pJWmT5p65ZO4z55x3n+e9zJyZtiKuSZOS5/ebzpkzJzPnvOf//p//c3mnAIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aIu2aLNumnxU71vQtuAvYAGZgQ8HH+zPb/t854azzrsobxWN/f0HHv/qP9zwsOsYGxbtlDT3ZDPg9zOT/vm7z31j0760lexLM/bQfofdv9thD48w9vNhlv3w3Q//sTzWA4t2Spr+oQ/d1tF/4Ohfuva9FEBxIH77x09fmnAY276vaD3W7zgP7WHspy8wdt/TNvvm43nr4SnGPvb5X17j/ptFO3WM39Dn9x/5Qq7oMMTB6LYf/eIdrvd1ePGbrnV2dpo2Y+ypQwX72SHGnsHHbw4x9vAeh/3kOcb+/1OMffWRXPHxHGPXvOdjdfJzF5QtuBOeYzM+/OHu5o2rl38wlmLWaNRpecPm130r77DMM30DWy+65ppaPIaBGMcTjSV7xwf+7iMTKQbNQY9e7wMIoKPzogPzmxp4dXrGR43H3PusAxdecWM3CC21oGyRQk9spGusnOUcnk7Yy3TT1GmwGMEGmFPjZXp9QIeR8ekff/af7v7Y3Z/51B75d2pMmfqgZwfGd0RCLX/k0XEXfkomB5AtAKQLNiRzOqRzGqTwdaoIkEmM77r1ytaNsMBskZGOb158WNF4+meFApxmmmYJHZpGD03PFnUYTTDHCISvuuvOT+5OZAoHv/HtH7578+bN9LcEIvoTPr7tLY0+q+gAQZEYyJSjjr6yjDbkIMcCOG1NpB4WoC0C6VgjIBSmpmN3e3yByzN5x9LY8ceJAKXhW6NJxjI5o6Or643ffPDBB7N79g89cPcXv/4qkC7qvx95ot8X0CBXJBbCD7dFjG9LieXQYbipmw7s6T14CBagLQKp0ij0LvzqN30frw2Fbo1mmJUHzczZNmjs2IO5q8OHwRBShq4nswBjCcYi7e1XffDmG55EfZ3oHzh8byo69VAKj87k0aWhWysgoPIEKEcHyxKAKlqO09yGoDz4wudgAdqiRiob10RP9o/e8MrVrV8fGC8WNcPjaW/C2Yb0MZNm4HC/JmafG1fKj0HFPgf1lMZ8XqY1+HV49kC2gH7QS26NaCqHQMpapJUYZG1g6UwRlq/y7r9sqbYWFmBi0oSXr1WLYuvH2/tu2ri69d7+8YJVo2NchUdEYw74MNLy+ukIjbsllDag6a5UdQWUmPxwnfSUVihqEEWwLF8a8O4btiBT0IHQZDnESg7LF2zmbzD1uqXmxI57t54JEtCwwOzlyEhKBNuXXfau2jff+GfXn/uqV/752R2N66NFqJ8cKxS9fo/HQBQQJExCCw/wSSwjCNDHFZgGlo33mulgUuiOCtrAT7VJMGNYp8mvKQ0uhXr4eTo6zuFpC0biNqQyHlbEz1izwZt56EdPf/oT7371HSBAZEMl4S0Ie7kBic/2D3V3h97ylpu+uuGMtjfFMkzLZEjoIkPkUa0wohqGrKFBvU/n4tgg2tEE++gIKEOwDYLJgXQeH0UGNYikuhod6tGNEVsVJKiAaRWD7DEEm+XzltUaMnOorurkW2WCW4D2cnFtquJuPbRz6NN/dPay23YNM3Z4wmGxpKP1jzswFtchgYkcDW+8blj48GIC0YKLN3hhWb0JBUQGeigIYu7ISqH4RvdkGjqEgzrUIUul0jYMTRUhZyGokKGWhE0I1+oIPAQVkpfjiBMoUsRWsKz2sGl+5jNfID2kJNeCLta+HBiJ36iPfOSzNR+74yP7R2NOm5Vl9lSKGc8MMhiJAdQHDAQNgA8ZxdSEBqI7Szc9iv7ukvUM1rR5oYh7t+8ch6svbIXpOANDVtyQVbgLpEfOZqiryH0hU6Gibgr5YGWTAUGfIXyWw6zmkGYOT8fftKI5/EN5fgsuk11tv281e6EYv0k33/bplZ+482Pjff1WLTgG23GwYDzVb4LHa8KKiA5tdTrKGHRneh6aayxob9Bgab0FoRoG9bUMdg8BnB7RuNvqHcrBC4czsKmjFvNCpKM0ke1GKFg8HaRBqMGA0yImtIa8kM5Y4PPoUIssZTuOU+sHIxGLfm15pOkzUNZEC95OZUbi1/bR/3vvyts/edOBp/qKVhbrHI+/YCGzGLC0UYMGShKiCGprduCs5XjjEQA6phgpRNcckcXWsawxGmNwZKoALSE/eBFcl99+EB78+9VQSOMxhvgirhF0oas9xGgmr4YgiIRbczDENwxb8+nOrvpa70Z48eisOgWgXOC81FCnskbSu7puCXxgy00HdrxQtHKOYT7WV4SAzwsrl6Dbwji+xluAy84yoaXOD7kc7SMh7ECOARfU3FAzhfwIutP8cHgaC69eZKZgHfz3szNw2YZ61E70TYy7PY2J6M3iQCQM6JBnlLnGrBKznNMaPAVNMwlEBJLfBiKeXb/7P3/zdlRZt9h64OCP/vV77+/p6caUZikPOq/sVAUSn+3dX/7i7r7d6FAsw9y+z8GoCl1ZC5YpMgU4bzWDV5weQJHswEzK4aEUMYiM1FHLoKAGQTeon8Eu0hsM3ZMGjVjC33nQhivPwc+iW+vQF+oVnGEgVXGPR39rZ+0VLTXG3/zN3yyDF9dEBJTC/qOTX9Ybmt83HgUWTToXfe7nW67/y3cmQk9suysH89BOxRIJj87++bu9n4inYLkXFfBTg0WoxWhrJZYgcqhZ3vgqE85s90EiiVUuCvc1MclFuE6pZ9RMuM/h2HA4wIooom2b56shj2IokfJwMZ7LEyo0kUNCH2YTcBiBD7d5fhtYa3ON8YOf7Nh41113ReU5/jZGYZe96U0tq9qb3+cvglVrgObDzz+8h3lf+/p33w3z1LWdkkBavXmz77I3n/upeNSx+wYsndkeWN6MbiZegDdfQBGUDqm8EoiV96VCNCIYqCyCWpm3eTDdgPEZB+IzVGa1MBckqIXqZTSSxFyWrRKTlL0mtwZapsD2Dg7uW/X+93/0DKhko+MtBIArL7+ugT6j1gsGUSuVhgtZByJtS06DeWqnIpCcd11720cODwAks5pxeEaDtia8TCy9X3ORycN7KpryA0GykbqdmusuEzOhvmEIhiLuTOVQU6Fw3jWcx20DqNmDPodC/ekogxiBy9H53xMjFREJpJeSOSdzcKi47j033vjDe+75TH+64CT7Dg5v//LX/+uWd99063IoI1l1W2q3fuAd+5HtkkMxiyUKwHJ5x16y0oCB3c/dDfPUTsnq/2uuuOiWbAoTjtNFaPQbqFwdOG+dBkHMDpKLUoVXBRwewoOUN46boTArjZQQzTgIJg/UYa7p0adTWBbxwapWnbu+UMgEH4rxFEZw05MWd30WB5EOMxmnMDAGNQXmhYEJgEPjAPEkBJsi7Rddf/1bv/jNe+8+XCw6Ew883n8niFNRkNa33P2lNU0tZizcAlrrKt3o23n0jn++bfPPYZ6mbE618F97zeXvbP3sd/5j5PAAg14UxMsbTVgWysFl5/ghkWEYmmviVlR4NCZkEnA9zQW3oYsdBJYDYzZ4feim0NW97/MzfP+n31sPdQblhnSeiNRlLY5wiB4Qycyx9g8xHTWaTq20QSz6YnCIKQeAgEeI8JZGYF95OMUe3mvqq17hz2+7/U2tgz0/TEBZtjtnn33eirqO1qnH778/CTKag3lopxojsbNfdcEZSWSHbBYzz+Se9AKcu9oLmZTIQNO0dyynWgzxhCTf0pRXQ2DgTR9AEFGyqC2swxcejINZUwtr0SEtxbJJsSA+xOb+TOfuTERsrLDvEGOOQ8kETCeghprJAiQw3ophXS+Nz62NAH/37bj2/Wc8OhV9R/qKZtftPxjftOkmFUlzL/v8808OSBDxaA7mqc1nILnP7Xem8+nJ8WVU38ogWDw4808L6dBYg2KVarG2AArRj2MxF5ik7JaVe55gRIV98KgFWWQcYpFHnk/Dzv06ZNNJeN/lQUhjyiCPDJVD8NiaFNn4QPBZLxwq5jKO4bHwk6j2VmBFjPQQTAigJAp0vQbgjvvi8OywH5bUIYipuU0vGpNHHO9pb/zQl+D42e55Xcyd14x0462fPf8v7vz5e+EllBH8NcEM3VQPYs9BMdzaQlGVCO/tUo4RNREmEZ2SHlKdJRj2U1+1R4P9IwWIpwyoRX6YcSz4x/tQGwWDcOF6gDOWeKGpXoMzlyBIAwgozDFRtcSDzHLwSGF0KqfX6xTx8QQU5pOKJo/oCg7jgHp8Tx5+uceCpgbhRnmSACPLYhacyKoVV8ACtPmckHQ2ntf5umlv+9tx+6vwO2Z000f7njKQiWr8pGlQbAdM7loMJgS1IB+RXOTwNMo+DktvHFwvDNqQcUxoQibSUJV89J4o1NSHMRSbgbe/tgmeHSBNxSCI75kokDT8G83QtIm0fXT/mNZWHxB5JWIkG0HiMTURkiGgNdRJ9z+VhMZwDR5DTbayxoKIYroNM9FYAhagzWtG2tR59rvsuvYNG6+8OfxbD+zu1qGz2w/XPhraBleNJWMsQamchhqbs4JQrlIDMdFyxpjBr56SkCb1HyEojmLFfsd+jLttE5oRDHmPAx/6yhiSRRjSyTj81bVhyMwAZy2KyrLoL1M5jacREI+p5/sLWAc2zYLl8JSBYzP+fUX0eRZFi6iY+jB9kExhHhyRpjGbR3kS2CwQ9OiJ/h1fhAVo8xVI2saLrwzXN3nXDQ0kYMWm9/0FVLNRV5cBl322Ft62rxmObGmFdVuawL+qBvwN/ocen/5opAH0xqDfRpYArLiDF+80BWK65nACQJkCPnRFHmShiQSDJ/otjM7oOBPaQwB7MHXwV1+YQqYJQzQehQ9c0wh1PoNX/DVbFGJF0d/hix1fGMomi7avxSLQIPsVLHKdKuONrg3BZWI1ePdAGmp8unBplHdiTPQqMdvxBCDx089f96/wv4umT0okPl9dG3v95us2RzHvkksVrPDKM/8a930SqUeHq9v8EL4yAPpSD9ROAuTHGWR32ZCtRVeV1SC7qvFLN0W+8urHUu9sa679491HPHY0XjA6MLNNHYwUuVnoUqi0EUfBPJ3UeAa6FmP0MCYZdSzdf6NnBn7xfBHzRvWYvY7B925rhiCGcvvxfNJ2EW885qZ8IvlIM3EmbycOHmWRuqBgIr6UkrdxI1ehfqLMuInubSbn8E4Cn5+ApNouuVi3m+qCxmM7Bi+AWyaCMPRrBx54BqV59+/ap6Sd03ltQ0241bvjB/dMwkmweZtH+vdfR7drWsOF/9Uz5dQEw+buw+nX9h11eqHR64MxpI4cChM/3jErI67BX4fbCCRb0wLeBjP7X0uH7vxZ7PG17aELizlg8TTTTNQ1pi4KtAbeWNIulK2uq0MhjCX/Jw/l4MFnUsgmQWpjhNMjNry9M4yMw6DR50B7o445IB3GkcF2jeDXezXMDWnOU/tyuVjWqPF5xQJIvjAAHx5d520oHmpNQTeJ5wCP7MSMJBaPab/O17TpVlO939xzePra7d//1U9hzbkhCC7BC8JzyB3Kw6E7M9D75eKLDJd26+33Xhc8+3U33HHd6ivhJNi8ZKS1a5vrVp0RvvjgfrAKtq9gYvW+RtcvhcJDv4LEhR4EUXkCBJGJKK0MtAw/S6qaZc2EFbj+6PK/vSJ80Xv+LRptrzXDG1fXcVdDdTZqwsdcD4biNhyYtGFvbwaeG8LIK48AMwIYqaXg0lfXwStX+GEG808ZxOo4fuPeUQeCgQIWgKnWb/JMTyzuFA5PM39dEGt5FAUiwxiIIqXMaIBppbYfGW8iPoNAtnkdjvqdEPNWfcA0D47HPrF965L7Yf+ZGGPGbVTkDMYPM6jBtPmmexvgvE/YsOdQFnouPVHln11w6eYrn8ksuVi+nvOuy/kIJC39hvuth57IfO38M2reo2vM3Hdk6E/3/mPHffC2ceoksmiyQopydA0SRGRYg+BvoOGNz4Zsu/2mp2s2rQ37ZmIpnlneNwzw7KE0jGDV38oXIZN3+OpXA0sefiMHrej+zlrmgXNWRXiZYwrrZ3KJNjINARBJzzKx8s94LzYJ9J2HLVPDpJNj2bycwksumvg7nrMgL4egDaAeGp7OoS4zRYSGCsmHfxktFH728Mdb/gGeHmxDJBchKNcC1OO1QZzBUTwRDyI0cm4N3MwCkO3JwjcupeYVd+6CLV3TtvmXO8z6c6/7h9c8872PPwZzbCcbSO6Zo8HmB72wdnNgeHhY776q9r2r//LXf33+6U2J3kNju+DKOKre4SIsCWl8YPkAIphMzOgp95bHO+RD9+ZFN5f0z5x7dngperKaxgYT6154W7BmZuGOBmSHpcuox8jm3ZCmbkJLOAytERNDdKytYaXdI09J55U4h0d5FO0RgExqVrOpF8lhA+NFI4g1D1o1azgUv+m8OY4raBA9ScRIWLyFmWQBArQ+ThMxjubRj95/S2gz/MnedjCKRSgiiDy1AiAzCXFtJZuyYWoK51GHHz7E/LDvp1n46Rs4oLre9ZEVwaDZMoEC7OxL3vZJBFInzLGdbCCxm2699bTe7PrRXripBtI47odwwIo46l0HGw6MrUyx4t4bbbN9HAoJHSp+XsH9M0LSrdGThfFYeqLw+k3hxluvX9n/i+eK1oFRrzmTycGlG/xw4ZogmEgXHc0FWBbxwNIQsYuOX+vA4FgOxtMmXwVrYzhHER1fkq0LV0TMYtuiVkc/TbMfyycYeWmWQxkjMZQOui7NJgGPEDTE0iVKjo7FMzKCIzay7aaGoPHLXw5sgq5dWCwxhAaShErzgzOSh8CIgMqoFUsxnCwNDhzah6LtfB+8g/ng29rMklWv7ppEjOVx2PSVHZesveY9dfvu/xpR9Zy5t5Md/rNzruv+ttn+tvMRBAUoTIoLx6GFFI54fV/DwWnnO7FaVKsNMk+XpcBZDmzOVarPBcR2ADOED7xq6uarl27fdZA5ectj0mLHHGaXR6IWL1nMIOM8M+yF+37N4J6fOfCfjxVhPOrAumVeuOY8E654hQZntGBYrxX4urUkMlmONA0TNbki9R8hmI6M5zWd9BATdTaK2ESphKBiIWthUZdS2l4Go5MZBCZHpo0MZvQNxN86YO1B0cQ85WtJimsxWfm6vHZ5O2WVtwtjDhR28/E694q33JiYsJllGdrUiAUNS6/vhjnWSCcPSF3f9dIcP6OlYd0yf/RmuEvLlt5LysGbCeBtyQYgTi8aaGaWBzLsAhEfeKmVshC99ZtHb/F4fKfNYFE1i+SfyaPH8xiQwjutUe4GH7Sen6+QRc2SRJA9f8SEHz7hwH07CrjNIITEdskGD1z9SgNe0WFBPbJDFusbObmEMYWfOT4jwFWg+J03shGYEGgOrcSlbCflkRgynA3TsSwXM4YBRmLG+tVTdy77LvjOCgH93g0KeggSiGiC0HN1cjsun5sqd9eut177qaml69thXQbpsmAbBR2/oNZnH4U5tpMAJBQY3QN+SHVpb71r/zo/aM2Nbc3XddyA+7yHjnM+1UltGmQ16FDJShj+RyIHjCvPa//ikTFw0gXQqbOREoQ2MsYyDIL4z8o4oozuoEuifA4lGFHUY37HxPe8cCSmQ89uDX74pA2/3Gvh3xpwzgoNrnq1F8I+mxdnozMWZDBHRIsfKWttWbZogrMpHEAw4XdmHYcrrGgUydYqUhuK4/Ma1viRltdD10ArpOnoOgEiAhPXR/K6Mq7r8tQz7tb4touh7HHjkSNNE//x0NG3tjToMY/H9PYNJy949O7N/wRz/KOmcwskKmXcMOiDBCZwfqrlV7R63zaRtpiVznpblphvhqPnZ8A3waBZzjyvIwYwFJfb0rJyMElTBKU78LdqsG3D2O1d530Xo2wspIJOPx2TQgpBInE2dhjQ4NWIQGRkhTcfE4tFZJICAYCVfyCCRDblmAwU4SnUTDsHdPjxTgY/32lhLkis95+eyWOmwcf7tS25pq1ALs2RLbb4eUXc6eDBRyZmwOPR7HCtT3/uSPINvdlxL1gzjhB1eP45BJCK1rJut4ZnEw+J7VRDeb+v0cXGu31f/M3YD96wQWtu9idhun9fCrqZFxn/FHVtnY+aMPhnXhjH6Ro7wAeic13L2yZmHIbROTtjWe3/gR6MmfIxDaamxcyL4jMxUhq3id0pIubujTaSYgbTTDYxQxjQM1139Z+zYWnN5mSO2TOybaOARFBTq+VfGBy5OBjSLCzgA18OaVFzvlZaVcu79B0CgsNXijgSHDb1JZnIVhje5fIm5OWQJXMGvl/kTEQimkS4jV6KSiH8M3AnEhBk0xYk0xkstXiMyZnC9j3/uPIhSEdF2JBToJHXwudEQlwjj/4BZISKNi0Hssq9WSj4oN0DNz3teeLp/euiG9P7oGdQh9pXexBQcxZMzQ2Q8CIh0qlDukPMkrpl7DU3/ioSaAqsxjDaoZ938QXrzlr+HgyDfWtcIa8aNHJv8Uq6L7ESzmQLY6ivRZLXX7rygaGxopOzNIMa8zMFBBGml0fHo7c+Otj+5M3/srv+yRcmuv1BNtHabGByUXwUAYFWGxEr2bI+xleCOOUHj7iArwfg+aFMgRhNLE+ycG7Y9AslJLodsZ+39CKjTU7HgGHOAckInuk/chXPhdVS3gEPIEY13VpPTRIyBFRIvRETY1Fya1gFSTSJ7dF2fBv3j7Z7Blb/4iD0dJgQwBOise7D+0tjPwc2+0Dis2ITwCFX0XXsWWvFWcsup1QJiVRb80ICXcXpS5s+DNsi6QrqTrkGOiRFJwdUgwxyEEjh9dMf+874h3XNWMYMD7ozxBmK4QI+sszqf+ZTTV+BmV2tmEFs+e4jQ5/929cZrf/2o8Obduwdu9PKZ3YHG8CK4H2q81LxFMunGJzZ3M0pdtK5aC5IcNEv2hQ1EtWiB9zi4pqBSGxTpKZxnVSwdJiKxp1w0NQHj8Y+GPUswTAwLfQQGdd3dP6KjYbEtTVIVlIiu8KtEYtFAJaoHSPiyT/IYPASASJuu2n+MT72984+mGYTSBp3Z2TteEGbesXeIN6ObW+xLzi37b3UeUMhM616zWRsZ8mSuvd33NCDaeZRVjkDQQpOtIgCVkJEa3gfzvf9JrD5vJbPTc8wx7JAT+dsWj5keQKavncwfjW8abiJWhAhi0zQUNMAXVNLe8f8w/dtt7Z+sqt2w6e+09v87z/ed/Hj+2J3zBRzu5vqmNOAbOBBd0YC2uLuji9WQ+Cj90WQ0erbYsHh4Cngl9KSJK6JOEtRD7cJU5PTnNryjnGo966zvgTRfCNmLRlnowqrqwz5aZIQG6Xd1+9iI25YQQ6osUAA1raVj6UxhvW40SvGfnQTg+5HZ9XNzR6QupHrI5MM6bV8gYd6GWxY76x+x4P1qyLeThSn1JADGUuzdK+p5zSIZe0zDYhHmJh50hQrKeGpZqyZ0eHL7VPvfvMrvjeC4+vTND2D4jqDTIBDaQ5NF/790D9F+qHW8vLGEazDAWa4wZ5AARPFQDwdhuuPtMdGlgR/vTe///uPpe/4f38aOOvjX94V+dZD+zb3HZi6t6jZg41hzIViLU03iKoQOOg22+oDQgvR+mwk3SITYT9FhJRdzBYKGK1F7fo6v/7ccPyNcO2zIazFWAIwdVJgS22kBDbXRgnBSvFB4C6drr1RjoPPFmzkVwBCNvIXyuM0vsw11q5x7+kB6MN70c1m7X7P0gdTZ/RWgG1duL3NtX8TXbtmec4s7B2e/v7prZphGFih0k3vxEz+Sz/5oH/5OM0yv/oB4WpWmsYBpghOitE0y1/+930b1i33/0mhwMgLIRNhdSSv4S3WCk/kd7wX3ow1LLrjdAMp1URgMuSNI31iYuEsSKWVsIn7w9C1b2mi6Kt5oo899fWfPHXr7VeZKz75reeW3ffE2J+Njs/8yBPQoxHE8/KIBiswUExSExv1bSMl2RjiF0hkY9A0NjYMPh8zJhL5B4buWb8LPF6/AFFSuDTSR55WpnKQ3OiaKAFJLtxzWvm6VV6NQKQsgJMN6QbPBEmK2GjwmLsA0gnwCb3NfW/+8DY7bSSUPNlK+SLc7tqmwSSOemcngqgXOSegQW2NDt9YkVtz06PNV5y/4V+fH4hfNziRO3PQFxiAeJ2g4Bw19VC/UYsGdXFMxuC+oFwjVMTnmiSW8jemPnBx6ubL19f+80xO4y21R6LgRDG02r5z7K27Ykd/DJMeUXiglhMebgPPN5XO1acWItXQz7O7xqNGPpMip66CfArOWJ1ChtXOX923dmlr6xsvWFt77a4R4+yJmO63sFTmCxgYORRZNjqGLjHj1NfVGI89HwvFzEY/rwJXg4iMsxGykKeOlSI2mjCKjchoMindqNgoPsxKbERA2oh+9wBIt4YWzjJo3yS2+7ahJ+hifHJv2aLWXlW51/+dzVI/Ugn1GgcSIDNtwG0CErFSDLN9rV4N8gknqE+Hr1+3bvyRnaNrDqWPHIbwShOyy8Tf56Y1DiQKfYuyuZrAREAiLzduOVdfoof+9u0rDx8YcJx4nmkjmEwcmbH6vvU+70bo6mulKV4q6tINtCSgLAWgjHhSgMrQrE+XcVQ6pkY8099rYRRhdhIeaM9EbukLeq2GS5ZEgp2JRPyRFY25bzkF1hgI6DAUK3z0+aP6v6CACnFdVHJnFJnOlEFUcmkyc69CfgKSYmQOJJxYfozW4ri/DffFBsV7tZRml24tuJoJkU36CIFEIKLx3yZ7enm5W/uDgohsdlwbkx2C3dy9Me7eyE/3b2Ilvh3DmfNCwUy1Xjb1yO7JEILoECTWVkUXEShppZKLi0kXR2fvNR7IrRz+zs8OvHPZUl0LBAwtozlDPf89fh5cva8Zclnx0zFmDeMPipZUJpxcGnc1BJAa0TlADyMlXR+BRz3oKSM2KUFEwPTH6gmok2Na3dHY2GPP9B/9xEEnvX3nMHTkHfbYWIL9y/N3b/wc+GqbIIffzZkoKZmIQBT/LSCKVYEIn0ljE4hIZHMQ0XvLjyOypSk2Itsm74VMts6GzV6HJCv9CmeZlSZxew2yUi+y0krcTh3QYAmmkNNYFR2uN2AZRh85r/irkGIl6c7ymsvFJTRO/cRMAZ8JdSOJdhjxePVIy+A9fzQIXUONXIiTEXj81JbWJs6LsxO5uLToqnSb2+Ud1xRNSYYqRVrp8lMDFo//Y/UEZpYNsM9rwcK+VSrIhpU7i4v0BQ/18bU3KiaGikzdLo10ImX7/TJvxCM1FNmxJQgudGcdg4gtdGNwhmCjQzJCJiDR5I10olsDt1v7g7MR2SwCidp3GM0E1EpbCEzo3rrE96Hgxkmn8VxHSgKHA2pUgqdDgmkShU9bWStVuDgFphmN/6QsCfA05VtGxGLKQEj0KxHYVN7Gr5evl1xbUOV0aivfe1FLlzdV14HaZ7Yg88kvpIw7N5UrwoS2ecQVoYEAEw/1pyWIGioZuBSpYUqEotk2nBCxJyQbIZDGZd6opI3WMx7y9+B2BN0aBTzdWzFi2yLPZXaANHvhvwau/7FFbpVSAThjwr0i11Gi40EZfaD5bVZOtOEATla5ON5m4hpw3mpBme+kDpllLhErG8XCUuASM5RcG75PvxyqBHguycRDHUPAOM5DvV99HHeftgBRiKLBhKifEYBUwpGDqKEMIqqlUYSWdqS4bhDXVqGLVLiPGcg2HJNRKQ0mrWMBcWi9kA499IL+IRDRmG9Rbm1WQEQ2y5ltnOQ0E7pdqYAeELTbW3UoiUWi6UmXzw8UxQDygu2kHNgmEQ6rniVei6sXxc0IuoiGIzICAuFCuBtxAUpFTiqrbM4IrURAUC6PAwaZ5ngPYjHqE6djlfbifyuLr4qFgnXlaj6dg3KDpcy1I9yZSjoqd5Z0gwgkiFTyEcN9/xKxv4PGrIqNlMAmK4X85NL4wjmYTZtdIGnH/Jcdgm7JUCaJpJmLlepUQm1IJNpGcZMiFCoHKI3AmampPOAlPeGUXYZ67ZG1K2KnUjmlVTCEYiizVoCAt+2yMjD49nEeXDizMjDcwOTdCOq7iYWSkhmJfk4krF1Jxwp3RvW0iNRFRfEcs8tRmjKVxaZwn8a0xzXG3a7x12b3twPmYjmSCOGEVjo2r+QW3mRLhjUY7MDBoJ/EUuIbZ2IINQxOTGjQKzVTnXFsjoncRYG0FN7ABN64mrBLG6U0vv6IjPDjT4v3Uq4eJ2XqPbflFPBAsI5qSlN5If65BMpg+bUS1RxMBIaQKzqT7izpEtbkzhI0gcZl4lGKaxqPSQRRB8Cx4T5aPz33CDYSKRcmwPSHzxtV21wAqRzBdeO/fdvEd05K4U1RXGyTvJnVYCLxjaIyjFEXVblJfNNCkgbML9FgUyRXAaaEBFOTVqqcFwhgeAMTeCdrlKCm5jh8HVC5JFd6uai79tW53lMgk/tVk777UNrIVgGIjFjIKwFUag05EYhAVPaJhWnidOCxJSYiVzZYCSJenJXJxx6QbKRARCH/7EVqbpubNhJN5pVA5ZWAcMCgkzY2iRocGR8YOFYv0Wyk6J1mJw0wb6GYlAPv1kwNZZdBApaXU1A3eaVL8cQYv7n8t7ISLg1FVgclgHBX1SrcEzGNR22TC5LbyriIZuJzeGuL1D8eyUKk28iVkYZLy/0KRPzvlTurAhFZB2avR0dcAznoApErg03WU/pHJh9LIIK5sLlqbBM/PFQW3qyUpOSdASD10m4xQKuhDCY+C4fKWVylmTiYXNGcG0zuPEz6dBnR1bGSRqG+H7qhSqsQi2QVGEj/BIUG4tIpWZJQ/LgJeUy2ThxvSiBStOipK39mhgAcLQPOnWgsRWchlyaCShCRuCaNSFpxGJ9rDxyri9QE7HcLbB6pibGeA5embA5bbTWRDuiWD6Jf7stBDAQl0Xj4ul5kvUs26GImWzBTXOqHhASMb235hnjcIpwa4mIiqiMwkbvLSBCREWNwQKmHrHep5nvTBSolrmeUcI6zEjhVJEZGDESPEH1ZSHx3CURWWVT7TgQiGaGNuir7axFE5OpL1f31oteIJmApSpMurVu5NJh1ge22ue3Z5i5ui6DdbSq3tE24uBKYXBevBo6YaXi52FcCk3JzKjWA+5ONZSZS6YHUpLiJlDVWriWkGMoROSgFggZZPPXUucDlepBrbJLRIB2rHhHJPoqB0vK70q6aGXdlTWU9RO3EqknNL0FEE4TcNwcRiWu85g0yQtt4nFBfWcRdT5MubY5/1mFuv42sJLxdURwZZb15UReNi2931hvFdwc+93TIaA4tjAKbqD8kxTGP6KpEOJkS4spURlx8kciUl1paaUN2JZKmcb0sMZo6Lu76TJ6Zdqpmv0sHuQU1mdJDZCqtEZd/T52OBCDerJYva0Z+7i5xTVYqg3CXhoyPINJmN4N9Ipt7IJG5o7huoMmEKYGeckqAjNpNiMIrIjna6ChHczkEAWV7VbcAmarN8RSB6+fYikbltQZPUBKhkkvJKpAkW31DAmSlpny5TEiBM1UFKFUvI2D7XH1FftdxARLV7WUQqRoaWQWIQFYEoLKWBrz8xMp5o7kFEdnJWSCpVeslELOKi2/p86lmhJOvIpILVEVzNPDESqQpAjIDTDeI36SIuHFcP+GNbJP6ya2h3A9l5AJLD4dVvE6fxsqah0yyjhL47m5G93cRA5XKHU2sBCJ13lxUy2NPCCLVgw2VTKRARC5NDO6cg4h/K5wsYzJRuRVdHNWC+uS5lJiJXvdKZpLmdnWD+BzxCWYiC0vGcbs7spx0d2T5qNwvGYKMmIpufvR4J3mCJUBuc/9tGwroqenye+5FDKqXSFmpp0ix1HFcGRlpot3IzBf1irLS1W4QyXzRLDas/a528pZsazLj2i3F9wYoh7AqLUBZb9IDNJBkSmjy1ACIXhxVvIxJduL5JnQV4+Pib9wM4JOdhqrMwlt58eYnQ2W2UizCmQXfb3SBqFE++HEh8UiqvyMQub9DljkUQ/otcU5xxZ4jZRDRNRyjh/BaiYk4iOTYVIAIKkEEJw9EZCePkcB1DszFTN0gWk7cZRQyVUpxi/DV+1HESsZKK3bCmR3uKF9XdlJuywTNEDIUJyjV/zwptktspayahabhuFbBOlD+TDf7gCx1ENDdDfsUia49cGyUqiYMpUPU6hueK+pxgWh2W2dfqs0HIFX2LnEwYSRHzQIEJpH+hoqGODeYyMjVkamyCiXwCFQbxyuvzy3KlanecA4s988vRsovI+r9apMHUJsLva0q9Qq0AZf2KoX0ZGr50KB4We3KyNwgqih/QBlExObUjaqdXBCRzQ8gCZPMJM9JMRNZqSFOgim3W4P15O6OA6iODnF/9iGglkmGoka5tqpv40y1BF6SuTBywgNKzAPCzboTi6WITB1uVQFoPb8k4cp6yxlrzkSdlcJ6HoGIbD4BqSzAta2aTPOL1AAZLR7owec1UoS72YmsAlCUaxoEnirggKKdUpTnkKXa2sW2cjX0usIFvihi5DEgWzzaoaTPVG3ML6v1pZzQCRiIrBTaSwCREYg6QSRsuVUJazLt5ERox7P5BSRhgpk0mbDsBij3fMuIjkytSKFxPyGgpMtTFJAeLesocLOVKoy2u05jBE5s7eL90fbycSXgAJRA6277IDsGQG4WcueHaKOnrIe28RwRlKr5fJTmD4jI5iOQXMwErgw4vZKujlpQOqEsxMlUNpzMDSYyN6AG5b68YioyBS61/ftaFfMoOxGAeG5ofZmFSuvQQLixEguBqKGpT5lnICKbn0BS5i6ngGInCSi3EE8ioDZRBRNvyOMBqZ/Idv8WUJF1iKfBQbF9DLiUSQYbhsp9vrZy8pB/1mD57eOCh0yem9uNKQC5M9XbVL/1/HRl1Ta/gURWWtYkdRNPXm4rn/cGF6BUEpOMa6jdWunGHQ9UgOkDWsZTAa7fwwbxQVl3an85UPWe0j/8FPAc/FUhfad87xgW2iomDu8pogPmL4jI5j+QhEndBFXsJLUTyKVOPfLoNS6XVxLlZLvLn8hBJYH0hzIC0lgV8yj3RdghANFznWvxYsQlprcBK5WMukurYunVvAYR2UIBkrDyosvjuLu3gBDkXeVr6sTHA+T26IUS5rvl++urPvx3Adl+8RQ8verGHuez3HkgkN+v1pu5+6rJKgFU/q+c5rErq7aFBSRhgp34lsvd0XOFIHe5PHrqgUqmKpn8LQJuMoJaDy/BJGj4R1WtsVKuq0ft6ClHYuX1+CIa6wZ3REb/LhgQkS1EIAljrp9nOQZQSkPJGa/SBj3y+E7cGHEv15ZC3W29m+AYqwYKqGNc+1USsRPgmDBe2Yau8mt3SA/zJ8H4Um3hAkmZO1UAVYAi63Jfo4r20FQ+qke+JV+WmKsaSPxllUg+3t+qnRXg6ZI/5OAGiSsaW8AAUrbwgVQy+X+Nlq7IlR3nz1Dp+ri5GIusGlzV1qk2eso73Jnn0mfLbb66WOmfreIttQaf/7vwAaTsFAJSyQRDsfIrAaotxx7ZLa+f3+9tv+Uju07wvgSiek9loLkp4NA/W1gFXBagBnoxOxWBVDbl9pTx9AG1924tuz5uEmTufW6XWEk0Ln1D/2wt/32pSxGqmEd++SnCPsezUxtIlSaulbHj7ZWlGBCu0A2I45lit25Vha/6vFL+h2+csuBx28sJSMcaU9f/e95rjhXN/fplAZpFe2mm/Y77Fg3tfwArJVfgx2ysFwAAAABJRU5ErkJggg==" alt="" aria-hidden="true">
+          <div class="ms-empty-text">${esc(title)}</div>
+          ${sub ? `<div class="bc-empty-sub">${esc(sub)}</div>` : ''}
+        </div></div>`;
+      }
+    },
+    {
       id: 'bc-quick-actions', cn: '快捷操作区', cat: '概览',
       desc: '首屏高频操作入口，一屏只允许一个主按钮（遵循 Button 交互 Skill）。',
       atoms: ['button', 'space', 'card', 'icon', 'divider'],
@@ -593,6 +618,51 @@ window.MS_BIZ_UTIL = (function () {
             <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 14)}新增${esc(e.cn)}</button>
           </div>
         </div></div>`;
+      }
+    },
+    {
+      id: 'bc-com-title', cn: '标题', cat: '通用',
+      desc: '跨产品线通用标题编排：按 level（page/tab/card/group）× variant（main/sub）双维度决定形态，标题右侧可编排 Tag/提示图标/开关/按钮组，describe 分必要展示（下一行小字）与非必要提示（tooltip）双模式；只编排不写样式常量。',
+      atoms: ['typography', 'form', 'tag', 'icon', 'tooltip', 'switch', 'button', 'text'],
+      entityHint: 'com',
+      tags: ['标题', '页面', 'Tab', '卡片', '分组', 'Tag', '开关', '按钮'],
+      render(ctx) {
+        const variant = ctx.variant || 'main';
+        const level = ctx.level || 'card';
+        const align = ctx.align || 'left';
+        const alignCls = align === 'center' ? ' bc-com-title--center' : (align === 'right' ? ' bc-com-title--right' : '');
+        // 标题原子：group 级复用 .ms-form-section-title（14px + 左竖条），否则 main→ms-h4 / sub→ms-h5
+        const titleCls = level === 'group'
+          ? 'ms-form-section-title'
+          : (variant === 'sub' ? 'ms-h5' : 'ms-h4');
+        // 左组：标题 + Tag（紧邻小间距）+ 提示图标（紧邻小间距）
+        const main = [`<span class="${titleCls}">${esc(ctx.title || '')}</span>`];
+        if (ctx.showTag && ctx.tag) main.push(`<span class="ms-tag">${esc(ctx.tag)}</span>`);
+        if (ctx.showTip) {
+          const tipText = (ctx.describeMode === 'tip' && ctx.describe) ? ctx.describe : (ctx.tip || '');
+          main.push(`<span class="ms-tip">${ico('info', 14)}<span class="ms-tip-bubble">${esc(tipText)}</span></span>`);
+        }
+        // 右组：开关（两端对齐）+ 按钮组
+        const extra = [];
+        if (ctx.showSwitch) {
+          const label = ctx.switchLabel ? `<span class="ms-text">${esc(ctx.switchLabel)}</span>` : '';
+          const sw = `<label class="ms-switch ms-switch--xs"><input type="checkbox"${ctx.switchChecked ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+          extra.push(`${label}${sw}`);
+        }
+        if (ctx.showButton && Array.isArray(ctx.buttons) && ctx.buttons.length) {
+          const btns = ctx.buttons.map(b => {
+            const kind = b.kind === 'filled' ? ' ms-btn--filled' : (b.kind === 'text' ? ' ms-btn--text' : '');
+            return `<button class="ms-btn ms-btn--sm${kind}">${esc(b.t)}</button>`;
+          }).join('');
+          extra.push(`<div class="ms-btn-group">${btns}</div>`);
+        }
+        const mainEl = `<div class="bc-com-title-main">${main.join('')}</div>`;
+        const extraEl = extra.length ? `<div class="bc-com-title-extra">${extra.join('')}</div>` : '';
+        const row = `<div class="bc-com-title-row">${mainEl}${extraEl}</div>`;
+        const descEl = (ctx.showDescribe && ctx.describeMode !== 'tip' && ctx.describe)
+          ? `<span class="bc-com-title-desc ms-text ms-text--auxiliary">${esc(ctx.describe)}</span>`
+          : '';
+        return `<div class="bc-com-title bc-com-title--${level}${alignCls}">${row}${descEl}</div>`;
       }
     },
     {
@@ -645,7 +715,7 @@ window.MS_BIZ_UTIL = (function () {
         };
         return `<aside class="ms-sidebar bc-eg71-sidenav">
           <div class="ms-sidebar-brand">
-            <span class="ms-logo ms-logo--dark"><span class="ms-logo-mark">M</span><span class="ms-logo-text">Milesight</span></span>
+            <span class="ms-logo">${window.MS_BASE_LOGO_SVG({ variant: 'full', color: 'white', height: 32 })}</span>
             <button class="ms-btn ms-btn--xs ms-btn--text bc-eg71-collapse" aria-label="收起侧边栏" aria-expanded="true">${ico('arrowLeft', 16)}</button>
           </div>
           <nav class="ms-sidebar-body"><div class="ms-nav">
@@ -673,6 +743,11 @@ window.MS_BIZ_UTIL = (function () {
             collapseBtn.innerHTML = ico(collapsed ? 'arrowRight' : 'arrowLeft', 16);
             collapseBtn.setAttribute('aria-expanded', String(!collapsed));
             collapseBtn.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
+            // Logo 完整↔图形切换：收起态仅 M 图形（compact），展开态完整字标（full）
+            const logo = rootEl.querySelector('.ms-logo');
+            if (logo && window.MS_BASE_LOGO_SVG) {
+              logo.innerHTML = window.MS_BASE_LOGO_SVG({ variant: collapsed ? 'compact' : 'full', color: 'white', height: 32 });
+            }
           });
         }
         // 一级导航展开/收起：点击切换 open，chevron 旋转，仅展开当前项（accordion）
@@ -821,6 +896,71 @@ window.MS_BIZ_UTIL = (function () {
             </div>
           </div>
         </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-protocol-card', cn: '协议连接状态卡', cat: '概览',
+      desc: 'Milesight 网关 Dashboard 协议连接状态卡：默认 1px 浅灰边框无箭头，hover 边框转主蓝 + 右侧箭头滑入/淡入、整卡可点击跳转对应详情/配置页；多子项协议（RS485/IO/KNX-TP/M-Bus）额外渲染 Tag+名称/数值子项行，子项数值可呈蓝色链接态单独跳转子项详情，点击子项不触发整卡跳转。',
+      atoms: ['card', 'icon', 'tag'],
+      entityHint: 'gateway',
+      tags: ['协议', '连接状态', 'Dashboard', '卡片', 'EG71', 'Cellular', 'WLAN', 'Ethernet', 'LoRaWAN', 'RS485', 'IO', 'KNX', 'M-Bus'],
+      render(ctx) {
+        const card = ctx.card || {};
+        const clickable = card.route ? ' bc-eg71-protocol-card--clickable' : '';
+        const routeAttr = card.route ? ` data-route="${esc(card.route)}"` : '';
+        const items = Array.isArray(card.items) && card.items.length
+          ? `<div class="bc-eg71-protocol-card-items">${card.items.map(it => {
+              const subAttr = it.route ? ` data-sub-route="${esc(it.route)}"` : '';
+              return `<div class="bc-eg71-protocol-card-item">
+                ${it.tag ? `<span class="ms-tag bc-eg71-protocol-card-item-tag">${esc(it.tag)}</span>` : ''}
+                <span class="bc-eg71-protocol-card-item-value bc-eg71-protocol-card-item-value--${esc(it.tone || 'plain')}"${subAttr}>${esc(it.label != null ? it.label : it.value)}</span>
+              </div>`;
+            }).join('')}</div>`
+          : (card.value != null ? `<div class="bc-eg71-protocol-card-value bc-eg71-protocol-card-value--${esc(card.tone || 'plain')}">${esc(card.value)}</div>` : '');
+        // 结构类统一用 div（不用 <a>）：多子项卡内部另有独立可点击的子项元素，
+        // 嵌套 <a> 是非法 HTML（浏览器会拆解重排 DOM），故整卡跳转走 data-route + bind() 委托，
+        // 与项目既有 sidenav 的 data-route 导航范式（MS_EG71_SHELL.bind）保持一致。
+        return `<div class="ms-card bc-eg71-protocol-card${clickable}"${routeAttr}>
+          <span class="bc-eg71-protocol-card-icon">${ico(card.icon || 'device', 24)}</span>
+          <span class="bc-eg71-protocol-card-body">
+            <span class="bc-eg71-protocol-card-title">${esc(card.title)}</span>
+            ${items}
+          </span>
+          ${card.route ? `<span class="bc-eg71-protocol-card-arrow">${ico('chevronRight', 16)}</span>` : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        // 子项：阻止冒泡，避免触发外层整卡的导航；随后以冒泡事件对外通知（props 进 / 事件出）。
+        rootEl.querySelectorAll('[data-sub-route]').forEach(el => {
+          el.addEventListener('click', e => {
+            e.stopPropagation();
+            el.dispatchEvent(new CustomEvent('eg71-protocol-navigate', { bubbles: true, detail: { route: el.getAttribute('data-sub-route'), sub: true } }));
+          });
+        });
+        // 整卡：仅当带 data-route 才可点击导航。
+        rootEl.querySelectorAll('.bc-eg71-protocol-card[data-route]').forEach(el => {
+          el.addEventListener('click', () => {
+            el.dispatchEvent(new CustomEvent('eg71-protocol-navigate', { bubbles: true, detail: { route: el.getAttribute('data-route'), sub: false } }));
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-dashboard', cn: 'Dashboard 卡片墙', cat: '概览',
+      desc: 'Milesight 网关 Dashboard 内容区：以 ms-grid-3 编排一组 bc-eg71-protocol-card，展示各协议接口的连接状态，供 MS_EG71_SHELL 在 route=/dashboard 时通过 opts.content 接入。',
+      atoms: ['grid', 'card', 'icon', 'tag'],
+      entityHint: 'gateway',
+      tags: ['Dashboard', '卡片墙', '协议', '概览', 'EG71'],
+      render(ctx) {
+        const B = window.MS_BIZ_INDEX;
+        const cards = ctx.cards || [];
+        return `<div class="ms-grid-3 bc-eg71-dashboard">${cards.map(card => B['bc-eg71-protocol-card'].render(Object.assign({}, ctx, { card }))).join('')}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        const B = window.MS_BIZ_INDEX;
+        if (typeof B['bc-eg71-protocol-card'].bind === 'function') B['bc-eg71-protocol-card'].bind(rootEl);
       }
     },
     {
@@ -1159,8 +1299,116 @@ window.MS_BIZ_UTIL = (function () {
           ${msg ? `<div class="bc-eg71-form-item-msg">${esc(msg)}</div>` : ''}
         </div>`;
       }
+    },
+    {
+      id: 'bc-eg71-modal', cn: '业务弹窗（删除/禁用/确认/选择）', cat: '反馈',
+      desc: 'Milesight 网关业务弹窗调度器：按 ctx.action 做业务匹配，分发到删除确认 / 禁用确认 / 信息确认 / 设备选择四类弹窗规则，触发时居中浮层展示。',
+      atoms: ['modal', 'button', 'result', 'input', 'radio'],
+      entityHint: 'gateway',
+      tags: ['弹窗', 'Modal', '删除确认', '禁用确认', '确认', '选择', 'EG71'],
+      render(ctx) { return renderEg71Modal(ctx || {}); },
+      bind(root) { bindEg71Modal(root); }
     }
   ];
+
+  /* ---------- EG71 业务弹窗：按 ctx.action 做业务匹配（不同业务 → 不同弹窗规则） ----------
+     ctx.action 取值：
+       'delete'  删除确认（危险，需二次确认，Result--error 图标，danger 按钮）
+       'disable' 禁用/停用确认（警示，Result--warn 图标，filled 按钮）
+       'confirm' 信息确认（普通提示，Result--info 图标，filled 按钮）
+       'select'  设备选择（信息 + 单选按钮组，用于「选择设备」类场景）
+     未命中时兜底为 'confirm'。 */
+  function eg71ModalVariant(action) {
+    if (action === 'delete') return { status: 'error', size: '', okClass: 'ms-btn--filled ms-btn--danger', okText: '删除' };
+    if (action === 'disable') return { status: 'warn', size: '', okClass: 'ms-btn--filled', okText: '禁用' };
+    if (action === 'select') return { status: 'info', size: '--lg', okClass: 'ms-btn--filled', okText: '确定' };
+    return { status: 'info', size: '', okClass: 'ms-btn--filled', okText: '确定' };
+  }
+
+  function eg71ModalBody(ctx, variant) {
+    const desc = ctx.desc != null ? ctx.desc : '';
+    if (ctx.action === 'select') {
+      const options = ctx.options || [];
+      const opts = options.map((o, i) => `<button type="button" class="ms-radio-btn${i === 0 ? ' ms-radio-btn--checked' : ''}" role="radio" aria-checked="${i === 0 ? 'true' : 'false'}" data-value="${esc(o.value != null ? o.value : o.label)}">${esc(o.label)}</button>`).join('');
+      return `<div class="ms-stack">
+        ${desc ? `<div class="ms-text ms-text--secondary">${esc(desc)}</div>` : ''}
+        <div class="ms-radio-btn-group bc-eg71-form-item-radio-group" role="radiogroup" aria-label="${esc(ctx.optionLabel || '设备')}">${opts}</div>
+      </div>`;
+    }
+    if (ctx.action === 'delete' && ctx.confirmKeyword) {
+      return `<div class="ms-stack">
+        ${desc ? `<div class="ms-text ms-text--secondary">${esc(desc)}</div>` : ''}
+        <div class="ms-alert ms-alert--error">${ico('warn', 16)}<div class="ms-alert-body">${esc(ctx.warnText || '此操作不可撤销，请谨慎确认。')}</div></div>
+        <div class="ms-form-item">
+          <label class="ms-form-label">请输入「${esc(ctx.confirmKeyword)}」以确认</label>
+          <input class="ms-input bc-eg71-modal-confirm-input" type="text" placeholder="${esc(ctx.confirmKeyword)}" data-keyword="${esc(ctx.confirmKeyword)}" />
+        </div>
+      </div>`;
+    }
+    return desc ? `<div class="ms-text ms-text--secondary">${esc(desc)}</div>` : '';
+  }
+
+  function renderEg71Modal(ctx) {
+    const variant = eg71ModalVariant(ctx.action);
+    const title = ctx.title || (ctx.action === 'delete' ? '删除确认' : ctx.action === 'disable' ? '禁用确认' : ctx.action === 'select' ? '选择设备' : '操作确认');
+    const cancelText = ctx.cancelText || '取消';
+    const okText = ctx.okText || variant.okText;
+    const needKeyword = ctx.action === 'delete' && ctx.confirmKeyword;
+    return `<div class="bc-eg71-modal" hidden>
+      <div class="ms-mask">
+        <div class="ms-modal${variant.size ? ' ms-modal' + variant.size : ''}" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-modal-title">
+          <div class="ms-modal-head">
+            <span class="ms-modal-title" id="bc-eg71-modal-title">${esc(title)}</span>
+            <span class="ms-modal-close" data-modal-close aria-label="关闭">${ico('close', 16)}</span>
+          </div>
+          <div class="ms-modal-body">
+            <div class="bc-eg71-modal-body-row">
+              <span class="ms-result-icon ms-result-icon--${variant.status}">${ico(variant.status === 'error' ? 'trash' : variant.status === 'warn' ? 'warn' : 'info', 24)}</span>
+              <div class="bc-eg71-modal-body-content">${eg71ModalBody(ctx, variant)}</div>
+            </div>
+          </div>
+          <div class="ms-modal-foot">
+            <button type="button" class="ms-btn" data-modal-cancel>${esc(cancelText)}</button>
+            <button type="button" class="ms-btn ${variant.okClass}" data-modal-ok${needKeyword ? ' disabled' : ''}>${esc(okText)}</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function bindEg71Modal(root) {
+    const scope = (root && root.querySelector && root.querySelector('.bc-eg71-modal')) || root;
+    if (!scope) return;
+    const wrap = scope.classList && scope.classList.contains('bc-eg71-modal') ? scope : scope.querySelector('.bc-eg71-modal');
+    if (!wrap) return;
+    const open = () => { wrap.hidden = false; wrap.classList.add('is-open'); };
+    const close = () => { wrap.hidden = true; wrap.classList.remove('is-open'); };
+    const okBtn = wrap.querySelector('[data-modal-ok]');
+    const keywordInput = wrap.querySelector('.bc-eg71-modal-confirm-input');
+    if (keywordInput && okBtn) {
+      keywordInput.addEventListener('input', () => {
+        okBtn.disabled = keywordInput.value !== keywordInput.dataset.keyword;
+      });
+    }
+    wrap.querySelectorAll('.ms-radio-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        wrap.querySelectorAll('.ms-radio-btn').forEach(b => { b.classList.remove('ms-radio-btn--checked'); b.setAttribute('aria-checked', 'false'); });
+        btn.classList.add('ms-radio-btn--checked');
+        btn.setAttribute('aria-checked', 'true');
+      });
+    });
+    wrap.querySelector('.ms-mask').addEventListener('click', e => { if (e.target === wrap.querySelector('.ms-mask')) close(); });
+    wrap.querySelector('.ms-modal').addEventListener('click', e => e.stopPropagation());
+    const closeBtn = wrap.querySelector('[data-modal-close]');
+    const cancelBtn = wrap.querySelector('[data-modal-cancel]');
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+    if (okBtn) okBtn.addEventListener('click', () => { close(); });
+    const triggers = (root.querySelectorAll ? root.querySelectorAll('[data-modal-trigger="bc-eg71-modal"]') : []);
+    triggers.forEach(t => t.addEventListener('click', open));
+    wrap.open = open;
+    wrap.close = close;
+  }
 
   /* ---------- EG71 侧-导航栏双重结构（L5 页面模板 · 捆绑） ----------
      规则：路由是唯一源。侧边栏（bc-eg71-sidenav）+ 顶栏（bc-eg71-topnav）捆绑为

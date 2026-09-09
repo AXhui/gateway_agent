@@ -1,5 +1,6 @@
 ---
 name: B_Eg71Sidenav
+version: 1.1.1
 description: 网关侧边导航（业务组件）
 ---
 
@@ -9,7 +10,6 @@ description: 网关侧边导航（业务组件）
 > **现 id**：`bc-eg71-sidenav`
 > **分类**：管理员
 > **entityHint**：`gateway`
-> **版本**：v1.1.0（已固化）
 > **包归属**：`ui-eg71`
 > **依赖基础组件**：`ui-core ^1.1.0`
 > **bind**：有（导航高亮 + 路由同步 + 展开/收起）
@@ -53,7 +53,7 @@ EG71 网关后台的侧边导航，含 Logo、一级菜单、二级下拉与底�
 ### bind 骨架
 1. 监听菜单项点击 → 更新 `ctx.route`（单一来源）。
 2. `syncSidebar` 高亮当前路由对应的菜单项（`ms-nav-item--active`）。
-3. 监听 `.bc-eg71-collapse` 点击 → 在容器上切换 `is-collapsed`，`innerHTML` 在 `arrowLeft` ↔ `arrowRight` 间互换，同步 `aria-expanded` / `aria-label`。
+3. 监听 `.bc-eg71-collapse` 点击 → 在容器上切换 `is-collapsed`，`innerHTML` 在 `arrowLeft` ↔ `arrowRight` 间互换，Logo 在完整 ↔ 图形（`MS_BASE_LOGO_SVG({ variant: 'full'|'compact', color:'white' })`）间互换，同步 `aria-expanded` / `aria-label`。
 
 ---
 
@@ -83,12 +83,19 @@ EG71 网关后台的侧边导航，含 Logo、一级菜单、二级下拉与底�
 
 ### 视觉/UI 变化（收起态 `is-collapsed`）
 - 宽度 `220px → 80px`，过渡 `width var(--duration-normal) var(--ease)`（240ms）。
-- 隐藏：`.ms-logo-text`（Logo 文字）、一级菜单 `<span>` 文字、`.bc-eg71-chevron`、`.bc-eg71-sub`（二级子菜单）、`.bc-eg71-foot-name`（账户名）、`.bc-eg71-more`（更多按钮）。
+- Logo 由完整版（M 图形 + 文字）切换为图形版（仅 M 图形），由 `bind()` 调 `MS_BASE_LOGO_SVG({ variant:'compact' })` 实现，不再用 CSS 隐藏文字。
+- 隐藏：一级菜单 `<span>` 文字、`.bc-eg71-chevron`、`.bc-eg71-sub`（二级子菜单）、`.bc-eg71-foot-name`（账户名）、`.bc-eg71-more`（更多按钮）。
 - 保留 icon 居中：`.ms-nav-item` / `.bc-eg71-foot` 改为 `justify-content: center`。
-- `.bc-eg71-collapse` 图标由 `bind()` 在 `arrowLeft`（展开态，回退左箭头）↔ `arrowRight`（收起态，回退右箭头）间互换；展开态按钮距侧边栏右缘 8px，收起态按钮 50% 悬浮于右缘外侧，且带底框（bg `#182032` + 边框 `#38393b` + 圆角 4px + 高 20px，源自 Figma `basic2Button`）。
+- `.bc-eg71-collapse` 图标由 `bind()` 在 `arrowLeft`（展开态，回退左箭头）↔ `arrowRight`（收起态，回退右箭头）间互换；展开态按钮距侧边栏右缘 8px，收起态按钮为 20×20 方形、50% 悬浮于右缘外侧，带底框（bg `#182032` + 边框 `#38393b` + 圆角 4px，源自 Figma `basic2Button`），图标颜色 `#A9AEB8`（→ `--color-gray-05`，固定深色底不随主题切换）。
 
 ### atoms 依赖不变
 折叠按钮复用现有 `S_Button`（`.ms-btn--xs.ms-btn--text`）+ `S_Icon`（`arrowLeft`/`arrowRight`），**不新增基础原子**，仅业务层编排 + 结构类控制显隐。
+
+### 一级分组 chevron 颜色状态（v1.1.1）
+- **默认（未选中且二级未展开）**：`#7c7d7e`（对应暗色板 `--color-icon-auxiliary` / `--color-gray-05`）。
+- **展开态（`.ms-nav-item.is-open .bc-eg71-chevron`，即点击展开二级后）**：`#5eafff`（对应 `--color-primary-normal` / `--color-blue-05`）。
+- 触发：点击一级项 `data-nav-trigger`（accordion，仅展开当前项）→ `bind()` 给该项加 `is-open` → chevron 同步旋转 180° + 变蓝；收起时移除 `is-open`，chevron 转回 + 变回灰。
+- 结构类里写的是固定 hex（非 `var(--*)`），与本组件其余深色配色写法一致（见文件头「深色配色基本固定，不绑主题切换」），hex 旁注释标注对应令牌名，便于核对不算裸值违规。
 
 ---
 

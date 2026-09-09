@@ -200,6 +200,8 @@ body {
 .ms-switch input:disabled ~ .ms-switch-track { opacity: 0.4; cursor: not-allowed; }
 .ms-switch--sm { width: 32px; height: 16px; } .ms-switch--sm .ms-switch-thumb { width: 10px; height: 10px; top: 2px; left: 2px; }
 .ms-switch--sm input:checked ~ .ms-switch-thumb { transform: translateX(16px); }
+.ms-switch--xs { width: 28px; height: 16px; } .ms-switch--xs .ms-switch-thumb { width: 10px; height: 10px; top: 2px; left: 2px; }
+.ms-switch--xs input:checked ~ .ms-switch-thumb { transform: translateX(14px); }
 .ms-slider { position: relative; height: 4px; border-radius: var(--radius-full); background: var(--color-fill-base-hover); margin: var(--spacing-8) 0; }
 .ms-slider-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: var(--radius-full); background: var(--color-primary-normal); }
 .ms-slider-handle { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: var(--radius-full); background: var(--color-bg-card); border: 2px solid var(--color-primary-normal); transform: translate(-50%, -50%); box-shadow: var(--shadow-1); }
@@ -526,17 +528,11 @@ body {
 .ms-anchor-item:hover { color: var(--color-text-primary); }
 
 /* ---------- Logo ---------- */
-.ms-logo { display: inline-flex; align-items: center; gap: var(--spacing-8); text-decoration: none; }
-.ms-logo-mark {
-  width: 32px; height: 32px; flex: none; border-radius: var(--radius-8);
-  background: var(--color-primary-normal); color: var(--color-text-constant-normal);
-  display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700;
-}
-.ms-logo-text { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; color: var(--color-text-primary); }
-.ms-logo--icon .ms-logo-text { display: none; }
-.ms-logo--dark .ms-logo-text { color: var(--color-text-constant-normal); }
-.ms-logo--sm .ms-logo-mark { width: 24px; height: 24px; font-size: 12px; border-radius: var(--radius-6); }
-.ms-logo--sm .ms-logo-text { font-size: 14px; }
+/* Logo 直接引用官方 SVG 原图（frontend/components/Logo/assets/），品牌色为官方硬编码色值，
+   豁免 token 约束（外部品牌资产）。业务层通过 MS_BASE_LOGO_SVG({ variant, color, height })
+   切换完整/图形、标准/反白，渲染为 <img> 而非内联 <svg>。 */
+.ms-logo { display: inline-flex; align-items: center; text-decoration: none; }
+.ms-logo img { display: block; }
 
 /* ---------- Affix ---------- */
 .ms-affix { position: relative; }
@@ -673,7 +669,7 @@ body {
 .ms-watermark-item { font-size: 14px; color: var(--color-text-auxiliary); opacity: 0.12; transform: rotate(-22deg); white-space: nowrap; user-select: none; }
 
 /* ---------- 布局骨架 ---------- */
-.ms-shell { display: flex; min-height: 100vh; background: var(--color-bg-page); }
+.ms-shell { display: flex; height: 100vh; background: var(--color-bg-page); }    /* 锁定视口高度（非 min-height）：内容撑高时侧栏/头像仍贴底常驻，滚动交给 .ms-sidebar-body / .ms-content 内部 */
 .ms-sidebar { width: var(--sidebar-w); flex: none; background: var(--color-bg-card); border-right: 1px solid var(--color-divider-base-1); display: flex; flex-direction: column; }
 .ms-sidebar-brand { height: var(--header-h); display: flex; align-items: center; gap: var(--spacing-8); padding: 0 var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
 .ms-sidebar-brand-mark { width: 26px; height: 26px; border-radius: var(--radius-8); background: var(--color-primary-normal); color: var(--color-text-constant-normal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex: none; }

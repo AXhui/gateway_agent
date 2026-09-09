@@ -78,6 +78,10 @@
 
 /* ---------- 空态 / 快捷操作 ---------- */
 .bc-empty-actions { display: inline-flex; gap: var(--spacing-8); flex-wrap: wrap; justify-content: center; }
+.bc-empty { padding: var(--spacing-64) var(--spacing-16); }
+.bc-empty .ms-empty-illu { width: 146px; height: 96px; opacity: 1; }
+.bc-empty .ms-empty-text { font-size: 14px; line-height: 22px; color: var(--color-text-primary); }
+.bc-empty-sub { font-size: 12px; line-height: 20px; color: var(--color-text-auxiliary); }
 .bc-quick { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-8); }
 .bc-quick-label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-auxiliary); }
 .bc-quick-spacer { flex: 1; }
@@ -105,15 +109,13 @@
 }
 .bc-eg71-sidenav .ms-sidebar-brand { border-bottom: 1px solid #1c1c1c; }
 .bc-eg71-sidenav .ms-sidebar-foot { border-top: 1px solid #1c1c1c; }
-.bc-eg71-sidenav .ms-logo-mark { background: #5eafff; color: #052461; }
-.bc-eg71-sidenav .ms-logo-text { color: #ffffff; }
 .bc-eg71-sidenav .ms-nav-item { color: #d6d6d8; }
 .bc-eg71-sidenav .ms-nav-item:hover { background: #1c1c1c; color: #ffffff; }
 .bc-eg71-sidenav .ms-nav-item--active { background: #052461; color: #5eafff; font-weight: 500; }
 .bc-eg71-sidenav .ms-nav-item--active:hover { background: #052461; color: #5eafff; }
 .bc-eg71-sidenav .ms-avatar { background: #052461; color: #5eafff; }
 .bc-eg71-sidenav .bc-eg71-foot-name { color: #ffffff; }
-.bc-eg71-sidenav .bc-eg71-chevron { color: #5eafff; }
+.bc-eg71-sidenav .bc-eg71-chevron { color: #7c7d7e; }                     /* 默认未展开态：对应 icon-auxiliary / gray-05（暗色板 7C7D7E） */
 .bc-eg71-sidenav .ms-dropdown { background: #1c1c1c; border-color: #2c2c2c; }
 .bc-eg71-sidenav .ms-dropdown-item { color: #d6d6d8; }
 .bc-eg71-sidenav .ms-dropdown-item:hover { background: #2c2c2c; color: #ffffff; }
@@ -143,7 +145,7 @@
 .bc-eg71-nav { display: flex; flex-direction: column; gap: var(--spacing-4); }  /* Figma 菜单组 gap-4 */
 .bc-eg71-sub { display: flex; flex-direction: column; gap: var(--spacing-4); padding-left: var(--spacing-24); }
 .bc-eg71-sub .ms-nav-item { font-size: 13px; }
-.bc-eg71-nav .ms-nav-item.is-open .bc-eg71-chevron { transform: rotate(180deg); }
+.bc-eg71-nav .ms-nav-item.is-open .bc-eg71-chevron { transform: rotate(180deg); color: #5eafff; } /* 展开态：对应 primary-normal / blue-05（5EAFFF） */
 .bc-eg71-foot { display: flex; align-items: center; gap: var(--spacing-8); position: relative; }
 .bc-eg71-foot-name { flex: 1; min-width: 0; font-weight: 500; }
 .bc-eg71-more { flex: none; color: #d6d6d8; }
@@ -154,19 +156,21 @@
 /* 展开/收起态：宽 220px → 80px，logo 文字 / 一级 label / chevron / 子菜单 / 账户名 / more 全隐藏，
    仅留 icon 居中；collapse 按钮图标由 bind() 在 arrowLeft ↔ arrowRight 间互换（点按即变，无需 CSS 旋转）。 */
 .bc-eg71-sidenav.is-collapsed { width: 80px; }
-.bc-eg71-sidenav.is-collapsed .ms-sidebar-brand { gap: 0; }
-/* 收起态：collapse 按钮 50% 悬浮在侧边栏右缘外，并按 Figma basic2Button 加底框
-   （bg #182032 + 边框 #38393b + 圆角 4px + 高 20px + 内边距 2px 8px；#38393b 为 Figma 指定且无令牌命中，写死） */
+.bc-eg71-sidenav.is-collapsed .ms-sidebar-brand { gap: 0; justify-content: center; }
+/* 收起态：collapse 按钮 50% 悬浮在侧边栏右缘外，按 Figma basic2Button 加底框，整体方形
+   （bg #182032 + 边框 #38393b 为 Figma 指定且无令牌命中，写死；20×20 尺寸与圆角走令牌，
+   图标 back-right 颜色 #A9AEB8 → --color-gray-05，固定深色底不随主题切换） */
 .bc-eg71-sidenav.is-collapsed .bc-eg71-collapse {
-  position: absolute; right: calc(var(--spacing-16) * -1); top: 50%; transform: translateY(-50%);
+  position: absolute; right: calc(var(--spacing-20) / -2); top: 50%; transform: translateY(-50%);
   margin-left: 0; margin-right: 0;
+  width: var(--spacing-20);
   height: var(--spacing-20);
-  padding: var(--spacing-2) var(--spacing-8);
+  padding: 0;
   border-radius: var(--radius-4);
   background: #182032;
   border: 1px solid #38393b;
+  color: var(--color-gray-05);
 }
-.bc-eg71-sidenav.is-collapsed .ms-logo-text,
 .bc-eg71-sidenav.is-collapsed .ms-nav-item > span:not(.ms-ico),
 .bc-eg71-sidenav.is-collapsed .bc-eg71-chevron,
 .bc-eg71-sidenav.is-collapsed .bc-eg71-sub,
@@ -250,6 +254,42 @@
 }
 @media (max-width: 980px) { .bc-eg71-formgrid { grid-template-columns: 1fr; } }
 
+/* ---------- EG71 Dashboard 协议连接状态卡 ---------- */
+/* 卡本体复用 .ms-card（白底/圆角），此处只编排「灰边→蓝边过渡 + 悬浮箭头 + 子项蓝链接」结构态 */
+.bc-eg71-dashboard { }
+.bc-eg71-protocol-card {
+  display: flex; align-items: flex-start; gap: var(--spacing-12);
+  padding: var(--spacing-12) var(--spacing-16);
+  border-color: var(--color-border-base);
+  text-decoration: none; color: inherit;
+  transition: border-color var(--duration-normal) var(--ease);
+}
+.bc-eg71-protocol-card--clickable { cursor: pointer; }
+.bc-eg71-protocol-card--clickable:hover { border-color: var(--color-border-primary-normal); }
+.bc-eg71-protocol-card-icon { flex: none; display: flex; align-items: center; color: var(--color-icon-primary-normal); }
+.bc-eg71-protocol-card-body { display: flex; flex-direction: column; gap: var(--spacing-4); flex: 1 1 auto; min-width: 0; }
+.bc-eg71-protocol-card-title { font-size: 16px; color: var(--color-text-primary); }
+.bc-eg71-protocol-card-value { font-size: 18px; font-weight: 600; }
+.bc-eg71-protocol-card-value--success { color: var(--color-text-success-normal); }
+.bc-eg71-protocol-card-value--muted { color: var(--color-text-auxiliary); }
+.bc-eg71-protocol-card-value--plain { color: var(--color-text-primary); }
+.bc-eg71-protocol-card-arrow {
+  flex: none; opacity: 0; transform: translateX(-4px);
+  color: var(--color-icon-primary-normal);
+  transition: opacity var(--duration-normal) var(--ease), transform var(--duration-normal) var(--ease);
+}
+.bc-eg71-protocol-card--clickable:hover .bc-eg71-protocol-card-arrow { opacity: 1; transform: translateX(0); }
+.bc-eg71-protocol-card-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-8) var(--spacing-16); }
+.bc-eg71-protocol-card-item { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-protocol-card-item-tag { flex: none; }
+.bc-eg71-protocol-card-item-value { font-size: 18px; font-weight: 600; text-decoration: none; }
+.bc-eg71-protocol-card-item-value--success { color: var(--color-text-success-normal); }
+.bc-eg71-protocol-card-item-value--muted { color: var(--color-text-auxiliary); }
+.bc-eg71-protocol-card-item-value--plain { color: var(--color-text-primary); }
+.bc-eg71-protocol-card-item-value--link { color: var(--color-text-link-normal); cursor: pointer; }
+.bc-eg71-protocol-card-item-value--link:hover { color: var(--color-text-link-hover); text-decoration: underline; }
+@media (max-width: 640px) { .bc-eg71-protocol-card-items { grid-template-columns: 1fr; } }
+
 /* ---------- EG71 表单输入项（FormItem input） ---------- */
 /* 标签行：必填星号/标签/单位/info 图标靠左，字数统计靠右；错误态文案走 error-normal 令牌 */
 .bc-eg71-form-item-labelrow { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-8); }
@@ -275,7 +315,32 @@
 .bc-eg71-form-item-range > input { flex: 1; min-width: 0; border: 0; padding: 0; height: auto; background: transparent; }
 .bc-eg71-form-item-range .ms-ico { flex: none; color: var(--color-text-auxiliary); }
 
+/* ---------- EG71 业务弹窗（Modal 调度：删除/禁用/确认/选择） ---------- */
+/* 图标+内容横排；图标本体复用 .ms-result-icon（L2 已含配色令牌），此处只编排布局 */
+.bc-eg71-modal-body-row { display: flex; gap: var(--spacing-12); align-items: flex-start; }
+.bc-eg71-modal-body-row .ms-result-icon { flex: none; }
+.bc-eg71-modal-body-content { flex: 1; min-width: 0; }
+
 /* ---------- EG71 表单单选按钮组（FormItem radio group） ---------- */
 /* 线框单选按钮组占满宽度，横向排布互斥选项；视觉由 L2 .ms-radio-btn 承担，此处仅编排布局 */
 .bc-eg71-form-item-radio-group { width: 100%; }
 .bc-eg71-form-item-radio-group .ms-radio-btn { flex: 1; }
+
+/* ---------- 标题（跨产品线通用 B_ComTitle） ---------- */
+/* 视觉（字号/字重/色）全部由 L2 原子承担（.ms-h4/.ms-h5/.ms-form-section-title），
+   此处仅编排布局与层级间距，不写视觉常量 */
+.bc-com-title { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.bc-com-title-row { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); }
+.bc-com-title-main { display: flex; align-items: center; gap: var(--spacing-8); min-width: 0; }
+.bc-com-title-extra { display: flex; align-items: center; gap: var(--spacing-8); flex: none; }
+.bc-com-title-desc { display: block; }
+
+/* 层级间距：标题到下方内容（表格/表单/字段组）的固定间距 */
+.bc-com-title--page { margin-bottom: var(--spacing-24); }
+.bc-com-title--tab { margin-bottom: var(--spacing-16); }
+.bc-com-title--card { margin-bottom: var(--spacing-16); }
+.bc-com-title--group { margin-bottom: var(--spacing-12); }
+
+/* 对齐方式（默认左对齐 = space-between 两端布局） */
+.bc-com-title--center .bc-com-title-row { justify-content: center; }
+.bc-com-title--right .bc-com-title-row { justify-content: flex-end; }

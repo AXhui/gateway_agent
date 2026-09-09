@@ -121,21 +121,20 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 const h = React.createElement;
 
-const BRAND = 'var(--color-primary-normal)';
-const Logo = ({ variant='full', color='default', height=32, style }) => {
-  const fg = color === 'white' ? 'var(--color-text-constant-normal)' : BRAND;
-  const textFg = color === 'white' ? 'var(--color-text-constant-normal)' : 'var(--color-text-primary)';
-  const ratio = variant === 'full' ? 82/32 : 1;
-  const w = height * ratio;
-  if (variant === 'compact')
-    return h('svg', { width:w, height, viewBox:'0 0 32 32', fill:'none', style },
-      h('rect', { width:32, height:32, rx:6, fill:fg }),
-      h('path', { d:'M8 8h4v16H8zM20 8h4v16h-4zM12 14h8v4h-8z', fill:'var(--color-text-constant-normal)' }));
-  return h('svg', { width:w, height, viewBox:'0 0 82 32', fill:'none', style },
-    h('rect', { width:32, height:32, rx:6, fill:fg }),
-    h('path', { d:'M8 8h4v16H8zM20 8h4v16h-4zM12 14h8v4h-8z', fill:'var(--color-text-constant-normal)' }),
-    h('text', { x:40, y:22, fontFamily:"'PingFang SC',-apple-system,sans-serif",
-      fontSize:16, fontWeight:600, fill:textFg }, 'Milesight IOT'));
+// 官方 SVG 品牌资产：直接引用官方原图（外部品牌资源，保留官方原色，不走 token 变量）
+const ASSET = {
+  'full:brand':    'Type=Logo, Color=Default.svg',
+  'full:white':    'Type=Logo, Color=White.svg',
+  'compact:brand': 'Type=Logo M, Color=Default.svg',
+  'compact:white': 'Type=Logo M, Color=White.svg'
+};
+const assetSrc = (variant, color) => 'assets/' + encodeURI(ASSET[variant + ':' + color]);
+
+const Logo = ({ variant='full', color='brand', height=32, style }) => {
+  const viewW = variant === 'compact' ? 32 : 120;
+  const w = height * viewW / 32;
+  return h('img', { src: assetSrc(variant, color), width: w, height,
+    alt: 'Milesight', style, draggable: false });
 };
 
 const Group = ({ title, bg, children }) => h('section', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-12)' } },

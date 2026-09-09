@@ -26,6 +26,7 @@
 | `B_MemberTable` | `bc-member-table` | [_shared/B_MemberTable/SKILL.md](_shared/B_MemberTable/SKILL.md) | 成员权限表 |
 | `B_LogTimeline` | `bc-log-timeline` | [_shared/B_LogTimeline/SKILL.md](_shared/B_LogTimeline/SKILL.md) | 操作日志时间轴 |
 | `B_EmptyState` | `bc-empty-state` | [_shared/B_EmptyState/SKILL.md](_shared/B_EmptyState/SKILL.md) | 空态引导 |
+| `B_Empty` | `bc-empty` | [_shared/B_Empty/SKILL.md](_shared/B_Empty/SKILL.md) | 空状态 |
 | `B_QuickActions` | `bc-quick-actions` | [_shared/B_QuickActions/SKILL.md](_shared/B_QuickActions/SKILL.md) | 快捷操作区 |
 
 ### EG71 网关线业务组件（`eg71/`）

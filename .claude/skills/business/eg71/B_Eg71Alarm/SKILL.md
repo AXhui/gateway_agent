@@ -79,4 +79,4 @@ EG71 告警事件列表，含关键统计、筛选、批量选择与分页，Eve
 - 结构类：无新增（复用 `ms-card/table/stat` 体系）
 - 实体（只读）：`assets/js/registry-entities.js`（key `alarm`）
 - 令牌（只读）：`.claude/tokens/tokens.css`
-- 校验页：`eg71-alarm-verify.html`（`MS_BIZ_INDEX['bc-eg71-alarm'].render/bind`）
+- 校验页：`output/eg71-alarm-verify.html`（`MS_BIZ_INDEX['bc-eg71-alarm'].render/bind`）

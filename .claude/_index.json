@@ -542,11 +542,25 @@
       "src": "assets/js/registry-business.js#bc-empty-state",
       "status": "已固化"
     },
+    "B_Empty": {
+      "id": "bc-empty",
+      "cn": "空状态",
+      "dir": ".claude/skills/business/_shared/B_Empty",
+      "src": "assets/js/registry-business.js#bc-empty",
+      "status": "已固化"
+    },
     "B_QuickActions": {
       "id": "bc-quick-actions",
       "cn": "快捷操作区",
       "dir": ".claude/skills/business/_shared/B_QuickActions",
       "src": "assets/js/registry-business.js#bc-quick-actions",
+      "status": "已固化"
+    },
+    "B_ComTitle": {
+      "id": "bc-com-title",
+      "cn": "标题",
+      "dir": ".claude/skills/business/_shared/B_ComTitle",
+      "src": "assets/js/registry-business.js#bc-com-title",
       "status": "已固化"
     },
     "B_Eg71Sidenav": {
@@ -582,6 +596,27 @@
       "cn": "告警事件列表",
       "dir": ".claude/skills/business/eg71/B_Eg71Alarm",
       "src": "assets/js/registry-business.js#bc-eg71-alarm",
+      "status": "已固化"
+    },
+    "B_Eg71Modal": {
+      "id": "bc-eg71-modal",
+      "cn": "业务弹窗（删除/禁用/确认/选择）",
+      "dir": ".claude/skills/business/eg71/B_Eg71Modal",
+      "src": "assets/js/registry-business.js#bc-eg71-modal",
+      "status": "已固化"
+    },
+    "B_Eg71ProtocolCard": {
+      "id": "bc-eg71-protocol-card",
+      "cn": "协议连接状态卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71ProtocolCard",
+      "src": "assets/js/registry-business.js#bc-eg71-protocol-card",
+      "status": "已固化"
+    },
+    "B_Eg71Dashboard": {
+      "id": "bc-eg71-dashboard",
+      "cn": "Dashboard 卡片墙",
+      "dir": ".claude/skills/business/eg71/B_Eg71Dashboard",
+      "src": "assets/js/registry-business.js#bc-eg71-dashboard",
       "status": "已固化"
     }
   },
