@@ -1,0 +1,61 @@
+# 将文件放到你的仓库 .github/workflows/ 目录下（例如 .github/workflows/sync-demo-to-bitable.yml）
+# 首次使用前：
+#   1. 在 GitHub 仓库 Settings → Secrets and variables → Actions → New repository secret
+#      新建两个 secret：
+#        - FEISHU_WEBHOOK_URL：飞书多维表格「接收到 Webhook 时」触发器给出的 webhook 地址
+#        - FEISHU_WEBHOOK_TOKEN：触发器「凭证校验(Bearer token)」里的 token
+#   2. 按你的仓库目录结构调整 paths（示例只监听 demo/ 目录）
+#   3. 推送一次改动即可看到效果；如需测试，可手动 Run workflow（on.workflow_dispatch 已开启）
+name: Sync UI Demo to Feishu Bitable
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'demo/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 推送 Demo 更新到飞书多维表格
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_WEBHOOK_TOKEN: ${{ secrets.FEISHU_WEBHOOK_TOKEN }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          PUSHER: ${{ github.event.pusher.name }}
+          SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+
+          url = os.environ.get("FEISHU_WEBHOOK_URL", "")
+          token = os.environ.get("FEISHU_WEBHOOK_TOKEN", "")
+          if not url:
+              raise SystemExit("缺少 FEISHU_WEBHOOK_URL，请先在仓库 Secrets 中配置")
+
+          msg = (os.environ.get("COMMIT_MSG") or "").strip().splitlines()
+          name = msg[0][:60] if msg else "Demo 更新"
+
+          payload = {
+              "Demo 名称": name,
+              "需求描述": msg[0] if msg else "仓库 demo 目录文件更新",
+              "生成人": os.environ.get("PUSHER", ""),
+              "版本号": os.environ.get("SHA", ""),
+              "来源": "GitHub 更新",
+              "状态": "已生成",
+          }
+
+          headers = {"Content-Type": "application/json"}
+          if token:
+              headers["Authorization"] = f"Bearer {token}"
+
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers=headers,
+              method="POST")
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              print("HTTP", resp.status, resp.read().decode())
+          EOF
