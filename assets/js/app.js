@@ -337,6 +337,25 @@
     $('#asset-search').addEventListener('input', e => { assetFilter = e.target.value.trim().toLowerCase(); renderTree(); });
     /* 样式层修改后需执行 tools/build-css-bundle.py，这里只负责重载页面 */
     $('#btn-rebuild').addEventListener('click', () => location.reload());
+    $('#btn-fullscreen').addEventListener('click', enterFullscreen);
+    $('#btn-fs-exit').addEventListener('click', exitFullscreen);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isFullscreen) exitFullscreen(); });
+  }
+
+  /* ---------------- 全屏渲染 ---------------- */
+  let isFullscreen = false;
+
+  function enterFullscreen() {
+    if (!state.html) return; // 未生成时无内容可全屏
+    isFullscreen = true;
+    $('#frame-wrap').classList.add('is-fullscreen');
+    $('#btn-fs-exit').hidden = false;
+  }
+
+  function exitFullscreen() {
+    isFullscreen = false;
+    $('#frame-wrap').classList.remove('is-fullscreen');
+    $('#btn-fs-exit').hidden = true;
   }
 
   /* ---------------- 启动 ---------------- */

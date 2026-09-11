@@ -166,6 +166,20 @@ button, input { font-family: inherit; }
 .wb-frame-wrap[data-device="tablet"] iframe { max-width: 834px; margin: 0 auto; }
 .wb-frame-wrap[data-device="mobile"] iframe { max-width: 414px; margin: 0 auto; }
 
+/* 全屏渲染：脱离 wb-main 网格与右侧面板，铺满视口；iframe 内容即最终产物，不叠加工作台外壳视觉 */
+.wb-frame-wrap.is-fullscreen {
+  position: fixed; inset: 0; z-index: 200; padding: 0;
+  background: #fff;
+}
+.wb-frame-wrap.is-fullscreen iframe { max-width: 100%; border: 0; border-radius: 0; }
+.wb-fs-exit {
+  position: absolute; top: 16px; right: 16px; z-index: 201;
+  border: 1px solid var(--wb-line); border-radius: 6px; background: var(--wb-panel);
+  color: var(--wb-text-2); font-size: 12px; padding: 6px 12px; cursor: pointer;
+  opacity: 0.6; transition: opacity .15s ease;
+}
+.wb-fs-exit:hover { opacity: 1; color: var(--wb-text); border-color: var(--wb-accent-dim); }
+
 .wb-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 40px; text-align: center; }
 .wb-empty-mark { font-size: 28px; color: var(--wb-line); }
 .wb-empty-title { font-size: 14px; font-weight: 600; color: var(--wb-text-2); }

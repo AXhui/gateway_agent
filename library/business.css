@@ -179,6 +179,17 @@
 .bc-eg71-sidenav.is-collapsed .ms-nav-item { justify-content: center; padding: 9px 0; }
 .bc-eg71-sidenav.is-collapsed .bc-eg71-foot { justify-content: center; gap: 0; }
 
+/* 收起态一级分组浮窗：80px icon-only 时容不下二级文字，点击一级项弹出浮窗列出子条目。
+   position:fixed（非 absolute）+ bind() 用 getBoundingClientRect() 算 top/left，跳出
+   .ms-sidebar-body{overflow:auto} 的裁切链（同类坑见 admin-sidebar skill 变更历史 2026-09-08 补）。 */
+.bc-eg71-popup {
+  position: fixed; z-index: 100; min-width: 160px;
+  background: #1c1c1c; border: 1px solid #2c2c2c; border-radius: var(--radius-8);
+  box-shadow: var(--shadow-3); padding: var(--spacing-4);
+}
+.bc-eg71-popup-title { padding: var(--spacing-8) var(--spacing-12); font-size: 12px; color: #7c7d7e; }
+.bc-eg71-popup .ms-nav-item--sub { padding-left: var(--spacing-12); font-size: 13px; }
+
 /* ---------- EG71 顶部导航（通用版，非 /dashboard） ---------- */
 /* Figma 2016:88258（默认）：56px 骨架，px-20、右灰底胶囊 + 40px 更多按钮。
    高度由 .ms-header 绑定 --header-h（56px），此处不覆盖；
@@ -344,3 +355,48 @@
 /* 对齐方式（默认左对齐 = space-between 两端布局） */
 .bc-com-title--center .bc-com-title-row { justify-content: center; }
 .bc-com-title--right .bc-com-title-row { justify-content: flex-end; }
+
+/* ---------- EG71 Dashboard 接入设备面板（Access devices） ---------- */
+/* 三段式进度条：视觉（色/圆角/高度）全由 .ms-progress-bar 系列承担，此处仅编排图例布局 */
+.bc-eg71-dashboard-devices-progress .ms-progress-line { display: flex; }
+.bc-eg71-dashboard-devices-seg { border-radius: 0; flex: none; }
+.bc-eg71-dashboard-devices-seg:first-child { border-radius: var(--radius-full) 0 0 var(--radius-full); }
+.bc-eg71-dashboard-devices-seg:last-child { border-radius: 0 var(--radius-full) var(--radius-full) 0; }
+/* L2 .ms-progress-bar 无灰态修饰符，业务层按铁律一「仅令牌引用」新增 --muted 变体 */
+.ms-progress-bar--muted { background: var(--color-icon-auxiliary); }
+.bc-eg71-dashboard-devices-legend { display: flex; align-items: center; gap: var(--spacing-16); margin-top: var(--spacing-12); flex-wrap: wrap; }
+.bc-eg71-dashboard-devices-legend-item { display: flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-dashboard-devices-legend-value { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.bc-eg71-dashboard-devices-legend-total { margin-left: auto; }
+.bc-eg71-dashboard-devices-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex: none; }
+.bc-eg71-dashboard-devices-dot--success { background: var(--color-success-normal); }
+.bc-eg71-dashboard-devices-dot--error { background: var(--color-error-normal); }
+.bc-eg71-dashboard-devices-dot--muted { background: var(--color-icon-auxiliary); }
+
+/* ---------- EG71 Dashboard 数据转发面板（Data forwarding） ---------- */
+.bc-eg71-dashboard-forwarding-row { display: flex; align-items: center; gap: var(--spacing-12); padding: var(--spacing-12) 0; border-bottom: 1px solid var(--color-divider-base-1); cursor: pointer; }
+.bc-eg71-dashboard-forwarding-row:last-child { border-bottom: 0; }
+.bc-eg71-dashboard-forwarding-row:hover { color: var(--color-primary-normal); }
+.bc-eg71-dashboard-forwarding-icon { display: inline-flex; color: var(--color-text-auxiliary); flex: none; }
+.bc-eg71-dashboard-forwarding-row:hover .bc-eg71-dashboard-forwarding-icon { color: var(--color-primary-normal); }
+.bc-eg71-dashboard-forwarding-title { flex: 1; min-width: 0; font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-dashboard-forwarding-arrow { display: inline-flex; color: var(--color-text-auxiliary); flex: none; }
+
+/* ---------- EG71 Dashboard 系统信息面板（System information） ---------- */
+/* Descriptions 非 bordered 摘要态，视觉全由 .ms-desc 承担，本面板零编排样式 */
+
+/* ---------- EG71 协议接口详情抽屉（bc-eg71-protocol-detail） ---------- */
+/* 头部图标卡：横排图标+标题+标签，复用 .ms-card 外壳，内部布局编排 */
+.bc-eg71-protocol-detail-headcard { display: flex; align-items: center; gap: var(--spacing-16); padding: var(--spacing-16); }
+.bc-eg71-protocol-detail-headcard-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--radius-4); background: var(--color-primary-normal); color: var(--color-text-constant-normal); flex: none; }
+.bc-eg71-protocol-detail-headcard-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+.bc-eg71-protocol-detail-headcard--sub { margin-bottom: var(--spacing-16); }
+.bc-eg71-protocol-detail-section { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-protocol-detail-section-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-protocol-detail-table-empty { text-align: center; color: var(--color-text-auxiliary); }
+/* Figma 详情态字段行是纯横排 label(117px)+value，非 .ms-desc--bordered 的边框表格形态；
+   作用域内覆写为单列纵向排列，每行内部改横排（label 定宽 117px） */
+.bc-eg71-protocol-detail .ms-desc { grid-template-columns: 1fr; gap: var(--spacing-12); }
+.bc-eg71-protocol-detail .ms-desc-item { flex-direction: row; align-items: center; gap: var(--spacing-24); }
+.bc-eg71-protocol-detail .ms-desc-label { flex: none; width: 117px; color: var(--color-text-secondary); font-size: 14px; }
+.bc-eg71-protocol-detail .ms-desc-value { font-size: 14px; }

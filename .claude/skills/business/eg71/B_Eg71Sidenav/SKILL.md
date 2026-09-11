@@ -1,6 +1,6 @@
 ---
 name: B_Eg71Sidenav
-version: 1.1.1
+version: 1.2.0
 description: 网关侧边导航（业务组件）
 ---
 
@@ -96,6 +96,37 @@ EG71 网关后台的侧边导航，含 Logo、一级菜单、二级下拉与底�
 - **展开态（`.ms-nav-item.is-open .bc-eg71-chevron`，即点击展开二级后）**：`#5eafff`（对应 `--color-primary-normal` / `--color-blue-05`）。
 - 触发：点击一级项 `data-nav-trigger`（accordion，仅展开当前项）→ `bind()` 给该项加 `is-open` → chevron 同步旋转 180° + 变蓝；收起时移除 `is-open`，chevron 转回 + 变回灰。
 - 结构类里写的是固定 hex（非 `var(--*)`），与本组件其余深色配色写法一致（见文件头「深色配色基本固定，不绑主题切换」），hex 旁注释标注对应令牌名，便于核对不算裸值违规。
+
+### 五、收起态一级分组浮窗（v1.2.0 新增）
+
+#### 背景
+收起态（`.is-collapsed`，80px icon-only）下，原展开态内联子菜单 `.bc-eg71-sub` 被 CSS 强制 `display:none`（见四节「收起态视觉变化」），点击带子菜单的一级项（Data Services / Network / Platform / System Setting / APP）**完全没有视觉反馈**——用户点击后二级条目无处可见，属于半成品交互（违反「交互功能必须闭环」红线）。v1.2.0 补齐：收起态点击一级项改为弹出浮窗列出子条目，而非依赖内联子菜单。
+
+#### 交互契约
+- **触发**：`.is-collapsed` 态下点击一级项 `[data-nav-trigger][aria-haspopup="menu"]`（即带 `children` 的分组：Data Services / Network / Platform / System Setting / APP；Dashboard 无子项不受影响）。
+- **状态**：`bind()` 内 `rootEl.classList.contains('is-collapsed')` 分支判定，展开态走原 accordion 逻辑（内联 `.bc-eg71-sub`），收起态走浮窗逻辑（`.bc-eg71-popup`），二者互斥、共用同一份 `renderChildren(g)` 生成的子条目 HTML（避免高亮判定重复维护）。
+- **定位**：`position: fixed`（非 `absolute`）+ `bind()` 用 `getBoundingClientRect()` 实时算 `top`（贴触发项顶部）/`left`（贴**侧边栏容器**右缘 + 8px，非触发项右缘——触发项自身有内边距，右缘落在 80px 收起轨内侧，若以触发项右缘为基准会与收起轨重叠），跳出 `.ms-sidebar-body{overflow:auto}` 的裁切链——这是必须的，不能省：收起态侧边栏仅 80px 宽，若浮窗嵌套在裁切祖先内会被裁掉（同类 bug 见 `admin-sidebar` skill 变更历史 2026-09-08 补的记录，那次是嵌套 `absolute` 浮层被 `overflow:hidden` 吞掉，此处从设计上直接避免）。
+- **关闭**：点击浮窗外任意处（`document` click 监听）关闭；切换回展开态（点击 collapse 按钮）时同步全部关闭；同一时刻只保留一个浮窗打开（`closeAllPopups()` 先清空再判断是否重开，实现「点击已打开项 = 关闭」的 toggle 语义）。
+- **同步**：触发项 `aria-expanded`（true=浮窗打开 / false=关闭）+ `is-open` 类（复用现有 chevron 变蓝的视觉逻辑，虽然收起态 chevron 本身因 `display:none` 不可见，但类保持一致方便后续排查）。
+
+#### DOM 结构
+```html
+<aside class="ms-sidebar bc-eg71-sidenav">
+  ...
+  <div class="bc-eg71-popup" data-popup="/data-services" role="menu" hidden>
+    <div class="bc-eg71-popup-title">Data Services</div>
+    <div class="ms-nav-item ms-nav-item--sub" data-sub="Data Acquisition" data-route="/data-services/data-acquisition">...</div>
+    ...
+  </div>
+  <!-- 每个带 children 的分组各一个 .bc-eg71-popup，挂在 .bc-eg71-sidenav 下（非 .ms-sidebar-body 导航滚动区内） -->
+</aside>
+```
+
+#### 结构类（`library/business.css` 158-180 行后新增段）
+`.bc-eg71-popup`（`position:fixed` + 深色底 `#1c1c1c` + 边框 `#2c2c2c`，与 `.ms-dropdown` 深色配色一致但独立定义，因需要 `position:fixed` 而非 `.ms-dropdown` 默认的 `absolute`）；`.bc-eg71-popup-title`（分组名小字灰色）；`.bc-eg71-popup .ms-nav-item--sub`（复用基础子项样式，仅调整内缩）。
+
+#### atoms 依赖不变
+浮窗复用现有子条目渲染（`renderChildren(g)`，v1.2.0 从 `navItem` 内联逻辑抽出的公用函数）+ 现有 `.ms-nav-item--sub` 样式，**不新增基础原子**，仅业务层新增一段结构类 + `bind()` 分支判断。
 
 ---
 

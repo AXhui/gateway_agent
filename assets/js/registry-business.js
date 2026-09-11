@@ -201,28 +201,29 @@ window.MS_BIZ_UTIL = (function () {
         const e = ctx.entity, rows = ctx.rows || MS_DATA.build(e, 6);
         const cols = e.fields;
         const ops = e.actions.slice(0, 3);
+        const embedded = !!ctx.embedded; // 卡片内嵌形态：无工具栏/复选列/表尾，首行不高亮
         return `<div class="ms-table-wrap">
-          <div class="ms-table-toolbar">
+          ${embedded ? '' : `<div class="ms-table-toolbar">
             <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">${rows.length * 214}</span></div>
             <div class="ms-space ms-space--8">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">${ico('filter', 14)}列设置</button>
               <button class="ms-btn ms-btn--sm">${ico('download', 14)}导出</button>
               <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 14)}新增${esc(e.cn)}</button>
             </div>
-          </div>
+          </div>`}
           <table class="ms-table">
             <thead><tr>
-              <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span></label></th>
+              ${embedded ? '' : `<th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span></label></th>`}
               ${cols.map(c => `<th${c.type === 'num' || c.type === 'percent' ? ' class="ms-table-num"' : ''}>${esc(c.cn)}</th>`).join('')}
               <th class="ms-table-ops">操作</th>
             </tr></thead>
-            <tbody>${rows.map((r, i) => `<tr${i === 0 ? ' class="ms-table-row--active"' : ''}>
-              <td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"${i < 2 ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>
+            <tbody>${rows.map((r, i) => `<tr${!embedded && i === 0 ? ' class="ms-table-row--active"' : ''}>
+              ${embedded ? '' : `<td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"${i < 2 ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>`}
               ${cols.map(c => `<td${c.type === 'num' || c.type === 'percent' ? ' class="ms-table-num"' : ''}>${U.cellHtml(c, r, e)}</td>`).join('')}
               <td class="ms-table-ops">${ops.map((a, k) => `<button class="ms-btn ms-btn--link${k === ops.length - 1 ? ' ms-btn--danger' : ''}">${esc(a)}</button>`).join('')}</td>
             </tr>`).join('')}</tbody>
           </table>
-          ${ctx.plain ? '' : `<div class="bc-table-foot">
+          ${(ctx.plain || embedded) ? '' : `<div class="bc-table-foot">
             <span class="ms-text--secondary ms-text--sm">已选 <b>2</b> 项</span>
             <div class="ms-space ms-space--8">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">批量配置</button>
@@ -677,22 +678,30 @@ window.MS_BIZ_UTIL = (function () {
         const route = ctx.route || '/dashboard';
         const slug = U.slug;
         const groups = U.navGroups;
+        // 子条目 HTML 抽公用：展开态内联 .bc-eg71-sub 与收起态浮窗 .bc-eg71-popup 共用同一份，避免重复维护高亮判定
+        const renderChildren = (g) => g.children.map(c => {
+          const cr = g.route + '/' + slug(c);
+          return `<div class="ms-nav-item ms-nav-item--sub${route === cr ? ' ms-nav-item--active' : ''}" data-sub="${esc(c)}" data-route="${esc(cr)}"><span>${esc(c)}</span></div>`;
+        }).join('');
         const navItem = (g) => {
           const has = g.children && g.children.length;
           const active = route === g.route || route.indexOf(g.route + '/') === 0;
           const subActive = has && route.indexOf(g.route + '/') === 0;
           const chevron = has ? `<span class="bc-eg71-chevron">${ico('chevronDown', 16)}</span>` : '';
-          const sub = has
-            ? `<div class="bc-eg71-sub"${subActive ? '' : ' hidden'}>${g.children.map(c => {
-                const cr = g.route + '/' + slug(c);
-                return `<div class="ms-nav-item ms-nav-item--sub${route === cr ? ' ms-nav-item--active' : ''}" data-sub="${esc(c)}" data-route="${esc(cr)}"><span>${esc(c)}</span></div>`;
-              }).join('')}</div>`
-            : '';
+          const sub = has ? `<div class="bc-eg71-sub"${subActive ? '' : ' hidden'}>${renderChildren(g)}</div>` : '';
           return `<div class="bc-eg71-nav" data-nav="${esc(g.label)}">
-            <div class="ms-nav-item${active ? ' ms-nav-item--active' : ''}" data-nav-trigger data-route="${esc(g.route)}"${has ? ` aria-expanded="${subActive}"` : ''}>${ico(g.icon, 16)}<span>${esc(g.label)}</span>${chevron}</div>
+            <div class="ms-nav-item${active ? ' ms-nav-item--active' : ''}" data-nav-trigger data-route="${esc(g.route)}"${has ? ` aria-expanded="${subActive}" aria-haspopup="menu"` : ''}>${ico(g.icon, 16)}<span>${esc(g.label)}</span>${chevron}</div>
             ${sub}
           </div>`;
         };
+        // 收起态（80px icon-only）容不下 .bc-eg71-sub 文字，点击一级分组改弹浮窗；挂在 .bc-eg71-sidenav 下（非导航区内），
+        // 避免被 .ms-sidebar-body 的 overflow 裁切（同类坑见 admin-sidebar skill 变更历史 2026-09-08 补的记录）
+        const popups = groups.filter(g => g.children && g.children.length).map(g =>
+          `<div class="bc-eg71-popup" data-popup="${esc(g.route)}" role="menu" hidden>
+            <div class="bc-eg71-popup-title">${esc(g.label)}</div>
+            ${renderChildren(g)}
+          </div>`
+        ).join('');
         // 账户下拉菜单（trigger=click / placement=topRight）：含危险项 + Language 二级语言子菜单
         const adminItems = [
           { icon: 'user', label: 'Change Account Info' },
@@ -731,6 +740,7 @@ window.MS_BIZ_UTIL = (function () {
               ${adminItems.map(dropdownItem).join('')}
             </div>
           </div>
+          ${popups}
         </aside>`;
       },
       bind(root) {
@@ -748,14 +758,44 @@ window.MS_BIZ_UTIL = (function () {
             if (logo && window.MS_BASE_LOGO_SVG) {
               logo.innerHTML = window.MS_BASE_LOGO_SVG({ variant: collapsed ? 'compact' : 'full', color: 'white', height: 32 });
             }
+            // 展开回来时收起态浮窗不再适用，全部收掉
+            if (!collapsed) closeAllPopups();
           });
         }
-        // 一级导航展开/收起：点击切换 open，chevron 旋转，仅展开当前项（accordion）
+        // 收起态浮窗：全部关闭 + 触发按钮 is-open/aria-expanded 复位
+        const closeAllPopups = () => {
+          rootEl.querySelectorAll('.bc-eg71-popup').forEach(p => { p.hidden = true; });
+          rootEl.querySelectorAll('[data-nav-trigger][aria-haspopup]').forEach(x => {
+            x.classList.remove('is-open');
+            x.setAttribute('aria-expanded', 'false');
+          });
+        };
+        // 一级导航展开/收起：展开态走内联 accordion（chevron 旋转，仅展开当前项）；
+        // 收起态（is-collapsed，80px icon-only）改弹浮窗，定位用 getBoundingClientRect 贴在触发项右侧，
+        // 不受 .ms-sidebar-body{overflow:auto} 裁切影响（浮窗挂在 .bc-eg71-sidenav 下，非导航滚动区内）
         rootEl.querySelectorAll('[data-nav]').forEach(nav => {
           const t = nav.querySelector('[data-nav-trigger]');
           const sub = nav.querySelector('.bc-eg71-sub');
           if (!t || !sub) return;
-          t.addEventListener('click', () => {
+          const route = t.getAttribute('data-route');
+          const popup = rootEl.querySelector(`.bc-eg71-popup[data-popup="${route}"]`);
+          t.addEventListener('click', (e) => {
+            if (rootEl.classList.contains('is-collapsed')) {
+              if (!popup) return;
+              e.stopPropagation(); // 阻止冒泡到 document 的 closeAllPopups，否则刚打开就被同一次点击关掉
+              const willOpen = popup.hidden;
+              closeAllPopups();
+              if (willOpen) {
+                const r = t.getBoundingClientRect();
+                const railRight = rootEl.getBoundingClientRect().right; // 用侧边栏容器右缘而非触发项右缘：触发项内边距使其右缘落在 80px 收起轨内侧，会导致浮窗与轨道重叠
+                popup.style.top = r.top + 'px';
+                popup.style.left = (railRight + 8) + 'px'; // 侧边栏右侧 8px 间距，position:fixed 相对视口定位
+                popup.hidden = false;
+                t.classList.add('is-open');
+                t.setAttribute('aria-expanded', 'true');
+              }
+              return;
+            }
             const willOpen = sub.hidden;
             rootEl.querySelectorAll('.bc-eg71-sub').forEach(s => { s.hidden = true; });
             rootEl.querySelectorAll('[data-nav-trigger]').forEach(x => {
@@ -769,6 +809,9 @@ window.MS_BIZ_UTIL = (function () {
             }
           });
         });
+        // 点击浮窗内子条目 / 侧边栏外任意处 → 关闭浮窗；不 stopPropagation，让点击继续冒泡到
+        // MS_EG71_SHELL 挂在 .bc-eg71-sidenav 上的路由监听（触发 navigate），关闭与导航互不影响
+        document.addEventListener('click', () => closeAllPopups());
         // 子条目点击 → 设为主选中态
         rootEl.querySelectorAll('.ms-nav-item--sub').forEach(item => {
           item.addEventListener('click', () => {
@@ -965,14 +1008,13 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-content', cn: '内容容器', cat: '系统设置',
-      desc: 'Milesight 网关配置页内容容器：一张张 ms-card 区块卡竖排堆叠，每张卡 = 标题行（标题 + 尾部 Switch 开关或 Add/导入按钮组）+ 卡体。表单字段统一引用 bc-eg71-form-item-* 表单业务组件（input / radio-group），Checkbox 多选内嵌子区、可编辑 ms-table + Add 按钮、ms-empty 空态则由基础组件直接编排。',
-      atoms: ['card', 'form', 'input', 'select', 'radio', 'checkbox', 'switch', 'button', 'tag', 'table', 'empty'],
+      desc: 'Milesight 网关配置页内容容器：一张张 ms-card 区块卡竖排堆叠，每张卡 = 标题行（标题 + 尾部 Switch 开关或 Add/导入按钮组）+ 卡体。表单字段统一引用 bc-eg71-form-item-* 表单业务组件（input / radio-group）；Checkbox 多选内嵌子区、ms-empty 空态由基础组件直接编排；Data Forwarding 表格调用 bc-data-table 业务组件（embedded 内嵌形态）。',
+      atoms: ['card', 'form', 'input', 'radio', 'checkbox', 'switch', 'button', 'empty'],
       entityHint: 'gateway',
       tags: ['内容容器', '区块卡', '表单', '设置', '网络', '开关', '单选', '多选', '可编辑表格', '空态', 'EG71'],
       render(ctx) {
         const e = ctx.entity, r = (ctx.rows || MS_DATA.build(e, 1))[0];
         const fitem = (id, c) => (window.MS_BIZ_INDEX && window.MS_BIZ_INDEX[id] ? window.MS_BIZ_INDEX[id].render(c) : '');
-        const select = opts => `<span class="ms-select"><select>${opts.map(o => `<option${o[1] ? ' selected' : ''}>${esc(o[0])}</option>`).join('')}</select></span>`;
         const head = (title, extra) => `
           <div class="ms-card-head">
             <div class="ms-card-title">${esc(title)}</div>
@@ -1024,23 +1066,23 @@ window.MS_BIZ_UTIL = (function () {
           <section class="ms-card">
             ${head('Data Forwarding', `<div class="ms-card-extra"><button class="ms-btn ms-btn--sm">${ico('plus', 14)}Add</button></div>`)}
             <div class="ms-card-body ms-card-body--flush">
-              <table class="ms-table">
-                <thead><tr><th>Rule</th><th>Protocol</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Uplink → MQTT</td>
-                    <td>${select([['MQTT', true], ['HTTP', false], ['HTTPS', false]])}</td>
-                    <td>${U.statusTag(U.statusOf(e, '在线'))}</td>
-                    <td class="ms-table-ops"><button class="ms-btn ms-btn--link">${ico('edit', 14)}</button><button class="ms-btn ms-btn--link ms-btn--danger">${ico('trash', 14)}</button></td>
-                  </tr>
-                  <tr>
-                    <td>Downlink bridge</td>
-                    <td>${select([['HTTP', true], ['MQTT', false], ['HTTPS', false]])}</td>
-                    <td>${U.statusTag(U.statusOf(e, '离线'))}</td>
-                    <td class="ms-table-ops"><button class="ms-btn ms-btn--link">${ico('edit', 14)}</button><button class="ms-btn ms-btn--link ms-btn--danger">${ico('trash', 14)}</button></td>
-                  </tr>
-                </tbody>
-              </table>
+              ${fitem('bc-data-table', {
+                entity: {
+                  cn: 'Data Forwarding',
+                  fields: [
+                    { key: 'rule', cn: 'Rule' },
+                    { key: 'protocol', cn: 'Protocol', type: 'code' },
+                    { key: 'status', cn: 'Status', type: 'status' }
+                  ],
+                  actions: ['Edit', 'Delete'],
+                  statuses: e.statuses
+                },
+                rows: [
+                  { rule: 'Uplink → MQTT', protocol: 'MQTT', status: '在线' },
+                  { rule: 'Downlink bridge', protocol: 'HTTP', status: '离线' }
+                ],
+                embedded: true
+              })}
             </div>
           </section>
 
@@ -1308,6 +1350,161 @@ window.MS_BIZ_UTIL = (function () {
       tags: ['弹窗', 'Modal', '删除确认', '禁用确认', '确认', '选择', 'EG71'],
       render(ctx) { return renderEg71Modal(ctx || {}); },
       bind(root) { bindEg71Modal(root); }
+    },
+    {
+      id: 'bc-eg71-dashboard-devices', cn: 'Dashboard 接入设备面板', cat: '概览',
+      desc: 'Milesight 网关 Dashboard「Access devices」面板：三段式进度条（在线/离线/未激活）+ 图例统计，展示网关下接入设备的总览分布。',
+      atoms: ['card', 'progress', 'text'],
+      entityHint: 'gateway',
+      tags: ['Dashboard', '接入设备', 'Access devices', '进度条', 'EG71'],
+      render(ctx) {
+        const d = ctx.devices || {};
+        const online = Number(d.online) || 0, offline = Number(d.offline) || 0, notActivated = Number(d.notActivated) || 0;
+        const total = Number(d.total) || (online + offline + notActivated) || 1;
+        const pct = n => Math.max(0, Math.min(100, (n / total) * 100));
+        const legend = [
+          { key: 'online', label: 'Online', tone: 'success', value: online },
+          { key: 'offline', label: 'Offline', tone: 'error', value: offline },
+          { key: 'notActivated', label: 'Not activated', tone: 'muted', value: notActivated }
+        ];
+        return `<div class="ms-card bc-eg71-dashboard-devices">
+          <div class="ms-card-head ms-card-head--plain"><span class="ms-card-title">Access devices</span></div>
+          <div class="ms-card-body">
+            <div class="ms-progress bc-eg71-dashboard-devices-progress">
+              <div class="ms-progress-line">
+                ${legend.map(l => `<i class="ms-progress-bar${l.tone === 'success' ? ' ms-progress-bar--success' : l.tone === 'error' ? ' ms-progress-bar--error' : ' ms-progress-bar--muted'} bc-eg71-dashboard-devices-seg" style="width:${pct(l.value).toFixed(2)}%"></i>`).join('')}
+              </div>
+            </div>
+            <div class="bc-eg71-dashboard-devices-legend">
+              ${legend.map(l => `<span class="bc-eg71-dashboard-devices-legend-item"><i class="bc-eg71-dashboard-devices-dot bc-eg71-dashboard-devices-dot--${l.tone}"></i><span class="ms-text--auxiliary ms-text--sm">${esc(l.label)}</span><span class="bc-eg71-dashboard-devices-legend-value">${esc(l.value)}</span></span>`).join('')}
+              <span class="bc-eg71-dashboard-devices-legend-item bc-eg71-dashboard-devices-legend-total"><span class="ms-text--auxiliary ms-text--sm">Total</span><span class="bc-eg71-dashboard-devices-legend-value">${esc(total)}</span></span>
+            </div>
+          </div>
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-dashboard-forwarding', cn: 'Dashboard 数据转发面板', cat: '概览',
+      desc: 'Milesight 网关 Dashboard「Data forwarding」面板：VPN / Routing information / Host 三行入口，逐行点击 dispatch eg71-protocol-navigate 事件跳转对应详情。',
+      atoms: ['card', 'icon', 'button'],
+      entityHint: 'gateway',
+      tags: ['Dashboard', '数据转发', 'Data forwarding', 'VPN', 'Routing', 'Host', 'EG71'],
+      render(ctx) {
+        const rows = ctx.forwards || [];
+        return `<div class="ms-card bc-eg71-dashboard-forwarding">
+          <div class="ms-card-head ms-card-head--plain"><span class="ms-card-title">Data forwarding</span></div>
+          <div class="ms-card-body">
+            ${rows.map(r => `<div class="bc-eg71-dashboard-forwarding-row" data-route="${esc(r.route)}">
+              <span class="bc-eg71-dashboard-forwarding-icon">${ico(r.icon || 'topology', 20)}</span>
+              <span class="bc-eg71-dashboard-forwarding-title">${esc(r.title)}</span>
+              <span class="bc-eg71-dashboard-forwarding-arrow">${ico('chevronRight', 16)}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        rootEl.querySelectorAll('.bc-eg71-dashboard-forwarding-row[data-route]').forEach(el => {
+          el.addEventListener('click', () => {
+            el.dispatchEvent(new CustomEvent('eg71-protocol-navigate', { bubbles: true, detail: { route: el.getAttribute('data-route'), sub: false } }));
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-dashboard-sysinfo', cn: 'Dashboard 系统信息面板', cat: '概览',
+      desc: 'Milesight 网关 Dashboard「System information」面板：型号/序列号/固件/硬件版本/运行时长/本地时间摘要，非 bordered 的 Descriptions 纯文字形态。',
+      atoms: ['descriptions', 'text'],
+      entityHint: 'gateway',
+      tags: ['Dashboard', '系统信息', 'System information', 'EG71'],
+      render(ctx) {
+        const s = ctx.sysinfo || {};
+        const fields = [
+          { label: 'Model', value: s.model },
+          { label: 'Gateway EUI', value: s.gatewayEui },
+          { label: 'Firmware version', value: s.firmware },
+          { label: 'Hardware version', value: s.hardware },
+          { label: 'Uptime', value: s.uptime },
+          { label: 'Local time', value: s.localTime }
+        ];
+        return `<div class="ms-card bc-eg71-dashboard-sysinfo">
+          <div class="ms-card-head ms-card-head--plain"><span class="ms-card-title">System information</span></div>
+          <div class="ms-card-body">
+            <div class="ms-desc">
+              ${fields.map(f => `<div class="ms-desc-item"><span class="ms-desc-label">${esc(f.label)}</span><span class="ms-desc-value">${esc(f.value != null ? f.value : '-')}</span></div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      }
+    },
+    {
+      id: 'bc-eg71-protocol-detail', cn: '协议接口详情抽屉', cat: '概览',
+      desc: 'Milesight 网关 Dashboard 协议接口详情抽屉：统一 schema 驱动（头部图标卡+标签 → 一至多组 Descriptions 字段分组 → 可选表格分组 → 单按钮确认底栏），供 10 个协议接口（WLAN/Cellular/IO/RS485/KNX-TP/VPN/Ethernet/Routing/Host/LoRaWAN）复用同一套框架渲染各自数据。',
+      atoms: ['drawer', 'descriptions', 'tag', 'table', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['详情', '抽屉', 'Drawer', '协议', 'WLAN', 'Cellular', 'IO', 'RS485', 'KNX', 'VPN', 'Ethernet', 'Routing', 'Host', 'LoRaWAN', 'EG71'],
+      render(ctx) {
+        const d = ctx.detail || {};
+        const tags = Array.isArray(d.tags) ? d.tags : [];
+        const sections = Array.isArray(d.sections) ? d.sections : [];
+        const fieldRow = f => `<div class="ms-desc-item"><span class="ms-desc-label">${esc(f.label)}</span><span class="ms-desc-value">${esc(f.value != null ? f.value : '-').replace(/\n/g, '<br>')}</span></div>`;
+        const sectionHtml = sec => {
+          const headcard = sec.headcard ? `<div class="ms-card bc-eg71-protocol-detail-headcard bc-eg71-protocol-detail-headcard--sub">
+              <span class="bc-eg71-protocol-detail-headcard-icon">${ico(sec.headcard.icon || 'device', 20)}</span>
+              <span class="bc-eg71-protocol-detail-headcard-title">${esc(sec.headcard.title)}</span>
+              ${(sec.headcard.tags || []).map(t => `<span class="ms-tag${t.tone ? ' ms-tag--' + esc(t.tone) : ''}">${esc(t.text)}</span>`).join('')}
+            </div>` : '';
+          const head = (!sec.headcard && sec.title) ? `<div class="bc-eg71-protocol-detail-section-head">
+              <span class="ms-h5">${esc(sec.title)}</span>
+              ${sec.tag ? `<span class="ms-tag${sec.tag.tone ? ' ms-tag--' + esc(sec.tag.tone) : ''}">${esc(sec.tag.text)}</span>` : ''}
+            </div>` : '';
+          const fieldsHtml = Array.isArray(sec.fields) && sec.fields.length
+            ? `<div class="ms-desc">${sec.fields.map(fieldRow).join('')}</div>` : '';
+          const tableHtml = sec.table
+            ? `<div class="ms-table-wrap"><table class="ms-table">
+                <thead><tr>${sec.table.columns.map(c => `<th>${esc(c.title)}</th>`).join('')}</tr></thead>
+                <tbody>${sec.table.rows.length
+                  ? sec.table.rows.map(row => `<tr>${sec.table.columns.map(c => `<td>${esc(row[c.key] != null ? row[c.key] : '-')}</td>`).join('')}</tr>`).join('')
+                  : `<tr><td colspan="${sec.table.columns.length}" class="bc-eg71-protocol-detail-table-empty">${esc(sec.table.empty || '暂无数据')}</td></tr>`}</tbody>
+              </table></div>` : '';
+          return `<div class="bc-eg71-protocol-detail-section">${headcard}${head}${fieldsHtml}${tableHtml}</div>`;
+        };
+        return `<div class="bc-eg71-protocol-detail" hidden>
+          <div class="ms-mask ms-mask--drawer">
+            <div class="ms-drawer bc-eg71-protocol-detail-drawer" style="width:600px" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-protocol-detail-title">
+              <div class="ms-drawer-head">
+                <span class="ms-h4" id="bc-eg71-protocol-detail-title">Detail</span>
+                <span class="ms-modal-close" data-drawer-close aria-label="关闭">${ico('close', 20)}</span>
+              </div>
+              <div class="ms-drawer-body ms-stack">
+                ${d.title ? `<div class="ms-card bc-eg71-protocol-detail-headcard">
+                  <span class="bc-eg71-protocol-detail-headcard-icon">${ico(d.icon || 'device', 20)}</span>
+                  <span class="bc-eg71-protocol-detail-headcard-title">${esc(d.title)}</span>
+                  ${tags.map(t => `<span class="ms-tag${t.tone ? ' ms-tag--' + esc(t.tone) : ''}">${esc(t.text)}</span>`).join('')}
+                </div>` : ''}
+                ${sections.map(sectionHtml).join('')}
+              </div>
+              <div class="ms-drawer-foot">
+                <button type="button" class="ms-btn ms-btn--filled" data-drawer-close>Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        const wrap = (rootEl.classList && rootEl.classList.contains('bc-eg71-protocol-detail')) ? rootEl : (rootEl.querySelector ? rootEl.querySelector('.bc-eg71-protocol-detail') : null);
+        if (!wrap) return;
+        const open = () => { wrap.hidden = false; wrap.classList.add('is-open'); };
+        const close = () => { wrap.hidden = true; wrap.classList.remove('is-open'); };
+        wrap.querySelectorAll('[data-drawer-close]').forEach(el => el.addEventListener('click', close));
+        const mask = wrap.querySelector('.ms-mask');
+        if (mask) mask.addEventListener('click', e => { if (e.target === mask) close(); });
+        const drawer = wrap.querySelector('.ms-drawer');
+        if (drawer) drawer.addEventListener('click', e => e.stopPropagation());
+        wrap.open = open;
+        wrap.close = close;
+      }
     }
   ];
 

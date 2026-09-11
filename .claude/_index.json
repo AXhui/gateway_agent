@@ -618,6 +618,34 @@
       "dir": ".claude/skills/business/eg71/B_Eg71Dashboard",
       "src": "assets/js/registry-business.js#bc-eg71-dashboard",
       "status": "已固化"
+    },
+    "B_Eg71DashboardDevices": {
+      "id": "bc-eg71-dashboard-devices",
+      "cn": "Dashboard 接入设备面板",
+      "dir": ".claude/skills/business/eg71/B_Eg71DashboardDevices",
+      "src": "assets/js/registry-business.js#bc-eg71-dashboard-devices",
+      "status": "已固化"
+    },
+    "B_Eg71DashboardForwarding": {
+      "id": "bc-eg71-dashboard-forwarding",
+      "cn": "Dashboard 数据转发面板",
+      "dir": ".claude/skills/business/eg71/B_Eg71DashboardForwarding",
+      "src": "assets/js/registry-business.js#bc-eg71-dashboard-forwarding",
+      "status": "已固化"
+    },
+    "B_Eg71DashboardSysinfo": {
+      "id": "bc-eg71-dashboard-sysinfo",
+      "cn": "Dashboard 系统信息面板",
+      "dir": ".claude/skills/business/eg71/B_Eg71DashboardSysinfo",
+      "src": "assets/js/registry-business.js#bc-eg71-dashboard-sysinfo",
+      "status": "已固化"
+    },
+    "B_Eg71ProtocolDetail": {
+      "id": "bc-eg71-protocol-detail",
+      "cn": "协议接口详情抽屉",
+      "dir": ".claude/skills/business/eg71/B_Eg71ProtocolDetail",
+      "src": "assets/js/registry-business.js#bc-eg71-protocol-detail",
+      "status": "已固化"
     }
   },
   "modules": {
