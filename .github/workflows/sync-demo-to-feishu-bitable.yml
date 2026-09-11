@@ -4,15 +4,13 @@
 #      新建两个 secret：
 #        - FEISHU_WEBHOOK_URL：飞书多维表格「接收到 Webhook 时」触发器给出的 webhook 地址
 #        - FEISHU_WEBHOOK_TOKEN：触发器「凭证校验(Bearer token)」里的 token
-#   2. 按你的仓库目录结构调整 paths（示例只监听 demo/ 目录）
-#   3. 推送一次改动即可看到效果；如需测试，可手动 Run workflow（on.workflow_dispatch 已开启）
+#   2. 推送一次改动即可看到效果；如需测试，可手动 Run workflow（on.workflow_dispatch 已开启）
+#      （已去掉 paths 过滤，任何 push 到 main 都会触发；跑通后可按需加回 paths 收紧范围）
 name: Sync UI Demo to Feishu Bitable
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'demo/**'
   workflow_dispatch:
 
 jobs:
