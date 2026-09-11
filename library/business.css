@@ -400,3 +400,30 @@
 .bc-eg71-protocol-detail .ms-desc-item { flex-direction: row; align-items: center; gap: var(--spacing-24); }
 .bc-eg71-protocol-detail .ms-desc-label { flex: none; width: 117px; color: var(--color-text-secondary); font-size: 14px; }
 .bc-eg71-protocol-detail .ms-desc-value { font-size: 14px; }
+
+/* ---------- EG71 设备列表（B_Eg71DeviceList · 数据服务） ---------- */
+/* Figma 2016:89755「设备」列表实测：工具栏 + 复选列 8 数据列 + 行操作 + 表尾分页；
+   视觉全部由 L2 .ms-table/.ms-btn/.ms-tag 等承担，此处仅编排布局与信号条/气泡 */
+.bc-eg71-device-list { display: flex; flex-direction: column; gap: var(--spacing-12); }
+/* 信号列 hover 气泡需越出表格卡片边界（作用域内覆写，不改基础组件本体） */
+.bc-eg71-device-list .ms-table-wrap { overflow: visible; }
+.bc-eg71-device-list .bc-eg71-th-filter { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-device-list .bc-eg71-th-filter .ms-ico { color: var(--color-text-auxiliary); }
+/* 信号强度条：4 根递增竖条，按 level 点亮（good=4 绿 / medium=3 蓝 / poor=2 橙），未点亮走分隔线灰 */
+.bc-eg71-device-list .bc-eg71-signal-cell { position: relative; display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-device-list .bc-eg71-signal { display: inline-flex; align-items: flex-end; gap: var(--spacing-2); }
+.bc-eg71-device-list .bc-eg71-signal i { display: block; width: var(--spacing-2); border-radius: var(--radius-2); background: var(--color-divider-base-2); }
+.bc-eg71-device-list .bc-eg71-signal i:nth-child(1) { height: var(--spacing-4); }
+.bc-eg71-device-list .bc-eg71-signal i:nth-child(2) { height: var(--spacing-6); }
+.bc-eg71-device-list .bc-eg71-signal i:nth-child(3) { height: var(--spacing-8); }
+.bc-eg71-device-list .bc-eg71-signal i:nth-child(4) { height: var(--spacing-12); }
+.bc-eg71-device-list .bc-eg71-signal i.bc-eg71-signal-bar--good { background: var(--color-success-normal); }
+.bc-eg71-device-list .bc-eg71-signal i.bc-eg71-signal-bar--medium { background: var(--color-primary-normal); }
+.bc-eg71-device-list .bc-eg71-signal i.bc-eg71-signal-bar--poor { background: var(--color-warm-normal); }
+/* 信号气泡：SF/SNR/RSSI 三行，hover 信号格时上浮显示 */
+.bc-eg71-device-list .bc-eg71-signal-tip {
+  position: absolute; bottom: calc(100% + var(--spacing-8)); left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: var(--spacing-2); padding: var(--spacing-8);
+  background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1);
+  border-radius: var(--radius-6); box-shadow: var(--shadow-3); white-space: nowrap;
+}

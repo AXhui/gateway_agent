@@ -1184,6 +1184,171 @@ window.MS_BIZ_UTIL = (function () {
       }
     },
     {
+      id: 'bc-eg71-device-list', cn: '设备列表', cat: '数据服务',
+      desc: 'Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（刷新 + Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 bc-eg71-modal 删除确认弹窗。',
+      atoms: ['button', 'table', 'checkbox', 'tag', 'icon', 'pagination', 'empty', 'modal'],
+      entityHint: 'gateway',
+      tags: ['设备', 'Device', '设备数采', 'Data Acquisition', '数据服务', '列表', '信号', 'Signal', '空态', '删除确认', '批量删除', 'EG71'],
+      render(ctx) {
+        const rows = ctx.rows || [
+          { id: '3423', name: 'WT201', model: 'WT201', protocol: 'Modbus TCP', network: 'Modbus TCP12', signal: { level: 'good', tip: ['SF:7', 'SNR: -199dB', 'RSSI: -188dBm'] }, updated: '2024-12-23 09:34', status: 'Online', objects: 11 },
+          { id: '3424', name: 'WT201', model: 'WT201', protocol: 'Modbus RTU', network: 'RTU23', signal: null, updated: '', status: 'Offline', objects: 11 },
+          { id: '3425', name: 'AM319', model: 'AM319', protocol: 'LoRaWAN', network: '', signal: { level: 'good', tip: ['SF:9', 'SNR: -97dB', 'RSSI: -108dBm'] }, updated: '2024-12-23 09:30', status: 'Online', objects: 34 },
+          { id: '3426', name: 'EM500-PT100', model: 'EM500-PT100', protocol: 'Modbus TCP', network: 'DO Name', signal: { level: 'medium', tip: ['SF:10', 'SNR: -121dB', 'RSSI: -120dBm'] }, updated: '2024-12-23 09:28', status: 'Online', objects: 232 },
+          { id: '3427', name: 'WS202', model: 'WS202', protocol: 'LoRaWAN', network: '', signal: { level: 'poor', tip: ['SF:11', 'SNR: -156dB', 'RSSI: -188dBm'] }, updated: '', status: 'Not activated', objects: 343 },
+          { id: '3428', name: 'UC50x', model: 'UC50x', protocol: 'KNX/TP', network: 'KNX Line 1', signal: null, updated: '2024-12-22 17:02', status: 'Online', objects: 8 }
+        ];
+        const cols = ['Identifier', 'Name', 'Model', 'Protocol Type', 'Signal', 'Last updated', 'Status', 'Number of objects'];
+        const FILTERED = ['Signal', 'Status'];
+        const STATUS = {
+          'Online': { cn: 'Online', tone: 'success' },
+          'Offline': { cn: 'Offline', tone: 'muted' },
+          'Not activated': { cn: 'Not activated', tone: 'warm' }
+        };
+        const SIGNAL_BARS = { good: 4, medium: 3, poor: 2 };
+        const signalHtml = s => {
+          if (!s) return '<span class="ms-text">—</span>';
+          const on = SIGNAL_BARS[s.level] || 4;
+          const bars = [1, 2, 3, 4].map(n => `<i class="bc-eg71-signal-bar${n <= on ? ' bc-eg71-signal-bar--' + esc(s.level) : ''}"></i>`).join('');
+          const tip = (s.tip || []).map(t => `<span class="ms-text--secondary ms-text--sm">${esc(t)}</span>`).join('');
+          return `<span class="bc-eg71-signal-cell"><span class="bc-eg71-signal">${bars}</span>${tip ? `<span class="bc-eg71-signal-tip" hidden>${tip}</span>` : ''}</span>`;
+        };
+        const OPS = [['edit', 'edit', 'Edit'], ['monitor', 'chart', 'Monitor'], ['delete', 'trash', 'Delete']];
+        const opsHtml = OPS.map(o => `<button type="button" class="ms-btn ms-btn--sm${o[0] === 'delete' ? ' ms-btn--danger' : ''}" data-device-op="${o[0]}" aria-label="${o[2]}" title="${o[2]}">${ico(o[1], 14)}</button>`).join('');
+        const toolbar = `<div class="ms-space ms-space--8">
+          <button type="button" class="ms-btn ms-btn--sm ms-btn--filled" data-device-add="manual">${ico('plus', 14)}Manually Add</button>
+          <button type="button" class="ms-btn ms-btn--sm" data-device-add="scan">${ico('search', 14)}Scan Add</button>
+          <button type="button" class="ms-btn ms-btn--sm" data-device-add="batch">${ico('download', 14)}Batch Add</button>
+          <button type="button" class="ms-btn ms-btn--sm ms-btn--danger" data-device-batch-delete disabled>${ico('trash', 14)}Delete</button>
+        </div>`;
+        const empty = ctx.state === 'empty';
+        const total = ctx.total != null ? ctx.total : 312;
+        const body = empty
+          ? `<tbody><tr><td colspan="${cols.length + 2}"><div class="ms-empty"><span class="ms-empty-illu">${ico('device', 32)}</span><div class="ms-empty-text">No data, please add a device first</div></div></td></tr></tbody>`
+          : `<tbody>${rows.map(r => `<tr>
+              <td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-device-check><span class="ms-checkbox-box"></span></label></td>
+              <td><span class="ms-text">${esc(r.id)}</span></td>
+              <td><span class="ms-text">${esc(r.name)}</span></td>
+              <td><span class="ms-text">${esc(r.model)}</span></td>
+              <td><span class="ms-text">${esc(r.protocol)}${r.network ? `<span class="ms-text--auxiliary"> / ${esc(r.network)}</span>` : ''}</span></td>
+              <td>${signalHtml(r.signal)}</td>
+              <td><span class="ms-text">${r.updated ? esc(r.updated) : '—'}</span></td>
+              <td>${U.statusTag(STATUS[r.status] || STATUS.Online)}</td>
+              <td class="ms-table-num">${esc(r.objects)}</td>
+              <td class="ms-table-ops">${opsHtml}</td>
+            </tr>`).join('')}</tbody>`;
+        const foot = `<div class="bc-table-foot">
+          <span class="ms-text ms-text--secondary ms-text--sm">${ico('refresh', 14)} Total:${esc(total)}</span>
+          <span class="ms-text ms-text--secondary ms-text--sm bc-eg71-device-selected" hidden>Selected <b>0</b> items</span>
+          <div class="ms-space ms-space--8">
+            <span class="ms-pagination">
+              <span class="ms-page-item" disabled>‹</span>
+              <span class="ms-page-item ms-page-item--active">1</span>
+              <span class="ms-page-item">2</span><span class="ms-page-item">3</span><span class="ms-page-item">4</span><span class="ms-page-item">5</span>
+              <span class="ms-page-item">…</span><span class="ms-page-item">20</span>
+              <span class="ms-page-item">›</span>
+              <span class="ms-select ms-select--sm"><select><option>10 / page</option><option>20 / page</option><option>50 / page</option></select></span>
+              <span class="ms-page-jump">Go to<input value="2">page</span>
+            </span>
+          </div>
+        </div>`;
+        const modalHtml = window.MS_BIZ_INDEX && window.MS_BIZ_INDEX['bc-eg71-modal']
+          ? window.MS_BIZ_INDEX['bc-eg71-modal'].render({ action: 'delete', title: 'Delete Device', desc: 'Are you sure you want to delete this device? This operation cannot be undone.', okText: 'Delete' })
+          : '';
+        return `<div class="bc-eg71-device-list">${toolbar}
+          <div class="ms-table-wrap">
+            <table class="ms-table">
+              <thead><tr>
+                <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-device-check-all><span class="ms-checkbox-box"></span></label></th>
+                ${cols.map(c => `<th>${FILTERED.indexOf(c) >= 0 ? `<span class="bc-eg71-th-filter">${esc(c)}${ico('filter', 14)}</span>` : esc(c)}</th>`).join('')}
+                <th class="ms-table-ops">Operation</th>
+              </tr></thead>
+              ${body}
+            </table>
+          </div>
+          ${foot}${modalHtml}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = root.querySelector('.bc-eg71-device-list') || root;
+        const modal = rootEl.querySelector('.bc-eg71-modal');
+        const modalDesc = modal ? modal.querySelector('.bc-eg71-modal-body-content .ms-text--secondary') : null;
+        const batchBtn = rootEl.querySelector('[data-device-batch-delete]');
+        const selectedInfo = rootEl.querySelector('.bc-eg71-device-selected');
+        let pendingRows = [];
+        const sync = () => {
+          const checks = Array.prototype.slice.call(rootEl.querySelectorAll('[data-device-check]'));
+          const checked = checks.filter(c => c.checked);
+          if (batchBtn) batchBtn.disabled = checked.length === 0;
+          if (selectedInfo) {
+            selectedInfo.hidden = checked.length === 0;
+            const b = selectedInfo.querySelector('b');
+            if (b) b.textContent = checked.length;
+          }
+          const all = rootEl.querySelector('[data-device-check-all]');
+          if (all) {
+            all.checked = checks.length > 0 && checked.length === checks.length;
+            all.indeterminate = checked.length > 0 && checked.length < checks.length;
+          }
+        };
+        rootEl.querySelectorAll('[data-device-check]').forEach(c => c.addEventListener('change', sync));
+        const all = rootEl.querySelector('[data-device-check-all]');
+        if (all) all.addEventListener('change', () => {
+          rootEl.querySelectorAll('[data-device-check]').forEach(c => { c.checked = all.checked; });
+          sync();
+        });
+        const openModal = desc => {
+          if (!modal) return;
+          if (modalDesc) modalDesc.textContent = desc;
+          pendingRows = [];
+          modal.hidden = false;
+          modal.classList.add('is-open');
+        };
+        const closeModal = () => {
+          if (!modal) return;
+          modal.hidden = true;
+          modal.classList.remove('is-open');
+        };
+        rootEl.querySelectorAll('[data-device-op="delete"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tr = btn.closest('tr');
+            const nameTd = tr ? tr.querySelector('td:nth-child(3) .ms-text') : null;
+            pendingRows = tr ? [tr] : [];
+            openModal(nameTd ? `Are you sure you want to delete "${nameTd.textContent.trim()}"? This operation cannot be undone.` : 'Are you sure you want to delete this device? This operation cannot be undone.');
+          });
+        });
+        if (batchBtn) batchBtn.addEventListener('click', () => {
+          pendingRows = Array.prototype.slice.call(rootEl.querySelectorAll('[data-device-check]')).filter(c => c.checked).map(c => c.closest('tr'));
+          openModal(`Are you sure you want to delete the ${pendingRows.length} selected device(s)? This operation cannot be undone.`);
+        });
+        if (modal) {
+          const ok = modal.querySelector('[data-modal-ok]');
+          if (ok) ok.addEventListener('click', () => {
+            pendingRows.forEach(tr => tr.remove());
+            pendingRows = [];
+            closeModal();
+            sync();
+          });
+        }
+        rootEl.querySelectorAll('.bc-eg71-signal-cell').forEach(cell => {
+          const tip = cell.querySelector('.bc-eg71-signal-tip');
+          if (!tip) return;
+          cell.addEventListener('mouseenter', () => { tip.hidden = false; });
+          cell.addEventListener('mouseleave', () => { tip.hidden = true; });
+        });
+        rootEl.querySelectorAll('[data-device-add]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            btn.dispatchEvent(new CustomEvent('eg71-device-add', { bubbles: true, detail: { path: btn.getAttribute('data-device-add') } }));
+          });
+        });
+        rootEl.querySelectorAll('[data-device-op="edit"], [data-device-op="monitor"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            btn.dispatchEvent(new CustomEvent('eg71-device-op', { bubbles: true, detail: { op: btn.getAttribute('data-device-op') } }));
+          });
+        });
+      }
+    },
+    {
       id: 'bc-eg71-form-item-input', cn: '表单输入项', cat: '表单',
       desc: 'Milesight 网关配置表单输入项：标签 + 输入框 + 提示文案，支持 normal/error 状态与 0/32 字数统计开关。',
       atoms: ['form', 'input'],
