@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Git post-commit 钩子：当提交包含 05_release/**/demo.html 时，自动同步到飞书多维表格。
+# 与 AI 工具无关——用 Claude Code / Cursor / Windsurf / 任何工具生成 demo，只要 commit 就自动同步。
+#
+# 安装（仓库根目录执行一次）：
+#   git config core.hooksPath .githooks
+#
+# 环境变量：
+#   FEISHU_WEBHOOK_URL    飞书 Webhook 地址（必填）
+#   FEISHU_WEBHOOK_TOKEN  飞书 Webhook Token（必填）
+#   FEISHU_DEMO_BASE_URL  预览地址前缀（可选）
+#                          - HTTP 地址：http://server/demos → 预览 URL 用 http://，并自动把文件复制到对应 NAS 路径
+#                          - UNC 网络路径：\\server\share\dir → 预览 URL 用 UNC，自动复制到该路径
+#                          不填则预览 URL 留空。
+
+set -e
+
+# merge/rebase 等场景跳过
+if [ -n "$(git rev-parse -q --verify MERGE_HEAD 2>/dev/null)" ]; then
+  exit 0
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# 取本次提交中新增/修改的 demo.html
+DEMO_FILES=$(git show --name-only --pretty=format: HEAD | grep -E '^05_release/.*/demo\.html$' || true)
+
+if [ -z "$DEMO_FILES" ]; then
+  exit 0
+fi
+
+COMMIT_MSG=$(git log -1 --pretty=%s)
+COMMIT_AUTHOR=$(git log -1 --pretty=%an)
+COMMIT_SHA=$(git rev-parse --short HEAD)
+BASE_URL="${FEISHU_DEMO_BASE_URL:-}"
+
+echo "[post-commit] 检测到 demo 更新，同步到飞书..."
+
+echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+
+  REQ_ID=$(echo "$DEMO_PATH" | sed -n 's|^05_release/\(REQ-[^/]*\)/demo\.html$|\1|p')
+  DEMO_NAME="${REQ_ID:+$REQ_ID · }${COMMIT_MSG}"
+
+  PREVIEW_URL=""
+  if [ -n "$BASE_URL" ]; then
+    # 判断是否为 HTTP 地址
+    if echo "$BASE_URL" | grep -qE '^https?://'; then
+      # HTTP 地址：预览 URL 用正斜杠拼接
+      PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
+      # 同时把文件复制到 NAS（把 http://IP/ 转成 \\IP\ 路径）
+      NAS_PATH=$(echo "$BASE_URL" | sed 's|^https\?://|\\\\|; s|/|\\|g')
+      TARGET_FILE="${NAS_PATH}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
+      TARGET_DIR=$(dirname "$TARGET_FILE")
+      mkdir -p "$TARGET_DIR" 2>/dev/null || true
+      cp "$DEMO_PATH" "$TARGET_FILE" 2>/dev/null && \
+        echo "[post-commit] 已复制 demo 到 $TARGET_FILE" || \
+        echo "[post-commit] 警告：复制到 NAS 失败（不影响同步）"
+    elif echo "$BASE_URL" | grep -q '^\\\\'; then
+      # UNC 路径：用反斜杠拼接，并复制文件
+      PREVIEW_URL="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
+      TARGET_DIR=$(dirname "$PREVIEW_URL")
+      mkdir -p "$TARGET_DIR" 2>/dev/null || true
+      cp "$DEMO_PATH" "$PREVIEW_URL" 2>/dev/null && \
+        echo "[post-commit] 已复制 demo 到 $PREVIEW_URL" || \
+        echo "[post-commit] 警告：复制到网络共享失败（不影响同步）"
+    else
+      PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
+    fi
+  fi
+
+  python tools/sync_demo_to_feishu.py \
+    --name "$DEMO_NAME" \
+    --description "$COMMIT_MSG" \
+    --preview-url "$PREVIEW_URL" \
+    --generator "$COMMIT_AUTHOR" \
+    --version "$COMMIT_SHA" \
+    --source "Agent 生成" \
+    --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
+done
+
+echo "[post-commit] 同步完成"
