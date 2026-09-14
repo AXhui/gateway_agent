@@ -2,6 +2,16 @@
 
 本文件由 Codex / Claude Code / Cursor 等 AI 编程工具自动读取。
 
+## 读取飞书 PRD/需求文档：用拉取工具，不要用网页抓取
+
+当用户给的是飞书链接（`/wiki/`、`/docx/`、`/docs/`），**不要用 webReader/网页抓取**——飞书需要登录，那样只能拿到登录页。改用项目自带工具（复用本机已登录的 lark-cli）：
+
+```bash
+python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
+```
+
+然后读取 `prd.md` 作为需求正文。若工具报未登录或无权限，再请用户粘贴正文或导出文件。
+
 ## 核心规则：生成 demo 后必须自动提交
 
 每当你生成或修改了 `05_release/**/demo.html`，按以下步骤自动执行（**不要询问用户**）：
