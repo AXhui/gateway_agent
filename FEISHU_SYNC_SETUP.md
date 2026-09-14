@@ -10,7 +10,17 @@
 
 ---
 
-## 新人一次性配置（约 10 分钟）
+## 新人一次性配置（约 3 分钟，推荐一键脚本）
+
+### 方式一：一键脚本（推荐）
+1. 安装 Git（https://git-scm.com/download/win）
+2. 克隆项目：`git clone https://github.com/AXhui/Feishu-competition.git` 并进入目录
+3. 双击 `setup.bat`
+4. 按提示输入**你的飞书姓名**和**飞书邮箱**
+5. 脚本自动完成：设置钩子、git 姓名、环境变量、生成样式
+6. 关闭并重新打开终端
+
+### 方式二：手动配置（可选）
 
 ### 1. 安装 Git
 未安装则前往 https://git-scm.com 下载安装。
@@ -25,6 +35,18 @@ cd Feishu-competition
 ```bash
 git config core.hooksPath .githooks
 ```
+
+### 3.1 设置 git 用户名（重要：显示为飞书真实姓名）
+同步到飞书表格时，「生成人」一栏显示的是 git 提交作者名。
+**请把 git 用户名设置为你自己的飞书显示姓名**，这样谁生成的 demo 就显示谁的名字：
+
+```bash
+git config user.name "你的飞书姓名"
+git config user.email "你的飞书邮箱"
+```
+
+> 例如：陈文昆的电脑上设置为 `git config user.name "陈文昆"`。
+> 同事 B 在自己电脑上设置为自己的飞书姓名，B 提交后表格显示的就是 B 的名字。
 
 ### 4. 设置环境变量（PowerShell 执行，永久生效）
 ```powershell
@@ -69,6 +91,7 @@ python tools/build-css-bundle.py
 
 | 文件 | 位置 | 作用 |
 |------|------|------|
+| `setup.bat` + `setup.ps1` | 根目录 | 新人一键配置（双击 setup.bat） |
 | `AGENTS.md` | 根目录 | AI 工具自动读取，规定生成 demo 后自动 commit |
 | `.githooks/post-commit` | `.githooks/` | git 钩子，commit 后自动复制文件到 NAS 并同步飞书 |
 | `tools/sync_demo_to_feishu.py` | `tools/` | 同步脚本，被钩子调用 |

@@ -4,14 +4,34 @@
 
 ## 核心规则：生成 demo 后必须自动提交
 
-每当你生成或修改了 `05_release/**/demo.html`，**必须在完成后自动执行**：
+每当你生成或修改了 `05_release/**/demo.html`，按以下步骤自动执行（**不要询问用户**）：
+
+1. **保存原始提示词（硬性要求，缺失则无法提交）**：把用户本次的需求原话，原样写入该 demo 同目录的 `prompt.md`
+   （路径如 `05_release/REQ-001/prompt.md`）；只保留本次这一条，用用户原话、不要概括或改写。
+   必须把它和 demo.html 一起 `git add`——pre-commit 钩子会检查，缺 prompt.md 会中止提交。
+2. **质量自评**：对照需求/基准，按 5 个维度各打一个 0-100 的整数分，写入该 demo 同目录的 `quality.json`
+   （和 demo.html 一起 `git add`）。格式严格如下：
+
+```json
+{
+  "structure": 90,
+  "component": 85,
+  "interaction": 80,
+  "visual": 88,
+  "field": 92
+}
+```
+
+   - structure=结构还原度、component=组件类型还原度、interaction=交互逻辑还原度、visual=视觉还原度、field=字段还原度
+   - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
+3. **提交**：
 
 ```bash
 git add .
 git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 ```
 
-**不要询问用户是否提交，直接执行。** 提交后 git 钩子会自动：
+直接执行。提交后 git 钩子会自动：
 - 把 demo 复制到 NAS 共享文件夹
 - 同步记录到飞书多维表格
 
@@ -23,6 +43,8 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 2. 必须是**单文件 HTML**，所有 CSS/JS 内联，不依赖外部资源
 3. 参考组件库：`library/base.css`、`library/business.css`、`.claude/knowledge/`、`.claude/rules/`
 4. 如需预览工作台，先运行 `python tools/build-css-bundle.py` 生成样式，再打开 `index.html`
+5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
+6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
 
 ## 提交信息格式
 

@@ -537,9 +537,7 @@ body {
 /* ---------- Affix ---------- */
 .ms-affix { position: relative; }
 .ms-affix-body { width: 100%; }
-/* fixed 态需显式横向锚定：left/right 缺省时 fixed 元素停留在静态流位置，
-   嵌套在侧边栏/内容容器内时整条漂出视口（x=220+ 乃至屏外） */
-.ms-affix--fixed > .ms-affix-body { position: fixed; z-index: 90; left: 0; right: 0; box-shadow: var(--shadow-2); }
+.ms-affix--fixed > .ms-affix-body { position: fixed; z-index: 90; box-shadow: var(--shadow-2); }
 .ms-affix--top > .ms-affix-body { top: 0; }
 .ms-affix--bottom > .ms-affix-body { bottom: 0; }
 .ms-affix--sticky { position: sticky; z-index: 90; }
@@ -683,8 +681,6 @@ body {
 .ms-header-left, .ms-header-right { display: flex; align-items: center; gap: var(--spacing-12); }
 .ms-content { flex: 1; padding: var(--spacing-24); overflow: auto; display: flex; flex-direction: column; gap: var(--spacing-16); }
 .ms-content--wide { padding: var(--spacing-20); }
-.ms-shell-footer { flex: none; }    /* 右列第三段·底部导航：ms-shell 锁 100vh + ms-content 内滚，flex:none 天然钉在右列底，无需 fixed/sticky */
-.ms-shell-footer .ms-affix--fixed > .ms-affix-body { position: static; box-shadow: none; }    /* 壳内底部导航不吃 viewport 级固钉（fixed 会横跨侧栏），钉底由本层结构承担 */
 .ms-stack { display: flex; flex-direction: column; gap: var(--spacing-16); }
 .ms-stack--tight { gap: var(--spacing-8); }
 .ms-stack--loose { gap: var(--spacing-24); }

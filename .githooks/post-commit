@@ -43,28 +43,66 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
   REQ_ID=$(echo "$DEMO_PATH" | sed -n 's|^05_release/\(REQ-[^/]*\)/demo\.html$|\1|p')
   DEMO_NAME="${REQ_ID:+$REQ_ID · }${COMMIT_MSG}"
 
+  # 读取用户本次的原始提示词（AI 按 AGENTS.md 规则写入同目录 prompt.md）；没有则留空
+  DEMO_DIR=$(dirname "$DEMO_PATH")
+  USER_PROMPT=""
+  if [ -f "$DEMO_DIR/prompt.md" ]; then
+    USER_PROMPT=$(cat "$DEMO_DIR/prompt.md")
+  fi
+
+  # AI 按 AGENTS.md 规则写入的 5 维度自评文件 quality.json；没有则留空（等 UED 打分）
+  QUALITY_FILE=""
+  if [ -f "$DEMO_DIR/quality.json" ]; then
+    QUALITY_FILE="$DEMO_DIR/quality.json"
+  fi
+
+  # 判断该 demo 是首次提交还是再次提交：
+  # post-commit 时 HEAD 已包含本次提交，该路径历史提交数 <=1 即首次（新建），否则为更新。
+  PREV_COUNT=$(git rev-list --count HEAD -- "$DEMO_PATH" 2>/dev/null || echo 0)
+  if [ "$PREV_COUNT" -le 1 ]; then
+    ACTION_TYPE="新建"
+  else
+    ACTION_TYPE="更新"
+  fi
+  # 版本号：该 demo 第几次提交就是第几版，两位数补零（01、02、03...）
+  VERSION_NO=$(printf "%02d" "$PREV_COUNT")
+
   PREVIEW_URL=""
   if [ -n "$BASE_URL" ]; then
     # 判断是否为 HTTP 地址
     if echo "$BASE_URL" | grep -qE '^https?://'; then
-      # HTTP 地址：预览 URL 用正斜杠拼接
-      PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
-      # 同时把文件复制到 NAS（把 http://IP/ 转成 \\IP\ 路径）
+      # HTTP 地址：LATEST=固定最新版，SNAPSHOT=版本快照
+      LATEST_URL="${BASE_URL%/}/${DEMO_PATH}"
+      SNAPSHOT_URL="${BASE_URL%/}/$(dirname "$DEMO_PATH")/versions/demo_v${VERSION_NO}.html"
       NAS_PATH=$(echo "$BASE_URL" | sed 's|^https\?://|\\\\|; s|/|\\|g')
-      TARGET_FILE="${NAS_PATH}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
-      TARGET_DIR=$(dirname "$TARGET_FILE")
-      mkdir -p "$TARGET_DIR" 2>/dev/null || true
-      cp "$DEMO_PATH" "$TARGET_FILE" 2>/dev/null && \
-        echo "[post-commit] 已复制 demo 到 $TARGET_FILE" || \
-        echo "[post-commit] 警告：复制到 NAS 失败（不影响同步）"
+      LATEST_FILE="${NAS_PATH}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
+      REQ_PARENT=$(dirname "$LATEST_FILE")
+      SNAPSHOT_FILE="${REQ_PARENT}\\versions\\demo_v${VERSION_NO}.html"
+      mkdir -p "$(dirname "$SNAPSHOT_FILE")" 2>/dev/null || true
+      cp "$DEMO_PATH" "$LATEST_FILE" 2>/dev/null && \
+        echo "[post-commit] 已更新最新版 $LATEST_FILE" || \
+        echo "[post-commit] 警告：复制最新版失败（不影响同步）"
+      cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
+        echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
+        echo "[post-commit] 警告：保存快照失败（不影响同步）"
+      PREVIEW_URL="$SNAPSHOT_URL"
     elif echo "$BASE_URL" | grep -q '^\\\\'; then
-      # UNC 路径：用反斜杠拼接，并复制文件
-      PREVIEW_URL="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
-      TARGET_DIR=$(dirname "$PREVIEW_URL")
-      mkdir -p "$TARGET_DIR" 2>/dev/null || true
-      cp "$DEMO_PATH" "$PREVIEW_URL" 2>/dev/null && \
-        echo "[post-commit] 已复制 demo 到 $PREVIEW_URL" || \
-        echo "[post-commit] 警告：复制到网络共享失败（不影响同步）"
+      # UNC 路径：反斜杠拼接。LATEST=固定最新版（覆盖），SNAPSHOT=带版本号快照（不覆盖）
+      LATEST_FILE="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
+      REQ_PARENT=$(dirname "$LATEST_FILE")
+      SNAPSHOT_FILE="${REQ_PARENT}\\versions\\demo_v${VERSION_NO}.html"
+      # 1) 覆盖写最新版 demo.html（快捷入口）
+      mkdir -p "$REQ_PARENT" 2>/dev/null || true
+      cp "$DEMO_PATH" "$LATEST_FILE" 2>/dev/null && \
+        echo "[post-commit] 已更新最新版 $LATEST_FILE" || \
+        echo "[post-commit] 警告：复制最新版失败（不影响同步）"
+      # 2) 另存版本快照（文件名带版本号，永不覆盖）
+      mkdir -p "$(dirname "$SNAPSHOT_FILE")" 2>/dev/null || true
+      cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
+        echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
+        echo "[post-commit] 警告：保存版本快照失败（不影响同步）"
+      # 3) 预览 URL 指向当次版本快照，保证每条记录各指各版
+      PREVIEW_URL="$SNAPSHOT_FILE"
     else
       PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
     fi
@@ -75,8 +113,11 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --description "$COMMIT_MSG" \
     --preview-url "$PREVIEW_URL" \
     --generator "$COMMIT_AUTHOR" \
-    --version "$COMMIT_SHA" \
+    --version "$VERSION_NO" \
     --source "Agent 生成" \
+    --action-type "$ACTION_TYPE" \
+    --prompt "$USER_PROMPT" \
+    --quality-file "$QUALITY_FILE" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
 done
 

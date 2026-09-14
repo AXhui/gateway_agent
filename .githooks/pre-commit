@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Git pre-commit 钩子：提交 05_release/**/demo.html 时，强制同目录必须一并提交 prompt.md
+# （prompt.md 保存用户本次的原始提示词），防止 AI 漏写导致飞书「提示词」为空。
+# 如确需跳过：git commit --no-verify
+
+# 暂存区里新增/修改的 demo.html
+DEMO_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^05_release/.*/demo\.html$' || true)
+[ -z "$DEMO_FILES" ] && exit 0
+
+STAGED=$(git diff --cached --name-only)
+
+BAD=""
+echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  DIR=$(dirname "$DEMO_PATH")
+  if ! echo "$STAGED" | grep -qx "$DIR/prompt.md"; then
+    echo "  [缺失] $DIR/prompt.md（用户原始提示词）"
+  fi
+done
+
+# 汇总判定（上面 while 在子shell，这里重新算一次）
+BAD=$(echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  DIR=$(dirname "$DEMO_PATH")
+  echo "$STAGED" | grep -qx "$DIR/prompt.md" || echo "$DEMO_PATH"
+done)
+
+if [ -n "$BAD" ]; then
+  echo ""
+  echo "[pre-commit] 提交 demo 前必须先把用户本次的原始提示词写入同目录 prompt.md 并 git add。"
+  echo "这是为了让飞书记录留存原始提示词；确认要跳过请用 git commit --no-verify。"
+  exit 1
+fi
+
+exit 0
