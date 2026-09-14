@@ -427,3 +427,251 @@
   background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1);
   border-radius: var(--radius-6); box-shadow: var(--shadow-3); white-space: nowrap;
 }
+
+/* ---------- EG71 维护页签壳（B_Eg71MaintenanceTabs · 系统设置） ---------- */
+/* Figma 125:11980「维护」符号组：一级页签条 48px 白底 + 底部 1px 分隔线，激活项主文字色 +
+   2px 蓝色墨条（--spacing-2 命中 2px）；Tools 页下再挂卡片式二级页签（激活灰底蓝字）。
+   9px 垂直内边距为 Figma 指定且令牌无命中，写死。 */
+.bc-eg71-maint-bar {
+  display: flex; align-items: center; gap: calc(var(--spacing-16) * 2);
+  height: var(--spacing-48); padding: 0 var(--spacing-20);
+  background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base);
+}
+.bc-eg71-maint-tab {
+  position: relative; display: inline-flex; align-items: center; gap: var(--spacing-4);
+  height: 100%; padding: 0; border: 0; background: none; cursor: pointer;
+  font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary);
+}
+.bc-eg71-maint-tab .ms-ico { color: var(--color-text-secondary); }
+.bc-eg71-maint-tab:hover { color: var(--color-text-primary); }
+.bc-eg71-maint-tab--active { color: var(--color-text-primary); font-weight: 500; }
+.bc-eg71-maint-tab--active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary);
+}
+.bc-eg71-maint-cardbar {
+  display: flex; align-items: flex-end; gap: var(--spacing-4);
+  padding: var(--spacing-16) var(--spacing-24) 0;
+  background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base);
+}
+.bc-eg71-maint-cardtab {
+  padding: 9px var(--spacing-16); cursor: pointer;
+  font-family: inherit; font-size: 14px; line-height: 22px;
+  color: var(--color-text-secondary); background: var(--color-bg-card);
+  border: 1px solid var(--color-border-base); border-bottom-color: transparent;
+  border-radius: var(--radius-2) var(--radius-2) 0 0;
+}
+.bc-eg71-maint-cardtab:hover { color: var(--color-text-primary); }
+.bc-eg71-maint-cardtab--active {
+  color: var(--color-text-primary-normal); font-weight: 500;
+  background: var(--color-fill-base-normal); border-bottom-color: var(--color-fill-base-normal);
+}
+/* 维护页内容区：灰底 + 白卡（复用 .ms-card 外壳，卡体 20px 内边距按 Figma p-20） */
+.bc-eg71-maint-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-maint-body .ms-card-body { padding: var(--spacing-20); }
+
+/* ---------- EG71 维护插图（140x140 · Figma 指定尺寸，颜色全走令牌） ---------- */
+.bc-eg71-maint-illu {
+  width: 140px; height: 140px; flex: none; display: block;
+  color: var(--color-icon-primary-normal);
+}
+
+/* ---------- EG71 工具表单（Ping / Traceroute / 抓包 / Qxdmlog · B_Eg71ToolDiagnose 系列） ---------- */
+/* 字段两列栅格（gap-32 按 Figma）+ 「输入 + 按钮组」横排行；视觉全由 L2 .ms-input/.ms-btn 承担 */
+.bc-eg71-tool-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) calc(var(--spacing-16) * 2); }
+.bc-eg71-tool-btnrow { display: flex; align-items: flex-end; gap: var(--spacing-8); }
+.bc-eg71-tool-btnrow .ms-input { flex: 1; min-width: 0; }
+.bc-eg71-tool-btnrow .ms-btn { flex: none; }
+.bc-eg71-tool-actions { display: flex; align-items: center; gap: var(--spacing-8); margin-bottom: var(--spacing-16); }
+.bc-eg71-plan-time { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-plan-time .ms-input { flex: 1; min-width: 0; }
+.bc-eg71-plan-time .ms-ico { flex: none; color: var(--color-text-auxiliary); }
+.bc-eg71-tool-advance { margin-bottom: var(--spacing-8); }
+@media (max-width: 980px) { .bc-eg71-tool-fields { grid-template-columns: 1fr; } }
+
+/* ---------- EG71 任务计划（B_Eg71MissionPlan） ---------- */
+/* 计划卡片墙：自适应栅格 + 「+ Add Plan」虚线占位卡；星期切换钮多选形态视觉走令牌 */
+.bc-eg71-plan-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-16);
+}
+.bc-eg71-plan-card--add {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-12);
+  min-height: 100%; padding: var(--spacing-20); cursor: pointer;
+  border: 1px dashed var(--color-border-base); border-radius: var(--radius-4);
+  color: var(--color-text-secondary); background: var(--color-bg-card);
+}
+.bc-eg71-plan-card--add .ms-ico { color: var(--color-icon-primary-normal); }
+.bc-eg71-plan-card--add:hover { border-color: var(--color-border-primary-normal); color: var(--color-text-primary); }
+.bc-eg71-plan-card { display: flex; flex-direction: column; gap: var(--spacing-16); padding: var(--spacing-20); }
+.bc-eg71-plan-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-plan-title { font-size: 16px; line-height: 24px; font-weight: 500; color: var(--color-text-primary); flex: 1; min-width: 0; }
+.bc-eg71-plan-del { width: auto; height: auto; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; flex: none; }
+.bc-eg71-plan-del:hover { color: var(--color-text-error-normal); }
+.bc-eg71-plan-days { display: flex; gap: var(--spacing-8); }
+.bc-eg71-plan-day {
+  width: calc(var(--spacing-16) * 2); height: calc(var(--spacing-16) * 2); padding: 0; flex: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; border-radius: var(--radius-4);
+}
+.bc-eg71-plan-day--active { color: var(--color-text-primary-normal); border-color: var(--color-border-primary-normal); }
+/* 停用卡：整卡降不透明度并禁用指针（开关除外，bind 仍可重新启用） */
+.bc-eg71-plan-card--disabled .bc-eg71-plan-body { opacity: 0.45; pointer-events: none; }
+
+/* ---------- EG71 固件升级（B_Eg71Upgrade · 含说明页状态机） ---------- */
+/* 版本行（label 灰 + 值蓝链接）+ 居中插图 + 文件导入行 + 恢复出厂复选 */
+.bc-eg71-upgrade { display: flex; flex-direction: column; gap: var(--spacing-20); }
+.bc-eg71-upgrade-version { display: flex; align-items: center; gap: var(--spacing-8); font-size: 14px; line-height: 22px; }
+.bc-eg71-upgrade-version .ms-form-label { color: var(--color-text-secondary); font-weight: 400; flex: none; }
+.bc-eg71-upgrade-center { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-20); }
+.bc-eg71-upgrade-filelabel { font-size: 14px; line-height: 22px; color: var(--color-text-secondary); align-self: flex-start; }
+.bc-eg71-upgrade-file { display: flex; align-items: center; gap: var(--spacing-8); width: 100%; max-width: 480px; }
+.bc-eg71-upgrade-file .ms-input { flex: 1; min-width: 0; }
+.bc-eg71-upgrade-file .ms-btn { flex: none; }
+.bc-eg71-upgrade-clear { width: auto; height: auto; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; flex: none; display: inline-flex; }
+.bc-eg71-upgrade-clear:hover { color: var(--color-text-secondary); }
+
+/* ---------- EG71 重启（B_Eg71Restart · 含说明页状态机） ---------- */
+/* 警示条 + 三选一单选组 + 触发按钮；中间态/结果态复用 bc-eg71-maint-message */
+.bc-eg71-restart { display: flex; flex-direction: column; gap: var(--spacing-20); max-width: 560px; }
+.bc-eg71-restart-center { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-20); }
+
+/* ---------- EG71 备份（B_Eg71Backup） ---------- */
+/* 双卡（备份运行配置 / 恢复出厂）+ 全宽导入卡；卡片内容垂直居中 */
+.bc-eg71-backup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16); }
+.bc-eg71-backup-card { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-20); padding: var(--spacing-24); }
+.bc-eg71-backup-file { display: flex; align-items: center; gap: var(--spacing-8); max-width: 480px; width: 100%; }
+.bc-eg71-backup-file .ms-input { flex: 1; min-width: 0; }
+.bc-eg71-backup-file .ms-btn { flex: none; }
+@media (max-width: 980px) { .bc-eg71-backup-grid { grid-template-columns: 1fr; } }
+
+/* ---------- EG71 维护结果反馈卡（B_Eg71MaintMessage · 升级/重启说明页 Frame75/76） ---------- */
+/* 416px 定宽结果卡：居中插图 + 标题 + 正文 + 右下按钮组；定宽为 Figma 指定，写死 */
+.bc-eg71-maint-msg {
+  width: 416px; max-width: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: var(--spacing-16);
+  padding: var(--spacing-20) var(--spacing-24);
+}
+.bc-eg71-maint-msg-title { font-size: 16px; line-height: 24px; font-weight: 500; color: var(--color-text-primary); text-align: center; }
+.bc-eg71-maint-msg-content { font-size: 14px; line-height: 22px; color: var(--color-text-secondary); text-align: center; }
+.bc-eg71-maint-msg-actions { display: flex; justify-content: flex-end; gap: var(--spacing-8); align-self: stretch; }
+
+/* ---------- EG71 SNMP（B_Eg71Snmp* · 系统设置 → SNMP 五页签） ---------- */
+/* 三级页签条：与维护一级页签同规格（48px 白底 + 底分隔线 + 2px 墨条），页签间距 32 = 2×16 */
+.bc-eg71-snmp-bar { display: flex; align-items: center; gap: calc(var(--spacing-16) * 2); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }
+.bc-eg71-snmp-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); }
+.bc-eg71-snmp-tab:hover { color: var(--color-text-primary); }
+.bc-eg71-snmp-tab--active { color: var(--color-text-primary); font-weight: 500; }
+.bc-eg71-snmp-tab--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary); }
+/* 标题行：16px 标题 + 28×16 小开关 */
+.bc-eg71-snmp-head { display: flex; align-items: center; gap: var(--spacing-8); margin-bottom: var(--spacing-16); }
+/* 字段两列栅格（Figma 列距 32 = 2×16 / 行距 16）；总开关关闭时整体禁用 */
+.bc-eg71-snmp-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) calc(var(--spacing-16) * 2); }
+.bc-eg71-snmp-fields--disabled { opacity: 0.45; pointer-events: none; }
+/* 可编辑表格：45px 行高 / 12px 左右内边距 / 表头灰底主文字为 Figma 指定 */
+.bc-eg71-snmp-table { width: 100%; border-collapse: collapse; }
+.bc-eg71-snmp-table th, .bc-eg71-snmp-table td { height: 45px; padding: 0 var(--spacing-12); border-bottom: 1px solid var(--color-border-base); text-align: left; vertical-align: middle; white-space: nowrap; }
+.bc-eg71-snmp-table th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-snmp-table td { font: 400 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-snmp-table .ms-select, .bc-eg71-snmp-table .ms-input { width: 100%; }
+.bc-eg71-snmp-ops { width: var(--spacing-40); }
+.bc-eg71-snmp-del { width: auto; height: auto; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; display: inline-flex; }
+.bc-eg71-snmp-del:hover { color: var(--color-text-error-normal); }
+.bc-eg71-snmp-addrow { display: flex; justify-content: center; padding: var(--spacing-12); border-bottom: 1px solid var(--color-border-base); }
+/* MIB 下载行 */
+.bc-eg71-snmp-mibrow { display: flex; align-items: flex-end; gap: var(--spacing-12); }
+.bc-eg71-snmp-mibrow .ms-select { flex: 1; min-width: 0; }
+@media (max-width: 980px) { .bc-eg71-snmp-fields { grid-template-columns: 1fr; } }
+
+/* ---------- EG71 事件 Events（B_Eg71Event* · 事件页 List / Notification） ---------- */
+/* 页签条（Figma 92:15883：48px 白底 + 2px 墨条，页签间距 24px） */
+.bc-eg71-event-bar { display: flex; align-items: center; gap: var(--spacing-24); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }
+.bc-eg71-event-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); }
+.bc-eg71-event-tab:hover { color: var(--color-text-primary); }
+.bc-eg71-event-tab--active { color: var(--color-text-primary); font-weight: 500; }
+.bc-eg71-event-tab--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary); }
+/* 工具栏 + 搜索（Figma 92:6069：搜索框固定 240px 右置） */
+.bc-eg71-event-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-20); }
+.bc-eg71-event-toolbar-left { display: flex; align-items: center; gap: var(--spacing-12); }
+.bc-eg71-event-search { width: 240px; flex: none; }
+.bc-eg71-event-search .ms-ico { color: var(--color-icon-auxiliary); }
+/* 斑马纹事件表（Figma 92:6072：表头/行高 41px，奇白偶灰） */
+.bc-eg71-event-table { width: 100%; border-collapse: collapse; }
+.bc-eg71-event-table th, .bc-eg71-event-table td { height: 41px; padding: 0 var(--spacing-12); border-bottom: 1px solid var(--color-border-base); text-align: left; vertical-align: middle; white-space: nowrap; }
+.bc-eg71-event-table--tall th, .bc-eg71-event-table--tall td { height: 45px; /* Figma 205:4689：MQTT 配置表行高 45px */ }
+.bc-eg71-event-table--stack { margin-top: var(--spacing-16); }
+.bc-eg71-event-table th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-event-table td { font: 400 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-event-table tbody tr:nth-child(even) td { background: var(--color-fill-base-normal); }
+.bc-eg71-event-table .ms-select, .bc-eg71-event-table .ms-input { width: 100%; }
+/* 列宽（Figma 指定：复选 48 / Type 184 / log·Type 200 / Time 197 / log·Time 260 / Events 344 / Keep 129 / 操作 40） */
+.bc-eg71-event-col-check { width: var(--spacing-48); }
+.bc-eg71-event-col-type { width: 184px; }
+.bc-eg71-event-col-type-l { width: 200px; }
+.bc-eg71-event-col-time { width: 197px; }
+.bc-eg71-event-col-time-l { width: 260px; }
+.bc-eg71-event-col-events { width: 344px; }
+.bc-eg71-event-col-keep { width: 129px; }
+.bc-eg71-event-col-ops { width: var(--spacing-40); }
+/* 已读态 / Mark as Read 链接（Figma 92:6079：#3491fa 文字链接） */
+.bc-eg71-event-read { color: var(--color-text-secondary); }
+.bc-eg71-event-link { padding: 0; border: 0; background: none; cursor: pointer; font: inherit; color: var(--color-text-primary-normal); }
+.bc-eg71-event-link:hover { text-decoration: underline; }
+/* 分页器（Figma 92:6137：左刷新 + Total，右页码/每页条数/前往） */
+.bc-eg71-event-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-16); }
+.bc-eg71-event-pager-left { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-event-total { font-size: 14px; color: var(--color-text-primary); }
+/* 通知卡通用：标题行 + 两列字段 + 总闸禁用 */
+.bc-eg71-event-head { display: flex; align-items: center; gap: var(--spacing-8); margin-bottom: var(--spacing-16); }
+.bc-eg71-event-fieldsrow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) calc(var(--spacing-16) * 2); }
+.bc-eg71-event-body--disabled { opacity: 0.45; pointer-events: none; }
+.bc-eg71-event-thhelp { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-event-thhelp .ms-ico { color: var(--color-icon-auxiliary); }
+/* 标签多选（Figma 264:2081：32px 高输入框内 tag 12px 可删 + chevron 展开） */
+.bc-eg71-event-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-4); min-height: 32px; padding: var(--spacing-4) var(--spacing-8); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); background: var(--color-bg-card); cursor: pointer; }
+.bc-eg71-event-tags-arrow { margin-left: auto; display: inline-flex; color: var(--color-icon-auxiliary); }
+.bc-eg71-event-tag { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: var(--spacing-2) var(--spacing-8); border-radius: var(--radius-4); background: var(--color-fill-base-normal); font-size: 12px; line-height: 20px; /* Figma 1419:19385：tag 12px/20px */ color: var(--color-text-primary); }
+.bc-eg71-event-tagclose { display: inline-flex; padding: 0; border: 0; background: none; cursor: pointer; color: var(--color-icon-auxiliary); }
+.bc-eg71-event-tagclose:hover { color: var(--color-text-primary); }
+@media (max-width: 980px) {
+  .bc-eg71-event-fieldsrow { grid-template-columns: 1fr; }
+  .bc-eg71-event-toolbar { flex-direction: column; align-items: stretch; }
+  .bc-eg71-event-search { width: 100%; }
+}
+
+/* ---------- EG71 应用 APP（B_Eg71App* · Node RED / Python 三页签 · Figma 41:19864） ---------- */
+/* 页签条（Figma 95:1420：48px 白底 + 2px 墨条，页签间距 24px；与事件页签同范式） */
+.bc-eg71-app-bar { display: flex; align-items: center; gap: var(--spacing-24); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }
+.bc-eg71-app-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); }
+.bc-eg71-app-tab:hover { color: var(--color-text-primary); }
+.bc-eg71-app-tab--active { color: var(--color-text-primary); font-weight: 500; }
+.bc-eg71-app-tab--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary); }
+/* 卡片标题行（Figma 41:33960：标题 + 开关 + 右置按钮组） */
+.bc-eg71-app-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-app-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-12); flex: 1; margin-left: var(--spacing-12); }
+.bc-eg71-app-body { display: flex; flex-direction: column; gap: var(--spacing-16); margin-top: var(--spacing-20); }
+.bc-eg71-app-card--tight .bc-eg71-app-body { margin-top: 10px; /* Figma 92:19750：AppManager Status 标题与内容间距 10px */ }
+/* 字段两列（Figma 41:18631：列距 32 = 2×16，行距 16） */
+.bc-eg71-app-fieldsrow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) calc(var(--spacing-16) * 2); }
+/* 字段 + 行内按钮（Figma 41:45071：字段与按钮同行底对齐，间距 12） */
+.bc-eg71-app-inline { display: flex; align-items: flex-end; gap: var(--spacing-12); min-width: 0; }
+.bc-eg71-app-inline .ms-form-item { flex: 1; min-width: 0; }
+/* 状态标签（Figma 41:33739：12px/20px 灰底） */
+.bc-eg71-app-tag { display: inline-flex; align-items: center; padding: var(--spacing-2) var(--spacing-4); border-radius: var(--radius-4); background: var(--color-fill-base-normal); font-size: 12px; line-height: 20px; color: var(--color-text-primary); }
+/* AppManager 分区子卡（Figma 41:20236 / 41:20305：边框子卡竖排两张） */
+.bc-eg71-app-subcard { margin-top: var(--spacing-20); padding: var(--spacing-20); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); }
+.bc-eg71-app-subhead { margin-bottom: var(--spacing-20); }
+/* 应用表（Figma 41:20238：表头/行高 41px 奇白偶灰，与事件表同范式） */
+.bc-eg71-app-table { width: 100%; border-collapse: collapse; }
+.bc-eg71-app-table th, .bc-eg71-app-table td { height: 41px; padding: 0 var(--spacing-12); border-bottom: 1px solid var(--color-border-base); text-align: left; vertical-align: middle; white-space: nowrap; }
+.bc-eg71-app-table th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-app-table td { font: 400 14px/22px var(--font-sans); color: var(--color-text-primary); }
+.bc-eg71-app-table tbody tr:nth-child(even) td { background: var(--color-fill-base-normal); }
+.bc-eg71-app-col-id { width: 142px; /* Figma 41:20239：ID 列 142px */ }
+.bc-eg71-app-thunit { color: var(--color-text-auxiliary); font-weight: 400; }
+/* 空态（Figma 92:2558：居中插图 + No data；原稿为 146×96 插图，此处以图标替代表达，高 176px 保留） */
+.bc-eg71-app-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-8); min-height: 176px; /* Figma 92:2558：空态高 176px */ font-size: 14px; color: var(--color-text-auxiliary); }
+.bc-eg71-app-empty .ms-ico { color: var(--color-icon-auxiliary); }
+@media (max-width: 980px) {
+  .bc-eg71-app-fieldsrow { grid-template-columns: 1fr; }
+  .bc-eg71-app-head { flex-wrap: wrap; }
+  .bc-eg71-app-head-actions { flex: none; width: 100%; justify-content: flex-start; margin-left: 0; }
+}

@@ -646,6 +646,181 @@
       "dir": ".claude/skills/business/eg71/B_Eg71ProtocolDetail",
       "src": "assets/js/registry-business.js#bc-eg71-protocol-detail",
       "status": "已固化"
+    },
+    "B_Eg71MaintenanceTabs": {
+      "id": "bc-eg71-maintenance-tabs",
+      "cn": "维护页签壳",
+      "dir": ".claude/skills/business/eg71/B_Eg71MaintenanceTabs",
+      "src": "assets/js/registry-business.js#bc-eg71-maintenance-tabs",
+      "status": "已固化"
+    },
+    "B_Eg71ToolDiagnose": {
+      "id": "bc-eg71-tool-diagnose",
+      "cn": "Ping/Traceroute 诊断工具",
+      "dir": ".claude/skills/business/eg71/B_Eg71ToolDiagnose",
+      "src": "assets/js/registry-business.js#bc-eg71-tool-diagnose",
+      "status": "已固化"
+    },
+    "B_Eg71ToolCapture": {
+      "id": "bc-eg71-tool-capture",
+      "cn": "网络抓包工具",
+      "dir": ".claude/skills/business/eg71/B_Eg71ToolCapture",
+      "src": "assets/js/registry-business.js#bc-eg71-tool-capture",
+      "status": "已固化"
+    },
+    "B_Eg71ToolQxdmlog": {
+      "id": "bc-eg71-tool-qxdmlog",
+      "cn": "Qxdmlog 日志抓取",
+      "dir": ".claude/skills/business/eg71/B_Eg71ToolQxdmlog",
+      "src": "assets/js/registry-business.js#bc-eg71-tool-qxdmlog",
+      "status": "已固化"
+    },
+    "B_Eg71MissionPlan": {
+      "id": "bc-eg71-mission-plan",
+      "cn": "任务计划卡片墙",
+      "dir": ".claude/skills/business/eg71/B_Eg71MissionPlan",
+      "src": "assets/js/registry-business.js#bc-eg71-mission-plan",
+      "status": "已固化"
+    },
+    "B_Eg71MaintMessage": {
+      "id": "bc-eg71-maint-message",
+      "cn": "维护结果反馈卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MaintMessage",
+      "src": "assets/js/registry-business.js#bc-eg71-maint-message",
+      "status": "已固化"
+    },
+    "B_Eg71Upgrade": {
+      "id": "bc-eg71-upgrade",
+      "cn": "固件升级",
+      "dir": ".claude/skills/business/eg71/B_Eg71Upgrade",
+      "src": "assets/js/registry-business.js#bc-eg71-upgrade",
+      "status": "已固化"
+    },
+    "B_Eg71Restart": {
+      "id": "bc-eg71-restart",
+      "cn": "重启/恢复出厂",
+      "dir": ".claude/skills/business/eg71/B_Eg71Restart",
+      "src": "assets/js/registry-business.js#bc-eg71-restart",
+      "status": "已固化"
+    },
+    "B_Eg71Backup": {
+      "id": "bc-eg71-backup",
+      "cn": "配置备份/恢复/导入",
+      "dir": ".claude/skills/business/eg71/B_Eg71Backup",
+      "src": "assets/js/registry-business.js#bc-eg71-backup",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpTabs": {
+      "id": "bc-eg71-snmp-tabs",
+      "cn": "SNMP 三级页签壳",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpTabs",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-tabs",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpAgent": {
+      "id": "bc-eg71-snmp-agent",
+      "cn": "SNMP Agent 设置",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpAgent",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-agent",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpMibView": {
+      "id": "bc-eg71-snmp-mibview",
+      "cn": "SNMP MIB View 视图表",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpMibView",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-mibview",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpVacm": {
+      "id": "bc-eg71-snmp-vacm",
+      "cn": "SNMP VACM 访问控制表",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpVacm",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-vacm",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpTrap": {
+      "id": "bc-eg71-snmp-trap",
+      "cn": "SNMP Trap 告警目标",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpTrap",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-trap",
+      "status": "已固化"
+    },
+    "B_Eg71SnmpMib": {
+      "id": "bc-eg71-snmp-mib",
+      "cn": "SNMP MIB 文件下载",
+      "dir": ".claude/skills/business/eg71/B_Eg71SnmpMib",
+      "src": "assets/js/registry-business.js#bc-eg71-snmp-mib",
+      "status": "已固化"
+    },
+    "B_Eg71EventTabs": {
+      "id": "bc-eg71-event-tabs",
+      "cn": "EG71 事件页签壳",
+      "dir": ".claude/skills/business/eg71/B_Eg71EventTabs",
+      "src": "assets/js/registry-business.js#bc-eg71-event-tabs",
+      "status": "已固化"
+    },
+    "B_Eg71EventList": {
+      "id": "bc-eg71-event-list",
+      "cn": "EG71 事件列表",
+      "dir": ".claude/skills/business/eg71/B_Eg71EventList",
+      "src": "assets/js/registry-business.js#bc-eg71-event-list",
+      "status": "已固化"
+    },
+    "B_Eg71EventNotify": {
+      "id": "bc-eg71-event-notify",
+      "cn": "EG71 事件通知矩阵",
+      "dir": ".claude/skills/business/eg71/B_Eg71EventNotify",
+      "src": "assets/js/registry-business.js#bc-eg71-event-notify",
+      "status": "已固化"
+    },
+    "B_Eg71EventChannel": {
+      "id": "bc-eg71-event-channel",
+      "cn": "EG71 事件通知渠道卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71EventChannel",
+      "src": "assets/js/registry-business.js#bc-eg71-event-channel",
+      "status": "已固化"
+    },
+    "B_Eg71EventMqtt": {
+      "id": "bc-eg71-event-mqtt",
+      "cn": "EG71 事件 MQTT 通知卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71EventMqtt",
+      "src": "assets/js/registry-business.js#bc-eg71-event-mqtt",
+      "status": "已固化"
+    },
+    "B_Eg71AppTabs": {
+      "id": "bc-eg71-app-tabs",
+      "cn": "EG71 应用页签壳",
+      "dir": ".claude/skills/business/eg71/B_Eg71AppTabs",
+      "src": "assets/js/registry-business.js#bc-eg71-app-tabs",
+      "status": "已固化"
+    },
+    "B_Eg71AppNodered": {
+      "id": "bc-eg71-app-nodered",
+      "cn": "EG71 Node RED 应用卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71AppNodered",
+      "src": "assets/js/registry-business.js#bc-eg71-app-nodered",
+      "status": "已固化"
+    },
+    "B_Eg71AppSdk": {
+      "id": "bc-eg71-app-sdk",
+      "cn": "EG71 AppManager 状态卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71AppSdk",
+      "src": "assets/js/registry-business.js#bc-eg71-app-sdk",
+      "status": "已固化"
+    },
+    "B_Eg71AppManager": {
+      "id": "bc-eg71-app-manager",
+      "cn": "EG71 AppManager 管理页",
+      "dir": ".claude/skills/business/eg71/B_Eg71AppManager",
+      "src": "assets/js/registry-business.js#bc-eg71-app-manager",
+      "status": "已固化"
+    },
+    "B_Eg71AppCard": {
+      "id": "bc-eg71-app-card",
+      "cn": "EG71 应用导入卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71AppCard",
+      "src": "assets/js/registry-business.js#bc-eg71-app-card",
+      "status": "已固化"
     }
   },
   "modules": {

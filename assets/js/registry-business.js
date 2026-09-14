@@ -48,6 +48,7 @@ window.MS_ICONS = {
   menuFold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7h9"/><path d="M11 12h9"/><path d="M11 17h9"/><path d="M9 7l-5 5 5 5"/></svg>',
   menuUnfold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9"/><path d="M4 12h9"/><path d="M4 17h9"/><path d="M15 7l5 5-5 5"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
   cellular: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 20V4"/></svg>',
   wlan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>',
@@ -1670,8 +1671,1297 @@ window.MS_BIZ_UTIL = (function () {
         wrap.open = open;
         wrap.close = close;
       }
+    },
+    {
+      id: 'bc-eg71-maintenance-tabs', cn: '维护页签壳', cat: '系统设置',
+      desc: 'Milesight 网关「System Setting → Maintenance」页签壳：一级页签条（Tools / Equipment self-test / Mission Planning / Backup / Upgrade / Restart，48px 白底 + 底分隔线，激活项主文字色 + 2px 蓝墨条）；Tools 页下追加卡片式二级页签（Ping / Traceroute / Network packet capture / Qxdmlog，激活灰底蓝字）。页签为路由唯一源的只读投影，切换以 eg71-maint-tab / eg71-maint-tool 冒泡事件对外通知，由宿主（MS_EG71_SHELL）改路由后重渲染。',
+      atoms: ['button', 'icon', 'space'],
+      entityHint: 'gateway',
+      tags: ['维护', '页签', 'Tabs', '工具', '升级', '重启', '备份', '任务计划', 'EG71', 'System Setting'],
+      render(ctx) {
+        const TABS = [
+          { key: 'tools', cn: 'Tools', caret: true },
+          { key: 'selftest', cn: 'Equipment self-test' },
+          { key: 'plan', cn: 'Mission Planning' },
+          { key: 'backup', cn: 'Backup' },
+          { key: 'upgrade', cn: 'Upgrade' },
+          { key: 'restart', cn: 'Restart' }
+        ];
+        const TOOLS = [
+          { key: 'ping', cn: 'Ping' },
+          { key: 'traceroute', cn: 'Traceroute' },
+          { key: 'capture', cn: 'Network packet capture' },
+          { key: 'qxdmlog', cn: 'Qxdmlog' }
+        ];
+        const tab = ctx.tab || 'tools';
+        const tool = ctx.tool || 'ping';
+        return `<div class="bc-eg71-maintenance-tabs">
+          <div class="bc-eg71-maint-bar" role="tablist" aria-label="Maintenance">
+            ${TABS.map(t => `<button type="button" class="bc-eg71-maint-tab${t.key === tab ? ' bc-eg71-maint-tab--active' : ''}" role="tab" aria-selected="${t.key === tab}" data-maint-tab="${t.key}"${t.key === tab ? '' : ' tabindex="-1"'}>${esc(t.cn)}${t.caret ? ico('chevronDown', 14) : ''}</button>`).join('')}
+          </div>
+          ${tab === 'tools' ? `<div class="bc-eg71-maint-cardbar" role="tablist" aria-label="Tools">
+            ${TOOLS.map(t => `<button type="button" class="bc-eg71-maint-cardtab${t.key === tool ? ' bc-eg71-maint-cardtab--active' : ''}" role="tab" aria-selected="${t.key === tool}" data-maint-tool="${t.key}"${t.key === tool ? '' : ' tabindex="-1"'}>${esc(t.cn)}</button>`).join('')}
+          </div>` : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-maint-tab]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-maint-tab', { bubbles: true, detail: { tab: b.getAttribute('data-maint-tab') } }));
+        }));
+        rootEl.querySelectorAll('[data-maint-tool]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-maint-tool', { bubbles: true, detail: { tool: b.getAttribute('data-maint-tool') } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-tool-diagnose', cn: 'Ping/Traceroute 诊断工具', cat: '系统设置',
+      desc: '维护 → Tools 下 Ping / Traceroute 两页共用诊断表单：Host 标签 + 输入框（placeholder「Eg.」）+ 主按钮（文案随 ctx.tool 在 Ping / Traceroute 间切换）+ 次按钮 Stop。Host 为空或未在运行时主按钮禁用（Figma 默认态），Stop 仅运行态可用。事件：eg71-tool-start / eg71-tool-stop（detail.tool 标明来源页）。',
+      atoms: ['form', 'input', 'button'],
+      entityHint: 'gateway',
+      tags: ['维护', '工具', 'Ping', 'Traceroute', '诊断', '连通性', 'Host', 'EG71'],
+      render(ctx) {
+        const tool = ctx.tool === 'traceroute' ? 'traceroute' : 'ping';
+        const startLabel = tool === 'ping' ? 'Ping' : 'Traceroute';
+        const running = !!ctx.running;
+        const startDisabled = !running && !(ctx.host || '').trim();
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="bc-eg71-tool-fields">
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Host</label></div>
+                    <div class="bc-eg71-tool-btnrow">
+                      <label class="ms-input"><input data-tool-host value="${esc(ctx.host || '')}" placeholder="Eg."></label>
+                      <button type="button" class="ms-btn ms-btn--filled" data-tool-start${startDisabled ? ' disabled' : ''}>${startLabel}</button>
+                      <button type="button" class="ms-btn" data-tool-stop${running ? '' : ' disabled'}>Stop</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-tool-btnrow') || rootEl;
+        const start = wrap.querySelector('[data-tool-start]');
+        const stop = wrap.querySelector('[data-tool-stop]');
+        if (start) start.addEventListener('click', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-tool-start', { bubbles: true, detail: { tool: 'diagnose' } }));
+        });
+        if (stop) stop.addEventListener('click', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-tool-stop', { bubbles: true, detail: { tool: 'diagnose' } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-tool-capture', cn: '网络抓包工具', cat: '系统设置',
+      desc: '维护 → Tools → Network packet capture 抓包表单：顶部动作行（Start 主按钮 / Stop / Download，未运行时后两者禁用）+ 两列字段（Ethernet Interface 下拉默认 Any / IP Address / Port）+ Advance 复选（默认勾选，控制高级规则 textarea 显隐，placeholder 给出 tcpdump 语法示例）。事件：eg71-tool-start / eg71-tool-stop / eg71-tool-download。',
+      atoms: ['form', 'input', 'select', 'checkbox', 'button'],
+      entityHint: 'gateway',
+      tags: ['维护', '工具', '抓包', 'packet capture', 'tcpdump', 'Advance', 'EG71'],
+      render(ctx) {
+        const running = !!ctx.running;
+        const advance = ctx.advance !== false;
+        const ifaces = ctx.interfaces || ['Any', 'eth0', 'eth1'];
+        const iface = ctx.interface || 'Any';
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-tool-actions">
+                <button type="button" class="ms-btn ms-btn--filled" data-tool-start>Start</button>
+                <button type="button" class="ms-btn" data-tool-stop${running ? '' : ' disabled'}>Stop</button>
+                <button type="button" class="ms-btn" data-tool-download${ctx.file ? '' : ' disabled'}>Download</button>
+              </div>
+              <div class="ms-form">
+                <div class="bc-eg71-tool-fields">
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Ethernet Interface</label></div>
+                    <span class="ms-select"><select data-capture-iface>${ifaces.map(o => `<option${o === iface ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                  </div>
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">IP Address</label></div>
+                    <label class="ms-input"><input data-capture-ip value="${esc(ctx.ip || '')}"></label>
+                  </div>
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Port</label></div>
+                    <label class="ms-input"><input data-capture-port value="${esc(ctx.port || '')}"></label>
+                  </div>
+                </div>
+                <label class="ms-checkbox bc-eg71-tool-advance"><input type="checkbox" data-capture-advance${advance ? ' checked' : ''}><span class="ms-checkbox-box"></span>Advance</label>
+                <label class="ms-input ms-input--textarea" data-capture-panel${advance ? '' : ' hidden'}><textarea rows="6" placeholder="Please set the packet capture network port, IP address, port and other rules in this text box. For example: ianyhost 192.168.1.1 and 443,"></textarea></label>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-tool-actions') || rootEl;
+        [['data-tool-start', 'eg71-tool-start'], ['data-tool-stop', 'eg71-tool-stop'], ['data-tool-download', 'eg71-tool-download']].forEach(([sel, ev]) => {
+          const btn = wrap.querySelector('[' + sel + ']');
+          if (btn) btn.addEventListener('click', () => {
+            wrap.dispatchEvent(new CustomEvent(ev, { bubbles: true, detail: { tool: 'capture' } }));
+          });
+        });
+        const adv = rootEl.querySelector('[data-capture-advance]');
+        const panel = rootEl.querySelector('[data-capture-panel]');
+        if (adv && panel) adv.addEventListener('change', () => { panel.hidden = !adv.checked; });
+      }
+    },
+    {
+      id: 'bc-eg71-tool-qxdmlog', cn: 'Qxdmlog 日志抓取', cat: '系统设置',
+      desc: '维护 → Tools → Qxdmlog 页：动作行（Start 主按钮 / Stop / Download 禁用）+ 日志输出空态面板，抓取启动后由宿主把日志流回填。事件：eg71-tool-start / eg71-tool-stop / eg71-tool-download。',
+      atoms: ['button', 'empty', 'icon'],
+      entityHint: 'gateway',
+      tags: ['维护', '工具', 'Qxdmlog', '日志', '抓取', '诊断', 'EG71'],
+      render(ctx) {
+        const running = !!ctx.running;
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-tool-actions">
+                <button type="button" class="ms-btn ms-btn--filled" data-tool-start>Start</button>
+                <button type="button" class="ms-btn" data-tool-stop${running ? '' : ' disabled'}>Stop</button>
+                <button type="button" class="ms-btn" data-tool-download${ctx.file ? '' : ' disabled'}>Download</button>
+              </div>
+              <div class="ms-empty">
+                <svg class="ms-empty-illu" viewBox="0 0 88 64" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="10" y="12" width="68" height="40" rx="6"/><path d="M10 22h68M22 34h44M22 44h28"/></svg>
+                <span class="ms-empty-text">No log output yet. Start capturing to view Qxdmlog.</span>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-tool-actions') || rootEl;
+        [['data-tool-start', 'eg71-tool-start'], ['data-tool-stop', 'eg71-tool-stop'], ['data-tool-download', 'eg71-tool-download']].forEach(([sel, ev]) => {
+          const btn = wrap.querySelector('[' + sel + ']');
+          if (btn) btn.addEventListener('click', () => {
+            wrap.dispatchEvent(new CustomEvent(ev, { bubbles: true, detail: { tool: 'qxdmlog' } }));
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-mission-plan', cn: '任务计划卡片墙', cat: '系统设置',
+      desc: '维护 → Mission Planning：自适应卡片墙 = 「+ Add Plan」虚线占位卡 + 计划卡（标题 + 启用开关 + 删除钮 / 动作下拉 Reboot / 时间选择 / 一~日七枚星期多选钮）。停用卡整体降透明度且表单区禁点（开关除外，可重新启用）。事件：eg71-plan-add / eg71-plan-delete / eg71-plan-toggle / eg71-plan-day。',
+      atoms: ['form', 'select', 'input', 'button', 'switch', 'icon'],
+      entityHint: 'gateway',
+      tags: ['维护', '任务计划', 'Mission Planning', '计划', '定时', 'Reboot', '星期', 'EG71'],
+      render(ctx) {
+        const DAYS = ['一', '二', '三', '四', '五', '六', '日'];
+        const actions = ctx.actions || ['Reboot'];
+        const plans = ctx.plans || [
+          { name: 'Plan 1', enabled: true, action: 'Reboot', time: '14:30', days: [0, 3, 5, 6] },
+          { name: 'Plan 1', enabled: false, action: 'Reboot', time: '14:30', days: [0, 3, 5, 6] }
+        ];
+        const planCard = (p, i) => {
+          const disabled = p.enabled === false;
+          return `<article class="bc-eg71-plan-card${disabled ? ' bc-eg71-plan-card--disabled' : ''}" data-plan="${i}">
+            <div class="bc-eg71-plan-head">
+              <span class="bc-eg71-plan-title">${esc(p.name || 'Plan ' + (i + 1))}</span>
+              <label class="ms-switch"><input type="checkbox" data-plan-toggle${disabled ? '' : ' checked'} aria-label="Enable plan"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              <button type="button" class="bc-eg71-plan-del" data-plan-del aria-label="Delete plan">${ico('trash', 16)}</button>
+            </div>
+            <div class="bc-eg71-plan-body">
+              <span class="ms-select"><select data-plan-action>${actions.map(a => `<option${a === p.action ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></span>
+              <div class="bc-eg71-plan-time">
+                <label class="ms-input"><input type="time" value="${esc(p.time || '00:00')}"></label>
+                ${ico('clock', 16)}
+              </div>
+              <div class="bc-eg71-plan-days" role="group" aria-label="Repeat days">
+                ${DAYS.map((d, di) => `<button type="button" class="ms-btn ms-btn--sm bc-eg71-plan-day${(p.days || []).indexOf(di) >= 0 ? ' bc-eg71-plan-day--active' : ''}" data-plan-day="${di}" aria-pressed="${(p.days || []).indexOf(di) >= 0}">${d}</button>`).join('')}
+              </div>
+            </div>
+          </article>`;
+        };
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-plan-grid">
+                ${plans.map(planCard).join('')}
+                <button type="button" class="bc-eg71-plan-card--add" data-plan-add>${ico('plus', 24)}<span>Add Plan</span></button>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-plan-add]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-plan-add', { bubbles: true }));
+        }));
+        rootEl.querySelectorAll('[data-plan-del]').forEach(b => b.addEventListener('click', () => {
+          const card = b.closest('[data-plan]');
+          b.dispatchEvent(new CustomEvent('eg71-plan-delete', { bubbles: true, detail: { index: Number(card.getAttribute('data-plan')) } }));
+        }));
+        rootEl.querySelectorAll('[data-plan-toggle]').forEach(t => t.addEventListener('change', () => {
+          const card = t.closest('[data-plan]');
+          card.classList.toggle('bc-eg71-plan-card--disabled', !t.checked);
+          t.dispatchEvent(new CustomEvent('eg71-plan-toggle', { bubbles: true, detail: { index: Number(card.getAttribute('data-plan')), enabled: t.checked } }));
+        }));
+        rootEl.querySelectorAll('[data-plan-day]').forEach(d => d.addEventListener('click', () => {
+          const active = d.classList.toggle('bc-eg71-plan-day--active');
+          d.setAttribute('aria-pressed', String(active));
+          const card = d.closest('[data-plan]');
+          d.dispatchEvent(new CustomEvent('eg71-plan-day', { bubbles: true, detail: { index: Number(card.getAttribute('data-plan')), day: Number(d.getAttribute('data-plan-day')), active } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-maint-message', cn: '维护结果反馈卡', cat: '系统设置',
+      desc: '维护域共用结果反馈 Message 卡（Figma 升级/重启说明页 Frame75/76 形态）：416px 定宽白卡 = 居中 140 插图（success/error/info 三态换色）+ 标题 + 正文 + 右下按钮组。被 bc-eg71-upgrade / bc-eg71-restart 在结果态引用。事件：eg71-maint-action（detail.action 为按钮文案）。',
+      atoms: ['card', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['维护', '结果', '反馈', 'Message', '升级完成', '重启完成', 'EG71'],
+      render(ctx) {
+        const tone = ctx.tone === 'success' || ctx.tone === 'error' ? ctx.tone : 'info';
+        const actions = ctx.actions && ctx.actions.length ? ctx.actions : [{ label: 'Back' }];
+        return `<section class="ms-card bc-eg71-maint-msg">
+          ${maintIllu(tone)}
+          <div class="bc-eg71-maint-msg-title">${esc(ctx.title || '')}</div>
+          <div class="bc-eg71-maint-msg-content">${esc(ctx.content || '')}</div>
+          <div class="bc-eg71-maint-msg-actions">
+            ${actions.map(a => `<button type="button" class="ms-btn${a.primary ? ' ms-btn--filled' : ''}" data-maint-action="${esc(a.label)}">${esc(a.label)}</button>`).join('')}
+          </div>
+        </section>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-maint-action]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-maint-action', { bubbles: true, detail: { action: b.getAttribute('data-maint-action') } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-upgrade', cn: '固件升级', cat: '系统设置',
+      desc: '维护 → Upgrade 固件升级页（含 Figma「.升级说明」状态机）：idle 态 = 固件版本行（蓝链接）+ 140 插图 + Upgrade Files + 文件行（File 输入 + 清除 × + Import 主钮 + Upgrade 次钮）+ Restore to factory settings 复选；importing / upgrading 态 = 插图 + 文件行与复选整体禁用；success / failed 态 = bc-eg71-maint-message 结果卡。事件：eg71-upgrade-import / eg71-upgrade-start / eg71-upgrade-clear / eg71-upgrade-factory。',
+      atoms: ['form', 'input', 'checkbox', 'button', 'icon', 'card'],
+      entityHint: 'gateway',
+      tags: ['维护', '升级', '固件', 'Firmware', 'Import', '恢复出厂', 'EG71'],
+      render(ctx) {
+        const B = window.MS_BIZ_INDEX;
+        const state = ctx.state || 'idle';
+        if (state === 'success' || state === 'failed') {
+          const ok = state === 'success';
+          const msg = B && B['bc-eg71-maint-message'] ? B['bc-eg71-maint-message'].render({
+            tone: ok ? 'success' : 'error',
+            title: ctx.title || (ok ? 'Upgrade completed' : 'Upgrade failed'),
+            content: ctx.content || (ok ? 'The firmware has been upgraded. The device will apply the new firmware.' : 'The upgrade failed. Please check the upgrade file and retry.'),
+            actions: ctx.actions || [{ label: 'Back' }]
+          }) : '';
+          return `<div class="bc-eg71-maint-body">${msg}</div>`;
+        }
+        const busy = state === 'importing' || state === 'upgrading';
+        const file = ctx.file || '';
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-upgrade">
+                <div class="bc-eg71-upgrade-version">
+                  <label class="ms-form-label">Firmware version</label>
+                  <a class="ms-link" href="javascript:void(0)">${esc(ctx.version || '60.0.0.42-r5-a5')}</a>
+                </div>
+                <div class="bc-eg71-upgrade-center">
+                  ${maintIllu('upgrade')}
+                  <span class="bc-eg71-upgrade-filelabel">Upgrade Files</span>
+                  <div class="bc-eg71-upgrade-file">
+                    <label class="ms-input"><input value="${esc(file)}" placeholder="File"${busy ? ' disabled' : ''}></label>
+                    ${file && !busy ? `<button type="button" class="bc-eg71-upgrade-clear" data-upgrade-clear aria-label="Clear file">${ico('close', 14)}</button>` : ''}
+                    <button type="button" class="ms-btn ms-btn--filled" data-upgrade-import${busy ? ' disabled' : ''}>Import</button>
+                    <button type="button" class="ms-btn" data-upgrade-start${busy || !file ? ' disabled' : ''}>Upgrade</button>
+                  </div>
+                  <label class="ms-checkbox"><input type="checkbox" data-upgrade-factory${ctx.factory ? ' checked' : ''}${busy ? ' disabled' : ''}><span class="ms-checkbox-box"></span>Restore to factory settings</label>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const B = window.MS_BIZ_INDEX;
+        if (B && B['bc-eg71-maint-message'] && typeof B['bc-eg71-maint-message'].bind === 'function') B['bc-eg71-maint-message'].bind(rootEl);
+        const wrap = rootEl.querySelector('.bc-eg71-upgrade') || rootEl;
+        [['data-upgrade-import', 'eg71-upgrade-import'], ['data-upgrade-start', 'eg71-upgrade-start'], ['data-upgrade-clear', 'eg71-upgrade-clear']].forEach(([sel, ev]) => {
+          const btn = wrap.querySelector('[' + sel + ']');
+          if (btn) btn.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent(ev, { bubbles: true })));
+        });
+        const factory = wrap.querySelector('[data-upgrade-factory]');
+        if (factory) factory.addEventListener('change', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-upgrade-factory', { bubbles: true, detail: { factory: factory.checked } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-restart', cn: '重启/恢复出厂', cat: '系统设置',
+      desc: '维护 → Restart 页（含 Figma「.重启说明」状态机）：idle 态 = 顶部 warm 警示条（重启期间勿操作）+ 三选一单选组（Reboot / Restore to factory settings / Restore to factory settings and reboot）+ Restart 主按钮；restarting / restoring 态 = 140 插图 + 按钮禁用（说明页中间态）；success 态 = bc-eg71-maint-message 结果卡。事件：eg71-restart-mode / eg71-restart-submit。',
+      atoms: ['alert', 'form', 'radio', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['维护', '重启', 'Reboot', '恢复出厂', 'Restart', 'EG71'],
+      render(ctx) {
+        const B = window.MS_BIZ_INDEX;
+        const state = ctx.state || 'idle';
+        if (state === 'success') {
+          const msg = B && B['bc-eg71-maint-message'] ? B['bc-eg71-maint-message'].render({
+            tone: 'success',
+            title: ctx.title || 'Restart completed',
+            content: ctx.content || 'The device has rebooted and is back online.',
+            actions: ctx.actions || [{ label: 'Back' }]
+          }) : '';
+          return `<div class="bc-eg71-maint-body">${msg}</div>`;
+        }
+        const busy = state === 'restarting' || state === 'restoring';
+        const MODES = [
+          { key: 'reboot', cn: 'Reboot' },
+          { key: 'factory', cn: 'Restore to factory settings' },
+          { key: 'factory-reboot', cn: 'Restore to factory settings and reboot' }
+        ];
+        const mode = ctx.mode || 'reboot';
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-restart">
+                <div class="ms-alert ms-alert--warn">${ico('warn', 16)}<div class="ms-alert-body">${esc(ctx.alertText || 'The device will be unavailable during the restart. Do not power off or refresh the page.')}</div></div>
+                ${busy ? `<div class="bc-eg71-restart-center">
+                  ${maintIllu('restart')}
+                  <button type="button" class="ms-btn ms-btn--filled" disabled>Restart</button>
+                </div>` : `<div class="ms-form">
+                  <div class="ms-form-item">
+                    ${MODES.map(m => `<label class="ms-radio bc-eg71-restart-mode"><input type="radio" name="eg71-restart-mode" value="${m.key}"${m.key === mode ? ' checked' : ''}><span class="ms-radio-dot"></span>${esc(m.cn)}</label>`).join('')}
+                  </div>
+                  <button type="button" class="ms-btn ms-btn--filled" data-restart-submit>Restart</button>
+                </div>`}
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const B = window.MS_BIZ_INDEX;
+        if (B && B['bc-eg71-maint-message'] && typeof B['bc-eg71-maint-message'].bind === 'function') B['bc-eg71-maint-message'].bind(rootEl);
+        const wrap = rootEl.querySelector('.bc-eg71-restart') || rootEl;
+        wrap.querySelectorAll('input[name="eg71-restart-mode"]').forEach(r => r.addEventListener('change', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-restart-mode', { bubbles: true, detail: { mode: r.value } }));
+        }));
+        const submit = wrap.querySelector('[data-restart-submit]');
+        if (submit) submit.addEventListener('click', () => {
+          const checked = wrap.querySelector('input[name="eg71-restart-mode"]:checked');
+          wrap.dispatchEvent(new CustomEvent('eg71-restart-submit', { bubbles: true, detail: { mode: checked ? checked.value : 'reboot' } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-backup', cn: '配置备份/恢复/导入', cat: '系统设置',
+      desc: '维护 → Backup 页三卡结构：双卡并排（Backup Running-config 插图+Backup 次按钮 / Restore Factory Defaults 插图+Reset 次按钮）+ 全宽导入卡（Importing a Configuration File：Configuration Files 标签 + File 输入带清除 × + Import 主按钮 + Configuration 次按钮）。事件：eg71-backup-run / eg71-backup-reset / eg71-backup-import / eg71-backup-config / eg71-backup-clear。',
+      atoms: ['card', 'form', 'input', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['维护', '备份', 'Backup', '恢复出厂', '配置导入', 'Running-config', 'EG71'],
+      render(ctx) {
+        const file = ctx.file || '';
+        return `<div class="bc-eg71-maint-body">
+          <div class="bc-eg71-backup-grid">
+            <section class="ms-card">
+              <div class="ms-card-body bc-eg71-backup-card">
+                <span class="ms-h4">Backup Running-config</span>
+                ${maintIllu('backupRun')}
+                <button type="button" class="ms-btn" data-backup-run>Backup</button>
+              </div>
+            </section>
+            <section class="ms-card">
+              <div class="ms-card-body bc-eg71-backup-card">
+                <span class="ms-h4">Restore Factory Defaults</span>
+                ${maintIllu('backupReset')}
+                <button type="button" class="ms-btn" data-backup-reset>Reset</button>
+              </div>
+            </section>
+          </div>
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Configuration Files</label></div>
+                  <div class="bc-eg71-backup-file">
+                    <label class="ms-input"><input value="${esc(file)}" placeholder="File"></label>
+                    ${file ? `<button type="button" class="bc-eg71-upgrade-clear" data-backup-clear aria-label="Clear file">${ico('close', 14)}</button>` : ''}
+                    <button type="button" class="ms-btn ms-btn--filled" data-backup-import>Import</button>
+                    <button type="button" class="ms-btn" data-backup-config>Configuration</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        [['data-backup-run', 'eg71-backup-run'], ['data-backup-reset', 'eg71-backup-reset'], ['data-backup-import', 'eg71-backup-import'], ['data-backup-config', 'eg71-backup-config'], ['data-backup-clear', 'eg71-backup-clear']].forEach(([sel, ev]) => {
+          rootEl.querySelectorAll('[' + sel + ']').forEach(b => b.addEventListener('click', () => {
+            b.dispatchEvent(new CustomEvent(ev, { bubbles: true }));
+          }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-tabs', cn: 'SNMP 三级页签壳', cat: '系统设置',
+      desc: 'Milesight 网关「System Setting → SNMP」三级页签条：Agent Setting / MIB View / VACM / Trap / MIB（48px 白底 + 底分隔线，激活项主文字色 + 2px 蓝墨条，页签间距 32px）。页签为路由唯一源的只读投影，切换以 eg71-snmp-tab 冒泡事件对外通知，由宿主（MS_EG71_SHELL）改路由后重渲染。',
+      atoms: ['button', 'icon', 'space'],
+      entityHint: 'gateway',
+      tags: ['SNMP', '页签', 'Tabs', '网管', 'System Setting', '三级菜单', 'EG71'],
+      render(ctx) {
+        const TABS = [
+          { key: 'agent', cn: 'Agent Setting' },
+          { key: 'mibview', cn: 'MIB View' },
+          { key: 'vacm', cn: 'VACM' },
+          { key: 'trap', cn: 'Trap' },
+          { key: 'mib', cn: 'MIB' }
+        ];
+        const tab = ctx.tab || 'agent';
+        return `<div class="bc-eg71-snmp-bar" role="tablist" aria-label="SNMP">
+          ${TABS.map(t => `<button type="button" class="bc-eg71-snmp-tab${t.key === tab ? ' bc-eg71-snmp-tab--active' : ''}" role="tab" aria-selected="${t.key === tab}" data-snmp-tab="${t.key}"${t.key === tab ? '' : ' tabindex="-1"'}>${esc(t.cn)}</button>`).join('')}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-snmp-tab]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-snmp-tab', { bubbles: true, detail: { tab: b.getAttribute('data-snmp-tab') } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-agent', cn: 'SNMP Agent 设置', cat: '系统设置',
+      desc: 'SNMP → Agent Setting：标题行「SNMP Setting」+ 28×16 小开关（功能总闸，关闭时表单整体禁用）+ 两列字段（port 默认 161 / System Name 默认设备 EUI / Version 分段单选 SNMP v1·v2·v3 / Location Information / Contact Information）。事件：eg71-snmp-agent-toggle {enabled} / eg71-snmp-agent-version {version}。',
+      atoms: ['form', 'input', 'radio', 'switch', 'button'],
+      entityHint: 'gateway',
+      tags: ['SNMP', 'Agent', '端口', '161', '版本', 'v1', 'v2', 'v3', 'System Name', 'EG71'],
+      render(ctx) {
+        const enabled = ctx.enabled !== false;
+        const version = ['v1', 'v2', 'v3'].indexOf(ctx.version) >= 0 ? ctx.version : 'v1';
+        const agent = ctx.agent || {};
+        const val = (k, d) => esc(agent[k] != null ? agent[k] : d);
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-snmp-head">
+                <span class="ms-h4">SNMP Setting</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-snmp-agent-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              </div>
+              <div class="bc-eg71-snmp-fields${enabled ? '' : ' bc-eg71-snmp-fields--disabled'}">
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">port</label></div>
+                  <label class="ms-input"><input data-snmp-agent-port value="${val('port', '161')}"></label>
+                </div>
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">System Name</label></div>
+                  <label class="ms-input"><input data-snmp-agent-name value="${val('systemName', '24E124FFFEF6A10E')}"></label>
+                </div>
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Version</label></div>
+                  <div class="ms-radio-btn-group" role="radiogroup" aria-label="SNMP Version">
+                    ${['v1', 'v2', 'v3'].map(v => `<button type="button" class="ms-radio-btn${v === version ? ' ms-radio-btn--checked' : ''}" role="radio" aria-checked="${v === version}" tabindex="${v === version ? '-1' : '0'}" data-snmp-agent-version="${v}">SNMP ${v}</button>`).join('')}
+                  </div>
+                </div>
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Location Information</label></div>
+                  <label class="ms-input"><input data-snmp-agent-location value="${val('location', '')}"></label>
+                </div>
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Contact Information</label></div>
+                  <label class="ms-input"><input data-snmp-agent-contact value="${val('contact', '')}"></label>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-snmp-agent-toggle]');
+        if (t) t.addEventListener('change', () => {
+          t.dispatchEvent(new CustomEvent('eg71-snmp-agent-toggle', { bubbles: true, detail: { enabled: t.checked } }));
+        });
+        rootEl.querySelectorAll('[data-snmp-agent-version]').forEach(b => b.addEventListener('click', () => {
+          const group = b.closest('.ms-radio-btn-group');
+          if (group) group.querySelectorAll('.ms-radio-btn').forEach(x => { x.classList.remove('ms-radio-btn--checked'); x.setAttribute('aria-checked', 'false'); });
+          b.classList.add('ms-radio-btn--checked');
+          b.setAttribute('aria-checked', 'true');
+          b.dispatchEvent(new CustomEvent('eg71-snmp-agent-version', { bubbles: true, detail: { version: b.getAttribute('data-snmp-agent-version') } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-mibview', cn: 'SNMP MIB View 视图表', cat: '系统设置',
+      desc: 'SNMP → MIB View 行内可编辑表格：View Name（输入）/ View Filter（下拉 Included·Excluded）/ View OID（输入）三列 + 行尾删除图标，底部居中「添加」小钮（24px）追加空行。事件：eg71-snmp-view-add / eg71-snmp-view-delete {index}。',
+      atoms: ['table', 'input', 'select', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['SNMP', 'MIB View', 'View Name', 'View Filter', 'View OID', 'Included', 'Excluded', '行内编辑', 'EG71'],
+      render(ctx) {
+        const views = (ctx.views && ctx.views.length ? ctx.views : [{}, {}]).map(v => ({
+          name: v.name || '', filter: v.filter || 'Included', oid: v.oid || ''
+        }));
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <table class="bc-eg71-snmp-table">
+                <thead><tr><th>View Name</th><th>View Filter</th><th>View OID</th><th class="bc-eg71-snmp-ops" aria-label="操作"></th></tr></thead>
+                <tbody>
+                  ${views.map((v, i) => `<tr>
+                    <td><label class="ms-input ms-input--sm"><input data-snmp-view-name value="${esc(v.name)}"></label></td>
+                    <td><span class="ms-select ms-select--sm"><select data-snmp-view-filter>${['Included', 'Excluded'].map(o => `<option${o === v.filter ? ' selected' : ''}>${o}</option>`).join('')}</select></span></td>
+                    <td><label class="ms-input ms-input--sm"><input data-snmp-view-oid value="${esc(v.oid)}"></label></td>
+                    <td class="bc-eg71-snmp-ops"><button type="button" class="bc-eg71-snmp-del" data-snmp-view-del="${i}" aria-label="Delete">${ico('trash', 16)}</button></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+              <div class="bc-eg71-snmp-addrow"><button type="button" class="ms-btn ms-btn--xs" data-snmp-view-add>添加</button></div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const add = rootEl.querySelector('[data-snmp-view-add]');
+        if (add) add.addEventListener('click', () => add.dispatchEvent(new CustomEvent('eg71-snmp-view-add', { bubbles: true })));
+        rootEl.querySelectorAll('[data-snmp-view-del]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-snmp-view-delete', { bubbles: true, detail: { index: Number(b.getAttribute('data-snmp-view-del')) } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-vacm', cn: 'SNMP VACM 访问控制表', cat: '系统设置',
+      desc: 'SNMP → VACM 行内可编辑表格：Community（输入）/ Permission（下拉 Read-Write·Read-Only）/ MIB View（下拉，选项来自 MIB View 页签已定义视图，ctx.viewNames 注入，缺省 All·None）/ View OID（输入）四列 + 行尾删除；底部居中「添加」。事件：eg71-snmp-vacm-add / eg71-snmp-vacm-delete {index}。',
+      atoms: ['table', 'input', 'select', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['SNMP', 'VACM', 'Community', 'Read-Write', 'Read-Only', 'MIB View', '访问控制', '行内编辑', 'EG71'],
+      render(ctx) {
+        const viewNames = (ctx.viewNames && ctx.viewNames.length) ? ctx.viewNames : ['All', 'None'];
+        const groups = (ctx.groups && ctx.groups.length ? ctx.groups : [{}, {}]).map((g, i) => ({
+          community: g.community || '',
+          permission: g.permission || 'Read-Write',
+          view: g.view || viewNames[i % viewNames.length],
+          oid: g.oid || ''
+        }));
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <table class="bc-eg71-snmp-table">
+                <thead><tr><th>Community</th><th>Permission</th><th>MIB View</th><th>View OID</th><th class="bc-eg71-snmp-ops" aria-label="操作"></th></tr></thead>
+                <tbody>
+                  ${groups.map((g, i) => `<tr>
+                    <td><label class="ms-input ms-input--sm"><input data-snmp-vacm-community value="${esc(g.community)}"></label></td>
+                    <td><span class="ms-select ms-select--sm"><select data-snmp-vacm-permission>${['Read-Write', 'Read-Only'].map(o => `<option${o === g.permission ? ' selected' : ''}>${o}</option>`).join('')}</select></span></td>
+                    <td><span class="ms-select ms-select--sm"><select data-snmp-vacm-view>${viewNames.map(o => `<option${o === g.view ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span></td>
+                    <td><label class="ms-input ms-input--sm"><input data-snmp-vacm-oid value="${esc(g.oid)}"></label></td>
+                    <td class="bc-eg71-snmp-ops"><button type="button" class="bc-eg71-snmp-del" data-snmp-vacm-del="${i}" aria-label="Delete">${ico('trash', 16)}</button></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+              <div class="bc-eg71-snmp-addrow"><button type="button" class="ms-btn ms-btn--xs" data-snmp-vacm-add>添加</button></div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const add = rootEl.querySelector('[data-snmp-vacm-add]');
+        if (add) add.addEventListener('click', () => add.dispatchEvent(new CustomEvent('eg71-snmp-vacm-add', { bubbles: true })));
+        rootEl.querySelectorAll('[data-snmp-vacm-del]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-snmp-vacm-delete', { bubbles: true, detail: { index: Number(b.getAttribute('data-snmp-vacm-del')) } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-trap', cn: 'SNMP Trap 告警目标', cat: '系统设置',
+      desc: 'SNMP → Trap：标题行「Enable」+ 28×16 小开关（Trap 总闸，关闭时表单整体禁用）+ 两列字段（SNMP Version 下拉默认 SNMPv2 / Server Address / Port / Name）。事件：eg71-snmp-trap-toggle {enabled}。',
+      atoms: ['form', 'input', 'select', 'switch'],
+      entityHint: 'gateway',
+      tags: ['SNMP', 'Trap', '告警', 'NMS', 'Server Address', 'SNMPv2', 'EG71'],
+      render(ctx) {
+        const enabled = ctx.enabled !== false;
+        const versions = ctx.versions || ['SNMPv1', 'SNMPv2', 'SNMPv3'];
+        const version = versions.indexOf(ctx.version) >= 0 ? ctx.version : 'SNMPv2';
+        const trap = ctx.trap || {};
+        const fi = (label, key) => `<div class="ms-form-item">
+          <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">${label}</label></div>
+          <label class="ms-input"><input data-snmp-trap-${key} value="${esc(trap[key] || '')}"></label>
+        </div>`;
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-snmp-head">
+                <span class="ms-h4">Enable</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-snmp-trap-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              </div>
+              <div class="bc-eg71-snmp-fields${enabled ? '' : ' bc-eg71-snmp-fields--disabled'}">
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">SNMP Version</label></div>
+                  <span class="ms-select"><select data-snmp-trap-version>${versions.map(o => `<option${o === version ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                </div>
+                ${fi('Server Address', 'server')}
+                ${fi('Port', 'port')}
+                ${fi('Name', 'name')}
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-snmp-trap-toggle]');
+        if (t) t.addEventListener('change', () => {
+          t.dispatchEvent(new CustomEvent('eg71-snmp-trap-toggle', { bubbles: true, detail: { enabled: t.checked } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-snmp-mib', cn: 'SNMP MIB 文件下载', cat: '系统设置',
+      desc: 'SNMP → MIB：MIB File 下拉（设备支持的 MIB 文件清单，ctx.files 注入，缺省 BRIDGE-MIB.txt）+ Download 主按钮（Figma 文案笔误 Downliad，实现取 Download）。只读下载，无上传。事件：eg71-snmp-mib-download {file}。',
+      atoms: ['form', 'select', 'button'],
+      entityHint: 'gateway',
+      tags: ['SNMP', 'MIB', 'Download', 'BRIDGE-MIB', '文件下载', 'EG71'],
+      render(ctx) {
+        const files = (ctx.files && ctx.files.length) ? ctx.files : ['BRIDGE-MIB.txt'];
+        const file = files.indexOf(ctx.file) >= 0 ? ctx.file : files[0];
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">MIB File</label></div>
+                  <div class="bc-eg71-snmp-mibrow">
+                    <span class="ms-select"><select data-snmp-mib-file>${files.map(o => `<option${o === file ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                    <button type="button" class="ms-btn ms-btn--filled" data-snmp-mib-download>Download</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const btn = rootEl.querySelector('[data-snmp-mib-download]');
+        if (btn) btn.addEventListener('click', () => {
+          const sel = rootEl.querySelector('[data-snmp-mib-file]');
+          btn.dispatchEvent(new CustomEvent('eg71-snmp-mib-download', { bubbles: true, detail: { file: sel ? sel.value : '' } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-event-tabs', cn: 'EG71 事件页签壳', cat: '系统设置',
+      desc: 'Milesight 网关「Events」页双页签条：List / Notification（48px 白底 + 底分隔线，激活项主文字色 + 2px 蓝墨条，页签间距 24px）。页签为路由唯一源的只读投影，切换以 eg71-event-tab 冒泡事件对外通知，由宿主改路由后重渲染。',
+      atoms: ['button', 'icon', 'space'],
+      entityHint: 'gateway',
+      tags: ['Events', '事件', '页签', 'Tabs', 'List', 'Notification', 'EG71'],
+      render(ctx) {
+        const TABS = [
+          { key: 'list', cn: 'List' },
+          { key: 'notification', cn: 'Notification' }
+        ];
+        const tab = ctx.tab === 'notification' ? 'notification' : 'list';
+        return `<div class="bc-eg71-event-bar" role="tablist" aria-label="Events">
+          ${TABS.map(t => `<button type="button" class="bc-eg71-event-tab${t.key === tab ? ' bc-eg71-event-tab--active' : ''}" role="tab" aria-selected="${t.key === tab}" data-event-tab="${t.key}"${t.key === tab ? '' : ' tabindex="-1"'}>${esc(t.cn)}</button>`).join('')}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-event-tab]').forEach(b => b.addEventListener('click', () => {
+          b.dispatchEvent(new CustomEvent('eg71-event-tab', { bubbles: true, detail: { tab: b.getAttribute('data-event-tab') } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-event-list', cn: 'EG71 事件列表', cat: '系统设置',
+      desc: 'Events → List 双形态事件表（ctx.mode）：inbox 收件箱态（行复选 + 已读/未读 + 「Mark as Read」链接 + Mark ALL as Read / Delete 工具钮，六列）/ log 日志态（Export 主按钮，Time / Type / Message 三列）。两态共用 240px 定宽搜索 + 41px 斑马纹表格 + 分页器（左刷新与 Total 计数，右页码 / 每页条数 / 前往跳页）。Figma 两列同题「Type」为设计稿复制痕迹，实现语义 = 已读状态列 + 事件类型列，ctx.columns 可覆写表头文案。事件：eg71-event-search {keyword} / eg71-event-read {index} / eg71-event-read-all / eg71-event-delete / eg71-event-export / eg71-event-select {index, checked} / eg71-event-select-all {checked} / eg71-event-refresh / eg71-event-page {page} / eg71-event-page-size {size} / eg71-event-jump {page} / eg71-event-ops {index}。',
+      atoms: ['table', 'checkbox', 'input', 'button', 'icon', 'pagination', 'select'],
+      entityHint: 'gateway',
+      tags: ['Events', '事件', '已读', 'Mark as Read', 'Delete', 'Export', '搜索', '分页', '斑马纹', 'EG71'],
+      render(ctx) {
+        const mode = ctx.mode === 'log' ? 'log' : 'inbox';
+        const cols = Object.assign({ type: 'Type', type2: 'Type', time: 'Time', message: 'Message' }, ctx.columns || {});
+        const rows = (ctx.rows && ctx.rows.length ? ctx.rows : [
+          { read: true }, { read: false }, { read: false }
+        ]).map(r => ({ checked: !!r.checked, read: !!r.read, type: r.type || '-', time: r.time || '2024-12-24 00:23:23', message: r.message || '-' }));
+        const total = ctx.total != null ? ctx.total : 312;
+        const size = ctx.size || 10;
+        const page = Math.max(1, ctx.page || 1);
+        const last = Math.max(1, Math.ceil(total / size));
+        const win = [];
+        for (let p = 1; p <= Math.min(5, last); p++) win.push(p);
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-event-toolbar">
+                <div class="bc-eg71-event-toolbar-left">${mode === 'inbox'
+                  ? `<button type="button" class="ms-btn" data-event-read-all>${ico('check', 16)}Mark ALL as Read</button>
+                     <button type="button" class="ms-btn" data-event-delete>${ico('trash', 16)}Delete</button>`
+                  : `<button type="button" class="ms-btn ms-btn--filled" data-event-export>${ico('download', 16)}Export</button>`}
+                </div>
+                <label class="ms-input bc-eg71-event-search"><input placeholder="Search" data-event-search value="${esc(ctx.keyword || '')}">${ico('search', 16)}</label>
+              </div>
+              <table class="bc-eg71-event-table">
+                <thead><tr>
+                  ${mode === 'inbox' ? `<th class="bc-eg71-event-col-check"><label class="ms-checkbox"><input type="checkbox" data-event-select-all aria-label="Select all"><span class="ms-checkbox-box"></span></label></th><th class="bc-eg71-event-col-type">${esc(cols.type)}</th>` : ''}
+                  <th class="${mode === 'inbox' ? 'bc-eg71-event-col-type' : 'bc-eg71-event-col-type-l'}">${esc(mode === 'inbox' ? cols.type2 : cols.type)}</th>
+                  <th class="${mode === 'inbox' ? 'bc-eg71-event-col-time' : 'bc-eg71-event-col-time-l'}">${esc(cols.time)}</th>
+                  <th>${esc(cols.message)}</th>
+                  ${mode === 'inbox' ? `<th class="bc-eg71-event-col-ops" aria-label="操作"></th>` : ''}
+                </tr></thead>
+                <tbody>
+                  ${rows.map((r, i) => `<tr>
+                    ${mode === 'inbox' ? `<td class="bc-eg71-event-col-check"><label class="ms-checkbox"><input type="checkbox" data-event-select="${i}"${r.checked ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>` : ''}
+                    ${mode === 'inbox' ? `<td>${r.read ? '<span class="bc-eg71-event-read">Read</span>' : `<button type="button" class="bc-eg71-event-link" data-event-read="${i}">Mark as Read</button>`}</td>` : ''}
+                    <td>${esc(r.type)}</td>
+                    <td>${esc(r.time)}</td>
+                    <td>${esc(r.message)}</td>
+                    ${mode === 'inbox' ? `<td class="bc-eg71-event-col-ops"><button type="button" class="bc-eg71-snmp-del" data-event-ops="${i}" aria-label="More">${ico('moreHoriz', 16)}</button></td>` : ''}
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+              <div class="bc-eg71-event-pager">
+                <div class="bc-eg71-event-pager-left">
+                  <button type="button" class="ms-btn bc-eg71-event-refresh" data-event-refresh aria-label="Refresh">${ico('refresh', 16)}</button>
+                  <span class="bc-eg71-event-total">Total:${total}</span>
+                </div>
+                <span class="ms-pagination">
+                  <span class="ms-page-item" data-event-page="${Math.max(1, page - 1)}" aria-label="Previous">‹</span>
+                  ${win.map(p => `<span class="ms-page-item${p === page ? ' ms-page-item--active' : ''}" data-event-page="${p}">${p}</span>`).join('')}
+                  ${last > 5 ? `<span class="ms-page-item">…</span><span class="ms-page-item${page === last ? ' ms-page-item--active' : ''}" data-event-page="${last}">${last}</span>` : ''}
+                  <span class="ms-page-item" data-event-page="${Math.min(last, page + 1)}" aria-label="Next">›</span>
+                  <span class="ms-select ms-select--sm bc-eg71-event-pagesize"><select data-event-page-size aria-label="Page size">${[10, 20, 50].map(n => `<option value="${n}"${n === size ? ' selected' : ''}>${n}条/页</option>`).join('')}</select></span>
+                  <span class="ms-page-jump">前往<input data-event-jump value="${page}" aria-label="Jump to page"></span>
+                </span>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const fire = (el, ev, detail) => el.dispatchEvent(new CustomEvent(ev, { bubbles: true, detail: detail || {} }));
+        rootEl.querySelectorAll('[data-event-search]').forEach(i => i.addEventListener('input', () => fire(i, 'eg71-event-search', { keyword: i.value })));
+        rootEl.querySelectorAll('[data-event-read]').forEach(b => b.addEventListener('click', () => fire(b, 'eg71-event-read', { index: Number(b.getAttribute('data-event-read')) })));
+        const readAll = rootEl.querySelector('[data-event-read-all]');
+        if (readAll) readAll.addEventListener('click', () => fire(readAll, 'eg71-event-read-all'));
+        const del = rootEl.querySelector('[data-event-delete]');
+        if (del) del.addEventListener('click', () => fire(del, 'eg71-event-delete'));
+        const exp = rootEl.querySelector('[data-event-export]');
+        if (exp) exp.addEventListener('click', () => fire(exp, 'eg71-event-export'));
+        rootEl.querySelectorAll('[data-event-select]').forEach(c => c.addEventListener('change', () => fire(c, 'eg71-event-select', { index: Number(c.getAttribute('data-event-select')), checked: c.checked })));
+        const selAll = rootEl.querySelector('[data-event-select-all]');
+        if (selAll) selAll.addEventListener('change', () => fire(selAll, 'eg71-event-select-all', { checked: selAll.checked }));
+        const rf = rootEl.querySelector('[data-event-refresh]');
+        if (rf) rf.addEventListener('click', () => fire(rf, 'eg71-event-refresh'));
+        rootEl.querySelectorAll('[data-event-page]').forEach(p => p.addEventListener('click', () => fire(p, 'eg71-event-page', { page: Number(p.getAttribute('data-event-page')) })));
+        const ps = rootEl.querySelector('[data-event-page-size]');
+        if (ps) ps.addEventListener('change', () => fire(ps, 'eg71-event-page-size', { size: Number(ps.value) }));
+        const jp = rootEl.querySelector('[data-event-jump]');
+        if (jp) jp.addEventListener('change', () => fire(jp, 'eg71-event-jump', { page: Number(jp.value) }));
+        rootEl.querySelectorAll('[data-event-ops]').forEach(b => b.addEventListener('click', () => fire(b, 'eg71-event-ops', { index: Number(b.getAttribute('data-event-ops')) })));
+      }
+    },
+    {
+      id: 'bc-eg71-event-notify', cn: 'EG71 事件通知矩阵', cat: '系统设置',
+      desc: 'Events → Notification（矩阵版 92:16508）：「Enable」总闸 + Phone / Email for Notification 两个通知端下拉 + 12 类事件 × Record / Email 双动作开关矩阵（斑马纹，Events 列 344px，Email 列头带 help 图标）。总闸关闭时通知端与矩阵整体禁用。事件：eg71-event-notify-toggle {enabled} / eg71-event-phone {value} / eg71-event-mail {value} / eg71-event-record {index, enabled} / eg71-event-email {index, enabled}。',
+      atoms: ['form', 'select', 'switch', 'table', 'icon'],
+      entityHint: 'gateway',
+      tags: ['Events', '事件通知', 'Record', 'Email', 'Phone', 'Cellular', 'WAN', 'VPN', 'UPS', '矩阵', 'EG71'],
+      render(ctx) {
+        const enabled = ctx.enabled !== false;
+        const EVENTS = ctx.events && ctx.events.length ? ctx.events : [
+          'Cellular Up', 'Cellular Down', 'WAN Up', 'WAN Down', 'VPN Up', 'VPN Down',
+          'Power On', 'Connect to UPS External Power Supplies', 'Connect to UPS Internal Battery',
+          'UPS Low Power (20%)', 'UPS Abnormal Charging', 'Disconnect the UPS'
+        ];
+        const rows = EVENTS.map(e => typeof e === 'string' ? { name: e, record: true, email: true } : { name: e.name || '', record: e.record !== false, email: e.email !== false });
+        const phones = ctx.phoneOptions && ctx.phoneOptions.length ? ctx.phoneOptions : [''];
+        const mails = ctx.mailOptions && ctx.mailOptions.length ? ctx.mailOptions : [''];
+        const phone = ctx.phone != null && phones.indexOf(ctx.phone) >= 0 ? ctx.phone : phones[0];
+        const mail = ctx.mail != null && mails.indexOf(ctx.mail) >= 0 ? ctx.mail : mails[0];
+        const sw = (attr, on) => `<label class="ms-switch ms-switch--xs"><input type="checkbox" ${attr}${on ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-event-head">
+                <span class="ms-h4">Enable</span>
+                ${sw('data-event-notify-toggle', enabled)}
+              </div>
+              <div class="bc-eg71-event-body${enabled ? '' : ' bc-eg71-event-body--disabled'}">
+                <div class="bc-eg71-event-fieldsrow">
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Phone for Notification</label></div>
+                    <span class="ms-select"><select data-event-phone>${phones.map(o => `<option${o === phone ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                  </div>
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Email for Notification</label></div>
+                    <span class="ms-select"><select data-event-mail>${mails.map(o => `<option${o === mail ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                  </div>
+                </div>
+                <table class="bc-eg71-event-table bc-eg71-event-table--stack">
+                  <thead><tr>
+                    <th class="bc-eg71-event-col-events">Events</th>
+                    <th>Record</th>
+                    <th><span class="bc-eg71-event-thhelp">Email${ico('question', 16)}</span></th>
+                  </tr></thead>
+                  <tbody>
+                    ${rows.map((r, i) => `<tr>
+                      <td class="bc-eg71-event-col-events">${esc(r.name)}</td>
+                      <td>${sw(`data-event-record="${i}"`, r.record)}</td>
+                      <td>${sw(`data-event-email="${i}"`, r.email)}</td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-event-notify-toggle]');
+        if (t) t.addEventListener('change', () => t.dispatchEvent(new CustomEvent('eg71-event-notify-toggle', { bubbles: true, detail: { enabled: t.checked } })));
+        const ph = rootEl.querySelector('[data-event-phone]');
+        if (ph) ph.addEventListener('change', () => ph.dispatchEvent(new CustomEvent('eg71-event-phone', { bubbles: true, detail: { value: ph.value } })));
+        const ml = rootEl.querySelector('[data-event-mail]');
+        if (ml) ml.addEventListener('change', () => ml.dispatchEvent(new CustomEvent('eg71-event-mail', { bubbles: true, detail: { value: ml.value } })));
+        rootEl.querySelectorAll('[data-event-record]').forEach(s => s.addEventListener('change', () => s.dispatchEvent(new CustomEvent('eg71-event-record', { bubbles: true, detail: { index: Number(s.getAttribute('data-event-record')), enabled: s.checked } }))));
+        rootEl.querySelectorAll('[data-event-email]').forEach(s => s.addEventListener('change', () => s.dispatchEvent(new CustomEvent('eg71-event-email', { bubbles: true, detail: { index: Number(s.getAttribute('data-event-email')), enabled: s.checked } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-event-channel', cn: 'EG71 事件通知渠道卡', cat: '系统设置',
+      desc: 'Events → Notification（渠道版 205:2483）：单渠道卡（SMS / Email / SNMP …，ctx.channel 为卡标题）= 标题 + 28×16 渠道开关 + Sender / Event Type 标签多选（tag 可删，chevron 展开选择）。渠道开关关闭仅禁用本卡字段，不影响其他渠道卡。事件：eg71-event-channel-toggle {channel, enabled} / eg71-event-tag-remove {field, index} / eg71-event-tag-open {field}。',
+      atoms: ['form', 'switch', 'icon', 'tag', 'select'],
+      entityHint: 'gateway',
+      tags: ['Events', '通知渠道', 'SMS', 'Email', 'SNMP', 'Sender', 'Event Type', '标签多选', 'EG71'],
+      render(ctx) {
+        const channel = ctx.channel || 'SMS';
+        const enabled = ctx.enabled !== false;
+        const fields = (ctx.fields && ctx.fields.length ? ctx.fields : [
+          { label: 'Sender', tags: ['+86 13860235632', 'Operation and Maintenance Group'] },
+          { label: 'Event Type', tags: ['Ethernet goes online', 'VPN goes live'] }
+        ]);
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-event-head" data-event-channel="${esc(channel)}">
+                <span class="ms-h4">${esc(channel)}</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-event-channel-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              </div>
+              <div class="bc-eg71-event-fieldsrow${enabled ? '' : ' bc-eg71-event-body--disabled'}">
+                ${fields.map((f, fi) => `<div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">${esc(f.label)}</label></div>
+                  <div class="bc-eg71-event-tags" data-event-tag-open="${fi}" role="combobox" aria-expanded="false" tabindex="0">
+                    ${(f.tags || []).map((t, ti) => `<span class="bc-eg71-event-tag">${esc(t)}<button type="button" class="bc-eg71-event-tagclose" data-event-tag-remove="${fi}:${ti}" aria-label="Remove ${esc(t)}">${ico('close', 14)}</button></span>`).join('')}
+                    <span class="bc-eg71-event-tags-arrow">${ico('chevronDown', 16)}</span>
+                  </div>
+                </div>`).join('')}
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-event-channel-toggle]');
+        if (t) t.addEventListener('change', () => {
+          const head = t.closest ? t.closest('[data-event-channel]') : null;
+          t.dispatchEvent(new CustomEvent('eg71-event-channel-toggle', { bubbles: true, detail: { channel: head ? head.getAttribute('data-event-channel') : '', enabled: t.checked } }));
+        });
+        rootEl.querySelectorAll('[data-event-tag-remove]').forEach(b => b.addEventListener('click', e => {
+          e.stopPropagation();
+          const p = String(b.getAttribute('data-event-tag-remove')).split(':');
+          b.dispatchEvent(new CustomEvent('eg71-event-tag-remove', { bubbles: true, detail: { field: Number(p[0]), index: Number(p[1]) } }));
+        }));
+        rootEl.querySelectorAll('[data-event-tag-open]').forEach(el => el.addEventListener('click', () => {
+          el.dispatchEvent(new CustomEvent('eg71-event-tag-open', { bubbles: true, detail: { field: Number(el.getAttribute('data-event-tag-open')) } }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-event-mqtt', cn: 'EG71 事件 MQTT 通知卡', cat: '系统设置',
+      desc: 'Events → Notification（渠道版 205:2483 · MQTT 渠道）：标题 + 渠道开关 + 表格化配置：Event Type / MQTT connection（引用数据服务已建连接）/ Topic / Keep messages（复选）/ QoS（0·1·2）五列 + 行尾 more 操作 + 底部居中「添加」（45px 行高）。事件：eg71-event-mqtt-toggle {enabled} / eg71-event-mqtt-field {index, field, value} / eg71-event-mqtt-keep {index, checked} / eg71-event-mqtt-ops {index} / eg71-event-mqtt-add。',
+      atoms: ['table', 'select', 'checkbox', 'switch', 'button', 'icon'],
+      entityHint: 'gateway',
+      tags: ['Events', 'MQTT', '通知渠道', 'Topic', 'QoS', 'Keep messages', '行内编辑', 'EG71'],
+      render(ctx) {
+        const enabled = ctx.enabled !== false;
+        const conns = ctx.connections && ctx.connections.length ? ctx.connections : [''];
+        const topics = ctx.topics && ctx.topics.length ? ctx.topics : ['All'];
+        const qoss = ['QoS 0', 'QoS 1', 'QoS 2'];
+        const rows = (ctx.rows && ctx.rows.length ? ctx.rows : [{ event: 'System Restart' }]).map(r => ({
+          event: r.event || '',
+          connection: r.connection != null && conns.indexOf(r.connection) >= 0 ? r.connection : conns[0],
+          topic: r.topic != null && topics.indexOf(r.topic) >= 0 ? r.topic : topics[0],
+          keep: !!r.keep,
+          qos: qoss.indexOf(r.qos) >= 0 ? r.qos : 'QoS 1'
+        }));
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-event-head" data-event-channel="MQTT">
+                <span class="ms-h4">MQTT</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-event-mqtt-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              </div>
+              <div class="${enabled ? '' : 'bc-eg71-event-body--disabled'}">
+                <table class="bc-eg71-event-table bc-eg71-event-table--tall">
+                  <thead><tr>
+                    <th>Event Type</th><th>MQTT connection</th><th>Topic</th>
+                    <th class="bc-eg71-event-col-keep">Keep messages</th><th>QoS</th>
+                    <th class="bc-eg71-event-col-ops" aria-label="操作"></th>
+                  </tr></thead>
+                  <tbody>
+                    ${rows.map((r, i) => `<tr>
+                      <td>${esc(r.event)}</td>
+                      <td><span class="ms-select ms-select--sm"><select data-event-mqtt-field="connection" data-index="${i}">${conns.map(o => `<option${o === r.connection ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span></td>
+                      <td><span class="ms-select ms-select--sm"><select data-event-mqtt-field="topic" data-index="${i}">${topics.map(o => `<option${o === r.topic ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span></td>
+                      <td class="bc-eg71-event-col-keep"><label class="ms-checkbox"><input type="checkbox" data-event-mqtt-keep="${i}"${r.keep ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>
+                      <td><span class="ms-select ms-select--sm"><select data-event-mqtt-field="qos" data-index="${i}">${qoss.map(o => `<option${o === r.qos ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span></td>
+                      <td class="bc-eg71-event-col-ops"><button type="button" class="bc-eg71-snmp-del" data-event-mqtt-ops="${i}" aria-label="More">${ico('moreHoriz', 16)}</button></td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+                <div class="bc-eg71-snmp-addrow"><button type="button" class="ms-btn ms-btn--xs" data-event-mqtt-add>添加</button></div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-event-mqtt-toggle]');
+        if (t) t.addEventListener('change', () => t.dispatchEvent(new CustomEvent('eg71-event-mqtt-toggle', { bubbles: true, detail: { enabled: t.checked } })));
+        rootEl.querySelectorAll('[data-event-mqtt-field]').forEach(s => s.addEventListener('change', () => s.dispatchEvent(new CustomEvent('eg71-event-mqtt-field', { bubbles: true, detail: { index: Number(s.getAttribute('data-index')), field: s.getAttribute('data-event-mqtt-field'), value: s.value } }))));
+        rootEl.querySelectorAll('[data-event-mqtt-keep]').forEach(c => c.addEventListener('change', () => c.dispatchEvent(new CustomEvent('eg71-event-mqtt-keep', { bubbles: true, detail: { index: Number(c.getAttribute('data-event-mqtt-keep')), checked: c.checked } }))));
+        rootEl.querySelectorAll('[data-event-mqtt-ops]').forEach(b => b.addEventListener('click', () => b.dispatchEvent(new CustomEvent('eg71-event-mqtt-ops', { bubbles: true, detail: { index: Number(b.getAttribute('data-event-mqtt-ops')) } }))));
+        const add = rootEl.querySelector('[data-event-mqtt-add]');
+        if (add) add.addEventListener('click', () => add.dispatchEvent(new CustomEvent('eg71-event-mqtt-add', { bubbles: true })));
+      }
+    },
+
+    /* ---------- EG71 应用 APP（B_Eg71App* · Node RED / Python 三页签 · Figma 41:19864） ---------- */
+    {
+      id: 'bc-eg71-app-tabs',
+      cn: 'EG71 应用页签壳',
+      cat: '应用管理',
+      desc: 'APP 菜单 Python 页三页签（Python / AppManager Configuration / Python APP），48px 白底 + 2px 墨条',
+      atoms: ['S_Tab'],
+      entityHint: 'gateway',
+      tags: ['app', 'python', 'tabs', '页签'],
+      render(ctx) {
+        ctx = ctx || {};
+        const tabs = ctx.tabs && ctx.tabs.length ? ctx.tabs : [
+          { key: 'python', label: 'Python' },
+          { key: 'manager', label: 'AppManager Configuration' },
+          { key: 'app', label: 'Python APP' }
+        ];
+        const cur = ctx.tab || 'python';
+        return `<div class="bc-eg71-app-bar">${tabs.map(t =>
+          `<button type="button" class="bc-eg71-app-tab${t.key === cur ? ' bc-eg71-app-tab--active' : ''}" data-app-tab="${esc(t.key)}">${esc(t.label)}</button>`).join('')}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-app-tab]').forEach(b => b.addEventListener('click', () =>
+          b.dispatchEvent(new CustomEvent('eg71-app-tab', { bubbles: true, detail: { tab: b.getAttribute('data-app-tab') } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-app-nodered',
+      cn: 'EG71 Node RED 应用卡',
+      cat: '应用管理',
+      desc: 'APP 菜单 Node RED 页：Enable 开关 + Reset/Export/Launch 头部按钮 + 版本只读 + Node Library 升级导入；禁用收起内容并禁用按钮（41:18749 / 41:19865 双态）',
+      atoms: ['S_Switch', 'S_Form', 'S_Select', 'S_Button', 'S_Card'],
+      entityHint: 'gateway',
+      tags: ['app', 'nodered', '升级', '开关', '只读'],
+      render(ctx) {
+        ctx = ctx || {};
+        const enabled = ctx.enabled !== false;
+        const files = ctx.upgradeFiles && ctx.upgradeFiles.length ? ctx.upgradeFiles : [''];
+        const file = files.indexOf(ctx.file) >= 0 ? ctx.file : files[0];
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-app-head">
+                <span class="ms-h4">Enable</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-app-nodered-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+                <div class="bc-eg71-app-head-actions">
+                  <button type="button" class="ms-btn" data-app-nodered-reset${enabled ? '' : ' disabled'}>Reset</button>
+                  <button type="button" class="ms-btn" data-app-nodered-export${enabled ? '' : ' disabled'}>Export</button>
+                  <button type="button" class="ms-btn ms-btn--primary" data-app-nodered-launch${enabled ? '' : ' disabled'}>Launch</button>
+                </div>
+              </div>
+              ${enabled ? `<div class="bc-eg71-app-body">
+                <div class="bc-eg71-app-fieldsrow">
+                  <div class="ms-form-item">
+                    <label class="ms-form-label">Node-RED Version</label>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(ctx.nodeRedVersion != null ? ctx.nodeRedVersion : '3.0.2')}" readonly></label>
+                  </div>
+                  <div class="ms-form-item">
+                    <label class="ms-form-label">Node Library Version</label>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(ctx.nodeLibraryVersion != null ? ctx.nodeLibraryVersion : '1.0.13')}" readonly></label>
+                  </div>
+                </div>
+                <div class="bc-eg71-app-fieldsrow">
+                  <div class="bc-eg71-app-inline">
+                    <div class="ms-form-item">
+                      <label class="ms-form-label">Upgrade Node Library</label>
+                      <span class="ms-select ms-select--sm"><select data-app-nodered-file>${files.map(o => `<option${o === file ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                    </div>
+                    <button type="button" class="ms-btn ms-btn--primary" data-app-nodered-import>Import</button>
+                    <button type="button" class="ms-btn" data-app-nodered-upgrade${file ? '' : ' disabled'}>Upgrade</button>
+                  </div>
+                </div>
+              </div>` : ''}
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-app-nodered-toggle]');
+        if (t) t.addEventListener('change', () => t.dispatchEvent(new CustomEvent('eg71-app-nodered-toggle', { bubbles: true, detail: { enabled: t.checked } })));
+        ['reset', 'export', 'launch', 'import', 'upgrade'].forEach(act => {
+          const b = rootEl.querySelector('[data-app-nodered-' + act + ']');
+          if (b) b.addEventListener('click', () => b.dispatchEvent(new CustomEvent('eg71-app-nodered-' + act, { bubbles: true })));
+        });
+        const sel = rootEl.querySelector('[data-app-nodered-file]');
+        if (sel) sel.addEventListener('change', () => sel.dispatchEvent(new CustomEvent('eg71-app-nodered-file', { bubbles: true, detail: { value: sel.value } })));
+      }
+    },
+    {
+      id: 'bc-eg71-app-sdk',
+      cn: 'EG71 AppManager 状态卡',
+      cat: '应用管理',
+      desc: 'Python 页签 AppManager Status 卡：状态标签 + SDK Version/Path 只读 + Available Storage 选择 + Upgrade Files 导入升级（92:19752）',
+      atoms: ['S_Form', 'S_Select', 'S_Button', 'S_Tag', 'S_Card'],
+      entityHint: 'gateway',
+      tags: ['app', 'python', 'sdk', '升级', '状态标签'],
+      render(ctx) {
+        ctx = ctx || {};
+        const status = ctx.status || 'Uninstalled';
+        const storages = ctx.storages && ctx.storages.length ? ctx.storages : ['Local'];
+        const storage = storages.indexOf(ctx.storage) >= 0 ? ctx.storage : storages[0];
+        const files = ctx.upgradeFiles && ctx.upgradeFiles.length ? ctx.upgradeFiles : [''];
+        const file = files.indexOf(ctx.file) >= 0 ? ctx.file : files[0];
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body bc-eg71-app-card--tight">
+              <div class="bc-eg71-app-head">
+                <span class="ms-h4">AppManager Status</span>
+                <span class="bc-eg71-app-tag">${esc(status)}</span>
+              </div>
+              <div class="bc-eg71-app-body">
+                <div class="bc-eg71-app-fieldsrow">
+                  <div class="ms-form-item">
+                    <label class="ms-form-label">SDK Version</label>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(ctx.sdkVersion || '')}" readonly></label>
+                  </div>
+                  <div class="ms-form-item">
+                    <label class="ms-form-label">SDK Path</label>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(ctx.sdkPath || '')}" readonly></label>
+                  </div>
+                </div>
+                <div class="bc-eg71-app-fieldsrow">
+                  <div class="ms-form-item">
+                    <label class="ms-form-label">Available Storage</label>
+                    <span class="ms-select ms-select--sm"><select data-app-sdk-storage>${storages.map(o => `<option${o === storage ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                  </div>
+                  <div class="bc-eg71-app-inline">
+                    <div class="ms-form-item">
+                      <label class="ms-form-label">Upgrade Files</label>
+                      <span class="ms-select ms-select--sm"><select data-app-sdk-file>${files.map(o => `<option${o === file ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+                    </div>
+                    <button type="button" class="ms-btn ms-btn--primary" data-app-sdk-import>Import</button>
+                    <button type="button" class="ms-btn" data-app-sdk-upgrade${file ? '' : ' disabled'}>Upgrade</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        [['storage', 'eg71-app-sdk-storage'], ['file', 'eg71-app-sdk-file']].forEach(pair => {
+          const s = rootEl.querySelector('[data-app-sdk-' + pair[0] + ']');
+          if (s) s.addEventListener('change', () => s.dispatchEvent(new CustomEvent(pair[1], { bubbles: true, detail: { value: s.value } })));
+        });
+        ['import', 'upgrade'].forEach(act => {
+          const b = rootEl.querySelector('[data-app-sdk-' + act + ']');
+          if (b) b.addEventListener('click', () => b.dispatchEvent(new CustomEvent('eg71-app-sdk-' + act, { bubbles: true })));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-app-manager',
+      cn: 'EG71 AppManager 管理页',
+      cat: '应用管理',
+      desc: 'AppManager Configuration 页签：Enable 总闸 + App Management 表（ID/命令/日志上限/卸载开关）+ App Status 表（名称/版本/SDK），空表显 No data 空态（41:33359）',
+      atoms: ['S_Switch', 'S_Table', 'S_Title', 'S_Icon', 'S_Card'],
+      entityHint: 'gateway',
+      tags: ['app', 'appmanager', '表格', '空态', '总闸'],
+      render(ctx) {
+        ctx = ctx || {};
+        const enabled = ctx.enabled !== false;
+        const manage = ctx.manageRows || [];
+        const status = ctx.statusRows || [];
+        const empty = `<div class="bc-eg71-app-empty">${ico('data', 32)}<span>No data</span></div>`;
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-app-head">
+                <span class="ms-h4">Enable</span>
+                <label class="ms-switch ms-switch--xs"><input type="checkbox" data-app-manager-toggle${enabled ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+              </div>
+              <div class="${enabled ? '' : 'bc-eg71-event-body--disabled'}">
+                <div class="bc-eg71-app-subcard">
+                  <div class="bc-eg71-app-subhead"><span class="ms-h4">App Management</span></div>
+                  ${manage.length ? `<table class="bc-eg71-app-table">
+                    <thead><tr>
+                      <th class="bc-eg71-app-col-id">ID</th><th>App Command</th>
+                      <th>Logfile Size <span class="bc-eg71-app-thunit">(MB)</span></th><th>Uninstall</th>
+                    </tr></thead>
+                    <tbody>${manage.map((r, i) => `<tr>
+                      <td class="bc-eg71-app-col-id">${esc(r.id != null ? r.id : i + 1)}</td>
+                      <td>${esc(r.command || '')}</td>
+                      <td>${esc(r.logSize != null ? r.logSize : '-')}</td>
+                      <td><label class="ms-switch ms-switch--xs"><input type="checkbox" data-app-uninstall="${i}"${r.uninstall ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label></td>
+                    </tr>`).join('')}</tbody>
+                  </table>` : empty}
+                </div>
+                <div class="bc-eg71-app-subcard">
+                  <div class="bc-eg71-app-subhead"><span class="ms-h4">App Status</span></div>
+                  ${status.length ? `<table class="bc-eg71-app-table">
+                    <thead><tr><th>App Name</th><th>App Version</th><th>SDK Version</th></tr></thead>
+                    <tbody>${status.map(r => `<tr>
+                      <td>${esc(r.name || '')}</td><td>${esc(r.version || '-')}</td><td>${esc(r.sdk || '-')}</td>
+                    </tr>`).join('')}</tbody>
+                  </table>` : empty}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const t = rootEl.querySelector('[data-app-manager-toggle]');
+        if (t) t.addEventListener('change', () => t.dispatchEvent(new CustomEvent('eg71-app-manager-toggle', { bubbles: true, detail: { enabled: t.checked } })));
+        rootEl.querySelectorAll('[data-app-uninstall]').forEach(s => s.addEventListener('change', () =>
+          s.dispatchEvent(new CustomEvent('eg71-app-uninstall', { bubbles: true, detail: { index: Number(s.getAttribute('data-app-uninstall')), enabled: s.checked } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-app-card',
+      cn: 'EG71 应用导入卡',
+      cat: '应用管理',
+      desc: '通用「标题 + 两列字段行 + 行内主钮」导入卡：Import App Package / Import App Configuration / Debug Script 三卡同形态复用（92:19840）',
+      atoms: ['S_Form', 'S_Select', 'S_Input', 'S_Button', 'S_Card'],
+      entityHint: 'gateway',
+      tags: ['app', '导入', '配置', '通用卡'],
+      render(ctx) {
+        ctx = ctx || {};
+        const rows = ctx.rows || [];
+        const cellHtml = (cell, r, c) => {
+          const ctl = cell.type === 'input'
+            ? `<span class="ms-input"><input data-app-card-field="${r}:${c}" value="${esc(cell.value || '')}"${cell.placeholder ? ` placeholder="${esc(cell.placeholder)}"` : ''}></span>`
+            : `<span class="ms-select ms-select--sm"><select data-app-card-field="${r}:${c}">${(cell.options && cell.options.length ? cell.options : ['']).map(o => `<option${o === cell.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>`;
+          const inner = `<div class="ms-form-item"><label class="ms-form-label">${esc(cell.label || '')}</label>${ctl}</div>`;
+          if (!cell.button) return inner;
+          const b = cell.button;
+          return `<div class="bc-eg71-app-inline">${inner}<button type="button" class="ms-btn${b.kind === 'primary' ? ' ms-btn--primary' : ''}" data-app-card-button="${r}:${c}"${b.disabled ? ' disabled' : ''}>${esc(b.label)}</button></div>`;
+        };
+        return `<div class="bc-eg71-maint-body">
+          <section class="ms-card">
+            <div class="ms-card-body">
+              <div class="bc-eg71-app-head"><span class="ms-h4">${esc(ctx.title || '')}</span></div>
+              ${rows.map((row, r) => `<div class="bc-eg71-app-fieldsrow">${(Array.isArray(row) ? row : []).map((cell, c) => cellHtml(cell, r, c)).join('')}</div>`).join('')}
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-app-card-field]').forEach(s => s.addEventListener('change', () => {
+          const pos = s.getAttribute('data-app-card-field').split(':');
+          s.dispatchEvent(new CustomEvent('eg71-app-card-field', { bubbles: true, detail: { row: Number(pos[0]), col: Number(pos[1]), value: s.value } }));
+        }));
+        rootEl.querySelectorAll('[data-app-card-button]').forEach(b => b.addEventListener('click', () => {
+          const pos = b.getAttribute('data-app-card-button').split(':');
+          b.dispatchEvent(new CustomEvent('eg71-app-card-button', { bubbles: true, detail: { row: Number(pos[0]), col: Number(pos[1]) } }));
+        }));
+      }
     }
   ];
+
+  /* ---------- 维护域 140x140 插图（升级/重启/备份/结果态 · 颜色全走 L1 令牌） ---------- */
+  function maintIllu(kind) {
+    const SVGS = {
+      upgrade: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<ellipse cx="70" cy="126" rx="46" ry="6" fill="var(--color-primary-bg)"/>'
+        + '<rect x="16" y="24" width="68" height="92" rx="8" fill="var(--color-primary-bg)"/>'
+        + '<path d="M30 44h40M30 58h40M30 72h24" stroke="var(--color-icon-auxiliary)" stroke-width="3" stroke-linecap="round"/>'
+        + '<rect x="50" y="40" width="60" height="60" rx="12" fill="var(--color-primary-normal)"/>'
+        + '<path d="M74 60l24 9-24 23 6-16z" fill="var(--color-text-constant-normal)"/>'
+        + '<rect x="22" y="92" width="20" height="20" rx="4" fill="var(--color-success-normal)"/>'
+        + '<circle cx="108" cy="44" r="6" fill="var(--color-remind-normal)"/>'
+        + '</svg>',
+      restart: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<circle cx="70" cy="70" r="46" fill="var(--color-primary-bg)"/>'
+        + '<path d="M46 52A30 30 0 0 1 100 62" stroke="var(--color-primary-normal)" stroke-width="8" stroke-linecap="round"/>'
+        + '<path d="M104 48l4 20-20-6z" fill="var(--color-primary-normal)"/>'
+        + '<path d="M94 88A30 30 0 0 1 40 78" stroke="var(--color-primary-normal)" stroke-width="8" stroke-linecap="round" opacity="0.45"/>'
+        + '<path d="M36 92l-4-20 20 6z" fill="var(--color-primary-normal)" opacity="0.45"/>'
+        + '<circle cx="70" cy="70" r="10" fill="var(--color-bg-card)" stroke="var(--color-primary-normal)" stroke-width="4"/>'
+        + '</svg>',
+      backupRun: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<ellipse cx="70" cy="122" rx="46" ry="6" fill="var(--color-primary-bg)"/>'
+        + '<rect x="14" y="26" width="76" height="58" rx="8" fill="var(--color-primary-bg)"/>'
+        + '<path d="M14 42h76" stroke="var(--color-icon-auxiliary)" stroke-width="3"/>'
+        + '<circle cx="24" cy="34" r="2.5" fill="var(--color-icon-auxiliary)"/><circle cx="32" cy="34" r="2.5" fill="var(--color-icon-auxiliary)"/><circle cx="40" cy="34" r="2.5" fill="var(--color-icon-auxiliary)"/>'
+        + '<path d="M52 48l14 5v12c0 8-6 13-14 16-8-3-14-8-14-16V53z" fill="var(--color-success-normal)"/>'
+        + '<path d="M46 66l5 5 9-10" stroke="var(--color-text-constant-normal)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        + '<rect x="82" y="60" width="44" height="54" rx="8" fill="var(--color-primary-normal)"/>'
+        + '<path d="M92 74h24M92 86h24M92 98h16" stroke="var(--color-text-constant-normal)" stroke-width="3" stroke-linecap="round" opacity="0.7"/>'
+        + '</svg>',
+      backupReset: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<ellipse cx="70" cy="122" rx="46" ry="6" fill="var(--color-primary-bg)"/>'
+        + '<rect x="14" y="26" width="76" height="58" rx="8" fill="var(--color-primary-bg)"/>'
+        + '<path d="M14 42h76" stroke="var(--color-icon-auxiliary)" stroke-width="3"/>'
+        + '<circle cx="34" cy="58" r="5" fill="var(--color-primary-normal)"/>'
+        + '<circle cx="66" cy="58" r="5" fill="var(--color-primary-normal)"/>'
+        + '<path d="M39 58h22" stroke="var(--color-primary-normal)" stroke-width="3"/>'
+        + '<circle cx="52" cy="84" r="13" fill="none" stroke="var(--color-icon-secondary)" stroke-width="5"/>'
+        + '<path d="M52 63v-7M52 112v-7M31 84h-7M80 84h-7M37 69l-5-5M72 99l-5-5M67 69l5-5M32 99l5-5" stroke="var(--color-icon-secondary)" stroke-width="4" stroke-linecap="round"/>'
+        + '<circle cx="30" cy="104" r="16" fill="var(--color-success-bg)"/>'
+        + '<path d="M22 104a8 8 0 1 1 3 6.2" stroke="var(--color-success-normal)" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+        + '<path d="M18 96l1 9 9-2z" fill="var(--color-success-normal)"/>'
+        + '</svg>',
+      success: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<circle cx="70" cy="70" r="46" fill="var(--color-success-bg)"/>'
+        + '<circle cx="70" cy="70" r="30" fill="var(--color-success-normal)"/>'
+        + '<path d="M58 70l9 9 16-17" stroke="var(--color-text-constant-normal)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        + '</svg>',
+      error: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<circle cx="70" cy="70" r="46" fill="var(--color-error-bg)"/>'
+        + '<circle cx="70" cy="70" r="30" fill="var(--color-error-normal)"/>'
+        + '<path d="M60 60l20 20M80 60l-20 20" stroke="var(--color-text-constant-normal)" stroke-width="5" stroke-linecap="round"/>'
+        + '</svg>',
+      info: '<svg class="bc-eg71-maint-illu" viewBox="0 0 140 140" fill="none" aria-hidden="true">'
+        + '<circle cx="70" cy="70" r="46" fill="var(--color-primary-bg)"/>'
+        + '<circle cx="70" cy="70" r="30" fill="var(--color-primary-normal)"/>'
+        + '<path d="M70 58v22" stroke="var(--color-text-constant-normal)" stroke-width="5" stroke-linecap="round"/>'
+        + '<circle cx="70" cy="50" r="3.5" fill="var(--color-text-constant-normal)"/>'
+        + '</svg>'
+    };
+    return SVGS[kind] || SVGS.info;
+  }
 
   /* ---------- EG71 业务弹窗：按 ctx.action 做业务匹配（不同业务 → 不同弹窗规则） ----------
      ctx.action 取值：
