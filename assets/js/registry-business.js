@@ -923,7 +923,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-form-footer', cn: '表单底部操作栏', cat: '系统设置',
-      desc: 'Milesight 网关配置表单底部固定悬浮操作栏：Affix 固钉吸底（offsetBottom=0）+ 左侧弹性占位把 取消/重置/保存 按钮靠右排列（保存为主按钮）；只读模式整体不渲染，弹窗内部表单禁用本栏。',
+      desc: 'Milesight 网关配置表单底部固定悬浮操作栏：Affix 固钉吸底（offsetBottom=0）+ 左侧弹性占位把 取消/重置/保存 按钮靠右排列（保存为主按钮）；支持 ctx.reset===false 裁掉重置键（两键形态，如 MQTT 通道表单）与 ctx.cancelText/saveText 文案覆写；只读模式整体不渲染，弹窗内部表单禁用本栏。',
       atoms: ['affix', 'space', 'button'],
       entityHint: 'gateway',
       tags: ['表单', '操作栏', '底部固定', '固钉', '保存', '取消', '重置', 'EG71'],
@@ -933,9 +933,9 @@ window.MS_BIZ_UTIL = (function () {
           <div class="ms-affix-body bc-eg71-formfooter">
             <span class="bc-eg71-formfooter-spacer"></span>
             <div class="ms-space ms-space--12">
-              <button class="ms-btn">取消</button>
-              <button class="ms-btn">重置</button>
-              <button class="ms-btn ms-btn--filled">保存</button>
+              <button class="ms-btn">${esc(ctx.cancelText || '取消')}</button>
+              ${ctx.reset === false ? '' : '<button class="ms-btn">重置</button>'}
+              <button class="ms-btn ms-btn--filled">${esc(ctx.saveText || '保存')}</button>
             </div>
           </div>
         </div>`;
@@ -1670,6 +1670,173 @@ window.MS_BIZ_UTIL = (function () {
         wrap.open = open;
         wrap.close = close;
       }
+    },
+    {
+      id: 'bc-eg71-data-forward-mqtt', cn: '数据转发 MQTT 通道表单', cat: '数据服务',
+      desc: 'Milesight 网关「数据服务 → 数据转发」添加/编辑 MQTT 通道整页表单（协议满配基准）：返回式页头（← Add MQTT）→ Basic（MQTT 状态 Tag + 两列字段 + 功能复选）→ User Credentials（标题行 Enabled 复选展开账密灰底面板）→ TLS（标题行 Enabled 复选展开 Mode 下拉 + 三组证书文件导入行）→ Topic 固定 9 行表格（Topic 输入 / QoS 下拉 / Retain 开关）→ Will function（标题行开关展开遗嘱配置）→ 页底 Cancel/Save 吸底操作栏（bc-eg71-form-footer 两键形态）。',
+      atoms: ['form', 'input', 'select', 'checkbox', 'switch', 'button', 'table', 'tag', 'icon', 'affix'],
+      entityHint: 'gateway',
+      tags: ['数据转发', 'MQTT', '通道', '表单', 'Topic', 'QoS', 'TLS', '证书', '遗嘱', 'Will', 'EG71'],
+      render(ctx) {
+        const B = window.MS_BIZ_INDEX;
+        const fitem = (id, c) => (B && B[id] ? B[id].render(c) : '');
+        const d = ctx.data || {};
+        const sw = on => `<label class="ms-switch"><input type="checkbox"${on ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+        const head = (title, extra) => `
+          <div class="ms-card-head">
+            <div class="ms-card-title">${esc(title)}</div>
+            ${extra ? `<div class="ms-card-extra">${extra}</div>` : ''}
+          </div>`;
+        const headCheck = (key, on) => `<label class="ms-checkbox"><input type="checkbox" data-toggle="${key}"${on ? ' checked' : ''}><span class="ms-checkbox-box"></span>Enabled</label>`;
+        const headSwitch = (key, on) => `<label class="ms-switch"><input type="checkbox" data-toggle="${key}"${on ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+
+        const topics = d.topics || [
+          { type: 'Uplink', topic: 'application/%g/device/%d/rx', qos: 0, retain: false },
+          { type: 'Downlink', topic: 'application/%g/device/%d/tx', qos: 0, retain: false },
+          { type: 'Multicast downlink', topic: 'application/%g/multicast/%m/tx', qos: 0, retain: false },
+          { type: 'Online', topic: 'application/%g/device/%d/online', qos: 0, retain: false },
+          { type: 'Offline', topic: 'application/%g/device/%d/offline', qos: 0, retain: false },
+          { type: 'ACK', topic: 'application/%g/device/%d/ack', qos: 0, retain: false },
+          { type: 'Error', topic: 'application/%g/device/%d/error', qos: 0, retain: false },
+          { type: 'Management Request', topic: 'gateway/%g/request', qos: 0, retain: false },
+          { type: 'Management Response', topic: 'gateway/%g/response', qos: 0, retain: false }
+        ];
+        const qosCell = q => `<span class="ms-select ms-select--inline"><select>${[0, 1, 2].map(v => `<option${v === q ? ' selected' : ''}>${v}</option>`).join('')}</select></span>`;
+        const fileRow = (label, name) => `
+          <div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">${esc(label)}</label></div>
+            <div class="bc-eg71-mqtt-file-row">
+              <label class="ms-input"><input value="${esc(name || '')}" placeholder="No file selected"></label>
+              <button type="button" class="ms-btn" data-import="${esc(label)}">Import</button>
+            </div>
+          </div>`;
+
+        return `<div class="bc-eg71-mqtt">
+          <div class="bc-eg71-mqtt-pagehead">
+            <button type="button" class="ms-btn bc-eg71-mqtt-back" data-back aria-label="返回数据转发列表">${ico('arrowLeft', 16)}</button>
+            <span class="ms-h4">${esc(d.title || 'Add MQTT')}</span>
+          </div>
+
+          <section class="ms-card">
+            ${head('Basic', `<span class="bc-eg71-mqtt-status">${esc(d.statusLabel || 'MQTT Status')}${U.statusTag({ cn: d.status || 'Connected', tone: 'success' })}</span>`)}
+            <div class="ms-card-body">
+              <div class="ms-form">
+                <div class="bc-eg71-formgrid">
+                  ${fitem('bc-eg71-form-item-input', { label: 'Name', required: true, value: d.name || 'MQTT-1', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'MQTT server', required: true, value: d.server || 'broker.emqx.io', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Port', required: true, value: d.port || '1883', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Client ID', required: true, value: d.clientId || '24e124fffef3ee31', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Connection Timeout', required: false, unit: 's', value: d.timeout || '30', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Keep Alive', required: false, unit: 's', value: d.keepalive || '120', msg: '' })}
+                </div>
+                <div class="bc-eg71-mqtt-checks">
+                  <label class="ms-checkbox"><input type="checkbox" checked><span class="ms-checkbox-box"></span>Data retransmission</label>
+                  <label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span>Global object exposition</label>
+                  <label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span>Metadata</label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('User Credentials', headCheck('credentials', d.credentials !== false))}
+            <div class="ms-card-body">
+              <div class="bc-eg71-subarea" data-panel="credentials"${d.credentials === false ? ' hidden' : ''}>
+                <div class="bc-eg71-formgrid">
+                  ${fitem('bc-eg71-form-item-input', { label: 'Username', required: false, value: d.username || '', placeholder: 'Username', msg: '' })}
+                  ${fitem('bc-eg71-form-item-input', { label: 'Password', required: false, value: d.password || '', placeholder: 'Password', msg: '' })}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('TLS', headCheck('tls', !!d.tls))}
+            <div class="ms-card-body">
+              <div class="bc-eg71-subarea" data-panel="tls"${d.tls ? '' : ' hidden'}>
+                ${fitem('bc-eg71-form-item-select', { label: 'Mode', required: true, options: ['Self-signed certificates on both the client and server side', 'Self-signed certificates on the server side only'], value: 'Self-signed certificates on both the client and server side', msg: '' })}
+                ${fileRow('CA file', d.caFile)}
+                ${fileRow('Client certificate file', d.certFile)}
+                ${fileRow('Client key file', d.keyFile)}
+              </div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Topic')}
+            <div class="ms-card-body ms-card-body--flush">
+              <div class="ms-table-wrap"><table class="ms-table">
+                <thead><tr>
+                  <th>Data Type</th>
+                  <th>Topic</th>
+                  <th>QoS</th>
+                  <th>Retain</th>
+                </tr></thead>
+                <tbody>
+                  ${topics.map(t => `<tr>
+                    <td>${esc(t.type)}</td>
+                    <td><label class="ms-input"><input value="${esc(t.topic)}"></label></td>
+                    <td>${qosCell(t.qos)}</td>
+                    <td>${sw(t.retain)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table></div>
+            </div>
+          </section>
+
+          <section class="ms-card">
+            ${head('Will function', headSwitch('will', !!d.will))}
+            <div class="ms-card-body">
+              <div class="bc-eg71-subarea" data-panel="will"${d.will ? '' : ' hidden'}>
+                <div class="bc-eg71-formgrid">
+                  ${fitem('bc-eg71-form-item-input', { label: 'Will message subject', required: true, value: d.willTopic || 'application/%g/device/%d/offline', msg: '' })}
+                  ${fitem('bc-eg71-form-item-select', { label: 'Will QoS', required: false, options: ['0', '1', '2'], value: '0', msg: '' })}
+                </div>
+                <label class="ms-checkbox"><input type="checkbox"${d.willRetain ? ' checked' : ''}><span class="ms-checkbox-box"></span>retention flag</label>
+                <div class="ms-form-item">
+                  <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Will messages</label></div>
+                  <label class="ms-input ms-input--textarea"><textarea rows="4" placeholder="Will messages">${esc(d.willMessage || '')}</textarea></label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          ${B['bc-eg71-form-footer'] ? B['bc-eg71-form-footer'].render({ reset: false, cancelText: 'Cancel', saveText: 'Save' }) : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        const wrap = (rootEl.classList && rootEl.classList.contains('bc-eg71-mqtt')) ? rootEl : rootEl.querySelector('.bc-eg71-mqtt');
+        if (!wrap) return;
+
+        // 分区联动：标题行 Enabled 复选（credentials / tls）与 Will 开关 → 同 key data-panel 灰底面板显隐
+        wrap.querySelectorAll('[data-toggle]').forEach(t => {
+          const panel = wrap.querySelector('[data-panel="' + t.getAttribute('data-toggle') + '"]');
+          if (!panel) return;
+          panel.hidden = !t.checked;
+          t.addEventListener('change', () => { panel.hidden = !t.checked; });
+        });
+
+        // 返回列表（页头圆形返回箭头）
+        const back = wrap.querySelector('[data-back]');
+        if (back) back.addEventListener('click', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-mqtt-back', { bubbles: true, detail: { route: '/data-services/data-forwarding' } }));
+        });
+
+        // 证书 / 密钥文件导入
+        wrap.querySelectorAll('[data-import]').forEach(btn => btn.addEventListener('click', () => {
+          wrap.dispatchEvent(new CustomEvent('eg71-mqtt-import', { bubbles: true, detail: { target: btn.getAttribute('data-import') } }));
+        }));
+
+        // 页底 Cancel / Save（bc-eg71-form-footer 两键形态）
+        const foot = wrap.querySelector('.bc-eg71-formfooter');
+        if (foot) {
+          const cancel = foot.querySelector('.ms-btn:not(.ms-btn--filled)');
+          const save = foot.querySelector('.ms-btn--filled');
+          if (cancel) cancel.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-mqtt-cancel', { bubbles: true })));
+          if (save) save.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-mqtt-save', { bubbles: true })));
+        }
+      }
     }
   ];
 
@@ -1772,12 +1939,14 @@ window.MS_BIZ_UTIL = (function () {
     wrap.close = close;
   }
 
-  /* ---------- EG71 侧-导航栏双重结构（L5 页面模板 · 捆绑） ----------
-     规则：路由是唯一源。侧边栏（bc-eg71-sidenav）+ 顶栏（bc-eg71-topnav）捆绑为
-     双重结构：每次侧边栏点击 → 读 data-route → 以新路由同源重渲染顶栏并同步侧边栏
-     选中态。顶栏只在「Dashboard」与「通用面包屑」两种形态间切换（其余路由都走通用版）。
-     调用方式（EG71 需求直接调双重结构，不再手动拼侧栏/顶栏）：
-       const html = window.MS_EG71_SHELL.render(ctx);
+  /* ---------- EG71 页面总骨架（L5 页面模板 · 左右结构 + 侧-顶捆绑） ----------
+     结构：ms-shell 左右结构——左 bc-eg71-sidenav；右 ms-main 从上到下 =
+     bc-eg71-topnav（Dashboard/通用两形态，路由为唯一源）→ ms-content 内容区
+     → .ms-shell-footer 底部导航（可有可无）。
+     底部导航省略规则：opts.footer 显式优先（HTML 覆盖 / null 省略）；未传时按
+     路由默认——/dashboard* 无保存操作不出底部栏，其余页走 bc-eg71-form-footer。
+     调用方式（EG71 需求直接调总骨架，不再手动拼侧栏/顶栏/底栏）：
+       const html = window.MS_EG71_SHELL.render(ctx, opts);
        app.innerHTML = html;
        window.MS_EG71_SHELL.bind(app); */
   window.MS_EG71_SHELL = (function () {
@@ -1791,15 +1960,16 @@ window.MS_BIZ_UTIL = (function () {
       const B = BIZ();
       const content = opts.content !== undefined ? opts.content
         : (B['bc-eg71-content'] ? B['bc-eg71-content'].render(ctx) : '');
+      const isDashboard = ctx.route === '/dashboard' || ctx.route.indexOf('/dashboard/') === 0;
       const footer = opts.footer !== undefined ? opts.footer
-        : (B['bc-eg71-form-footer'] ? B['bc-eg71-form-footer'].render(ctx) : '');
+        : (isDashboard ? '' : (B['bc-eg71-form-footer'] ? B['bc-eg71-form-footer'].render(ctx) : ''));
       return '<div class="ms-shell">'
         + B['bc-eg71-sidenav'].render(ctx)
         + '<div class="ms-main">'
         + B['bc-eg71-topnav'].render(ctx)
         + '<div class="ms-content">' + content + '</div>'
+        + (footer ? '<div class="ms-shell-footer">' + footer + '</div>' : '')
         + '</div>'
-        + footer
         + '</div>';
     }
 
