@@ -1589,6 +1589,8 @@ body {
 
 /* ---------- 内容区（列表/流程页形态：单卡片四周 20px） ---------- */
 .ms-content { padding: var(--spacing-20); gap: 0; }
+/* EG71 表格左对齐契约：操作列仅 nowrap（镜像 library/business.css，壳资产不动） */
+.bc-eg71-table-ops { white-space: nowrap; }
 .mb-card { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8); padding: var(--spacing-20); overflow: auto; }
 .mb-card > .mb-wizard { flex: none; }
 .mb-card .ms-table-wrap { background: transparent; border: none; border-radius: 0; }
@@ -6824,10 +6826,10 @@ function renderList() {
       <td><span class="ms-text ms-text--secondary">${esc(d.model || 'None')}</span></td>
       <td>${d.proto && d.proto.indexOf('M-Bus') === 0 ? `<span class="ms-text">${esc(d.proto.split(' / ')[0])}</span> <span class="ms-link">/ ${esc(d.proto.split(' / ')[1])}</span>` : `<span class="ms-text">${esc(d.proto)}</span>`}</td>
       <td>${statusCell(d)}</td>
-      <td class="ms-table-num"><span class="ms-link">${d.objects}</span></td>
+      <td class="bc-num"><span class="ms-link">${d.objects}</span></td>
       <td><span class="mb-mono ms-text--secondary">${esc(d.updated || '—')}</span></td>
-      <td class="ms-table-num">—</td>
-      <td class="ms-table-ops">
+      <td class="bc-num">—</td>
+      <td class="bc-eg71-table-ops">
         <button class="ms-btn ms-btn--text ms-btn--sm" data-action="edit-dev" data-id="${d.id}">编辑</button>
         <button class="ms-btn ms-btn--text ms-btn--sm ms-btn--danger" data-action="del-dev" data-id="${d.id}">删除</button>
       </td>
@@ -6851,15 +6853,30 @@ function renderList() {
         <table class="ms-table">
           <thead><tr>
             <th>设备名称</th><th>设备型号</th><th>协议类型</th><th>状态</th>
-            <th class="ms-table-num">对象数量</th><th>最新更新时间</th><th class="ms-table-num">信号</th><th>操作</th>
+            <th class="bc-num">对象数量</th><th>最新更新时间</th><th class="bc-num">信号</th><th class="bc-eg71-table-ops">操作</th>
           </tr></thead>
           <tbody>${rows || '<tr><td colspan="8" class="ms-text ms-text--auxiliary" style="text-align:center;padding:32px 0">暂无设备</td></tr>'}</tbody>
         </table>
       </div>
     ${state.drawerDev ? drawerEditHtml() : ''}
-    ${state.delDev ? delConfirmHtml() : ''}
+    ${state.delDev ? delModalHtml() : ''}
   `;
   $app.innerHTML = shell(inner); window.MS_EG71_SHELL.bind($app);
+  const delModal = $app.querySelector('.bc-eg71-modal');
+  if (delModal && state.delDev) {
+    delModal.hidden = false;
+    delModal.classList.add('is-open');
+    const resetDel = () => { state.delDev = null; renderList(); };
+    delModal.querySelectorAll('[data-modal-close],[data-modal-cancel]').forEach(b => b.addEventListener('click', resetDel));
+    delModal.querySelector('.ms-mask').addEventListener('click', e => { if (e.target === delModal.querySelector('.ms-mask')) resetDel(); });
+    const okBtn = delModal.querySelector('[data-modal-ok]');
+    if (okBtn) okBtn.addEventListener('click', () => {
+      addedDevices = addedDevices.filter(x => x.id !== state.delDev);
+      state.delDev = null;
+      renderList();
+      toast('设备已删除', 'success');
+    });
+  }
 }
 
 function drawerEditHtml() {
@@ -6894,21 +6911,19 @@ function drawerEditHtml() {
     </div>`);
 }
 
-function delConfirmHtml() {
+/* 删除确认弹窗：调 B_Eg71Modal（bc-eg71-modal），禁止手搓（AGENTS.md 组件映射清单 + R2b） */
+function delModalHtml() {
   const d = addedDevices.find(x => x.id === state.delDev);
   if (!d) return '';
-  return modalHtml(`
-    <div class="ms-modal ms-modal--sm">
-      <div class="ms-modal-head"><span class="ms-modal-title">删除 ${esc(d.name)}</span><span class="ms-modal-close" data-action="close-del">${ico('close')}</span></div>
-      <div class="ms-modal-body"><div class="ms-space ms-space--8" style="align-items:flex-start">
-        <span style="color:var(--color-warm-normal);margin-top:2px">${ico('warn')}</span>
-        <span class="ms-text">删除设备后，该设备相关的数据及数据转发应用都将被删除，您是否要删除？</span>
-      </div></div>
-      <div class="ms-modal-foot">
-        <button class="ms-btn" data-action="close-del">取消</button>
-        <button class="ms-btn ms-btn--filled ms-btn--danger" data-action="confirm-del" data-id="${d.id}">删除</button>
-      </div>
-    </div>`);
+  return window.MS_BIZ_INDEX && window.MS_BIZ_INDEX['bc-eg71-modal']
+    ? window.MS_BIZ_INDEX['bc-eg71-modal'].render({
+        action: 'delete',
+        title: `删除 ${d.name}`,
+        desc: '删除设备后，该设备相关的数据及数据转发应用都将被删除，您是否要删除？',
+        okText: '删除',
+        cancelText: '取消'
+      })
+    : '';
 }
 
 function modalHtml(inner) {
@@ -7682,16 +7697,6 @@ document.addEventListener('click', e => {
     case 'del-dev':
       state.delDev = t.dataset.id;
       renderList();
-      break;
-    case 'close-del':
-      state.delDev = null;
-      renderList();
-      break;
-    case 'confirm-del':
-      addedDevices = addedDevices.filter(x => x.id !== t.dataset.id);
-      state.delDev = null;
-      renderList();
-      toast('设备已删除', 'success');
       break;
     case 'noop-close':
       break;
