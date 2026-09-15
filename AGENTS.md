@@ -34,8 +34,8 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 ```
 
    - structure=结构还原度、component=组件类型还原度、interaction=交互逻辑还原度、visual=视觉还原度、field=字段还原度
-   - category=产品分类，必须是以下四个之一：**IOT / CCTV / 路由器 / 网关**
-   - 根据需求内容和产品名称判断：提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；其他 IoT 设备（传感器、门禁等）选「IOT」
+   - category=产品分类，必须是以下六个之一：**云平台 / CCTV / CV / 网关 / 路由器 / uink**
+   - 根据需求内容和产品名称判断：提到"云平台"、"Cloud"、"平台管理"选「云平台」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；提到"CV"、"计算机视觉"、"AI识别"选「CV」；提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"uink"、"Ulink"选「uink」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
 3. **提交**：
 

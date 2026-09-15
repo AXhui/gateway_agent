@@ -88,7 +88,7 @@ def main():
     parser.add_argument("--prompt", default="", help="用户本次的原始提示词/需求原话")
     parser.add_argument("--duration", type=float, default=None, help="生成耗时（分钟），由 post-commit 自动计算")
     parser.add_argument("--req-id", default="", help="需求编号（如 REQ-004），供工作流按需求查找/更新旧记录")
-    parser.add_argument("--category", default="", choices=["", "IOT", "CCTV", "路由器", "网关"], help="产品分类：IOT/CCTV/路由器/网关（AI 自动判断）")
+    parser.add_argument("--category", default="", choices=["", "云平台", "CCTV", "CV", "网关", "路由器", "uink"], help="产品分类：IOT/CCTV/路由器/网关（AI 自动判断）")
     # AI 自评的 5 维度分数（0-100，整数）；不填则为空，等待 UED 复核
     parser.add_argument("--structure", type=int, help="结构还原度 0-100（AI 自评）")
     parser.add_argument("--component", type=int, help="组件类型还原度 0-100（AI 自评）")
