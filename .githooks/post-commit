@@ -56,6 +56,16 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     QUALITY_FILE="$DEMO_DIR/quality.json"
   fi
 
+  # 生成耗时：commit 时间 - prompt.md 创建时间（分钟，保留1位小数）；prompt.md 不存在则留空
+  DURATION=""
+  if [ -f "$DEMO_DIR/prompt.md" ]; then
+    COMMIT_TS=$(git log -1 --pretty=%ct)
+    PROMPT_TS=$(stat -c %Y "$DEMO_DIR/prompt.md" 2>/dev/null || date -r "$DEMO_DIR/prompt.md" +%s 2>/dev/null || echo "")
+    if [ -n "$PROMPT_TS" ] && [ -n "$COMMIT_TS" ]; then
+      DURATION=$(awk "BEGIN{printf \"%.1f\", ($COMMIT_TS - $PROMPT_TS)/60}")
+    fi
+  fi
+
   # 判断该 demo 是首次提交还是再次提交：
   # post-commit 时 HEAD 已包含本次提交，该路径历史提交数 <=1 即首次（新建），否则为更新。
   PREV_COUNT=$(git rev-list --count HEAD -- "$DEMO_PATH" 2>/dev/null || echo 0)
@@ -118,6 +128,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --action-type "$ACTION_TYPE" \
     --prompt "$USER_PROMPT" \
     --quality-file "$QUALITY_FILE" \
+    --duration "$DURATION" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
 done
 

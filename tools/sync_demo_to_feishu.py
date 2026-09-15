@@ -86,6 +86,7 @@ def main():
         help="记录类型：新建=首次生成（会通知）；更新=修改已有 demo（不通知，仅留记录）",
     )
     parser.add_argument("--prompt", default="", help="用户本次的原始提示词/需求原话")
+    parser.add_argument("--duration", type=float, default=None, help="生成耗时（分钟），由 post-commit 自动计算")
     # AI 自评的 5 维度分数（0-100，整数）；不填则为空，等待 UED 复核
     parser.add_argument("--structure", type=int, help="结构还原度 0-100（AI 自评）")
     parser.add_argument("--component", type=int, help="组件类型还原度 0-100（AI 自评）")
@@ -150,6 +151,7 @@ def main():
         "状态": args.status,
         "记录类型": args.action_type,
         "提示词": args.prompt,
+        "生成耗时(分钟)": args.duration,
         "结构还原度": structure,
         "组件类型还原度": component,
         "交互逻辑还原度": interaction,
