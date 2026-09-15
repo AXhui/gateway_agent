@@ -99,21 +99,48 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
       PREVIEW_URL="$LATEST_URL"
     elif echo "$BASE_URL" | grep -q '^\\\\'; then
       # UNC 路径：反斜杠拼接。LATEST=固定最新版（覆盖），SNAPSHOT=带版本号快照（不覆盖）
-      LATEST_FILE="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
-      REQ_PARENT=$(dirname "$LATEST_FILE")
-      SNAPSHOT_FILE="${REQ_PARENT}\\versions\\demo_v${VERSION_NO}.html"
-      # 1) 覆盖写最新版 demo.html（快捷入口）
-      mkdir -p "$REQ_PARENT" 2>/dev/null || true
-      cp "$DEMO_PATH" "$LATEST_FILE" 2>/dev/null && \
-        echo "[post-commit] 已更新最新版 $LATEST_FILE" || \
-        echo "[post-commit] 警告：复制最新版失败（不影响同步）"
-      # 2) 另存版本快照（文件名带版本号，永不覆盖）
-      mkdir -p "$(dirname "$SNAPSHOT_FILE")" 2>/dev/null || true
-      cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
-        echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
-        echo "[post-commit] 警告：保存版本快照失败（不影响同步）"
+      # macOS 兼容：自动把 \\server\share\dir 转换为 /Volumes/share/dir（需用户先在 Finder 挂载 SMB）
+      if [[ "$(uname)" == "Darwin" ]]; then
+        # 去掉开头的 \\server\，把反斜杠转正斜杠，前面加 /Volumes/
+        NAS_LOCAL=$(echo "$BASE_URL" | sed 's|^\\\\[^\\]*\\||; s|\\|/|g')
+        NAS_BASE="/Volumes/${NAS_LOCAL}"
+        # 检查是否已挂载
+        if [ ! -d "$NAS_BASE" ]; then
+          echo "[post-commit] 警告：SMB 共享未挂载到 $NAS_BASE"
+          echo "              请在 Finder 按 Cmd+K，输入 smb://192.168.5.50/公共临时文件夹（每季度定期清空） 挂载后重试"
+          echo "              （飞书同步仍会执行，只是 NAS 备份跳过）"
+          NAS_BASE=""
+        fi
+      else
+        NAS_BASE="$BASE_URL"
+      fi
+
+      if [ -n "$NAS_BASE" ]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+          # Mac：用正斜杠拼接本地路径
+          LATEST_FILE="${NAS_BASE%/}/$(echo "$DEMO_PATH" | tr '\\' '/')"
+          REQ_PARENT=$(dirname "$LATEST_FILE")
+          SNAPSHOT_FILE="${REQ_PARENT}/versions/demo_v${VERSION_NO}.html"
+        else
+          # Windows Git Bash：用反斜杠拼接 UNC 路径
+          LATEST_FILE="${NAS_BASE%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
+          REQ_PARENT=$(dirname "$LATEST_FILE")
+          SNAPSHOT_FILE="${REQ_PARENT}\\versions\\demo_v${VERSION_NO}.html"
+        fi
+        # 1) 覆盖写最新版 demo.html（快捷入口）
+        mkdir -p "$REQ_PARENT" 2>/dev/null || true
+        cp "$DEMO_PATH" "$LATEST_FILE" 2>/dev/null && \
+          echo "[post-commit] 已更新最新版 $LATEST_FILE" || \
+          echo "[post-commit] 警告：复制最新版失败（不影响同步）"
+        # 2) 另存版本快照（文件名带版本号，永不覆盖）
+        mkdir -p "$(dirname "$SNAPSHOT_FILE")" 2>/dev/null || true
+        cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
+          echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
+          echo "[post-commit] 警告：保存版本快照失败（不影响同步）"
+      fi
       # 预览 URL 统一指向最新版固定地址（LATEST），同一个需求只有一个可访问地址
-      PREVIEW_URL="$LATEST_FILE"
+      # Mac 下预览 URL 仍用 UNC 格式（飞书表格里显示 UNC 路径，Windows 同事可直接访问）
+      PREVIEW_URL="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
     else
       PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
     fi

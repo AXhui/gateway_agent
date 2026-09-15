@@ -62,6 +62,18 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 - 修改已有 demo：`fix: 更新 REQ-XXX <页面名称> demo`
 - 其他改动：按常规 Conventional Commits 规范
 
+## 跨平台说明（Windows / macOS）
+
+本项目的 git 钩子同时支持 Windows 和 macOS：
+
+- **Windows**：运行 `setup.ps1`（PowerShell）或 `setup.bat` 一键配置
+- **macOS / Linux**：运行 `bash setup.sh` 一键配置
+
+**macOS 用户额外注意**：
+1. NAS 共享文件夹（SMB）需要先在 Finder 中挂载：按 `Cmd+K`，输入 `smb://192.168.5.50/公共临时文件夹（每季度定期清空）`，连接后挂载到 `/Volumes/` 下
+2. 挂载后 post-commit 钩子会自动把 UNC 路径转换为 `/Volumes/` 本地路径进行复制
+3. 如果未挂载，飞书同步仍会执行，只是 NAS 备份会跳过并输出警告
+
 ## 注意事项
 
 - 不要提交 `.env`、`node_modules/`、临时文件
