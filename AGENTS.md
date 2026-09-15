@@ -19,7 +19,7 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 1. **保存原始提示词（硬性要求，缺失则无法提交）**：把用户本次的需求原话，原样写入该 demo 同目录的 `prompt.md`
    （路径如 `05_release/REQ-001/prompt.md`）；只保留本次这一条，用用户原话、不要概括或改写。
    必须把它和 demo.html 一起 `git add`——pre-commit 钩子会检查，缺 prompt.md 会中止提交。
-2. **质量自评**：对照需求/基准，按 5 个维度各打一个 0-100 的整数分，写入该 demo 同目录的 `quality.json`
+2. **质量自评 + 产品分类**：对照需求/基准，按 5 个维度各打一个 0-100 的整数分，并判断产品分类，写入该 demo 同目录的 `quality.json`
    （和 demo.html 一起 `git add`）。格式严格如下：
 
 ```json
@@ -28,11 +28,14 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
   "component": 85,
   "interaction": 80,
   "visual": 88,
-  "field": 92
+  "field": 92,
+  "category": "网关"
 }
 ```
 
    - structure=结构还原度、component=组件类型还原度、interaction=交互逻辑还原度、visual=视觉还原度、field=字段还原度
+   - category=产品分类，必须是以下四个之一：**IOT / CCTV / 路由器 / 网关**
+   - 根据需求内容和产品名称判断：提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；其他 IoT 设备（传感器、门禁等）选「IOT」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
 3. **提交**：
 
