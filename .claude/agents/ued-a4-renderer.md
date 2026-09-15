@@ -25,7 +25,17 @@ color: purple
 2. 引用 L1 令牌（`--*` 变量），禁止硬编码。
 3. 落地到 demo.html，供 A5 校验。
 
+## 生成前契约注入（硬性，见 `.claude/rules/page-assembly.md` §0）
+
+1. **无映射清单，不渲染**：开工前先核对 page.json / 装配计划里的组件映射——每个业务形态必须落到 `B_*` 组件 ID + ctx 参数；缺形态走铸造注册回库（page-assembly.md §3），**禁止在页面层手搓业务形态**。
+2. **读契约再调用**：对本页涉及的每个 `B_*`，先读其 SKILL.md **§2 组装契约**（atoms 序列 + ctx 字段），按契约以 ctx 调用。只把组件 JS 代码内联进 demo、不按契约调用 = 未完成匹配，A5 会按 R2b 一票否决。
+3. **EG71 必查清单**（涉及即必读契约，缺一判违规）：
+   - 壳：`window.MS_EG71_SHELL` + `navGroups` 唯一源（见 AGENTS.md「EG71 唯一壳契约」）
+   - 业务弹窗调度：`B_Eg71Modal`（删除/禁用/确认/选择四类，按 `ctx.action` 匹配）
+   - 危险操作：`B_ComDangerAction`（删除/卸载/重置等不可恢复操作统一规范）
+4. **自我生产判负例**：demo 源码中不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（例：手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal({action:'delete', ...})`）。
+
 ## 待补
 
-- 渲染规则（续接 `engine-renderer.js`）。
+- 渲染规则：内联 `library/*.css` + `assets/js/registry-*.js`（含 `MS_EG71_SHELL`）到单文件 demo，样式/类名一律取自已注册资产。
 - 图表纯内联 SVG 的生成约定。

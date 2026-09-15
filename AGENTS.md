@@ -56,12 +56,22 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 2. 必须是**单文件 HTML**，所有 CSS/JS 内联，不依赖外部资源
 3. **必须使用组件库（硬性要求，缺失则无法提交）**：所有样式必须基于组件库生成，禁止自写一套样式。
    - 组件库真源：`library/base.css`（基础样式）、`library/business.css`（业务组件，class 前缀 `bc-`）、`.claude/tokens/tokens.css`（设计令牌）
-   - 生成 demo 前先运行 `python tools/build-css-bundle.py` 把组件库打包成 `assets/js/library-css.js`
    - demo.html 中必须使用组件库的 class（如 `bc-*` 业务组件类），样式内联时必须包含组件库样式内容
    - pre-commit 钩子会检查 demo.html 是否包含组件库标识（`bc-` 前缀 class 或 `base.css`/`business.css` 引用），未使用组件库会中止提交
-4. 如需预览工作台，先运行 `python tools/build-css-bundle.py` 生成样式，再打开 `index.html`
+4. 组件运行时真源：`library/*.css` + `assets/js/registry-*.js`，A4 渲染时内联进 demo.html（工作台与 engine-* 已移除，不做本地预览，`tools/build-css-bundle.py` 已随工作台删除）
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
 6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
+
+## Demo 生成前置：组件映射清单（硬性，含一把梭场景）
+
+无论走 PRD 链路（A1→A4）还是用户白话直接要 demo（一把梭），**写第一行页面前必须先产出组件映射清单**（详见 `.claude/rules/page-assembly.md` §0）：
+
+1. **清单格式**：每个业务形态一行——`形态描述 → B_* 组件 ID + ctx 参数`（例：`删除确认弹窗 → B_Eg71Modal + ctx.action='delete'`）。清单先给用户确认（或落 `04_pages/REQ-###/` 供链路消费），确认后才开写 demo。
+2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
+3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
+4. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
+
+> 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
 
 ## EG71 唯一壳契约（硬性）
 
@@ -81,6 +91,15 @@ EG71 产品线的 demo 只允许一套壳，侧边栏 + 顶部导航固定不变
 2. **需求匹配动作**：新需求先把它映射到 `navGroups` 既有入口——命中既有入口（如 System Setting → General）则 demo 渲染在该入口路由下，基于该入口当前内容做修改；确属新功能才修改 `navGroups` 唯一源增补菜单项，**不在单个 demo 里私自加菜单**。
 3. **内容区卡片形态按页面类型**：设置类页面 = `bc-eg71-content` 多区块卡片（默认）；列表/流程类页面 = 单张卡片、四周 20px（`.ms-content` 页面级覆写 `padding: var(--spacing-20)`），卡片内部禁止再套卡片。
 4. **壳资产冻结**：`registry-business.js` / `library/*.css` 里的壳实现不因某个 demo 的需要反向修改；要改先单独提案。
+
+## EG71 表格左对齐契约（硬性）
+
+EG71 线表格一律左对齐，写死不改：
+
+- **数字列**：`bc-num`（mono + tabular-nums，左对齐），禁用 `ms-table-num`。
+- **操作列**：`bc-eg71-table-ops`（`library/business.css`，仅 nowrap，左对齐），禁用 `ms-table-ops`。
+- 空态占位（`ms-empty`）居中除外；com / router / cctv / cv 线不受此约束。
+- 存量已修正：`bc-eg71-alarm`、`bc-eg71-device-list`（2026-09-15）。
 
 ## 提交信息格式
 
