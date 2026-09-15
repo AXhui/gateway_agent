@@ -54,7 +54,11 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 
 1. 输出路径：`05_release/REQ-XXX/demo.html`（XXX 为需求编号，如 REQ-001）
 2. 必须是**单文件 HTML**，所有 CSS/JS 内联，不依赖外部资源
-3. 参考组件库：`library/base.css`、`library/business.css`、`.claude/knowledge/`、`.claude/rules/`
+3. **必须使用组件库（硬性要求，缺失则无法提交）**：所有样式必须基于组件库生成，禁止自写一套样式。
+   - 组件库真源：`library/base.css`（基础样式）、`library/business.css`（业务组件，class 前缀 `bc-`）、`.claude/tokens/tokens.css`（设计令牌）
+   - 生成 demo 前先运行 `python tools/build-css-bundle.py` 把组件库打包成 `assets/js/library-css.js`
+   - demo.html 中必须使用组件库的 class（如 `bc-*` 业务组件类），样式内联时必须包含组件库样式内容
+   - pre-commit 钩子会检查 demo.html 是否包含组件库标识（`bc-` 前缀 class 或 `base.css`/`business.css` 引用），未使用组件库会中止提交
 4. 如需预览工作台，先运行 `python tools/build-css-bundle.py` 生成样式，再打开 `index.html`
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
 6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）

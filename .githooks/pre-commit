@@ -32,4 +32,32 @@ if [ -n "$BAD" ]; then
   exit 1
 fi
 
+# ===== 组件库校验：demo.html 必须使用组件库，禁止自写样式 =====
+BAD_LIB=""
+echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  # 从暂存区读取 demo.html 内容，检查组件库标识
+  CONTENT=$(git show ":$DEMO_PATH" 2>/dev/null || true)
+  # 组件库标识：bc- 前缀业务组件 class、base.css/business.css 引用、MS_CSS 打包变量
+  if echo "$CONTENT" | grep -qE 'bc-|base\.css|business\.css|MS_CSS'; then
+    : # 使用了组件库，通过
+  else
+    echo "  [未使用组件库] $DEMO_PATH"
+  fi
+done
+
+BAD_LIB=$(echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  CONTENT=$(git show ":$DEMO_PATH" 2>/dev/null || true)
+  echo "$CONTENT" | grep -qE 'bc-|base\.css|business\.css|MS_CSS' || echo "$DEMO_PATH"
+done)
+
+if [ -n "$BAD_LIB" ]; then
+  echo ""
+  echo "[pre-commit] 检测到 demo 未使用组件库。所有样式必须基于 library/base.css 和 library/business.css 生成，"
+  echo "禁止自写一套样式。生成前请先运行 python tools/build-css-bundle.py，并在 demo 中使用 bc-* 组件类。"
+  echo "确认要跳过请用 git commit --no-verify。"
+  exit 1
+fi
+
 exit 0
