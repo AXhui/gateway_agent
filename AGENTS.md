@@ -63,6 +63,25 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
 6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
 
+## EG71 唯一壳契约（硬性）
+
+EG71 产品线的 demo 只允许一套壳，侧边栏 + 顶部导航固定不变：
+
+1. **唯一壳**：EG71 demo 一律内联 `window.MS_EG71_SHELL`（连同菜单唯一源 `navGroups`，见 `assets/js/registry-business.js` 约 130 行）并按范式调用：
+
+   ```js
+   $app.innerHTML = window.MS_EG71_SHELL.render(
+     { route: '<该页路由>', entity: {...}, rows: [...] },
+     { content: '<内容区HTML>', footer: '' }
+   );
+   window.MS_EG71_SHELL.bind($app);
+   ```
+
+   **禁止**自造壳（页面私有 shell/topbar/sider 结构类）、**禁止**自编菜单树。基准范式：`output/eg71-verify.html`（还原度最高的壳核实页）；已交付参考：`05_release/REQ-001` ~ `REQ-004` 的 demo.html。
+2. **需求匹配动作**：新需求先把它映射到 `navGroups` 既有入口——命中既有入口（如 System Setting → General）则 demo 渲染在该入口路由下，基于该入口当前内容做修改；确属新功能才修改 `navGroups` 唯一源增补菜单项，**不在单个 demo 里私自加菜单**。
+3. **内容区卡片形态按页面类型**：设置类页面 = `bc-eg71-content` 多区块卡片（默认）；列表/流程类页面 = 单张卡片、四周 20px（`.ms-content` 页面级覆写 `padding: var(--spacing-20)`），卡片内部禁止再套卡片。
+4. **壳资产冻结**：`registry-business.js` / `library/*.css` 里的壳实现不因某个 demo 的需要反向修改；要改先单独提案。
+
 ## 提交信息格式
 
 - 生成新 demo：`feat: 生成 REQ-XXX <页面名称> demo`
