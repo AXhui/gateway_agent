@@ -95,7 +95,8 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
       cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
         echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
         echo "[post-commit] 警告：保存快照失败（不影响同步）"
-      PREVIEW_URL="$SNAPSHOT_URL"
+      # 预览 URL 统一指向最新版固定地址（LATEST），同一个需求只有一个可访问地址
+      PREVIEW_URL="$LATEST_URL"
     elif echo "$BASE_URL" | grep -q '^\\\\'; then
       # UNC 路径：反斜杠拼接。LATEST=固定最新版（覆盖），SNAPSHOT=带版本号快照（不覆盖）
       LATEST_FILE="${BASE_URL%\\}\\$(echo "$DEMO_PATH" | tr '/' '\\')"
@@ -111,8 +112,8 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
       cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
         echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
         echo "[post-commit] 警告：保存版本快照失败（不影响同步）"
-      # 3) 预览 URL 指向当次版本快照，保证每条记录各指各版
-      PREVIEW_URL="$SNAPSHOT_FILE"
+      # 预览 URL 统一指向最新版固定地址（LATEST），同一个需求只有一个可访问地址
+      PREVIEW_URL="$LATEST_FILE"
     else
       PREVIEW_URL="${BASE_URL%/}/${DEMO_PATH}"
     fi
@@ -129,6 +130,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --prompt "$USER_PROMPT" \
     --quality-file "$QUALITY_FILE" \
     --duration "$DURATION" \
+    --req-id "$REQ_ID" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
 done
 
