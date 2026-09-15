@@ -145,7 +145,7 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 | R5 交互完备度 | 15 | 五轴交互（hover/active/keyboard/loading/error）在 demo 中可测、可断言 |
 
 当前样例实测：**R1 693 项引用 0 异常 / R2 92 个 class 全部可溯源 / R3 / R4 / R5 全通过 → 100**。
-校验器非空跑：注入一个硬编码色值和一个未注册 class 后，分数立即降到 99.6 并给出具体证据。
+校验由 A5 agent 按上述五维规则执行（证据落 `05_release/REQ-###/validation.md`）。
 
 ---
 
@@ -153,7 +153,6 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 
 ```
 .
-├── index.html                 工作台（三栏：资产库 / 预览 / 推理链·还原度·代码）
 ├── README.md
 ├── library/                   ← 样式真源（改这里）
 │   ├── base.css                  基础组件样式
@@ -172,7 +171,8 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 │   │   ├── naming.md             命名（层名模式 + 书写格式）
 │   │   ├── documentation.md      文档 8 章节模板
 │   │   ├── release.md            发布 / 下线 checklist
-│   │   └── business-specific.md  业务组件差异补充（页面验证 + 跨产品线影响）
+│   │   ├── business-specific.md  业务组件差异补充（页面验证 + 跨产品线影响）
+│   │   └── page-assembly.md      页面装配铁律（页面拼 L3 / L3 封 L2 / L2 引 L1）
 │   ├── skills/
 │   │   ├── base/                基础组件层 · 62 个物理目录（在册 63，含 1 派生 S_Table）
 │   │   ├── business/            业务组件层 · 仅封装（B_{业务域}_{组件} 约定）
@@ -183,39 +183,23 @@ Agent 学到的不是样式，而是**搭建逻辑**：
 ├── 03_requirements/             输入 · 产品需求文档（R_* 命名，首个 PRD 归档时按需创建）
 ├── 04_pages/                    输出 · 页面 demo 契约（REQ-* / P_* 约定）
 ├── 05_release/                  交付 · 打包 + 校验报告（REQ-*）
-├── assets/
-│   ├── css/workbench.css         工作台外壳样式（与产物视觉刻意区分）
-│   └── js/
-│       ├── registry-base.js       基础组件注册表（含 props / tokens / 交互 skill）
-│       ├── registry-entities.js   业务实体词典 + 确定性造数工厂
-│       ├── registry-business.js   业务组件（声明 atoms 依赖 + render 骨架）
-│       ├── registry-modules.js    页面模块
-│       ├── registry-templates.js  页面模板 + 控制台导航
-│       ├── library-css.js         样式层打包产物（自动生成，勿手改）
-│       ├── engine-parser.js       引擎① 意图解析
-│       ├── engine-planner.js      引擎② 装配规划
-│       ├── engine-renderer.js     引擎③ 页面渲染
-│       ├── engine-validator.js    引擎④ 还原度校验
-│       ├── engine-learner.js      引擎⑤ 新业务组件学习生成
-│       └── app.js                 界面装配
-├── tools/build-css-bundle.py   把 .claude/tokens/tokens.css + library/*.css 打包成 JS 常量
-└── output/                     导出的 demo 落盘位置
+├── assets/js/
+│   ├── registry-base.js           基础组件注册表（含 props / tokens / 交互 skill）
+│   ├── registry-entities.js       业务实体词典 + 确定性造数工厂
+│   ├── registry-business.js       业务组件（声明 atoms 依赖 + render 骨架，含 MS_EG71_SHELL）
+│   └── registry-eg71-protocol-details.js  EG71 协议详情数据
+├── frontend/                   基础组件独立示例页（components/*//index.html）
+└── output/                     临时校验 demo 落盘位置（不入库）
 ```
 
 ---
 
-## 六、运行
+## 六、渲染链路（工作台已移除）
 
-直接打开 `index.html` 即可（样式已打包进 JS，**无需起服务、无网络依赖**）。
+页面产出走 **agent 链路**（A1 规划 → A2 匹配 → A3 page.json → A4 渲染），不再有本地工作台：
 
-修改样式后的流程：
-
-```bash
-python3 tools/build-css-bundle.py   # .claude/tokens/tokens.css + library/*.css → assets/js/library-css.js
-# 然后刷新页面
-```
-
-导出：工作台右上角「导出 HTML」，产出单文件、零外部依赖、可直接浏览器打开的 demo。
+- 组件运行时真源：`library/*.css`（样式）+ `assets/js/registry-*.js`（render 骨架），A4 渲染时**内联**进 `05_release/REQ-###/demo.html`（单文件、零依赖）。
+- 临时核实页落 `output/`（见 `.claude/rules/output.md`）。
 
 ---
 

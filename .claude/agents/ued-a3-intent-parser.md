@@ -27,5 +27,5 @@ color: purple
 
 ## 待补
 
-- page.json 的完整 schema 定义（续接 `engine-parser.js`）。
+- page.json 的完整 schema 定义（以 `.claude/knowledge/` 装配契约知识为准）。
 - 与赛道路由器（iot-track-router）的衔接。

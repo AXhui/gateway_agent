@@ -1,7 +1,7 @@
 # K_mapping · 需求要素 → 组件映射表
 
 > 用途：把 PRD 里的「需求要素」翻译成可装配的组件资产（`B_*` / `M_*` / `T_*`）。
-> 初版由 `assets/js/registry-business.js` / `registry-modules.js` / `registry-templates.js` 播种，随 PRD 出现持续回写。
+> 初版由 `assets/js/registry-business.js` 播种（`M_*` / `T_*` 装配词汇随知识本身维护，registry 已随工作台移除），随 PRD 出现持续回写。
 
 ---
 

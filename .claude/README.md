@@ -146,7 +146,7 @@ A0 三角色提炼（a0-prd-decomposer 一 agent，依次产出）
 
 ## 七、与其它资产的关系
 
-- **根工作台引擎**（`index.html` + `assets/js/*.js` + `library/` + `tools/` + `frontend/`）保留在仓库根，是**运行时**；本目录是**契约层**，两者通过 `_index.json` + 相对路径衔接。
+- **组件运行时**（`assets/js/registry-*.js` + `library/*.css` + `frontend/` + `tools/`）保留在仓库根，是**运行时**（demo 渲染时内联）；本目录是**契约层**，两者通过 `_index.json` + 相对路径衔接。工作台（index.html + engine-*）已移除，页面产出全走 agent 链路（A1–A5）。
 - **`.claude/skills/iot-track-*`**：8 个赛道 skill + 赛道路由器，是**管控层**（PRD 把关红线），不迁入本目录。
 - **`.claude/rules/`**：治理规则层（封装 / 版本 / 命名 / 文档 / 发布 / 产出目录 / 业务补充），6 + 1 份，只写一份。
 - **`.claude/agents/`**：Agent 规则层 · 18 个 agent 定义（A0 + A1–A8 + D1–D5 + T1–T4）。

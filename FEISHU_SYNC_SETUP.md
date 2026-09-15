@@ -55,12 +55,7 @@ git config user.email "你的飞书邮箱"
 [Environment]::SetEnvironmentVariable("FEISHU_DEMO_BASE_URL", "\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo", "User")
 ```
 
-### 5. 生成样式文件
-```bash
-python tools/build-css-bundle.py
-```
-
-### 6. 重启终端
+### 5. 重启终端
 环境变量需要重启终端后生效。
 
 ---

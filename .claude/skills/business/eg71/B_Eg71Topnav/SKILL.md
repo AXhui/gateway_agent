@@ -1,15 +1,17 @@
 ---
 name: B_Eg71Topnav
+version: 1.0.1
 description: 顶部导航（业务组件）
 ---
 
 # 顶部导航 · B_Eg71Topnav
 
+> **唯一调用（硬性）**：本组件是 EG71 顶部导航的**唯一来源**——demo/页面不得自造顶栏/面包屑壳，且只准经 `MS_EG71_SHELL.render/bind` 整体调用（面包屑由 `ctx.route` + `navGroups` 自动推导）；禁止绕过壳单独抽出本组件拼装（契约见 eg71-shell skill·唯一壳+唯一调用、AGENTS.md「EG71 唯一壳契约」）。
 > **逻辑名**：`B_Eg71Topnav`
 > **现 id**：`bc-eg71-topnav`
 > **分类**：概览
 > **entityHint**：`gateway`
-> **版本**：v1.0.0（已固化）
+> **版本**：见 frontmatter `version:`
 > **包归属**：`ui-eg71`
 > **依赖基础组件**：`ui-core ^1.1.0`
 

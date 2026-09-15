@@ -554,6 +554,11 @@
 .bc-eg71-maint-msg-content { font-size: 14px; line-height: 22px; color: var(--color-text-secondary); text-align: center; }
 .bc-eg71-maint-msg-actions { display: flex; justify-content: flex-end; gap: var(--spacing-8); align-self: stretch; }
 
+/* ---------- EG71 表格左对齐（铁律） ---------- */
+/* EG71 线所有表格单元格一律左对齐：数字列用 .bc-num（mono+tabular，继承左对齐），操作列用本类（仅 nowrap）；
+   禁用 ms-table-num / ms-table-ops（二者在 base.css 定义了右对齐，跨线共享不可改） */
+.bc-eg71-table-ops { white-space: nowrap; }
+
 /* ---------- EG71 SNMP（B_Eg71Snmp* · 系统设置 → SNMP 五页签） ---------- */
 /* 三级页签条：与维护一级页签同规格（48px 白底 + 底分隔线 + 2px 墨条），页签间距 32 = 2×16 */
 .bc-eg71-snmp-bar { display: flex; align-items: center; gap: calc(var(--spacing-16) * 2); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }

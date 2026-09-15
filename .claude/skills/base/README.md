@@ -122,5 +122,5 @@
 
 - **找组件**：先想"我要的是填 / 选 / 看 / 反馈哪一类"，落到分类再查表。
 - **调组件**：打开对应 `SKILL.md`，按「产品层（何时用）→ UED 层（Token）→ 研发层（Props 契约）」三层读。
-- **改样式**：样式真源不在单个 SKILL.md，而在 [`.claude/tokens/tokens.css`](../tokens/tokens.css)（令牌）+ `library/base.css`（基础组件）+ `library/business.css`（业务组件）。改完执行 `python3 tools/build-css-bundle.py` 打包。
+- **改样式**：样式真源不在单个 SKILL.md，而在 [`.claude/tokens/tokens.css`](../tokens/tokens.css)（令牌）+ `library/base.css`（基础组件）+ `library/business.css`（业务组件）。demo 渲染链路（A4）直接内联这三份源文件，改完即生效。
 - **加组件**：改 `assets/js/registry-base.js` 后跑 `python3 tools/generate-components.py` 重新生成 `.claude/skills/base/{Name}/SKILL.md` 与 `frontend/components/{Name}/index.html`。

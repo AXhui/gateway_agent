@@ -27,5 +27,5 @@ color: purple
 
 ## 待补
 
-- 确定性装配规则（续接 `engine-planner.js` 思路）。
+- 确定性装配规则（以 `K_patterns` + `K_mapping` 知识为准）。
 - 装配计划的结构化 schema（与 `page.json` 的关系）。

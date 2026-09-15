@@ -1,11 +1,12 @@
 ---
 name: B_Eg71Sidenav
-version: 1.2.0
+version: 1.2.1
 description: 网关侧边导航（业务组件）
 ---
 
 # 网关侧边导航 · B_Eg71Sidenav
 
+> **唯一调用（硬性）**：本组件是 EG71 侧边栏的**唯一来源**——demo/页面不得自造侧边栏结构，且只准经 `MS_EG71_SHELL.render/bind` 整体调用（连同菜单唯一源 `navGroups` 一起消费）；禁止绕过壳单独抽出本组件拼装、禁止自编菜单树（契约见 eg71-shell skill·唯一壳+唯一调用、AGENTS.md「EG71 唯一壳契约」）。
 > **逻辑名**：`B_Eg71Sidenav`
 > **现 id**：`bc-eg71-sidenav`
 > **分类**：管理员

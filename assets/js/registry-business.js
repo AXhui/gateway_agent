@@ -1142,14 +1142,14 @@ window.MS_BIZ_UTIL = (function () {
             <thead><tr>
               <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"><span class="ms-checkbox-box"></span></label></th>
               ${cols.map(c => `<th>${esc(c.cn)}</th>`).join('')}
-              <th class="ms-table-ops">操作</th>
+              <th class="bc-eg71-table-ops">操作</th>
             </tr></thead>
             <tbody>${rows.map((r, i) => `<tr${i === 0 ? ' class="ms-table-row--active"' : ''}>
               <td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"${i < 2 ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>
               ${cols.map(c => c.type === 'status'
                 ? `<td data-col="status">${U.cellHtml(c, r, e)}</td>`
-                : `<td${c.type === 'num' || c.type === 'percent' ? ' class="ms-table-num"' : ''}>${U.cellHtml(c, r, e)}</td>`).join('')}
-              <td class="ms-table-ops">${e.actions.map(opBtn).join('')}</td>
+                : `<td${c.type === 'num' || c.type === 'percent' ? ' class="bc-num"' : ''}>${U.cellHtml(c, r, e)}</td>`).join('')}
+              <td class="bc-eg71-table-ops">${e.actions.map(opBtn).join('')}</td>
             </tr>`).join('')}</tbody>
           </table>
           <div class="bc-table-foot">
@@ -1235,8 +1235,8 @@ window.MS_BIZ_UTIL = (function () {
               <td>${signalHtml(r.signal)}</td>
               <td><span class="ms-text">${r.updated ? esc(r.updated) : '—'}</span></td>
               <td>${U.statusTag(STATUS[r.status] || STATUS.Online)}</td>
-              <td class="ms-table-num">${esc(r.objects)}</td>
-              <td class="ms-table-ops">${opsHtml}</td>
+              <td class="bc-num">${esc(r.objects)}</td>
+              <td class="bc-eg71-table-ops">${opsHtml}</td>
             </tr>`).join('')}</tbody>`;
         const foot = `<div class="bc-table-foot">
           <span class="ms-text ms-text--secondary ms-text--sm">${ico('refresh', 14)} Total:${esc(total)}</span>
@@ -1262,7 +1262,7 @@ window.MS_BIZ_UTIL = (function () {
               <thead><tr>
                 <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-device-check-all><span class="ms-checkbox-box"></span></label></th>
                 ${cols.map(c => `<th>${FILTERED.indexOf(c) >= 0 ? `<span class="bc-eg71-th-filter">${esc(c)}${ico('filter', 14)}</span>` : esc(c)}</th>`).join('')}
-                <th class="ms-table-ops">Operation</th>
+                <th class="bc-eg71-table-ops">Operation</th>
               </tr></thead>
               ${body}
             </table>

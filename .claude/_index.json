@@ -827,119 +827,119 @@
     "M_QuickActions": {
       "id": "mod-quick-actions",
       "cn": "快捷操作区",
-      "src": "assets/js/registry-modules.js#mod-quick-actions"
+      "src": ".claude/knowledge/K_mapping.md#mod-quick-actions"
     },
     "M_Metrics": {
       "id": "mod-metrics",
       "cn": "指标概览区",
-      "src": "assets/js/registry-modules.js#mod-metrics"
+      "src": ".claude/knowledge/K_mapping.md#mod-metrics"
     },
     "M_FilterList": {
       "id": "mod-filter-list",
       "cn": "列表管理区",
-      "src": "assets/js/registry-modules.js#mod-filter-list"
+      "src": ".claude/knowledge/K_mapping.md#mod-filter-list"
     },
     "M_EntityCards": {
       "id": "mod-entity-cards",
       "cn": "卡片墙区",
-      "src": "assets/js/registry-modules.js#mod-entity-cards"
+      "src": ".claude/knowledge/K_mapping.md#mod-entity-cards"
     },
     "M_Telemetry": {
       "id": "mod-telemetry",
       "cn": "遥测数据区",
-      "src": "assets/js/registry-modules.js#mod-telemetry"
+      "src": ".claude/knowledge/K_mapping.md#mod-telemetry"
     },
     "M_RuleConfig": {
       "id": "mod-rule-config",
       "cn": "规则配置区",
-      "src": "assets/js/registry-modules.js#mod-rule-config"
+      "src": ".claude/knowledge/K_mapping.md#mod-rule-config"
     },
     "M_DetailDrawer": {
       "id": "mod-detail-drawer",
       "cn": "详情抽屉区",
-      "src": "assets/js/registry-modules.js#mod-detail-drawer"
+      "src": ".claude/knowledge/K_mapping.md#mod-detail-drawer"
     },
     "M_UpgradeTask": {
       "id": "mod-upgrade-task",
       "cn": "批量任务区",
-      "src": "assets/js/registry-modules.js#mod-upgrade-task"
+      "src": ".claude/knowledge/K_mapping.md#mod-upgrade-task"
     },
     "M_Topology": {
       "id": "mod-topology",
       "cn": "网络拓扑区",
-      "src": "assets/js/registry-modules.js#mod-topology"
+      "src": ".claude/knowledge/K_mapping.md#mod-topology"
     },
     "M_Member": {
       "id": "mod-member",
       "cn": "成员权限区",
-      "src": "assets/js/registry-modules.js#mod-member"
+      "src": ".claude/knowledge/K_mapping.md#mod-member"
     },
     "M_Log": {
       "id": "mod-log",
       "cn": "日志审计区",
-      "src": "assets/js/registry-modules.js#mod-log"
+      "src": ".claude/knowledge/K_mapping.md#mod-log"
     },
     "M_Empty": {
       "id": "mod-empty",
       "cn": "空态引导区",
-      "src": "assets/js/registry-modules.js#mod-empty"
+      "src": ".claude/knowledge/K_mapping.md#mod-empty"
     }
   },
   "templates": {
     "T_Overview": {
       "id": "tpl-overview",
       "cn": "概览看板",
-      "src": "assets/js/registry-templates.js#tpl-overview"
+      "src": ".claude/knowledge/K_mapping.md#tpl-overview"
     },
     "T_List": {
       "id": "tpl-list",
       "cn": "列表管理",
-      "src": "assets/js/registry-templates.js#tpl-list"
+      "src": ".claude/knowledge/K_mapping.md#tpl-list"
     },
     "T_Detail": {
       "id": "tpl-detail",
       "cn": "详情页",
-      "src": "assets/js/registry-templates.js#tpl-detail"
+      "src": ".claude/knowledge/K_mapping.md#tpl-detail"
     },
     "T_Alarm": {
       "id": "tpl-alarm",
       "cn": "告警中心",
-      "src": "assets/js/registry-templates.js#tpl-alarm"
+      "src": ".claude/knowledge/K_mapping.md#tpl-alarm"
     },
     "T_Upgrade": {
       "id": "tpl-upgrade",
       "cn": "固件升级",
-      "src": "assets/js/registry-templates.js#tpl-upgrade"
+      "src": ".claude/knowledge/K_mapping.md#tpl-upgrade"
     },
     "T_Dashboard": {
       "id": "tpl-dashboard",
       "cn": "数据分析",
-      "src": "assets/js/registry-templates.js#tpl-dashboard"
+      "src": ".claude/knowledge/K_mapping.md#tpl-dashboard"
     },
     "T_Topology": {
       "id": "tpl-topology",
       "cn": "网关拓扑",
-      "src": "assets/js/registry-templates.js#tpl-topology"
+      "src": ".claude/knowledge/K_mapping.md#tpl-topology"
     },
     "T_Permission": {
       "id": "tpl-permission",
       "cn": "权限管理",
-      "src": "assets/js/registry-templates.js#tpl-permission"
+      "src": ".claude/knowledge/K_mapping.md#tpl-permission"
     },
     "T_Config": {
       "id": "tpl-config",
       "cn": "配置页",
-      "src": "assets/js/registry-templates.js#tpl-config"
+      "src": ".claude/knowledge/K_mapping.md#tpl-config"
     },
     "T_Audit": {
       "id": "tpl-audit",
       "cn": "审计日志",
-      "src": "assets/js/registry-templates.js#tpl-audit"
+      "src": ".claude/knowledge/K_mapping.md#tpl-audit"
     },
     "T_Onboard": {
       "id": "tpl-onboard",
       "cn": "空态引导",
-      "src": "assets/js/registry-templates.js#tpl-onboard"
+      "src": ".claude/knowledge/K_mapping.md#tpl-onboard"
     }
   },
   "knowledge": {
