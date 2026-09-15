@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>REQ-005 M-Bus 设备扫描添加 Demo</title>
+<style>
+/* ==========================================================================
+   位置：.claude/tokens/tokens.css
+   真源：从线上组件文档 milesight-iot-web-doc.html 原样抽取，未做任何改写。
+   合并：本文件取代原 library/tokens.css 与 frontend/shared/tokens.css，
+        并补齐 base.css / business.css / Tokens 预览所消费的
+        --spacing-2 / --spacing-6 / --spacing-48 三个间距令牌。
+   约束：本项目中所有颜色 / 间距 / 圆角 / 阴影 / 动效 必须引用此处令牌，
+        禁止在组件层与业务层出现裸值 —— 这是「还原度 100%」的可校验前提。
+   覆盖范围：浅色主题 :root + 深色主题 [data-theme="dark"] 同构映射
+   ========================================================================== */
+
+:root {
+  /* ==========================================================================
+     原始色阶 (Raw Color Scales) · 10 级 + 06-transparent
+     规则：01 = 最浅/背景，06 = 基准，10 = 最深；命名跨 Light/Dark 一致。
+     ========================================================================== */
+  /* --- Blue --- */
+  --color-blue-01:#f0f9ff; --color-blue-02:#d9f0ff; --color-blue-03:#b0ddff;
+  --color-blue-04:#87c7ff; --color-blue-05:#5eafff; --color-blue-06:#3491fa;
+  --color-blue-07:#226fd4; --color-blue-08:#1351ad; --color-blue-09:#083787;
+  --color-blue-10:#052461; --color-blue-06-transparent:#3491fa21;
+
+  /* --- Green --- */
+  --color-green-01:#ebfaef; --color-green-02:#beedcc; --color-green-03:#90e0ab;
+  --color-green-04:#66d48e; --color-green-05:#40c776; --color-green-06:#1eba62;
+  --color-green-07:#10944e; --color-green-08:#076e3a; --color-green-09:#014726;
+  --color-green-10:#002113; --color-green-06-transparent:#1eba6221;
+
+  /* --- Red --- */
+  --color-red-01:#fff2f0; --color-red-02:#ffe0db; --color-red-03:#ffbab3;
+  --color-red-04:#ff928a; --color-red-05:#ff6661; --color-red-06:#f13535;
+  --color-red-07:#cc2328; --color-red-08:#a6141e; --color-red-09:#800915;
+  --color-red-10:#590511; --color-red-06-transparent:#f1353521;
+
+  /* --- Orange --- */
+  --color-orange-01:#fff7f0; --color-orange-02:#ffead9; --color-orange-03:#ffd1b0;
+  --color-orange-04:#ffb587; --color-orange-05:#ff975e; --color-orange-06:#f77234;
+  --color-orange-07:#d15321; --color-orange-08:#ab3913; --color-orange-09:#832308;
+  --color-orange-10:#5e1505; --color-orange-06-transparent:#f7723421;
+
+  /* --- Yellow --- */
+  --color-yellow-01:#fffdeb; --color-yellow-02:#fff6c2; --color-yellow-03:#ffec99;
+  --color-yellow-04:#ffe070; --color-yellow-05:#ffd147; --color-yellow-06:#f7ba1e;
+  --color-yellow-07:#d1940f; --color-yellow-08:#ab7003; --color-yellow-09:#855200;
+  --color-yellow-10:#5e3700; --color-yellow-06-transparent:#f7ba1e21;
+
+  /* --- Gray --- */
+  --color-gray-01:#f7f8fa; --color-gray-02:#f2f3f5; --color-gray-03:#e5e6eb;
+  --color-gray-04:#c9cdd4; --color-gray-05:#a9aeb8; --color-gray-06:#86909c;
+  --color-gray-07:#6b7785; --color-gray-08:#4e5969; --color-gray-09:#272e3b;
+  --color-gray-10:#1d2129;
+
+  /* --- Dark Blue --- */
+  --color-darkblue-01:#e6f6ff; --color-darkblue-02:#b1d8f2; --color-darkblue-03:#83bbe6;
+  --color-darkblue-04:#599dd9; --color-darkblue-05:#3380cc; --color-darkblue-06:#1261be;
+  --color-darkblue-07:#064699; --color-darkblue-08:#002e73; --color-darkblue-09:#001c4d;
+  --color-darkblue-10:#000d26; --color-darkblue-06-transparent:#1261be21;
+
+  /* --- Cyan --- */
+  --color-cyan-01:#e6fffe; --color-cyan-02:#b8ffff; --color-cyan-03:#8ffbff;
+  --color-cyan-04:#66f5ff; --color-cyan-05:#3ce7fa; --color-cyan-06:#12d1ee;
+  --color-cyan-07:#06a7c7; --color-cyan-08:#0081a1; --color-cyan-09:#005e7a;
+  --color-cyan-10:#003e54; --color-cyan-06-transparent:#12d1ee21;
+
+  /* --- Primary (Blue) --- */
+  --color-primary-normal:#3491FA;
+  --color-primary-hover:#5EAFFF;
+  --color-primary-active:#226FD4;
+  --color-primary-disable:#87C7FF;
+  --color-primary-bg:#F0F9FF;
+
+  /* --- Success (Green) --- */
+  --color-success-normal:#1EBA62;
+  --color-success-hover:#40C776;
+  --color-success-active:#10944E;
+  --color-success-bg:#EBFAEF;
+
+  /* --- Error (Red) --- */
+  --color-error-normal:#F13535;
+  --color-error-hover:#FF6661;
+  --color-error-active:#CC2328;
+  --color-error-bg:#FFF2F0;
+
+  /* --- Warm (Orange) --- */
+  --color-warm-normal:#F77234;
+  --color-warm-hover:#FF975E;
+  --color-warm-active:#D15321;
+  --color-warm-bg:#FFF7F0;
+
+  /* --- Remind (Yellow) --- */
+  --color-remind-normal:#F7BA1E;
+  --color-remind-hover:#FFD147;
+  --color-remind-active:#D1940F;
+  --color-remind-bg:#FFFDEB;
+
+  /* --- Text --- */
+  --color-text-primary:#272E3B;
+  --color-text-secondary:#6B7785;
+  --color-text-auxiliary:#A9AEB8;
+  --color-text-disable:#C9CDD4;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#3491FA;
+  --color-text-success-normal:#1EBA62;
+  --color-text-error-normal:#F13535;
+  --color-text-warm-normal:#F77234;
+  --color-text-link-normal:#3491FA;
+  --color-text-link-hover:#5EAFFF;
+
+  /* --- Fill --- */
+  --color-fill-base-normal:#F7F8FA;
+  --color-fill-base-hover:#F2F3F5;
+  --color-fill-primary:#F0F9FF;
+  --color-fill-primary-normal:#3491FA;
+  --color-fill-success:#EBFAEF;
+  --color-fill-error:#FFF2F0;
+  --color-fill-warm:#FFF7F0;
+
+  /* --- Background --- */
+  --color-bg-page:#F7F8FA;
+  --color-bg-card:#FFFFFF;
+  --color-bg-hover:#F2F3F5;
+
+  /* --- Border --- */
+  --color-border-base:#E5E6EB;
+  --color-border-base-disable:#C9CDD4;
+  --color-border-primary-normal:#3491FA;
+  --color-border-success-normal:#1EBA62;
+  --color-border-error-normal:#F13535;
+
+  /* --- Divider --- */
+  --color-divider-base-1:#F7F8FA;
+  --color-divider-base-2:#E5E6EB;
+  --color-divider-primary:#3491FA;
+
+  /* --- Icon --- */
+  --color-icon-normal:#272E3B;
+  --color-icon-secondary:#6B7785;
+  --color-icon-auxiliary:#A9AEB8;
+  --color-icon-disable:#C9CDD4;
+  --color-icon-primary-normal:#3491FA;
+
+  /* --- Backward-compat aliases (used by existing selectors) --- */
+  --color-primary:var(--color-primary-normal);
+  --color-primary-hover-alias:var(--color-primary-hover);
+  --color-info:var(--color-primary-normal);
+  --color-warning:var(--color-warm-normal);
+  --color-error:var(--color-error-normal);
+  --color-success:var(--color-success-normal);
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-fill-base-hover);
+  --text-quaternary:var(--color-text-disable);
+  --brand-500:var(--color-primary-normal); --brand-600:var(--color-primary-active); --brand-50:var(--color-primary-bg);
+  --brand-100:#b0ddff;
+  --color-brand-500:var(--color-primary-normal); --color-brand-50:var(--color-primary-bg); --color-brand-600:var(--color-primary-active);
+  --gray-25:#ffffff; --gray-50:#f7f8fa; --gray-100:#f7f8fa; --gray-150:#f7f8fa;
+  --gray-200:#f2f3f5; --gray-300:#e5e6eb; --gray-400:#c9cdd4; --gray-500:#a9aeb8;
+  --gray-600:#86909c; --gray-700:#6b7785; --gray-800:#4e5969; --gray-900:#272e3b;
+  --color-gray-50:#f7f8fa; --color-gray-100:#f7f8fa; --color-gray-200:#f2f3f5;
+  --color-gray-300:#e5e6eb; --color-gray-400:#c9cdd4; --color-gray-500:#a9aeb8;
+  --color-gray-600:#86909c; --color-gray-700:#6b7785; --color-gray-900:#272e3b;
+  --color-white:#fff;
+
+  /* --- Spacing --- */
+  --spacing-xs:4px; --spacing-s:8px; --spacing-m:12px; --spacing-l:16px;
+  --spacing-xl:20px; --spacing-2xl:24px; --spacing-3xl:32px;
+  --spacing-4xl:40px; --spacing-5xl:48px; --spacing-6xl:64px;
+  --spacing-2:2px; --spacing-4:4px; --spacing-6:6px; --spacing-8:8px;
+  --spacing-12:12px; --spacing-16:16px; --spacing-20:20px; --spacing-24:24px;
+  --spacing-30:30px; --spacing-40:40px; --spacing-48:48px; --spacing-64:64px;
+
+  /* --- Radius --- */
+  --radius-s:2px; --radius-m:4px; --radius-l:8px; --radius-xl:12px; --radius-full:9999px;
+  --radius-2:2px; --radius-4:4px; --radius-6:6px; --radius-8:8px; --radius-10:10px; --radius-12:12px; --radius-16:16px;
+
+  /* --- Shadow --- */
+  --shadow-1:0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-2:0 2px 8px 0 rgba(0,0,0,0.10);
+  --shadow-3:0 8px 24px 0 rgba(0,0,0,0.14);
+  --shadow-4:0 16px 48px 0 rgba(0,0,0,0.18);
+  --shadow-diffusion-primary:0 0 0 3px rgba(52,145,250,0.25);
+  --shadow-diffusion-success:0 0 0 3px rgba(30,186,98,0.25);
+  --shadow-diffusion-error:0 0 0 3px rgba(241,53,53,0.25);
+  --shadow-diffusion-warm:0 0 0 3px rgba(247,114,52,0.25);
+
+  /* --- Duration & Easing --- */
+  --duration-fast:160ms;
+  --duration-normal:240ms;
+  --easing-standard:cubic-bezier(0.2, 0, 0, 1);
+
+  /* --- Typography --- */
+  --font-family:'PingFang SC',-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-sans:var(--font-family);
+  --font-mono:'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  /* --- Layout --- */
+  --sidebar-w:248px;
+  --header-h:56px;
+  --ease:var(--easing-standard);
+
+  /* --- Surfaces / overlays --- */
+  --surface-glass:rgba(255,255,255,0.85);
+  --surface-mask:rgba(0,0,0,0.4);
+  --surface-code-bg:#272e3b;
+  --surface-code-fg:#E5E9F0;
+  --surface-code-btn-bg:rgba(255,255,255,0.08);
+  --surface-code-btn-bg-hover:rgba(255,255,255,0.16);
+  --surface-toast-bg:#272e3b;
+  --surface-toast-fg:#fff;
+
+  /* --- Callout --- */
+  --callout-tip-border:#bfdfff; --callout-tip-fg:#1a5fa8;
+  --callout-warn-bg:#fff7f0; --callout-warn-border:#ffb587; --callout-warn-fg:#a34d1e;
+  --callout-bad-bg:#fff2f0; --callout-bad-border:#ff928a; --callout-bad-fg:#f13535;
+
+  color-scheme:light;
+}
+
+/* ===== Dark Theme ===== */
+[data-theme="dark"] {
+  /* ==========================================================================
+     原始色阶 (Dark · 顺序反转) · 10 级 + 06-transparent
+     ========================================================================== */
+  /* --- Blue --- */
+  --color-blue-01:#052461; --color-blue-02:#083787; --color-blue-03:#1351ad;
+  --color-blue-04:#226fd4; --color-blue-05:#3491fa; --color-blue-06:#5eafff;
+  --color-blue-07:#87c7ff; --color-blue-08:#b0ddff; --color-blue-09:#d9f0ff;
+  --color-blue-10:#f0f9ff; --color-blue-06-transparent:#5eafff21;
+
+  /* --- Green --- */
+  --color-green-01:#002113; --color-green-02:#014726; --color-green-03:#076e3a;
+  --color-green-04:#10944e; --color-green-05:#1eba62; --color-green-06:#40c776;
+  --color-green-07:#66d48e; --color-green-08:#90e0ab; --color-green-09:#beedcc;
+  --color-green-10:#ebfaef; --color-green-06-transparent:#40c77621;
+
+  /* --- Red --- */
+  --color-red-01:#590511; --color-red-02:#800915; --color-red-03:#a6141e;
+  --color-red-04:#cc2328; --color-red-05:#f13535; --color-red-06:#ff6661;
+  --color-red-07:#ff928a; --color-red-08:#ffbab3; --color-red-09:#ffe0db;
+  --color-red-10:#fff2f0; --color-red-06-transparent:#ff666121;
+
+  /* --- Orange --- */
+  --color-orange-01:#5e1505; --color-orange-02:#832308; --color-orange-03:#ab3913;
+  --color-orange-04:#d15321; --color-orange-05:#f77234; --color-orange-06:#ff975e;
+  --color-orange-07:#ffb587; --color-orange-08:#ffd1b0; --color-orange-09:#ffead9;
+  --color-orange-10:#fff7f0; --color-orange-06-transparent:#ff975e21;
+
+  /* --- Yellow --- */
+  --color-yellow-01:#5e3700; --color-yellow-02:#855200; --color-yellow-03:#ab7003;
+  --color-yellow-04:#d1940f; --color-yellow-05:#f7ba1e; --color-yellow-06:#ffd147;
+  --color-yellow-07:#ffe070; --color-yellow-08:#ffec99; --color-yellow-09:#fff6c2;
+  --color-yellow-10:#fffdeb; --color-yellow-06-transparent:#ffd14721;
+
+  /* --- Gray --- */
+  --color-gray-01:#2c2c2c; --color-gray-02:#393939; --color-gray-03:#414242;
+  --color-gray-04:#5e5e5f; --color-gray-05:#7c7d7e; --color-gray-06:#919192;
+  --color-gray-07:#a0a0a2; --color-gray-08:#acaeb1; --color-gray-09:#d6d6d8;
+  --color-gray-10:#eaebee;
+
+  /* --- Gray-Transparent --- */
+  --color-gray-transparent-1:#f7f8fa08; --color-gray-transparent-2:#f7f8fa12;
+  --color-gray-transparent-3:#f7f8fa26; --color-gray-transparent-4:#f7f8fa4d;
+  --color-gray-transparent-5:#f7f8fa73; --color-gray-transparent-6:#f7f8fa8c;
+  --color-gray-transparent-7:#f7f8fa9e; --color-gray-transparent-8:#e3e5e9bf;
+  --color-gray-transparent-9:#f7f8fadb; --color-gray-transparent-10:#f7f8faf2;
+
+  /* --- Dark Blue --- */
+  --color-darkblue-01:#000d26; --color-darkblue-02:#001c4d; --color-darkblue-03:#002e73;
+  --color-darkblue-04:#064699; --color-darkblue-05:#1261be; --color-darkblue-06:#3380cc;
+  --color-darkblue-07:#599dd9; --color-darkblue-08:#83bbe6; --color-darkblue-09:#b1d8f2;
+  --color-darkblue-10:#e6f6ff; --color-darkblue-06-transparent:#3380cc21;
+
+  /* --- Cyan --- */
+  --color-cyan-01:#003e54; --color-cyan-02:#005e7a; --color-cyan-03:#0081a1;
+  --color-cyan-04:#06a7c7; --color-cyan-05:#12d1ee; --color-cyan-06:#3ce7fa;
+  --color-cyan-07:#66f5ff; --color-cyan-08:#8ffbff; --color-cyan-09:#b8ffff;
+  --color-cyan-10:#e6fffe; --color-cyan-06-transparent:#3ce7fa21;
+
+  /* Primary */
+  --color-primary-normal:#5EAFFF;
+  --color-primary-hover:#3491FA;
+  --color-primary-active:#87C7FF;
+  --color-primary-disable:#226FD4;
+  --color-primary-bg:#052461;
+
+  /* Success */
+  --color-success-normal:#40C776;
+  --color-success-hover:#1EBA62;
+  --color-success-active:#66D48E;
+  --color-success-bg:#002113;
+
+  /* Error */
+  --color-error-normal:#FF6661;
+  --color-error-hover:#F13535;
+  --color-error-active:#FF928A;
+  --color-error-bg:#590511;
+
+  /* Warm */
+  --color-warm-normal:#FF975E;
+  --color-warm-hover:#F77234;
+  --color-warm-active:#FFB587;
+  --color-warm-bg:#5E1505;
+
+  /* Remind */
+  --color-remind-normal:#FFD147;
+  --color-remind-hover:#F7BA1E;
+  --color-remind-bg:#5E3700;
+
+  /* Text (Dark) */
+  --color-text-primary:#D6D6D8;
+  --color-text-secondary:#A0A0A2;
+  --color-text-auxiliary:#7C7D7E;
+  --color-text-disable:#5E5E5F;
+  --color-text-constant-normal:#FFFFFF;
+  --color-text-primary-normal:#5EAFFF;
+  --color-text-success-normal:#40C776;
+  --color-text-error-normal:#FF6661;
+  --color-text-warm-normal:#FF975E;
+  --color-text-link-normal:#5EAFFF;
+  --color-text-link-hover:#3491FA;
+
+  /* Fill (Dark) */
+  --color-fill-base-normal:#2C2C2C;
+  --color-fill-base-hover:#393939;
+  --color-fill-primary:#052461;
+  --color-fill-primary-normal:#5EAFFF;
+  --color-fill-success:#002113;
+  --color-fill-error:#590511;
+  --color-fill-warm:#5E1505;
+
+  /* Background 5-layer (Dark) */
+  --color-bg-1:#0C0C0C;
+  --color-bg-2:#1C1C1C;
+  --color-bg-3:#1C1C1C;
+  --color-bg-4:#2C2C2C;
+  --color-bg-5:#393939;
+  --color-bg-page:#0C0C0C;
+  --color-bg-card:#1C1C1C;
+  --color-bg-hover:#393939;
+
+  /* Border (Dark) */
+  --color-border-base:#414242;
+  --color-border-base-disable:#5E5E5F;
+  --color-border-primary-normal:#5EAFFF;
+  --color-border-success-normal:#40C776;
+  --color-border-error-normal:#FF6661;
+
+  /* Divider (Dark) */
+  --color-divider-base-1:#2C2C2C;
+  --color-divider-base-2:#414242;
+  --color-divider-primary:#5EAFFF;
+
+  /* Icon (Dark) */
+  --color-icon-normal:#D6D6D8;
+  --color-icon-secondary:#A0A0A2;
+  --color-icon-auxiliary:#7C7D7E;
+  --color-icon-disable:#5E5E5F;
+  --color-icon-primary-normal:#5EAFFF;
+
+  /* Backward-compat aliases */
+  --color-primary:var(--color-primary-normal);
+  --color-info:var(--color-primary-normal);
+  --color-warning:var(--color-warm-normal);
+  --color-error:var(--color-error-normal);
+  --color-success:var(--color-success-normal);
+  --color-base-bg:var(--color-bg-page);
+  --color-base-hover:var(--color-bg-hover);
+  --text-quaternary:var(--color-text-disable);
+  --brand-500:var(--color-primary-normal); --brand-600:var(--color-primary-hover); --brand-50:var(--color-primary-bg);
+  --brand-100:#1351ad;
+  --color-brand-500:var(--color-primary-normal); --color-brand-50:var(--color-primary-bg); --color-brand-600:var(--color-primary-hover);
+  --gray-25:#1c1c1c; --gray-50:#2c2c2c; --gray-100:#2c2c2c; --gray-150:#393939;
+  --gray-200:#393939; --gray-300:#414242; --gray-400:#5e5e5f; --gray-500:#7c7d7e;
+  --gray-600:#919192; --gray-700:#a0a0a2; --gray-800:#acaeb1; --gray-900:#d6d6d8;
+  --color-gray-50:#2c2c2c; --color-gray-100:#2c2c2c; --color-gray-200:#393939;
+  --color-gray-300:#414242; --color-gray-400:#5e5e5f; --color-gray-500:#7c7d7e;
+  --color-gray-600:#919192; --color-gray-700:#a0a0a2; --color-gray-900:#d6d6d8;
+
+  /* Shadow (Dark) */
+  --shadow-1:none;
+  --shadow-2:0 2px 8px 0 rgba(0,0,0,0.36);
+  --shadow-3:0 8px 24px 0 rgba(0,0,0,0.48);
+  --shadow-4:0 20px 56px 0 rgba(0,0,0,0.72);
+
+  /* Surfaces (Dark) */
+  --surface-glass:rgba(28,28,28,0.78);
+  --surface-mask:rgba(0,0,0,0.72);
+  --surface-code-bg:#0C0C0C;
+  --surface-code-fg:#D6D6D8;
+  --surface-code-btn-bg:rgba(255,255,255,0.08);
+  --surface-code-btn-bg-hover:rgba(255,255,255,0.18);
+  --surface-toast-bg:#2c2c2c;
+  --surface-toast-fg:#d6d6d8;
+
+  /* Callout (Dark) */
+  --callout-tip-border:#1a3f80; --callout-tip-fg:#87c7ff;
+  --callout-warn-bg:#5e1505; --callout-warn-border:#d15321; --callout-warn-fg:#ffb587;
+  --callout-bad-bg:#590511; --callout-bad-border:#cc2328; --callout-bad-fg:#ff928a;
+
+  color-scheme:dark;
+}
+
+* { box-sizing:border-box }
+
+/* ==========================================================================
+   L2 · 基础组件层 (Atoms)
+   --------------------------------------------------------------------------
+   规则（可被 validator 静态校验）：
+   1. 不得出现任何硬编码色值 / 间距 / 圆角 / 阴影，一律引用 L1 令牌；
+   2. 组件之间不得互相依赖，只允许依赖令牌层；
+   3. class 统一前缀 ms- ，可被资产库溯源。
+   ========================================================================== */
+
+/* ---------- Reset & 排版基础 ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font: 400 14px/1.6 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.ms-ico { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.ms-ico svg { width: 100%; height: 100%; display: block; }
+.ms-ico--14 { width: 14px; height: 14px; }
+.ms-ico--16 { width: 16px; height: 16px; }
+.ms-ico--20 { width: 20px; height: 20px; }
+.ms-ico--24 { width: 24px; height: 24px; }
+.ms-ico--32 { width: 32px; height: 32px; }
+
+/* ---------- Typography ---------- */
+.ms-h1, .ms-h2, .ms-h3, .ms-h4, .ms-h5 { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); }
+.ms-h1 { font-size: 28px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; }
+.ms-h2 { font-size: 22px; line-height: 1.35; font-weight: 600; }
+.ms-h3 { font-size: 18px; line-height: 1.4; font-weight: 600; }
+.ms-h4 { font-size: 16px; line-height: 1.5; font-weight: 600; }
+.ms-h5 { font-size: 14px; line-height: 1.5; font-weight: 600; }
+.ms-text { font-size: 14px; line-height: 1.6; color: var(--color-text-primary); }
+.ms-text--secondary { color: var(--color-text-secondary); }
+.ms-text--auxiliary { color: var(--color-text-auxiliary); }
+.ms-text--disabled { color: var(--color-text-disable); }
+.ms-text--sm { font-size: 12px; line-height: 1.5; }
+.ms-text--lg { font-size: 16px; line-height: 1.6; }
+.ms-text--strong { font-weight: 600; }
+.ms-text--code { font-family: var(--font-mono); font-size: 13px; }
+.ms-link { color: var(--color-text-link-normal); text-decoration: none; cursor: pointer; }
+.ms-link:hover { color: var(--color-text-link-hover); text-decoration: underline; }
+.ms-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---------- Divider ---------- */
+.ms-divider { height: 1px; background: var(--color-divider-base-2); border: 0; margin: var(--spacing-16) 0; }
+.ms-divider--dashed { background: none; border-top: 1px dashed var(--color-divider-base-2); }
+.ms-divider--text { display: flex; align-items: center; gap: var(--spacing-12); background: none; height: auto; border: 0; color: var(--color-text-auxiliary); font-size: 12px; }
+.ms-divider--text::before, .ms-divider--text::after { content: ''; flex: 1; height: 1px; background: var(--color-divider-base-2); }
+.ms-divider--vertical { display: inline-block; width: 1px; height: 1em; margin: 0 var(--spacing-8); background: var(--color-divider-base-2); vertical-align: middle; }
+
+/* ---------- Space / Grid / Layout ---------- */
+.ms-space { display: inline-flex; align-items: center; flex-wrap: wrap; }
+.ms-space--vertical { flex-direction: column; align-items: stretch; }
+.ms-space--4 { gap: var(--spacing-4); }
+.ms-space--8 { gap: var(--spacing-8); }
+.ms-space--12 { gap: var(--spacing-12); }
+.ms-space--16 { gap: var(--spacing-16); }
+.ms-space--24 { gap: var(--spacing-24); }
+.ms-space--fill { display: flex; width: 100%; }
+.ms-space--between { justify-content: space-between; }
+.ms-row { display: flex; flex-wrap: wrap; margin: 0 calc(var(--spacing-8) * -1); }
+.ms-col { padding: 0 var(--spacing-8); flex: 1 1 0; min-width: 0; }
+.ms-col--6 { flex: 0 0 25%; } .ms-col--8 { flex: 0 0 33.3333%; }
+.ms-col--12 { flex: 0 0 50%; } .ms-col--16 { flex: 0 0 66.6667%; }
+.ms-col--18 { flex: 0 0 75%; } .ms-col--24 { flex: 0 0 100%; }
+
+/* ---------- Button ---------- */
+.ms-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--spacing-8);
+  height: 32px; padding: 0 var(--spacing-12); border-radius: var(--radius-6);
+  font: 500 14px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--color-border-base); background: var(--color-bg-card); color: var(--color-text-primary);
+  transition: background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.ms-btn:hover { border-color: var(--color-primary-normal); color: var(--color-primary-normal); background: var(--color-primary-bg); }
+.ms-btn:active { background: var(--color-bg-hover); }
+.ms-btn:focus-visible { outline: 2px solid var(--color-border-primary-normal); outline-offset: 2px; }
+.ms-btn--xs { height: 24px; padding: 0 var(--spacing-8); font-size: 12px; border-radius: var(--radius-4); }
+.ms-btn--sm { height: 28px; padding: 0 var(--spacing-8); font-size: 13px; border-radius: var(--radius-4); }
+.ms-btn--lg { height: 40px; padding: 0 var(--spacing-16); font-size: 16px; border-radius: var(--radius-8); }
+.ms-btn--filled { background: var(--color-primary-normal); border-color: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-btn--filled:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); color: var(--color-text-constant-normal); }
+.ms-btn--filled:active { background: var(--color-primary-active); border-color: var(--color-primary-active); }
+.ms-btn--danger { color: var(--color-error-normal); border-color: var(--color-error-normal); }
+.ms-btn--danger:hover { background: var(--color-error-bg); border-color: var(--color-error-hover); color: var(--color-error-hover); }
+.ms-btn--filled.ms-btn--danger { background: var(--color-error-normal); border-color: var(--color-error-normal); color: var(--color-text-constant-normal); }
+.ms-btn--filled.ms-btn--danger:hover { background: var(--color-error-hover); border-color: var(--color-error-hover); }
+.ms-btn--success { color: var(--color-success-normal); border-color: var(--color-success-normal); }
+.ms-btn--success:hover { background: var(--color-success-bg); }
+.ms-btn--dashed { border-style: dashed; }
+.ms-btn--text { border-color: transparent; background: transparent; color: var(--color-primary-normal); }
+.ms-btn--text:hover { background: var(--color-fill-base-normal); border-color: transparent; }
+.ms-btn--link { border-color: transparent; background: transparent; color: var(--color-text-link-normal); text-decoration: underline; text-underline-offset: 2px; padding: 0; height: auto; }
+.ms-btn--block { display: flex; width: 100%; }
+.ms-btn[disabled], .ms-btn--disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.ms-btn--loading { opacity: 0.75; cursor: default; pointer-events: none; }
+.ms-btn-group { display: inline-flex; }
+.ms-btn-group .ms-btn { border-radius: 0; margin-left: -1px; }
+.ms-btn-group .ms-btn:first-child { border-radius: var(--radius-6) 0 0 var(--radius-6); margin-left: 0; }
+.ms-btn-group .ms-btn:last-child { border-radius: 0 var(--radius-6) var(--radius-6) 0; }
+
+/* ---------- Input / Textarea ---------- */
+.ms-input {
+  display: inline-flex; align-items: center; gap: var(--spacing-8); width: 100%;
+  height: 32px; padding: 0 var(--spacing-12); border-radius: var(--radius-6);
+  border: 1px solid var(--color-border-base); background: var(--color-bg-card);
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+}
+.ms-input:hover { border-color: var(--color-primary-hover); }
+.ms-input:focus-within { border-color: var(--color-primary-normal); box-shadow: 0 0 0 3px var(--color-primary-bg); }
+.ms-input > input, .ms-input > textarea {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+  font: 400 14px/1.5 var(--font-sans); color: var(--color-text-primary); padding: 0;
+}
+.ms-input > input::placeholder { color: var(--color-text-auxiliary); }
+.ms-input--sm { height: 28px; font-size: 13px; }
+.ms-input--lg { height: 40px; font-size: 16px; }
+.ms-input--error { border-color: var(--color-error-normal); }
+.ms-input--error:focus-within { box-shadow: 0 0 0 3px var(--color-error-bg); }
+.ms-input--disabled { background: var(--color-fill-base-normal); cursor: not-allowed; }
+.ms-input--disabled > input { color: var(--color-text-disable); cursor: not-allowed; }
+.ms-input--textarea { height: auto; padding: var(--spacing-8) var(--spacing-12); align-items: flex-start; }
+.ms-input-affix { color: var(--color-text-auxiliary); display: inline-flex; align-items: center; }
+.ms-input-count { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-search .ms-input { border-radius: var(--radius-6); }
+
+/* ---------- Select ---------- */
+.ms-select { position: relative; display: block; width: 100%; }
+.ms-select > select {
+  appearance: none; width: 100%; height: 32px; padding: 0 var(--spacing-30) 0 var(--spacing-12);
+  border: 1px solid var(--color-border-base); border-radius: var(--radius-6);
+  background: var(--color-bg-card); color: var(--color-text-primary);
+  font: 400 14px/1 var(--font-sans); cursor: pointer; outline: 0;
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+}
+.ms-select > select:hover { border-color: var(--color-primary-hover); }
+.ms-select > select:focus { border-color: var(--color-primary-normal); box-shadow: 0 0 0 3px var(--color-primary-bg); }
+.ms-select > select:disabled { background: var(--color-fill-base-normal); color: var(--color-text-disable); cursor: not-allowed; }
+.ms-select::after {
+  content: ''; position: absolute; right: var(--spacing-12); top: 50%; width: 8px; height: 8px;
+  border-right: 1.5px solid var(--color-text-auxiliary); border-bottom: 1.5px solid var(--color-text-auxiliary);
+  transform: translateY(-70%) rotate(45deg); pointer-events: none;
+}
+.ms-select--sm > select { height: 28px; font-size: 13px; }
+.ms-select--error > select { border-color: var(--color-error-normal); }
+.ms-select-native { height: 32px; padding: 0 var(--spacing-12); border: 1px solid var(--color-border-base); border-radius: var(--radius-6); background: var(--color-bg-card); color: var(--color-text-primary); font: 400 14px/1 var(--font-sans); }
+
+/* ---------- InputNumber ---------- */
+.ms-input-number { display: inline-flex; align-items: stretch; width: 100%; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); overflow: hidden; background: var(--color-bg-card); }
+.ms-input-number input { flex: 1; min-width: 0; border: 0; outline: 0; height: 30px; padding: 0 var(--spacing-12); font: 400 14px/1 var(--font-sans); color: var(--color-text-primary); background: transparent; text-align: center; }
+.ms-input-number-step { display: flex; flex-direction: column; border-left: 1px solid var(--color-border-base); }
+.ms-input-number-step button { width: 24px; flex: 1; border: 0; background: var(--color-bg-card); color: var(--color-text-secondary); cursor: pointer; font-size: 10px; line-height: 1; padding: 0; }
+.ms-input-number-step button:hover { background: var(--color-primary-bg); color: var(--color-primary-normal); }
+.ms-input-number-step button:first-child { border-bottom: 1px solid var(--color-border-base); }
+
+/* ---------- Checkbox / Radio / Switch / Slider ---------- */
+.ms-checkbox, .ms-radio { display: inline-flex; align-items: center; gap: var(--spacing-8); cursor: pointer; font-size: 14px; color: var(--color-text-primary); }
+.ms-checkbox input, .ms-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ms-checkbox-box, .ms-radio-dot {
+  width: 16px; height: 16px; flex: none; border: 1px solid var(--color-border-base);
+  background: var(--color-bg-card); display: inline-flex; align-items: center; justify-content: center;
+  transition: all var(--duration-fast) var(--ease);
+}
+.ms-checkbox-box { border-radius: var(--radius-4); }
+.ms-radio-dot { border-radius: var(--radius-full); }
+.ms-checkbox input:checked + .ms-checkbox-box, .ms-radio input:checked + .ms-radio-dot {
+  background: var(--color-primary-normal); border-color: var(--color-primary-normal);
+}
+.ms-checkbox input:checked + .ms-checkbox-box::after {
+  content: ''; width: 9px; height: 5px; border-left: 2px solid var(--color-text-constant-normal);
+  border-bottom: 2px solid var(--color-text-constant-normal); transform: rotate(-45deg) translateY(-1px);
+}
+.ms-radio input:checked + .ms-radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-text-constant-normal); }
+.ms-checkbox input:indeterminate + .ms-checkbox-box::after { content: ''; width: 8px; height: 2px; background: var(--color-text-constant-normal); }
+.ms-checkbox input:disabled + .ms-checkbox-box, .ms-radio input:disabled + .ms-radio-dot { background: var(--color-fill-base-normal); border-color: var(--color-border-base-disable); cursor: not-allowed; }
+
+/* ---------- Radio 按钮组（optionType="button" buttonStyle="outline"） ---------- */
+/* 线框形态：选中 border+text --color-primary-normal，未选 --color-border-base + --color-text-primary */
+.ms-radio-btn-group { display: inline-flex; align-items: center; }
+.ms-radio-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 var(--spacing-12); margin-left: -1px;
+  border: 1px solid var(--color-border-base); background: var(--color-bg-card); color: var(--color-text-primary);
+  font: 500 14px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.ms-radio-btn:first-child { margin-left: 0; border-radius: var(--radius-6) 0 0 var(--radius-6); }
+.ms-radio-btn:last-child { border-radius: 0 var(--radius-6) var(--radius-6) 0; }
+.ms-radio-btn:hover { border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
+.ms-radio-btn--checked { border-color: var(--color-primary-normal); color: var(--color-primary-normal); z-index: 1; }
+.ms-switch { position: relative; display: inline-flex; width: 40px; height: 20px; flex: none; }
+.ms-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ms-switch-track { position: absolute; inset: 0; border-radius: var(--radius-full); background: var(--color-fill-base-hover); border: 1px solid var(--color-border-base); transition: all var(--duration-fast) var(--ease); }
+.ms-switch-thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: var(--radius-full); background: var(--color-bg-card); box-shadow: var(--shadow-1); transition: transform var(--duration-fast) var(--ease); }
+.ms-switch input:checked ~ .ms-switch-track { background: var(--color-primary-normal); border-color: var(--color-primary-normal); }
+.ms-switch input:checked ~ .ms-switch-thumb { transform: translateX(20px); }
+.ms-switch input:disabled ~ .ms-switch-track { opacity: 0.4; cursor: not-allowed; }
+.ms-switch--sm { width: 32px; height: 16px; } .ms-switch--sm .ms-switch-thumb { width: 10px; height: 10px; top: 2px; left: 2px; }
+.ms-switch--sm input:checked ~ .ms-switch-thumb { transform: translateX(16px); }
+.ms-switch--xs { width: 28px; height: 16px; } .ms-switch--xs .ms-switch-thumb { width: 10px; height: 10px; top: 2px; left: 2px; }
+.ms-switch--xs input:checked ~ .ms-switch-thumb { transform: translateX(14px); }
+.ms-slider { position: relative; height: 4px; border-radius: var(--radius-full); background: var(--color-fill-base-hover); margin: var(--spacing-8) 0; }
+.ms-slider-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: var(--radius-full); background: var(--color-primary-normal); }
+.ms-slider-handle { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: var(--radius-full); background: var(--color-bg-card); border: 2px solid var(--color-primary-normal); transform: translate(-50%, -50%); box-shadow: var(--shadow-1); }
+
+/* ---------- DatePicker / TimePicker ---------- */
+.ms-datepicker { position: relative; display: block; width: 100%; }
+.ms-datepicker .ms-input > input { cursor: pointer; }
+.ms-datepicker-panel, .ms-calendar {
+  width: 280px; background: var(--color-bg-card); border: 1px solid var(--color-border-base);
+  border-radius: var(--radius-12); box-shadow: var(--shadow-3); padding: var(--spacing-12);
+}
+.ms-datepicker-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-8); }
+.ms-datepicker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.ms-datepicker-grid span { text-align: center; font-size: 12px; color: var(--color-text-auxiliary); padding: var(--spacing-4) 0; }
+.ms-datepicker-cell {
+  height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-6);
+  font-size: 13px; color: var(--color-text-primary); cursor: pointer;
+}
+.ms-datepicker-cell:hover { background: var(--color-bg-hover); }
+.ms-datepicker-cell--muted { color: var(--color-text-auxiliary); }
+.ms-datepicker-cell--active { background: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-datepicker-cell--today { box-shadow: inset 0 0 0 1px var(--color-primary-normal); }
+
+/* ---------- Upload ---------- */
+.ms-upload {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-8);
+  padding: var(--spacing-24); border: 1px dashed var(--color-border-base); border-radius: var(--radius-12);
+  background: var(--color-bg-card); color: var(--color-text-secondary); font-size: 13px; cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease);
+}
+.ms-upload:hover { border-color: var(--color-primary-normal); background: var(--color-primary-bg); }
+.ms-upload--disabled { cursor: not-allowed; opacity: 0.6; }
+.ms-upload-file { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12); border: 1px solid var(--color-border-base); border-radius: var(--radius-6); background: var(--color-bg-card); font-size: 13px; }
+
+/* ---------- Form ---------- */
+.ms-form { display: flex; flex-direction: column; gap: var(--spacing-20); }
+.ms-form-item { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.ms-form-label { font-size: 14px; color: var(--color-text-primary); font-weight: 500; display: flex; align-items: center; gap: var(--spacing-4); }
+.ms-form-label--required::before { content: '*'; color: var(--color-error-normal); }
+.ms-form-item--inline { flex-direction: row; align-items: center; }
+.ms-form-item--inline .ms-form-label { width: 96px; flex: none; color: var(--color-text-secondary); font-weight: 400; }
+.ms-form-item--inline .ms-form-control { flex: 1; }
+.ms-form-help { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-form-error { font-size: 12px; color: var(--color-error-normal); display: flex; align-items: center; gap: var(--spacing-4); }
+.ms-form-section { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.ms-form-section-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); padding-left: var(--spacing-8); border-left: 3px solid var(--color-primary-normal); }
+
+/* ---------- Card ---------- */
+.ms-card {
+  background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1);
+  border-radius: var(--radius-12); overflow: hidden;
+}
+.ms-card--hoverable { transition: box-shadow var(--duration-normal) var(--ease), border-color var(--duration-normal) var(--ease); }
+.ms-card--hoverable:hover { box-shadow: var(--shadow-2); border-color: var(--color-border-base); }
+.ms-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12);
+  padding: var(--spacing-16) var(--spacing-20); border-bottom: 1px solid var(--color-divider-base-1);
+}
+.ms-card-head--plain { border-bottom: 0; padding-bottom: 0; }
+.ms-card-title { display: flex; align-items: center; gap: var(--spacing-8); font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+.ms-card-body { padding: var(--spacing-20); }
+.ms-card-body--tight { padding: var(--spacing-16); }
+.ms-card-body--flush { padding: 0; }
+.ms-card-foot { padding: var(--spacing-12) var(--spacing-20); border-top: 1px solid var(--color-divider-base-1); background: var(--color-base-bg); display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-8); }
+.ms-card-extra { display: flex; align-items: center; gap: var(--spacing-8); }
+
+/* ---------- Tag / Badge ---------- */
+.ms-tag {
+  display: inline-flex; align-items: center; gap: var(--spacing-4); height: 22px; padding: 0 var(--spacing-8);
+  border-radius: var(--radius-4); font-size: 12px; line-height: 1; font-weight: 400;
+  background: var(--color-fill-base-normal); color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-base);
+}
+.ms-tag--primary { background: var(--color-primary-bg); color: var(--color-primary-normal); border-color: transparent; }
+.ms-tag--success { background: var(--color-success-bg); color: var(--color-success-normal); border-color: transparent; }
+.ms-tag--error { background: var(--color-error-bg); color: var(--color-error-normal); border-color: transparent; }
+.ms-tag--warm { background: var(--color-warm-bg); color: var(--color-warm-normal); border-color: transparent; }
+.ms-tag--remind { background: var(--color-remind-bg); color: var(--color-remind-normal); border-color: transparent; }
+.ms-tag--outline { background: transparent; }
+.ms-tag--round { border-radius: var(--radius-full); padding: 0 var(--spacing-8); }
+.ms-tag-dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; }
+.ms-tag-close { cursor: pointer; opacity: 0.6; font-size: 12px; }
+.ms-badge { position: relative; display: inline-flex; }
+.ms-badge-count {
+  position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: var(--radius-full); background: var(--color-error-normal); color: var(--color-text-constant-normal);
+  font-size: 10px; line-height: 16px; text-align: center; font-weight: 600;
+}
+.ms-badge-dot { position: absolute; top: 0; right: 0; width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-error-normal); box-shadow: 0 0 0 2px var(--color-bg-card); }
+.ms-badge--dot .ms-badge-dot--success { background: var(--color-success-normal); }
+.ms-badge--dot .ms-badge-dot--warn { background: var(--color-warm-normal); }
+
+/* ---------- Avatar ---------- */
+.ms-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 32px; height: 32px; border-radius: var(--radius-full);
+  background: var(--color-primary-bg); color: var(--color-primary-normal);
+  font-size: 13px; font-weight: 600; overflow: hidden;
+}
+.ms-avatar--sm { width: 24px; height: 24px; font-size: 11px; }
+.ms-avatar--lg { width: 40px; height: 40px; font-size: 15px; }
+.ms-avatar--square { border-radius: var(--radius-8); }
+.ms-avatar-group { display: inline-flex; }
+.ms-avatar-group .ms-avatar { margin-left: -8px; box-shadow: 0 0 0 2px var(--color-bg-card); }
+.ms-avatar-group .ms-avatar:first-child { margin-left: 0; }
+.ms-avatar--more { background: var(--color-fill-base-hover); color: var(--color-text-secondary); }
+
+/* ---------- Statistic ---------- */
+.ms-stat { display: flex; flex-direction: column; gap: var(--spacing-4); }
+.ms-stat-title { font-size: 13px; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--spacing-4); }
+.ms-stat-value { font-size: 28px; line-height: 1.2; font-weight: 600; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.ms-stat-value--sm { font-size: 20px; }
+.ms-stat-suffix { font-size: 14px; font-weight: 400; color: var(--color-text-secondary); margin-left: var(--spacing-4); }
+.ms-stat-trend { font-size: 12px; display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.ms-stat-trend--up { color: var(--color-success-normal); }
+.ms-stat-trend--down { color: var(--color-error-normal); }
+.ms-stat-trend--flat { color: var(--color-text-auxiliary); }
+
+/* ---------- Table ---------- */
+.ms-table-wrap { background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-12); overflow: hidden; }
+.ms-table { width: 100%; border-collapse: collapse; }
+.ms-table th, .ms-table td { padding: 12px 16px; text-align: left; font: 400 13px/1.6 var(--font-sans); border-bottom: 1px solid var(--color-divider-base-1); vertical-align: middle; }
+.ms-table thead th { background: var(--color-base-bg); font: 600 12px/1.4 var(--font-sans); color: var(--color-text-auxiliary); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.ms-table tbody tr:last-child td { border-bottom: none; }
+.ms-table tbody tr:hover { background: var(--color-base-bg); }
+.ms-table tbody tr.ms-table-row--active { background: var(--color-primary-bg); }
+.ms-table td.ms-table-num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.ms-table td.ms-table-ops { text-align: right; white-space: nowrap; }
+.ms-table td.ms-table-ops .ms-btn--link { margin-left: var(--spacing-12); font-size: 13px; }
+.ms-table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); padding: var(--spacing-12) var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-table-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+
+/* ---------- List / Descriptions / Empty ---------- */
+.ms-list { display: flex; flex-direction: column; }
+.ms-list-item { display: flex; align-items: center; gap: var(--spacing-12); padding: var(--spacing-12) var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-list-item:last-child { border-bottom: none; }
+.ms-list-item:hover { background: var(--color-base-bg); }
+.ms-list-meta { flex: 1; min-width: 0; }
+.ms-list-title { font-size: 14px; color: var(--color-text-primary); }
+.ms-list-desc { font-size: 12px; color: var(--color-text-secondary); margin-top: var(--spacing-4); }
+.ms-list-actions { display: flex; align-items: center; gap: var(--spacing-8); }
+.ms-desc { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-16); }
+.ms-desc-item { display: flex; flex-direction: column; gap: var(--spacing-4); min-width: 0; }
+.ms-desc-label { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-desc-value { font-size: 14px; color: var(--color-text-primary); word-break: break-all; }
+.ms-desc--bordered { border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-12); overflow: hidden; gap: 0; grid-template-columns: 1fr 1fr; }
+.ms-desc--bordered .ms-desc-item { padding: var(--spacing-12) var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); border-right: 1px solid var(--color-divider-base-1); }
+.ms-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-12); padding: var(--spacing-40) var(--spacing-16); color: var(--color-text-auxiliary); text-align: center; }
+.ms-empty-illu { width: 88px; height: 64px; opacity: 0.7; }
+.ms-empty-text { font-size: 13px; }
+
+/* ---------- Timeline / Tree / Steps ---------- */
+.ms-timeline { display: flex; flex-direction: column; }
+.ms-timeline-item { position: relative; padding: 0 0 var(--spacing-20) var(--spacing-24); border-left: 1px solid var(--color-divider-base-2); }
+.ms-timeline-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+.ms-timeline-dot { position: absolute; left: -5px; top: 4px; width: 9px; height: 9px; border-radius: var(--radius-full); background: var(--color-primary-normal); box-shadow: 0 0 0 3px var(--color-primary-bg); }
+.ms-timeline-dot--success { background: var(--color-success-normal); box-shadow: 0 0 0 3px var(--color-success-bg); }
+.ms-timeline-dot--error { background: var(--color-error-normal); box-shadow: 0 0 0 3px var(--color-error-bg); }
+.ms-timeline-dot--warm { background: var(--color-warm-normal); box-shadow: 0 0 0 3px var(--color-warm-bg); }
+.ms-timeline-dot--muted { background: var(--color-text-auxiliary); box-shadow: 0 0 0 3px var(--color-fill-base-normal); }
+.ms-timeline-title { font-size: 14px; color: var(--color-text-primary); display: flex; align-items: center; gap: var(--spacing-8); }
+.ms-timeline-time { font-size: 12px; color: var(--color-text-auxiliary); font-family: var(--font-mono); }
+.ms-timeline-desc { font-size: 13px; color: var(--color-text-secondary); margin-top: var(--spacing-4); }
+.ms-tree { font-size: 14px; }
+.ms-tree-node { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-4) var(--spacing-8); border-radius: var(--radius-6); cursor: pointer; color: var(--color-text-primary); }
+.ms-tree-node:hover { background: var(--color-bg-hover); }
+.ms-tree-node--active { background: var(--color-primary-bg); color: var(--color-primary-normal); font-weight: 500; }
+.ms-tree-arrow { width: 16px; display: inline-flex; color: var(--color-text-auxiliary); }
+.ms-tree-count { margin-left: auto; font-size: 12px; color: var(--color-text-auxiliary); font-family: var(--font-mono); }
+.ms-steps { display: flex; align-items: flex-start; }
+.ms-step { flex: 1; display: flex; align-items: center; min-width: 0; }
+.ms-step-index {
+  width: 24px; height: 24px; flex: none; border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+  background: var(--color-bg-card); border: 1px solid var(--color-border-base); color: var(--color-text-auxiliary);
+}
+.ms-step--active .ms-step-index { background: var(--color-primary-normal); border-color: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-step--done .ms-step-index { background: var(--color-primary-bg); border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
+.ms-step-body { padding: 0 var(--spacing-8); min-width: 0; }
+.ms-step-title { font-size: 13px; color: var(--color-text-secondary); }
+.ms-step--active .ms-step-title { color: var(--color-text-primary); font-weight: 600; }
+.ms-step-desc { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-step-line { flex: 1; height: 1px; background: var(--color-divider-base-2); margin-top: 12px; }
+
+/* ---------- Progress / Tooltip / Popover ---------- */
+.ms-progress { display: flex; align-items: center; gap: var(--spacing-12); }
+.ms-progress-line { flex: 1; height: 8px; border-radius: var(--radius-full); background: var(--color-fill-base-hover); overflow: hidden; }
+.ms-progress-bar { height: 100%; border-radius: var(--radius-full); background: var(--color-primary-normal); transition: width var(--duration-normal) var(--ease); }
+.ms-progress-bar--success { background: var(--color-success-normal); }
+.ms-progress-bar--error { background: var(--color-error-normal); }
+.ms-progress-bar--warm { background: var(--color-warm-normal); }
+.ms-progress-text { font-size: 12px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.ms-tip { position: relative; display: inline-flex; }
+.ms-tip-bubble {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  padding: var(--spacing-8) var(--spacing-8); border-radius: var(--radius-6);
+  background: var(--surface-toast-bg); color: var(--surface-toast-fg); font-size: 12px; white-space: nowrap;
+  box-shadow: var(--shadow-2); z-index: 20;
+}
+.ms-tip-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--surface-toast-bg); }
+.ms-popover {
+  width: 240px; background: var(--color-bg-card); border: 1px solid var(--color-border-base);
+  border-radius: var(--radius-12); box-shadow: var(--shadow-3); padding: var(--spacing-12);
+}
+.ms-popover-title { font-size: 14px; font-weight: 600; margin-bottom: var(--spacing-8); color: var(--color-text-primary); }
+.ms-popover-body { font-size: 13px; color: var(--color-text-secondary); }
+
+/* ---------- Alert / Message / Notification / Result ---------- */
+.ms-alert {
+  display: flex; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12);
+  border-radius: var(--radius-8); font-size: 13px; line-height: 1.6;
+  background: var(--color-primary-bg); border: 1px solid var(--color-primary-normal); color: var(--color-text-primary);
+}
+.ms-alert--success { background: var(--color-success-bg); border-color: var(--color-success-normal); }
+.ms-alert--error { background: var(--color-error-bg); border-color: var(--color-error-normal); }
+.ms-alert--warn { background: var(--color-warm-bg); border-color: var(--color-warm-normal); }
+.ms-alert--info { background: var(--color-fill-base-normal); border-color: var(--color-border-base); }
+.ms-alert-icon { flex: none; margin-top: 2px; }
+.ms-alert--error .ms-alert-icon { color: var(--color-error-normal); }
+.ms-alert--success .ms-alert-icon { color: var(--color-success-normal); }
+.ms-alert--warn .ms-alert-icon { color: var(--color-warm-normal); }
+.ms-alert-body { flex: 1; min-width: 0; }
+.ms-alert-title { font-weight: 600; }
+.ms-alert-desc { color: var(--color-text-secondary); }
+.ms-message-stack { position: fixed; top: var(--spacing-16); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: var(--spacing-8); z-index: 60; }
+.ms-message {
+  display: inline-flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-16);
+  background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8);
+  box-shadow: var(--shadow-3); font-size: 13px; color: var(--color-text-primary);
+}
+.ms-notification { width: 320px; background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-12); box-shadow: var(--shadow-4); padding: var(--spacing-16); display: flex; gap: var(--spacing-12); }
+.ms-notification-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.ms-notification-desc { font-size: 13px; color: var(--color-text-secondary); margin-top: var(--spacing-4); }
+.ms-result { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-12); padding: var(--spacing-40) var(--spacing-16); text-align: center; }
+.ms-result-icon { width: 56px; height: 56px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; background: var(--color-success-bg); color: var(--color-success-normal); }
+.ms-result-icon--error { background: var(--color-error-bg); color: var(--color-error-normal); }
+.ms-result-icon--warn { background: var(--color-warm-bg); color: var(--color-warm-normal); }
+.ms-result-icon--info { background: var(--color-primary-bg); color: var(--color-primary-normal); }
+.ms-result-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+.ms-result-sub { font-size: 13px; color: var(--color-text-secondary); max-width: 420px; }
+
+/* ---------- Modal / Drawer / Popconfirm ---------- */
+.ms-mask { position: fixed; inset: 0; background: var(--surface-mask); z-index: 50; display: flex; align-items: center; justify-content: center; padding: var(--spacing-24); }
+.ms-modal { width: 520px; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; background: var(--color-bg-card); border-radius: var(--radius-16); box-shadow: var(--shadow-4); overflow: hidden; }
+.ms-modal--lg { width: 720px; }
+.ms-modal--sm { width: 420px; }
+.ms-modal-head { display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-20) var(--spacing-24); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-modal-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+.ms-modal-close { cursor: pointer; color: var(--color-text-auxiliary); display: inline-flex; }
+.ms-modal-body { padding: var(--spacing-24); overflow: auto; }
+.ms-modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-8); padding: var(--spacing-12) var(--spacing-24); border-top: 1px solid var(--color-divider-base-1); background: var(--color-base-bg); }
+.ms-mask--drawer { justify-content: flex-end; padding: 0; }
+.ms-drawer { width: 480px; max-width: 100%; height: 100%; background: var(--color-bg-card); box-shadow: var(--shadow-4); display: flex; flex-direction: column; }
+.ms-drawer--lg { width: 640px; }
+.ms-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-16) var(--spacing-24); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-drawer-body { flex: 1; padding: var(--spacing-24); overflow: auto; }
+.ms-drawer-foot { padding: var(--spacing-12) var(--spacing-24); border-top: 1px solid var(--color-divider-base-1); display: flex; justify-content: flex-end; gap: var(--spacing-8); }
+.ms-popconfirm { width: 260px; background: var(--color-bg-card); border: 1px solid var(--color-border-base); border-radius: var(--radius-12); box-shadow: var(--shadow-3); padding: var(--spacing-16); }
+.ms-popconfirm-title { display: flex; gap: var(--spacing-8); font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.ms-popconfirm-title .ms-ico { color: var(--color-warm-normal); }
+.ms-popconfirm-desc { font-size: 13px; color: var(--color-text-secondary); margin: var(--spacing-8) 0 var(--spacing-12) 24px; }
+.ms-popconfirm-foot { display: flex; justify-content: flex-end; gap: var(--spacing-8); }
+
+/* ---------- Spin / Skeleton ---------- */
+.ms-spin { display: inline-flex; align-items: center; justify-content: center; color: var(--color-primary-normal); animation: ms-rotate 800ms linear infinite; }
+.ms-spin--sm { width: 14px; height: 14px; }
+.ms-spin--md { width: 20px; height: 20px; }
+.ms-spin--lg { width: 32px; height: 32px; }
+.ms-spin-wrap { position: relative; }
+.ms-spin-wrap > .ms-spin-mask { position: absolute; inset: 0; background: var(--color-bg-card); opacity: 0.6; display: flex; align-items: center; justify-content: center; }
+@keyframes ms-rotate { to { transform: rotate(360deg); } }
+.ms-skeleton { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.ms-skeleton-bar { height: 14px; border-radius: var(--radius-4); background: linear-gradient(90deg, var(--color-fill-base-normal) 25%, var(--color-bg-hover) 37%, var(--color-fill-base-normal) 63%); background-size: 400% 100%; animation: ms-shimmer 1.4s ease infinite; }
+.ms-skeleton-bar--title { height: 20px; width: 40%; }
+.ms-skeleton-bar--short { width: 60%; }
+@keyframes ms-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ---------- Tabs / Pagination / Breadcrumb / NavMenu / PageHeader / Dropdown / Segmented ---------- */
+.ms-tabs { border-bottom: 1px solid var(--color-divider-base-2); display: flex; align-items: center; gap: var(--spacing-24); }
+.ms-tab { position: relative; padding: var(--spacing-8) 0; font-size: 14px; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; }
+.ms-tab:hover { color: var(--color-primary-normal); }
+.ms-tab--active { color: var(--color-primary-normal); font-weight: 500; }
+.ms-tab--active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--color-primary-normal); border-radius: var(--radius-2); }
+.ms-tab-badge { margin-left: var(--spacing-4); }
+.ms-tabs--card { border-bottom: 0; gap: var(--spacing-4); background: var(--color-fill-base-normal); padding: var(--spacing-4); border-radius: var(--radius-8); }
+.ms-tabs--card .ms-tab { padding: var(--spacing-8) var(--spacing-16); border-radius: var(--radius-6); }
+.ms-tabs--card .ms-tab--active { background: var(--color-bg-card); box-shadow: var(--shadow-1); }
+.ms-tabs--card .ms-tab--active::after { display: none; }
+.ms-pagination { display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-secondary); }
+.ms-page-item { min-width: 30px; height: 30px; padding: 0 var(--spacing-8); display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); background: var(--color-bg-card); color: var(--color-text-primary); cursor: pointer; font-variant-numeric: tabular-nums; }
+.ms-page-item:hover { border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
+.ms-page-item--active { background: var(--color-primary-normal); border-color: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-page-item[disabled] { opacity: 0.4; cursor: not-allowed; }
+.ms-page-jump { display: inline-flex; align-items: center; gap: var(--spacing-4); margin-left: var(--spacing-8); }
+.ms-page-jump input { width: 48px; height: 30px; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); text-align: center; font: 400 13px/1 var(--font-sans); color: var(--color-text-primary); background: var(--color-bg-card); outline: 0; }
+.ms-breadcrumb { display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-auxiliary); }
+.ms-breadcrumb a { color: var(--color-text-secondary); text-decoration: none; cursor: pointer; }
+.ms-breadcrumb a:hover { color: var(--color-primary-normal); }
+.ms-breadcrumb-sep { color: var(--color-text-disable); }
+.ms-nav { display: flex; flex-direction: column; gap: var(--spacing-4); }
+.ms-nav-group { padding: var(--spacing-12) var(--spacing-12) var(--spacing-4); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-auxiliary); }
+.ms-nav-item { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12); border-radius: var(--radius-8); font-size: 14px; color: var(--color-text-secondary); cursor: pointer; }
+.ms-nav-item:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
+.ms-nav-item--active { background: var(--color-primary-bg); color: var(--color-primary-normal); font-weight: 500; }
+.ms-nav-item .ms-ico { color: currentColor; }
+.ms-nav-count { margin-left: auto; font-size: 12px; font-family: var(--font-mono); color: var(--color-text-auxiliary); }
+.ms-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-16); padding-bottom: var(--spacing-16); }
+.ms-page-header-main { min-width: 0; }
+.ms-page-header-title { display: flex; align-items: center; gap: var(--spacing-8); }
+.ms-page-header-desc { font-size: 13px; color: var(--color-text-secondary); margin-top: var(--spacing-4); }
+.ms-page-header-extra { display: flex; align-items: center; gap: var(--spacing-8); flex: none; }
+.ms-dropdown { min-width: 160px; background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-12); box-shadow: var(--shadow-3); padding: var(--spacing-4); }
+.ms-dropdown-item { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12); border-radius: var(--radius-6); font-size: 13px; color: var(--color-text-primary); cursor: pointer; }
+.ms-dropdown-item:hover { background: var(--color-bg-hover); }
+.ms-dropdown-item--danger { color: var(--color-error-normal); }
+.ms-dropdown-item--danger:hover { background: var(--color-error-bg); }
+.ms-dropdown-sep { height: 1px; background: var(--color-divider-base-1); margin: var(--spacing-4) 0; }
+.ms-segmented { display: inline-flex; padding: var(--spacing-4); background: var(--color-fill-base-normal); border-radius: var(--radius-8); }
+.ms-segmented-item { padding: var(--spacing-4) var(--spacing-12); border-radius: var(--radius-6); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; }
+.ms-segmented-item--active { background: var(--color-bg-card); color: var(--color-text-primary); font-weight: 500; box-shadow: var(--shadow-1); }
+.ms-anchor { display: flex; flex-direction: column; gap: var(--spacing-8); border-left: 2px solid var(--color-divider-base-2); }
+.ms-anchor-item { padding-left: var(--spacing-12); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
+.ms-anchor-item--active { color: var(--color-primary-normal); border-left: 2px solid var(--color-primary-normal); margin-left: -2px; font-weight: 500; }
+.ms-anchor-item:hover { color: var(--color-text-primary); }
+
+/* ---------- Logo ---------- */
+/* Logo 直接引用官方 SVG 原图（frontend/components/Logo/assets/），品牌色为官方硬编码色值，
+   豁免 token 约束（外部品牌资产）。业务层通过 MS_BASE_LOGO_SVG({ variant, color, height })
+   切换完整/图形、标准/反白，渲染为 <img> 而非内联 <svg>。 */
+.ms-logo { display: inline-flex; align-items: center; text-decoration: none; }
+.ms-logo img { display: block; }
+
+/* ---------- Affix ---------- */
+.ms-affix { position: relative; }
+.ms-affix-body { width: 100%; }
+.ms-affix--fixed > .ms-affix-body { position: fixed; z-index: 90; box-shadow: var(--shadow-2); }
+.ms-affix--top > .ms-affix-body { top: 0; }
+.ms-affix--bottom > .ms-affix-body { bottom: 0; }
+.ms-affix--sticky { position: sticky; z-index: 90; }
+
+/* ---------- BackTop ---------- */
+.ms-backtop {
+  position: fixed; right: var(--spacing-24); bottom: var(--spacing-40); z-index: 90;
+  width: 40px; height: 40px; border-radius: var(--radius-full); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-bg-card); color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-base); box-shadow: var(--shadow-2);
+  transition: opacity var(--duration-normal) var(--ease), background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.ms-backtop:hover { background: var(--color-primary-normal); border-color: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-backtop--hidden { opacity: 0; pointer-events: none; }
+.ms-anchor-wrap { position: sticky; top: var(--spacing-24); z-index: 10; max-height: calc(100vh - var(--spacing-64)); overflow: auto; }
+
+/* ---------- AutoComplete ---------- */
+.ms-autocomplete { position: relative; display: block; }
+.ms-autocomplete-panel {
+  position: absolute; top: calc(100% + var(--spacing-4)); left: 0; right: 0; z-index: 30;
+  background: var(--color-bg-card); border: 1px solid var(--color-border-base);
+  border-radius: var(--radius-8); box-shadow: var(--shadow-2); padding: var(--spacing-4);
+  max-height: 240px; overflow: auto;
+}
+.ms-autocomplete-item { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12); border-radius: var(--radius-6); font-size: 13px; color: var(--color-text-primary); cursor: pointer; }
+.ms-autocomplete-item:hover, .ms-autocomplete-item--active { background: var(--color-bg-page); }
+.ms-autocomplete-item mark { background: transparent; color: var(--color-primary-normal); font-weight: 600; }
+.ms-autocomplete-empty { padding: var(--spacing-12); font-size: 13px; color: var(--color-text-auxiliary); text-align: center; }
+.ms-autocomplete-group { padding: var(--spacing-6) var(--spacing-12) var(--spacing-4); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-auxiliary); }
+
+/* ---------- TimePicker ---------- */
+.ms-timepicker { display: inline-flex; background: var(--color-bg-card); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); overflow: hidden; }
+.ms-timepicker-col { width: 56px; max-height: 180px; overflow: auto; border-right: 1px solid var(--color-divider-base-1); padding: var(--spacing-4) 0; }
+.ms-timepicker-col:last-child { border-right: 0; }
+.ms-timepicker-cell { height: 32px; display: flex; align-items: center; justify-content: center; font: 400 13px/1 var(--font-mono); color: var(--color-text-primary); cursor: pointer; }
+.ms-timepicker-cell:hover { background: var(--color-bg-hover); }
+.ms-timepicker-cell--active { background: var(--color-primary-normal); color: var(--color-text-constant-normal); font-weight: 600; }
+.ms-timepicker-cell--disabled { opacity: 0.4; cursor: not-allowed; }
+.ms-timepicker-foot { border-top: 1px solid var(--color-divider-base-1); padding: var(--spacing-8); display: flex; align-items: center; justify-content: space-between; }
+
+/* ---------- Cascader / TreeSelect ---------- */
+.ms-cascader { display: inline-flex; background: var(--color-bg-card); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); box-shadow: var(--shadow-2); overflow: hidden; }
+.ms-cascader-col { width: 160px; max-height: 220px; overflow: auto; border-right: 1px solid var(--color-divider-base-1); padding: var(--spacing-4) 0; }
+.ms-cascader-col:last-child { border-right: 0; }
+.ms-cascader-node { display: flex; align-items: center; gap: var(--spacing-6); padding: var(--spacing-6) var(--spacing-12); font-size: 13px; color: var(--color-text-primary); cursor: pointer; }
+.ms-cascader-node:hover { background: var(--color-bg-hover); }
+.ms-cascader-node--active { background: var(--color-primary-bg); color: var(--color-primary-normal); font-weight: 500; }
+.ms-cascader-node--disabled { color: var(--color-text-disable); cursor: not-allowed; }
+.ms-cascader-arrow { margin-left: auto; color: var(--color-text-auxiliary); }
+.ms-treeselect-panel { width: 280px; background: var(--color-bg-card); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); box-shadow: var(--shadow-2); padding: var(--spacing-8); }
+.ms-treeselect-search { margin-bottom: var(--spacing-8); }
+
+/* ---------- Transfer ---------- */
+.ms-transfer { display: flex; align-items: stretch; gap: var(--spacing-12); }
+.ms-transfer-panel { flex: 1; min-width: 0; border: 1px solid var(--color-border-base); border-radius: var(--radius-8); background: var(--color-bg-card); overflow: hidden; }
+.ms-transfer-head { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); background: var(--color-base-bg); font-size: 13px; font-weight: 600; }
+.ms-transfer-head-count { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-auxiliary); font-weight: 400; }
+.ms-transfer-body { height: 240px; overflow: auto; padding: var(--spacing-4) 0; }
+.ms-transfer-item { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-6) var(--spacing-12); font-size: 13px; color: var(--color-text-primary); }
+.ms-transfer-item:hover { background: var(--color-bg-hover); }
+.ms-transfer-ops { display: flex; flex-direction: column; justify-content: center; gap: var(--spacing-8); }
+.ms-transfer-empty { height: 240px; display: flex; align-items: center; justify-content: center; color: var(--color-text-auxiliary); font-size: 13px; }
+
+/* ---------- Calendar ---------- */
+.ms-calendar { background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-12); overflow: hidden; }
+.ms-calendar-head { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); padding: var(--spacing-12) var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ms-calendar-week { padding: var(--spacing-8) 0; text-align: center; font-size: 12px; color: var(--color-text-auxiliary); background: var(--color-base-bg); }
+.ms-calendar-cell { min-height: 84px; padding: var(--spacing-6); border-top: 1px solid var(--color-divider-base-1); border-left: 1px solid var(--color-divider-base-1); font-size: 13px; color: var(--color-text-primary); }
+.ms-calendar-cell:nth-child(7n + 1) { border-left: 0; }
+.ms-calendar-cell--muted { color: var(--color-text-auxiliary); background: var(--color-base-bg); }
+.ms-calendar-cell--selected { background: var(--color-primary-bg); }
+.ms-calendar-date { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: var(--radius-full); font-variant-numeric: tabular-nums; }
+.ms-calendar-cell--today .ms-calendar-date { background: var(--color-primary-normal); color: var(--color-text-constant-normal); }
+.ms-calendar-note { margin-top: var(--spacing-4); display: flex; flex-direction: column; gap: var(--spacing-2); }
+
+/* ---------- Collapse ---------- */
+.ms-collapse { border: 1px solid var(--color-border-base); border-radius: var(--radius-8); overflow: hidden; background: var(--color-bg-card); }
+.ms-collapse-item + .ms-collapse-item { border-top: 1px solid var(--color-divider-base-1); }
+.ms-collapse-head { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-12) var(--spacing-16); font-size: 14px; font-weight: 500; color: var(--color-text-primary); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
+.ms-collapse-head:hover { background: var(--color-bg-page); }
+.ms-collapse-caret { color: var(--color-text-auxiliary); transition: transform var(--duration-normal) var(--ease); }
+.ms-collapse-item--open .ms-collapse-caret { transform: rotate(180deg); }
+.ms-collapse-body { padding: 0 var(--spacing-16) var(--spacing-16); font-size: 13px; color: var(--color-text-secondary); line-height: 1.8; }
+.ms-collapse-extra { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
+.ms-collapse--ghost { border: 0; border-radius: 0; background: transparent; }
+.ms-collapse--ghost .ms-collapse-item + .ms-collapse-item { border-top: 1px solid var(--color-divider-base-2); }
+.ms-collapse--ghost .ms-collapse-head { padding-left: 0; padding-right: 0; }
+
+/* ---------- Comment ---------- */
+.ms-comment { display: flex; gap: var(--spacing-12); }
+.ms-comment-main { flex: 1; min-width: 0; }
+.ms-comment-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.ms-comment-author { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.ms-comment-time { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-comment-content { font-size: 14px; line-height: 1.75; color: var(--color-text-primary); margin-top: var(--spacing-4); }
+.ms-comment-actions { display: flex; align-items: center; gap: var(--spacing-16); margin-top: var(--spacing-8); font-size: 12px; color: var(--color-text-secondary); }
+.ms-comment-action { display: inline-flex; align-items: center; gap: var(--spacing-4); cursor: pointer; }
+.ms-comment-action:hover { color: var(--color-primary-normal); }
+.ms-comment-action--active { color: var(--color-primary-normal); }
+.ms-comment-children { margin-top: var(--spacing-12); padding-left: var(--spacing-16); border-left: 2px solid var(--color-divider-base-1); display: flex; flex-direction: column; gap: var(--spacing-12); }
+
+/* ---------- Image ---------- */
+.ms-image { position: relative; display: inline-flex; overflow: hidden; border-radius: var(--radius-8); background: var(--color-bg-hover); }
+.ms-image > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ms-image--fallback { display: flex; align-items: center; justify-content: center; color: var(--color-text-auxiliary); background: var(--color-fill-base-normal); }
+.ms-image-caption { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--spacing-8) var(--spacing-12); background: var(--surface-mask); color: var(--color-text-constant-normal); font-size: 12px; }
+.ms-image-group { display: flex; gap: var(--spacing-8); flex-wrap: wrap; }
+.ms-image-mask { position: fixed; inset: 0; z-index: 60; background: var(--surface-mask); display: flex; align-items: center; justify-content: center; }
+.ms-image-preview { max-width: 80vw; max-height: 80vh; border-radius: var(--radius-12); box-shadow: var(--shadow-4); }
+
+/* ---------- Rate ---------- */
+.ms-rate { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+.ms-rate-star { width: 20px; height: 20px; color: var(--color-warm-normal); cursor: pointer; display: inline-flex; }
+.ms-rate-star--empty { color: var(--color-fill-base-hover); }
+.ms-rate--sm .ms-rate-star { width: 16px; height: 16px; }
+.ms-rate--lg .ms-rate-star { width: 26px; height: 26px; }
+.ms-rate--disabled .ms-rate-star { cursor: default; }
+.ms-rate-text { margin-left: var(--spacing-8); font-size: 13px; color: var(--color-text-secondary); }
+
+/* ---------- Watermark ---------- */
+.ms-watermark { position: relative; }
+.ms-watermark-layer {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--spacing-40);
+  align-content: space-around; justify-items: center;
+}
+.ms-watermark-item { font-size: 14px; color: var(--color-text-auxiliary); opacity: 0.12; transform: rotate(-22deg); white-space: nowrap; user-select: none; }
+
+/* ---------- 布局骨架 ---------- */
+.ms-shell { display: flex; height: 100vh; background: var(--color-bg-page); }    /* 锁定视口高度（非 min-height）：内容撑高时侧栏/头像仍贴底常驻，滚动交给 .ms-sidebar-body / .ms-content 内部 */
+.ms-sidebar { width: var(--sidebar-w); flex: none; background: var(--color-bg-card); border-right: 1px solid var(--color-divider-base-1); display: flex; flex-direction: column; }
+.ms-sidebar-brand { height: var(--header-h); display: flex; align-items: center; gap: var(--spacing-8); padding: 0 var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-sidebar-brand-mark { width: 26px; height: 26px; border-radius: var(--radius-8); background: var(--color-primary-normal); color: var(--color-text-constant-normal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex: none; }
+.ms-sidebar-brand-name { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
+.ms-sidebar-body { flex: 1; overflow: auto; padding: var(--spacing-8); }
+.ms-sidebar-foot { padding: var(--spacing-12); border-top: 1px solid var(--color-divider-base-1); }
+.ms-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ms-header { height: var(--header-h); flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); padding: 0 var(--spacing-24); background: var(--color-bg-card); border-bottom: 1px solid var(--color-divider-base-1); }
+.ms-header-left, .ms-header-right { display: flex; align-items: center; gap: var(--spacing-12); }
+.ms-content { flex: 1; padding: var(--spacing-24); overflow: auto; display: flex; flex-direction: column; gap: var(--spacing-16); }
+.ms-content--wide { padding: var(--spacing-20); }
+.ms-stack { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.ms-stack--tight { gap: var(--spacing-8); }
+.ms-stack--loose { gap: var(--spacing-24); }
+.ms-grid-2, .ms-grid-3, .ms-grid-4 { display: grid; gap: var(--spacing-16); }
+.ms-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ms-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ms-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ms-grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--spacing-16); }
+@media (max-width: 1180px) {
+  .ms-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ms-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ms-grid-2-1 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .ms-grid-2, .ms-grid-3, .ms-grid-4 { grid-template-columns: minmax(0, 1fr); }
+  .ms-sidebar { display: none; }
+  .ms-content { padding: var(--spacing-16); }
+}
+
+/* ==========================================================================
+   REQ-005 · M-Bus 设备扫描添加 Demo 专属样式（mb- 前缀）
+   --------------------------------------------------------------------------
+
+   ========================================================================== */
+
+/* ---------- 页面壳 ---------- */
+.mb-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-base-bg); }
+.mb-topbar { height: 48px; flex: none; display: flex; align-items: center; gap: var(--spacing-12); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-divider-base-1); }
+.mb-topbar-logo { display: inline-flex; align-items: center; gap: var(--spacing-8); font-weight: 600; color: var(--color-text-primary); }
+.mb-topbar-crumb { display: inline-flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-secondary); }
+.mb-topbar-crumb b { color: var(--color-text-primary); font-weight: 500; }
+.mb-topbar-right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-12); font-size: 13px; color: var(--color-text-auxiliary); }
+.mb-body { flex: 1; display: flex; min-height: 0; }
+.mb-sider { width: 200px; flex: none; background: var(--color-bg-card); border-right: 1px solid var(--color-divider-base-1); padding: var(--spacing-12) var(--spacing-8); display: flex; flex-direction: column; gap: 2px; }
+.mb-sider-group { font-size: 11px; color: var(--color-text-auxiliary); letter-spacing: 0.05em; padding: var(--spacing-12) var(--spacing-12) var(--spacing-4); }
+.mb-sider-item { display: flex; align-items: center; gap: var(--spacing-8); height: 34px; padding: 0 var(--spacing-12); border-radius: var(--radius-6); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
+.mb-sider-item:hover { background: var(--color-fill-base-hover); color: var(--color-text-primary); }
+.mb-sider-item--active { background: var(--color-primary-bg); color: var(--color-primary-normal); font-weight: 500; }
+.mb-content { flex: 1; min-width: 0; padding: var(--spacing-20); overflow: auto; }
+
+/* ---------- 通用工具 ---------- */
+.mb-mono { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mb-status { display: inline-flex; align-items: center; gap: var(--spacing-6); }
+.mb-status i { width: 6px; height: 6px; border-radius: var(--radius-full); flex: none; }
+.mb-status--online i { background: var(--color-success-normal); }
+.mb-status--offline i { background: var(--color-error-normal); }
+.mb-status--never i { background: var(--color-text-auxiliary); }
+.mb-addr-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--spacing-8); border-radius: var(--radius-4); font-size: 12px; font-family: var(--font-mono); }
+.mb-addr-tag--wait { background: var(--color-warm-bg); color: var(--color-warm-normal); }
+.mb-addr-tag--none { background: var(--color-fill-base-normal); color: var(--color-text-auxiliary); }
+.mb-addr-tag--num { background: var(--color-primary-bg); color: var(--color-primary-normal); }
+
+/* ---------- Tooltip ---------- */
+.mb-tip { position: relative; display: inline-flex; color: var(--color-text-auxiliary); cursor: help; }
+.mb-tip-body { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); width: max-content; max-width: 260px; padding: var(--spacing-8) var(--spacing-12); background: var(--color-gray-10); color: #fff; font-size: 12px; line-height: 1.6; border-radius: var(--radius-6); box-shadow: var(--shadow-2); opacity: 0; visibility: hidden; transition: opacity var(--duration-fast) var(--ease); z-index: 30; pointer-events: none; }
+.mb-tip:hover .mb-tip-body { opacity: 1; visibility: visible; }
+.mb-tip-body::after { content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--color-gray-10); }
+
+/* ---------- 扫描向导页 ---------- */
+.mb-wizard { max-width: 1080px; margin: 0 auto; }
+.mb-wizard-head { display: flex; align-items: center; gap: var(--spacing-12); margin-bottom: var(--spacing-20); }
+.mb-wizard-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+.mb-wizard-tabs { display: flex; gap: var(--spacing-24); border-bottom: 1px solid var(--color-divider-base-1); margin-bottom: var(--spacing-24); }
+.mb-wizard-tab { display: inline-flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-12) var(--spacing-4); font-size: 14px; color: var(--color-text-auxiliary); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.mb-wizard-tab i { width: 20px; height: 20px; border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-style: normal; background: var(--color-fill-base-normal); color: var(--color-text-auxiliary); flex: none; }
+.mb-wizard-tab--done i { background: var(--color-success-normal); color: #fff; }
+.mb-wizard-tab--active { color: var(--color-primary-normal); font-weight: 500; border-bottom-color: var(--color-primary-normal); }
+.mb-wizard-tab--active i { background: var(--color-primary-normal); color: #fff; }
+.mb-wizard-foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-8); margin-top: var(--spacing-24); padding-top: var(--spacing-16); border-top: 1px solid var(--color-divider-base-1); }
+.mb-wizard-card { background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8); padding: var(--spacing-24); }
+
+/* ---------- 步骤一：掩码 8 格输入 ---------- */
+.mb-mask { display: inline-flex; gap: var(--spacing-6); }
+.mb-mask-cell { width: 40px; height: 40px; text-align: center; font: 500 16px/40px var(--font-mono); color: var(--color-text-primary); background: var(--color-bg-card); border: 1px solid var(--color-border-base); border-radius: var(--radius-6); outline: none; text-transform: uppercase; padding: 0; }
+.mb-mask-cell:focus { border-color: var(--color-primary-normal); box-shadow: 0 0 0 2px var(--color-primary-bg); }
+.mb-mask-cell--fixed { background: var(--color-fill-base-normal); color: var(--color-text-auxiliary); cursor: not-allowed; }
+.mb-mask-cell--error { border-color: var(--color-error-normal); }
+.mb-advanced { margin-top: var(--spacing-8); border: 1px dashed var(--color-border-base); border-radius: var(--radius-8); }
+.mb-advanced-toggle { display: flex; align-items: center; gap: var(--spacing-8); width: 100%; padding: var(--spacing-12) var(--spacing-16); background: none; border: none; font-size: 13px; color: var(--color-text-secondary); cursor: pointer; }
+.mb-advanced-toggle:hover { color: var(--color-text-primary); }
+.mb-advanced-body { padding: 0 var(--spacing-16) var(--spacing-16) var(--spacing-16); display: grid; grid-template-columns: 240px 240px; gap: var(--spacing-16); }
+.mb-advanced-arrow { transition: transform var(--duration-fast) var(--ease); display: inline-block; }
+.mb-advanced.is-open .mb-advanced-arrow { transform: rotate(90deg); }
+
+/* ---------- 扫描进度弹框 ---------- */
+.mb-scan-modal { width: 460px; }
+.mb-scan-modal .ms-modal-body { display: flex; flex-direction: column; gap: var(--spacing-16); padding-top: var(--spacing-28); }
+.mb-scan-title { display: flex; align-items: center; gap: var(--spacing-10); font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+.mb-scan-title .ms-ico { color: var(--color-primary-normal); }
+.mb-scan-spin { width: 18px; height: 18px; border: 2px solid var(--color-primary-bg); border-top-color: var(--color-primary-normal); border-radius: var(--radius-full); animation: mb-spin 0.8s linear infinite; flex: none; }
+@keyframes mb-spin { to { transform: rotate(360deg); } }
+.mb-scan-stats { display: flex; gap: var(--spacing-32); }
+.mb-scan-stat { display: flex; flex-direction: column; gap: 2px; }
+.mb-scan-stat b { font: 600 20px/1.2 var(--font-sans); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.mb-scan-stat span { font-size: 12px; color: var(--color-text-auxiliary); }
+.mb-scan-bar { height: 8px; border-radius: var(--radius-full); background: var(--color-fill-base-normal); overflow: hidden; }
+.mb-scan-bar b { display: block; height: 100%; border-radius: var(--radius-full); background: var(--color-primary-normal); transition: width 0.3s linear; }
+.mb-scan-pct { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-auxiliary); font-variant-numeric: tabular-nums; }
+
+/* ---------- 步骤二：汇总 + 冲突 ---------- */
+.mb-summary { display: flex; align-items: flex-start; gap: var(--spacing-10); padding: var(--spacing-12) var(--spacing-16); border-radius: var(--radius-8); background: var(--color-primary-bg); color: var(--color-text-primary); font-size: 13px; line-height: 1.7; }
+.mb-summary .ms-ico { color: var(--color-primary-normal); margin-top: 3px; flex: none; }
+.mb-conflict { border: 1px solid var(--color-warm-border, #ffe0db); border-radius: var(--radius-8); overflow: hidden; }
+.mb-conflict-head { display: flex; align-items: center; gap: var(--spacing-10); padding: var(--spacing-12) var(--spacing-16); cursor: pointer; user-select: none; }
+.mb-conflict-head:hover { background: var(--color-fill-base-hover); }
+.mb-conflict-head .ms-ico { flex: none; }
+.mb-conflict-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); flex: 1; min-width: 0; }
+.mb-conflict-actions { display: inline-flex; gap: var(--spacing-8); }
+.mb-conflict-arrow { transition: transform var(--duration-fast) var(--ease); color: var(--color-text-auxiliary); }
+.mb-conflict.is-open .mb-conflict-arrow { transform: rotate(90deg); }
+.mb-conflict-body { display: none; border-top: 1px solid var(--color-divider-base-1); background: var(--color-base-bg); }
+.mb-conflict.is-open .mb-conflict-body { display: block; }
+.mb-conflict-scroll { max-height: 148px; overflow: auto; padding: var(--spacing-12) var(--spacing-16); display: flex; flex-direction: column; gap: var(--spacing-8); }
+.mb-conflict-row { font-size: 13px; line-height: 1.7; color: var(--color-text-secondary); }
+.mb-conflict-row b { color: var(--color-text-primary); font-weight: 500; }
+.mb-conflict-row .mb-mono { color: var(--color-text-secondary); }
+
+/* ---------- 步骤二：左右主从 ---------- */
+.mb-md { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: var(--spacing-16); align-items: start; }
+.mb-group-panel { background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8); overflow: hidden; }
+.mb-group-bar { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
+.mb-group-bar .ms-input { flex: 1; }
+.mb-group-list { max-height: 480px; overflow: auto; }
+.mb-group { border-bottom: 1px solid var(--color-divider-base-1); }
+.mb-group:last-child { border-bottom: none; }
+.mb-group-head { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-10) var(--spacing-12); background: var(--color-base-bg); cursor: pointer; }
+.mb-group-head:hover { background: var(--color-fill-base-hover); }
+.mb-group-head-label { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.mb-group-count { font-size: 12px; font-weight: 400; color: var(--color-text-auxiliary); white-space: nowrap; }
+.mb-group--active > .mb-group-head { box-shadow: inset 2px 0 0 var(--color-primary-normal); }
+.mb-group-devs { padding: var(--spacing-4) 0; }
+.mb-dev { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-12) var(--spacing-8) var(--spacing-20); cursor: pointer; }
+.mb-dev:hover { background: var(--color-fill-base-hover); }
+.mb-dev-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mb-dev-name { display: flex; align-items: center; gap: var(--spacing-6); font-size: 13px; color: var(--color-text-primary); min-width: 0; }
+.mb-dev-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb-dev-name .ms-ico { color: var(--color-text-auxiliary); opacity: 0; flex: none; }
+.mb-dev:hover .mb-dev-name .ms-ico { opacity: 1; color: var(--color-primary-normal); }
+.mb-dev-sec { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-auxiliary); }
+
+/* ---------- 对象表 ---------- */
+.mb-obj-panel { background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-8); overflow: hidden; }
+.mb-obj-head { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-12) var(--spacing-16); border-bottom: 1px solid var(--color-divider-base-1); }
+.mb-obj-head-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); flex: 1; }
+.mb-obj-note { display: flex; align-items: flex-start; gap: var(--spacing-8); padding: var(--spacing-8) var(--spacing-16); font-size: 12px; line-height: 1.7; color: var(--color-text-secondary); background: var(--color-warm-bg); }
+.mb-obj-note .ms-ico { color: var(--color-warm-normal); margin-top: 2px; flex: none; }
+.mb-obj-table th, .mb-obj-table td { padding: 8px 12px; font-size: 12.5px; }
+.mb-obj-table th { background: var(--color-base-bg); }
+.mb-obj-name-input { border: 1px solid transparent; border-radius: var(--radius-4); background: transparent; padding: 2px 6px; font: 400 12.5px var(--font-sans); color: var(--color-text-primary); min-width: 140px; outline: none; }
+.mb-obj-name-input:hover { border-color: var(--color-border-base); }
+.mb-obj-name-input:focus { border-color: var(--color-primary-normal); background: var(--color-bg-card); box-shadow: 0 0 0 2px var(--color-primary-bg); }
+.mb-obj-row--warn td { background: var(--color-warm-bg); }
+.mb-obj-row--warn:hover td { background: var(--color-warm-bg); }
+.mb-obj-idx { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: var(--radius-4); background: var(--color-fill-base-normal); color: var(--color-text-secondary); font: 500 11px var(--font-mono); }
+
+/* ---------- 名称编辑弹框 ---------- */
+.mb-edit-modal { width: 420px; }
+
+/* ---------- Loading 弹框 ---------- */
+.mb-loading-modal { width: 360px; }
+.mb-loading-body { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-16); padding: var(--spacing-32) var(--spacing-24) var(--spacing-24); }
+.mb-loading-text { font-size: 14px; color: var(--color-text-secondary); }
+
+/* ---------- 结果弹框 ---------- */
+.mb-result-modal { width: 440px; }
+.mb-result-devs { max-height: 140px; overflow: auto; border: 1px solid var(--color-divider-base-1); border-radius: var(--radius-6); background: var(--color-base-bg); padding: var(--spacing-8) var(--spacing-12); display: flex; flex-direction: column; gap: var(--spacing-4); margin-top: var(--spacing-12); }
+
+/* ---------- 设备列表页 ---------- */
+.mb-page-head { display: flex; align-items: center; gap: var(--spacing-12); margin-bottom: var(--spacing-16); }
+.mb-page-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+.mb-row-new { animation: mb-flash 2.4s var(--ease); }
+@keyframes mb-flash { 0%, 40% { background: var(--color-primary-bg); } 100% { background: transparent; } }
+.mb-new-tag { display: inline-flex; height: 18px; align-items: center; padding: 0 6px; margin-left: var(--spacing-8); border-radius: var(--radius-4); background: var(--color-success-bg); color: var(--color-success-normal); font-size: 11px; font-weight: 500; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 980px) {
+  .mb-md { grid-template-columns: minmax(0, 1fr); }
+  .mb-advanced-body { grid-template-columns: minmax(0, 1fr); }
+  .mb-sider { display: none; }
+}
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+
+/* ================================================================
+   REQ-005 · M-Bus 设备扫描添加 Demo
+   流程：设备列表 → 步骤一扫描配置 → 扫描进度弹框 → 步骤二选择设备与对象
+        → 确认添加（loading → 结果）→ 回设备列表
+   ================================================================ */
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------------- 演示数据 ---------------- */
+
+// 已添加设备（设备列表初始）
+let addedDevices = [
+  { id: 'old1', name: 'Kamstrup Multical 302', model: 'None', proto: 'M-Bus / M-Bus', status: 'online', objects: 6, updated: '2026-09-15 10:23:41', prim: 5, sec: '49000350 6E160102' },
+  { id: 'old2', name: 'Sontex Supercal 5', model: 'None', proto: 'M-Bus / M-Bus', status: 'offline', objects: 5, updated: '2026-09-15 09:12:03', prim: 9, sec: '88004502 66010202' },
+  { id: 'old3', name: 'Milesight AM319', model: 'AM319', proto: 'Modbus / RS485-1', status: 'online', objects: 12, updated: '2026-09-15 10:24:02' },
+];
+
+// 扫描模板：全部可发现设备（发现顺序 = timeline 顺序）
+const DISCOVER_TIMELINE = [
+  { p: 14, dev: 'g1d1' }, { p: 24, dev: 'g1d2' }, { p: 34, dev: 'g1d3' },
+  { p: 42, dev: 'old1' },
+  { p: 52, dev: 'g3d1' }, { p: 60, dev: 'g3d2' },
+  { p: 68, dev: 'old2' },
+  { p: 76, dev: 'g2d1' },
+  { p: 86, dev: 'g4d1' }, { p: 93, dev: 'g4d2' }, { p: 99, dev: 'g4d3' },
+];
+
+// 扫描结果分组模板（厂商代码+介质+数据点签名）
+const GROUP_TPL = [
+  {
+    id: 'g1', manuf: 'Kamstrup', manufCode: '6E16', medium: '热量表', hasGroups: 2, gno: 1,
+    devices: [
+      { id: 'g1d1', name: 'Kamstrup Heat #49000354', prim: 5, sec: '49000354 6E160102', primConflict: true },
+      { id: 'g1d2', name: 'Kamstrup Heat #49000355', prim: 7, sec: '49000355 6E160102' },
+      { id: 'g1d3', name: 'Kamstrup Heat #49000356', prim: null, sec: '49000356 6E160102' },
+    ],
+    objects: [
+      { name: 'Energy', unit: 'kWh', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '0C', value: '15234.5' },
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '325.8' },
+      { name: 'Power', unit: 'kW', dtype: '16bit 整数 · 瞬时值', dib: '0B', vib: '2B', value: '12.4' },
+      { name: 'Flow rate', unit: 'm³/h', dtype: '16bit 整数 · 瞬时值', dib: '0B', vib: '3A', value: '0.42' },
+      { name: 'Flow temperature', unit: '°C', dtype: '16bit 整数 · 瞬时值', dib: '0A', vib: '59', value: '68.2' },
+      { name: 'Return temperature', unit: '°C', dtype: '16bit 整数 · 瞬时值', dib: '0A', vib: '5B', value: '55.7' },
+      { name: 'Energy', unit: 'kWh', dtype: '32bit 整数 · 最大值', dib: '04 84', vib: '0C', value: '18200.0', suffix: '(最大值)' },
+      { name: '', unit: '', dtype: '8bit 整数 · 瞬时值', dib: '01', vib: 'FD 09', value: '—', vibUnparsed: true },
+    ],
+  },
+  {
+    id: 'g2', manuf: 'Kamstrup', manufCode: '6E16', medium: '热量表', hasGroups: 2, gno: 2,
+    devices: [
+      { id: 'g2d1', name: 'Kamstrup Heat #49000361', prim: 12, sec: '49000361 6E160102' },
+    ],
+    objects: [
+      { name: 'Energy', unit: 'kWh', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '0C', value: '8210.9' },
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '158.3', recIdx: 1 },
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '158.6', recIdx: 2 },
+      { name: 'Power', unit: 'kW', dtype: '16bit 整数 · 瞬时值', dib: '0B', vib: '2B', value: '8.6' },
+      { name: 'Operating hours', unit: 'h', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '20', value: '3341.0' },
+      { name: 'Error flags', unit: '—', dtype: '8bit 整数 · 瞬时值', dib: '01', vib: '61', value: '00' },
+    ],
+  },
+  {
+    id: 'g3', manuf: 'Sontex', manufCode: '6601', medium: '热量表', hasGroups: 1,
+    devices: [
+      { id: 'g3d1', name: 'Sontex Heat #88004510', prim: 9, sec: '88004510 66010202' },
+      { id: 'g3d2', name: 'Sontex Heat #88004511', prim: 5, sec: '88004511 66010202', primConflict: true },
+    ],
+    objects: [
+      { name: 'Energy', unit: 'kWh', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '0C', value: '5630.2' },
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '211.4' },
+      { name: 'Power', unit: 'kW', dtype: '16bit 整数 · 瞬时值', dib: '0B', vib: '2B', value: '6.3' },
+      { name: 'Flow temperature', unit: '°C', dtype: '16bit 整数 · 瞬时值', dib: '0A', vib: '59', value: '61.5' },
+      { name: 'Return temperature', unit: '°C', dtype: '16bit 整数 · 瞬时值', dib: '0A', vib: '5B', value: '49.8' },
+    ],
+  },
+  {
+    id: 'g4', manuf: 'Zenner', manufCode: '4406', medium: '水表', hasGroups: 1,
+    devices: [
+      { id: 'g4d1', name: 'Zenner Water #84002213', prim: 18, sec: '84002213 4406011D' },
+      { id: 'g4d2', name: 'Zenner Water #84002215', prim: 5, sec: '84002215 4406011D', primConflict: true },
+      { id: 'g4d3', name: 'Zenner Water #84002218', prim: null, sec: '84002218 4406011D' },
+    ],
+    objects: [
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '1204.7', recIdx: 1 },
+      { name: 'Volume', unit: 'm³', dtype: '32bit 整数 · 瞬时值', dib: '04', vib: '13', value: '1205.1', recIdx: 2 },
+      { name: 'Flow rate', unit: 'm³/h', dtype: '16bit 整数 · 瞬时值', dib: '0B', vib: '3A', value: '1.85' },
+      { name: 'Error flags', unit: '—', dtype: '8bit 整数 · 瞬时值', dib: '01', vib: '61', value: '00' },
+    ],
+  },
+];
+
+// 地址冲突（预置）
+const PRIMARY_CONFLICT = {
+  addr: 5,
+  total: 4, shown: 3,
+  rows: [
+    { name: 'Kamstrup Heat #49000354', sec: '49000354 6E160102' },
+    { name: 'Zenner Water #84002215', sec: '84002215 4406011D' },
+    { name: 'Sontex Heat #88004511', sec: '88004511 66010202' },
+  ],
+};
+const SECONDARY_CONFLICT = {
+  masks: ['84002211'],
+  note: '二次地址冲突无法唯一识别设备，不可添加',
+};
+
+const UNITS = ['kWh', 'm³', 'kW', 'm³/h', '°C', 'h', '—'];
+
+/* ---------------- 状态 ---------------- */
+
+const state = {
+  view: 'list',            // list | scan
+  scanStep: 1,             // 1 配置 | 2 选择
+  cfg: { mode: 'full', mask: 'FFFFFFFF', autoAssign: true, advOpen: false, retry: 5, timeout: 350 },
+  scan: { active: false, progress: 0, found: 0, objects: 0, done: false, timer: null, entered: [] },
+  result: { groups: [], totalFound: 0, addedCount: 0, newCount: 0, objTotal: 0 },
+  sel: {},                 // 设备勾选 { devId: true }
+  objSel: {},              // 对象勾选 { groupId: [bool] }
+  activeGroup: 'g1',
+  devSearch: '',
+  conflictOpen: { primary: false, secondary: false },
+  editTarget: null,        // 设备名编辑
+  drawerDev: null,         // 列表页编辑设备
+  delDev: null,
+  justAddedIds: [],
+};
+
+const $app = document.getElementById('app');
+
+/* ---------------- 小工具 ---------------- */
+
+const ICONS = {
+  info: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 7.2v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.9" fill="currentColor"/></svg>',
+  warn: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M8 2.2 14.3 13.3H1.7L8 2.2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 6.4v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="0.9" fill="currentColor"/></svg>',
+  search: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="m10.6 10.6 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  edit: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M11.3 2.6a1.4 1.4 0 0 1 2 2L5.6 12.3l-2.7.7.7-2.7 7.7-7.7Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+  scan: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M2.5 5.5v-2a1 1 0 0 1 1-1h2M13.5 5.5v-2a1 1 0 0 0-1-1h-2M2.5 10.5v2a1 1 0 0 0 1 1h2M13.5 10.5v2a1 1 0 0 1-1 1h-2M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  plus: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  download: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 2.5v7M5.2 6.8 8 9.6l2.8-2.8M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  right: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  back: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M10 3.5 5.5 8 10 12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  copy: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 3.5v-1h-8v8h1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+  close: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  refresh: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M13.2 8a5.2 5.2 0 1 1-1.6-3.8M13.4 2.6v2.2h-2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  trash: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 4.5h10M6.5 2.5h3M4.5 4.5 5.2 13a1 1 0 0 0 1 .9h3.6a1 1 0 0 0 1-.9l.7-8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const ico = (n, s) => `<span class="ms-ico ms-ico--${s || 16}" style="display:inline-flex">${ICONS[n] || ''}</span>`;
+const tip = (text) => `<span class="mb-tip">${ico('info', 14)}<span class="mb-tip-body">${text}</span></span>`;
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'ms-message' + (type ? ' ms-message--' + type : '');
+  el.innerHTML = esc(msg);
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* ---------------- 视图路由 ---------------- */
+
+function render() {
+  if (state.view === 'list') renderList();
+  else if (state.scanStep === 1) renderScan1();
+  else renderScan2();
+}
+
+/* ================= 页面壳 ================= */
+
+function shell(inner, activeMenu) {
+  const menus = [
+    { g: '设备数采', items: [['接入网络', 'nw'], ['设备', 'dev'], ['数据流', 'stream'], ['数据转发', 'fwd'], ['本地自动化', 'nodered']] },
+    { g: '系统管理', items: [['系统设置', 'sys'], ['告警与事件', 'alarm'], ['设备库模板', 'lib'], ['状态概览', 'overview']] },
+  ];
+  return `<div class="mb-shell">
+    <div class="mb-topbar">
+      <span class="mb-topbar-logo">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><rect x="3" y="10" width="18" height="10" rx="1.6" stroke="currentColor" stroke-width="1.5"/><path d="M7 10 10.4 4h3.2L17 10" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="15" r="1.2" fill="currentColor"/><circle cx="12" cy="15" r="1.2" fill="currentColor"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg>
+        EG71
+      </span>
+      <span class="mb-topbar-crumb">设备数采 <b>/</b> <b>${esc(activeMenu || '设备')}</b></span>
+      <span class="mb-topbar-right"><span>admin</span><span>·</span><span>71.0.0.4</span></span>
+    </div>
+    <div class="mb-body">
+      <nav class="mb-sider">
+        ${menus.map(m => `<div class="mb-sider-group">${esc(m.g)}</div>` + m.items.map(it =>
+          `<div class="mb-sider-item${it[1] === 'dev' ? ' mb-sider-item--active' : ''}">${esc(it[0])}</div>`).join('')).join('')}
+      </nav>
+      <main class="mb-content">${inner}</main>
+    </div>
+  </div>`;
+}
+
+/* ================= 设备列表页 ================= */
+
+function statusCell(d) {
+  const map = { online: ['mb-status--online', '在线'], offline: ['mb-status--offline', '离线'], never: ['mb-status--never', '从未上线'] };
+  const m = map[d.status] || map.never;
+  return `<span class="mb-status ${m[0]}"><i></i>${esc(m[1])}${d.primConflict ? ' ' + ico('warn', 13) : ''}</span>`;
+}
+
+function renderList() {
+  const rows = addedDevices.map((d, i) => {
+    const isNew = state.justAddedIds.includes(d.id);
+    return `<tr class="${isNew ? 'mb-row-new' : ''}">
+      <td>${esc(d.name)}${isNew ? '<span class="mb-new-tag">NEW</span>' : ''}</td>
+      <td><span class="ms-text ms-text--secondary">${esc(d.model || 'None')}</span></td>
+      <td>${d.proto && d.proto.indexOf('M-Bus') === 0 ? `<span class="ms-text">${esc(d.proto.split(' / ')[0])}</span> <span class="ms-link">/ ${esc(d.proto.split(' / ')[1])}</span>` : `<span class="ms-text">${esc(d.proto)}</span>`}</td>
+      <td>${statusCell(d)}</td>
+      <td class="ms-table-num"><span class="ms-link">${d.objects}</span></td>
+      <td><span class="mb-mono ms-text--secondary">${esc(d.updated || '—')}</span></td>
+      <td class="ms-table-num">—</td>
+      <td class="ms-table-ops">
+        <button class="ms-btn ms-btn--text ms-btn--sm" data-action="edit-dev" data-id="${d.id}">编辑</button>
+        <button class="ms-btn ms-btn--text ms-btn--sm ms-btn--danger" data-action="del-dev" data-id="${d.id}">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const inner = `
+    <div class="mb-page-head">
+      <span class="mb-page-title">设备</span>
+      <span class="ms-tag ms-tag--round" style="margin-left:4px">${addedDevices.length}</span>
+    </div>
+    <div class="ms-card">
+      <div class="ms-table-wrap">
+        <div class="ms-table-toolbar">
+          <div class="ms-table-title">设备列表</div>
+          <div class="ms-space ms-space--8">
+            <button class="ms-btn ms-btn--sm">${ico('download', 14)}导出</button>
+            <button class="ms-btn ms-btn--sm">${ico('plus', 14)}手动添加</button>
+            <button class="ms-btn ms-btn--sm ms-btn--filled" data-action="open-scan">${ico('scan', 14)}扫描添加 M-Bus</button>
+          </div>
+        </div>
+        <table class="ms-table">
+          <thead><tr>
+            <th>设备名称</th><th>设备型号</th><th>协议类型</th><th>状态</th>
+            <th class="ms-table-num">对象数量</th><th>最新更新时间</th><th class="ms-table-num">信号</th><th>操作</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="8" class="ms-text ms-text--auxiliary" style="text-align:center;padding:32px 0">暂无设备</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+    ${state.drawerDev ? drawerEditHtml() : ''}
+    ${state.delDev ? delConfirmHtml() : ''}
+  `;
+  $app.innerHTML = shell(inner);
+}
+
+function drawerEditHtml() {
+  const d = addedDevices.find(x => x.id === state.drawerDev);
+  if (!d) return '';
+  return modalHtml(`
+    <div class="ms-modal mb-edit-modal">
+      <div class="ms-modal-head"><span class="ms-modal-title">编辑设备</span><span class="ms-modal-close" data-action="close-drawer">${ico('close')}</span></div>
+      <div class="ms-modal-body">
+        <div class="ms-form">
+          <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备名称</label>
+            <label class="ms-input"><input id="ed-name" value="${esc(d.name)}"></label></div>
+          <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备型号</label>
+            <span class="ms-select"><select class="ms-select-native"><option${d.model === 'None' ? ' selected' : ''}>None</option><option>Kamstrup Multical 302</option><option>Sontex Supercal 5</option></select></span></div>
+          <div class="ms-form-item"><label class="ms-form-label">协议类型</label>
+            <span class="ms-text ms-text--secondary">${esc(d.proto)}</span></div>
+          <div class="ms-form-item"><label class="ms-form-label">一次地址</label>
+            <label class="ms-input"><input id="ed-prim" value="${d.prim != null ? d.prim : ''}" placeholder="1 - 250"></label>
+            <span class="ms-form-help">范围 1-250 的整数；保存时校验是否与已有设备冲突</span></div>
+          <div class="ms-form-item"><label class="ms-form-label">二次地址</label>
+            <span class="mb-mono ms-text--secondary">${esc(d.sec || '—')}</span></div>
+          <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">采集间隔（秒）</label>
+            <label class="ms-input"><input id="ed-interval" value="300"></label></div>
+          <div class="ms-form-item"><label class="ms-form-label">描述</label>
+            <label class="ms-input ms-input--textarea"><textarea rows="2"></textarea></label></div>
+        </div>
+      </div>
+      <div class="ms-modal-foot">
+        <button class="ms-btn" data-action="close-drawer">取消</button>
+        <button class="ms-btn ms-btn--filled" data-action="save-drawer" data-id="${d.id}">保存</button>
+      </div>
+    </div>`);
+}
+
+function delConfirmHtml() {
+  const d = addedDevices.find(x => x.id === state.delDev);
+  if (!d) return '';
+  return modalHtml(`
+    <div class="ms-modal ms-modal--sm">
+      <div class="ms-modal-head"><span class="ms-modal-title">删除 ${esc(d.name)}</span><span class="ms-modal-close" data-action="close-del">${ico('close')}</span></div>
+      <div class="ms-modal-body"><div class="ms-space ms-space--8" style="align-items:flex-start">
+        <span style="color:var(--color-warm-normal);margin-top:2px">${ico('warn')}</span>
+        <span class="ms-text">删除设备后，该设备相关的数据及数据转发应用都将被删除，您是否要删除？</span>
+      </div></div>
+      <div class="ms-modal-foot">
+        <button class="ms-btn" data-action="close-del">取消</button>
+        <button class="ms-btn ms-btn--filled ms-btn--danger" data-action="confirm-del" data-id="${d.id}">删除</button>
+      </div>
+    </div>`);
+}
+
+function modalHtml(inner) {
+  return `<div class="ms-modal-mask" style="position:fixed;inset:0;background:var(--color-mask-bg, rgba(0,0,0,.45));display:flex;align-items:center;justify-content:center;z-index:50;padding:var(--spacing-24)">${inner}</div>`;
+}
+
+/* ================= 步骤一：扫描配置 ================= */
+
+function renderScan1() {
+  const maskCells = state.cfg.mask.split('');
+  const inner = `
+  <div class="mb-wizard">
+    <div class="mb-wizard-head">
+      <button class="ms-btn ms-btn--text" data-action="back-list">${ico('back')}返回</button>
+      <span class="mb-wizard-title">扫描添加 M-Bus 设备</span>
+    </div>
+    <div class="mb-wizard-tabs">
+      <span class="mb-wizard-tab mb-wizard-tab--active"><i>1</i>基本信息</span>
+      <span class="mb-wizard-tab"><i>2</i>选择对象</span>
+    </div>
+    <div class="mb-wizard-card">
+      <div class="ms-form" style="max-width:560px">
+        <div class="ms-form-item">
+          <label class="ms-form-label">扫描模式 ${tip('完整扫描：扫描 M-Bus 网络中的所有设备<br>掩码扫描：通过设备序列号前 8 位扫描特定设备')}</label>
+          <div class="ms-radio-btn-group" role="radiogroup">
+            <label class="ms-radio-btn ${state.cfg.mode === 'full' ? 'ms-radio-btn--checked' : ''}"><input type="radio" name="scanmode" value="full" ${state.cfg.mode === 'full' ? 'checked' : ''} data-action="set-mode"><span>完整扫描</span></label>
+            <label class="ms-radio-btn ${state.cfg.mode === 'mask' ? 'ms-radio-btn--checked' : ''}"><input type="radio" name="scanmode" value="mask" ${state.cfg.mode === 'mask' ? 'checked' : ''} data-action="set-mode"><span>掩码扫描</span></label>
+          </div>
+        </div>
+        <div class="ms-form-item" id="mask-item" style="${state.cfg.mode === 'mask' ? '' : 'display:none'}">
+          <label class="ms-form-label ms-form-label--required">序列号前缀（8 位 BCD 掩码）</label>
+          <div class="mb-mask" id="mask-cells">
+            ${maskCells.map((c, i) => `<input class="mb-mask-cell ${i === 0 ? 'mb-mask-cell--fixed' : ''}" maxlength="1" value="${i === 0 ? 'F' : esc(c === 'F' && i > 0 ? '' : c)}" ${i === 0 ? 'readonly tabindex="-1"' : 'data-idx="' + i + '"'} inputmode="text">`).join('')}
+          </div>
+          <span class="ms-form-help">首位固定 F = 匹配任意数字（0-9）；其余位填写已知数字，未知位留空按 F 处理</span>
+          <span class="ms-form-error" id="mask-error" style="display:none"></span>
+        </div>
+        <div class="ms-form-item">
+          <label class="ms-checkbox" style="cursor:pointer">
+            <input type="checkbox" id="auto-assign" ${state.cfg.autoAssign ? 'checked' : ''}>
+            <span class="ms-checkbox-box"></span><span>自动分配一次地址 ${tip('为扫描到的无地址设备自动分配 1-250 的通信地址')}</span>
+          </label>
+        </div>
+      </div>
+      <div class="mb-advanced ${state.cfg.advOpen ? 'is-open' : ''}" id="adv-box">
+        <button class="mb-advanced-toggle" data-action="toggle-adv" type="button">
+          <span class="mb-advanced-arrow">${ico('right', 12)}</span>高级设置
+        </button>
+        <div class="mb-advanced-body" style="${state.cfg.advOpen ? '' : 'display:none'}">
+          <div class="ms-form-item">
+            <label class="ms-form-label ms-form-label--required">超时时间（ms）</label>
+            <label class="ms-input"><input id="cfg-timeout" value="${state.cfg.timeout}"></label>
+            <span class="ms-form-help">范围 100 - 60000</span>
+          </div>
+          <div class="ms-form-item">
+            <label class="ms-form-label ms-form-label--required">重试次数</label>
+            <label class="ms-input"><input id="cfg-retry" value="${state.cfg.retry}"></label>
+            <span class="ms-form-help">范围 0 - 30</span>
+          </div>
+        </div>
+      </div>
+      <div class="mb-wizard-foot">
+        <button class="ms-btn" data-action="back-list">取消</button>
+        <button class="ms-btn ms-btn--filled" data-action="scan-next">下一步</button>
+      </div>
+    </div>
+  </div>`;
+  $app.innerHTML = shell(inner, '设备');
+}
+
+/* 掩码输入：仅更新单元格样式，不重绘 */
+function bindMaskInputs() {
+  const box = document.getElementById('mask-cells');
+  if (!box) return;
+  box.querySelectorAll('.mb-mask-cell:not(.mb-mask-cell--fixed)').forEach(cell => {
+    cell.addEventListener('input', () => {
+      const v = cell.value.toUpperCase().replace(/[^0-9F]/g, '');
+      cell.value = v;
+      cell.classList.remove('mb-mask-cell--error');
+      const err = document.getElementById('mask-error');
+      err.style.display = 'none';
+      const idx = +cell.dataset.idx;
+      state.cfg.mask = state.cfg.mask.substring(0, idx) + (v || '_') + state.cfg.mask.substring(idx + 1);
+      if (v && cell.nextElementSibling) cell.nextElementSibling.focus();
+    });
+    cell.addEventListener('blur', () => validateMask(false));
+  });
+}
+
+function readMaskVal() {
+  let raw = 'F';
+  document.querySelectorAll('#mask-cells .mb-mask-cell:not(.mb-mask-cell--fixed)').forEach(c => {
+    raw += c.value.toUpperCase() || '_';
+  });
+  return raw;
+}
+
+function validateMask(showEmpty) {
+  const raw = readMaskVal();
+  const err = document.getElementById('mask-error');
+  const cells = document.querySelectorAll('#mask-cells .mb-mask-cell:not(.mb-mask-cell--fixed)');
+  let msg = '';
+  if (/[^F_0-9]/.test(raw)) msg = '仅允许 0-9 或 F。';
+  else if (raw.includes('_')) {
+    if (showEmpty) msg = '序列号前缀为必填项，每一位都需要输入。';
+    else { cells.forEach(c => { if (!c.value) c.classList.add('mb-mask-cell--error'); }); msg = 'F = 匹配任意数字（0-9）；填写已知位，其余位留 F。此字段为必填项。'; }
+  } else if (!/[0-9]/.test(raw)) msg = '请至少填写一位具体数字，或切换为“完整扫描”。';
+  if (msg) {
+    err.textContent = msg;
+    err.style.display = 'flex';
+    cells.forEach(c => { if (!c.value && !msg.startsWith('仅允许')) c.classList.add('mb-mask-cell--error'); });
+    return false;
+  }
+  err.style.display = 'none';
+  state.cfg.mask = raw;
+  return true;
+}
+
+/* ================= 扫描进度 ================= */
+
+function startScan() {
+  state.scan.active = true;
+  state.scan.progress = 0;
+  state.scan.found = 0;
+  state.scan.objects = 0;
+  state.scan.entered = [];
+  renderScanModal();
+  state.scan.timer = setInterval(tickScan, 110);
+}
+
+function tickScan() {
+  const s = state.scan;
+  // 设备密集号段（30%-55%）增长慢，稀疏号段增长快
+  const dense = s.progress > 28 && s.progress < 56;
+  s.progress = Math.min(100, s.progress + (dense ? 0.55 : 1.35) + Math.random() * 0.9);
+  const hits = DISCOVER_TIMELINE.filter(t => t.p <= s.progress && !s.entered.includes(t.dev));
+  hits.forEach(t => {
+    s.entered.push(t.dev);
+    s.found += 1;
+    s.objects += deviceById(t.dev).objects.length;
+  });
+  updateScanModal();
+  if (s.progress >= 100) {
+    clearInterval(s.scan_safe);
+    clearInterval(s.timer);
+    s.timer = null;
+    setTimeout(() => { closeScanModal(); buildResult(); }, 500);
+  }
+}
+
+function deviceById(id) {
+  for (const g of GROUP_TPL) {
+    const d = g.devices.find(x => x.id === id);
+    if (d) return { ...d, objects: g.objects, group: g };
+  }
+  if (id === 'old1') return { id: 'old1', objects: GROUP_TPL[0].objects, added: true };
+  if (id === 'old2') return { id: 'old2', objects: GROUP_TPL[2].objects, added: true };
+  return null;
+}
+
+function renderScanModal() {
+  let mask = document.getElementById('scan-modal');
+  if (!mask) {
+    mask = document.createElement('div');
+    mask.id = 'scan-modal';
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50';
+    document.body.appendChild(mask);
+  }
+  mask.innerHTML = `
+  <div class="ms-modal mb-scan-modal">
+    <div class="ms-modal-body">
+      <div class="mb-scan-title"><span class="mb-scan-spin"></span>扫描中…</div>
+      <div class="ms-text ms-text--secondary" style="font-size:13px">持续扫描中，直至您停止扫描</div>
+      <div class="mb-scan-bar"><b id="scan-bar" style="width:0%"></b></div>
+      <div class="mb-scan-pct"><span id="scan-pct">0%</span><span>已探索地址空间 / 总地址空间</span></div>
+      <div class="mb-scan-stats">
+        <div class="mb-scan-stat"><b id="scan-devs">0</b><span>已发现设备</span></div>
+        <div class="mb-scan-stat"><b id="scan-objs">0</b><span>已发现对象</span></div>
+      </div>
+    </div>
+    <div class="ms-modal-foot" style="justify-content:center">
+      <button class="ms-btn ms-btn--filled" data-action="stop-scan">停止扫描，下一步</button>
+    </div>
+  </div>`;
+}
+
+function updateScanModal() {
+  const s = state.scan;
+  const bar = document.getElementById('scan-bar');
+  if (!bar) return;
+  bar.style.width = s.progress + '%';
+  document.getElementById('scan-pct').textContent = Math.round(s.progress) + '%';
+  document.getElementById('scan-devs').textContent = s.found;
+  document.getElementById('scan-objs').textContent = s.objects;
+}
+
+function closeScanModal() {
+  const m = document.getElementById('scan-modal');
+  if (m) m.remove();
+}
+
+function stopScan() {
+  const s = state.scan;
+  if (s.timer) { clearInterval(s.timer); s.timer = null; }
+  closeScanModal();
+  if (s.found === 0) {
+    // 未发现设备：返回步骤一并提示
+    state.scan.active = false;
+    state.scanStep = 1;
+    renderScan1();
+    noDeviceModal();
+    return;
+  }
+  buildResult();
+}
+
+function noDeviceModal() {
+  const m = document.createElement('div');
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px';
+  m.innerHTML = modalHtml(`
+    <div class="ms-modal ms-modal--sm">
+      <div class="ms-modal-head"><span class="ms-modal-title">未发现设备</span></div>
+      <div class="ms-modal-body"><div class="ms-space ms-space--8" style="align-items:flex-start">
+        <span style="color:var(--color-warm-normal);margin-top:2px">${ico('warn')}</span>
+        <span class="ms-text">未发现设备。请检查：<br>1）接线是否正确<br>2）设备是否上电<br>3）波特率是否匹配</span>
+      </div></div>
+      <div class="ms-modal-foot"><button class="ms-btn" data-action="noop-close">取消</button><button class="ms-btn ms-btn--filled" data-action="noop-close">重新扫描</button></div>
+    </div>`);
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-action]')) m.remove(); });
+}
+
+/* ================= 步骤二：选择设备与对象 ================= */
+
+function buildResult() {
+  const entered = state.scan.entered;
+  const foundOld = entered.filter(id => id.startsWith('old'));
+  const newIds = entered.filter(id => !id.startsWith('old'));
+  // 按分组模板裁剪出已发现的设备
+  const groups = GROUP_TPL.map(g => {
+    const devs = g.devices.filter(d => newIds.includes(d.id)).map(d => ({ ...d }));
+    return devs.length ? { ...g, devices: devs } : null;
+  }).filter(Boolean);
+  state.result = {
+    groups,
+    totalFound: entered.length,
+    addedCount: foundOld.length,
+    newCount: newIds.length,
+    objTotal: groups.reduce((a, g) => a + g.devices.length * g.objects.length, 0),
+  };
+  // 默认全选设备与对象（VIB 不可解析除外）
+  state.sel = {};
+  groups.forEach(g => g.devices.forEach(d => { state.sel[d.id] = true; }));
+  state.objSel = {};
+  groups.forEach(g => { state.objSel[g.id] = g.objects.map(o => !o.vibUnparsed); });
+  state.activeGroup = groups.length ? groups[0].id : '';
+  state.conflictOpen = { primary: false, secondary: false };
+  state.devSearch = '';
+  state.scanStep = 2;
+  state.view = 'scan';
+  renderScan2();
+}
+
+function groupTitle(g) {
+  const base = `${g.manufCode} ${g.manuf} ${g.medium}`;
+  const label = g.hasGroups > 1 ? `${base} Group ${g.gno}` : base;
+  const objCount = g.objects.filter(o => !o.vibUnparsed).length;
+  return { label, count: `${g.devices.length} 台 × ${objCount} 个对象` };
+}
+
+function hasDupDibVib(g) {
+  const seen = new Set();
+  return g.objects.some(o => { const k = o.dib + '|' + o.vib; if (seen.has(k)) return true; seen.add(k); return false; });
+}
+
+function renderScan2() {
+  const R = state.result;
+  const g = R.groups.find(x => x.id === state.activeGroup) || R.groups[0];
+  const kw = state.devSearch.trim().toLowerCase();
+
+  // 左：分组列表（搜索过滤）
+  const groupHtml = R.groups.map(gr => {
+    const t = groupTitle(gr);
+    const shownDevs = gr.devices.filter(d => !kw || d.name.toLowerCase().includes(kw));
+    const allChecked = shownDevs.length > 0 && shownDevs.every(d => state.sel[d.id]);
+    const someChecked = shownDevs.some(d => state.sel[d.id]);
+    return `<div class="mb-group ${gr.id === g.id ? 'mb-group--active' : ''}">
+      <div class="mb-group-head" data-action="pick-group" data-id="${gr.id}">
+        <label class="ms-checkbox" data-action="toggle-group" data-id="${gr.id}">
+          <input type="checkbox" ${allChecked ? 'checked' : ''}>
+          <span class="ms-checkbox-box"></span>
+        </label>
+        <span class="mb-group-head-label">${esc(t.label)}<span class="mb-group-count">${esc(t.count)}</span></span>
+        <span class="mb-conflict-arrow">${ico('right', 12)}</span>
+      </div>
+      <div class="mb-group-devs">
+        ${shownDevs.map(d => devRowHtml(gr, d)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // 右：对象表
+  const dup = g ? hasDupDibVib(g) : false;
+  const vibUnparsed = g ? g.objects.some(o => o.vibUnparsed) : false;
+  const objRows = g ? g.objects.map((o, i) => {
+    const checked = state.objSel[g.id][i];
+    const dis = o.vibUnparsed && !o.name;
+    return `<tr class="${o.vibUnparsed ? 'mb-obj-row--warn' : ''}" data-obj="${i}" data-group="${g.id}">
+      <td><label class="ms-checkbox"><input type="checkbox" data-action="toggle-obj" data-group="${g.id}" data-idx="${i}" ${checked ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="ms-checkbox-box"></span></label></td>
+      <td><input class="mb-obj-name-input" data-action="edit-objname" data-group="${g.id}" data-idx="${i}" value="${esc(o.name)}" placeholder="${o.vibUnparsed ? '请配置名称' : ''}">${o.vibUnparsed ? ' ' + ico('warn', 13) : ''}</td>
+      <td>${o.vibUnparsed && !o.name ? `<span class="ms-select ms-select--sm" style="width:88px"><select class="ms-select-native" data-action="unit-sel" data-group="${g.id}" data-idx="${i}">${UNITS.map(u => `<option ${u === '—' ? 'selected' : ''}>${u}</option>`).join('')}</select></span>` : `<span class="ms-text">${esc(o.unit)}</span>`}</td>
+      <td><span class="ms-text ms-text--secondary">${esc(o.dtype)}</span></td>
+      <td><span class="mb-mono">${esc(o.dib)}</span></td>
+      <td><span class="mb-mono">${esc(o.vib)}</span></td>
+      ${dup ? `<td>${o.recIdx ? `<span class="mb-obj-idx">${o.recIdx}</span>` : ''}</td>` : ''}
+      <td><span class="mb-mono ms-text--secondary">${esc(o.value)}</span></td>
+    </tr>`;
+  }).join('') : '';
+
+  const selDevCount = Object.values(state.sel).filter(Boolean).length;
+
+  const inner = `
+  <div class="mb-wizard">
+    <div class="mb-wizard-head">
+      <button class="ms-btn ms-btn--text" data-action="back-list">${ico('back')}返回</button>
+      <span class="mb-wizard-title">扫描添加 M-Bus 设备</span>
+    </div>
+    <div class="mb-wizard-tabs">
+      <span class="mb-wizard-tab mb-wizard-tab--done"><i>✓</i>基本信息</span>
+      <span class="mb-wizard-tab mb-wizard-tab--active"><i>2</i>选择对象</span>
+    </div>
+
+    <div class="ms-space ms-space--12" style="margin-bottom:var(--spacing-16)">
+      <div class="mb-summary">${ico('info')}
+        <span>总线共发现 <b>${R.totalFound}</b> 台设备，其中 <b>${R.addedCount}</b> 台已添加、<b class="ms-text" style="color:var(--color-primary-normal)">${R.newCount}</b> 台为新设备，请选择需要添加的新设备及对象信息。</span>
+      </div>
+      ${conflictHtml()}
+    </div>
+
+    <div class="mb-md">
+      <div class="mb-group-panel">
+        <div class="mb-group-bar">
+          <label class="ms-checkbox" title="全选当前列表设备">
+            <input type="checkbox" id="dev-checkall" data-action="check-all" ${isAllShownChecked() ? 'checked' : ''}>
+            <span class="ms-checkbox-box"></span>
+          </label>
+          <label class="ms-input ms-input--sm">${ico('search', 14)}<input id="dev-search" placeholder="搜索设备名称" value="${esc(state.devSearch)}"></label>
+        </div>
+        <div class="mb-group-list">${groupHtml || '<div class="ms-text ms-text--auxiliary" style="padding:24px;text-align:center">无匹配设备</div>'}</div>
+      </div>
+
+      <div class="mb-obj-panel">
+        <div class="mb-obj-head">
+          <span class="mb-obj-head-title">${g ? esc(groupTitle(g).label) + ' 对象' : ''}</span>
+          ${g ? `<label class="ms-checkbox"><input type="checkbox" data-action="check-all-obj" data-id="${g.id}" ${state.objSel[g.id].every((v, i) => v || g.objects[i].vibUnparsed && !g.objects[i].name) ? 'checked' : ''}><span class="ms-checkbox-box"></span><span style="font-size:12px;color:var(--color-text-secondary)">全选对象</span></label>` : ''}
+        </div>
+        ${vibUnparsed ? `<div class="mb-obj-note">${ico('warn')}<span>部分对象 VIB 无法自动解析，请手动配置名称和单位，否则对象数据无法解析上报。</span></div>` : ''}
+        ${dup ? `<div class="mb-obj-note">${ico('warn')}<span>相同编码（DIB+VIB 重复）记录已按数据帧顺序排列，请参照设备手册确认物理量。不确定时可先全部添加，稍后调整。</span></div>` : ''}
+        <div class="ms-table-wrap">
+          <table class="ms-table mb-obj-table">
+            <thead><tr>
+              <th style="width:36px"></th><th>对象名称</th><th>单位</th><th>类型</th>
+              <th>DIB</th><th>VIB</th>${dup ? '<th>记录位置</th>' : ''}<th>值</th>
+            </tr></thead>
+            <tbody>${objRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-wizard-foot">
+      <span class="ms-text ms-text--secondary" style="margin-right:auto;font-size:13px">已选 <b id="sel-count">${selDevCount}</b> 台设备</span>
+      <button class="ms-btn" data-action="back-step1">上一步</button>
+      <button class="ms-btn ms-btn--filled" data-action="finish-add" ${selDevCount === 0 ? 'disabled' : ''}>完成</button>
+    </div>
+  </div>
+  ${state.editTarget ? editNameModalHtml() : ''}
+  ${state.adding ? addingModalHtml() : ''}
+  ${state.resultModal ? resultModalHtml() : ''}
+  `;
+  $app.innerHTML = shell(inner, '设备');
+  bindScan2Events();
+}
+
+function devRowHtml(gr, d) {
+  const primTag = d.prim != null
+    ? `<span class="mb-addr-tag mb-addr-tag--num">${d.prim}</span>`
+    : (state.cfg.autoAssign ? `<span class="mb-addr-tag mb-addr-tag--wait">待分配</span>` : `<span class="mb-addr-tag mb-addr-tag--none">未分配</span>`);
+  return `<div class="mb-dev" data-action="pick-group" data-id="${gr.id}">
+    <label class="ms-checkbox" data-action="toggle-dev" data-id="${d.id}">
+      <input type="checkbox" ${state.sel[d.id] ? 'checked' : ''}><span class="ms-checkbox-box"></span>
+    </label>
+    <span class="mb-dev-main">
+      <span class="mb-dev-name"><span>${esc(d.name)}</span><span data-action="edit-name" data-id="${d.id}" title="编辑名称">${ico('edit', 13)}</span></span>
+      <span class="mb-dev-sec">${esc(d.sec)}</span>
+    </span>
+    ${primTag}
+  </div>`;
+}
+
+function conflictHtml() {
+  const parts = [];
+  // 一次地址冲突（可添加）
+  parts.push(`<div class="mb-conflict ${state.conflictOpen.primary ? 'is-open' : ''}">
+    <div class="mb-group-head" style="padding:var(--spacing-12) var(--spacing-16)" data-action="toggle-conflict" data-key="primary">
+      <span style="color:var(--color-warm-normal)">${ico('warn')}</span>
+      <span class="mb-conflict-title">一次地址冲突：${PRIMARY_CONFLICT.total} 台设备涉及地址 ${PRIMARY_CONFLICT.addr}（不影响添加，建议添加后修改地址）</span>
+      <span class="mb-conflict-actions">
+        <button class="ms-btn ms-btn--text ms-btn--sm" data-action="noop-stop">查看详情</button>
+        <button class="ms-btn ms-btn--text ms-btn--sm" data-action="download-report">${ico('download')}下载报告</button>
+      </span>
+      <span class="mb-conflict-arrow">${ico('right', 12)}</span>
+    </div>
+    <div class="mb-conflict-body"><div class="mb-conflict-scroll">
+      <div class="mb-conflict-row"><b>一次地址 ${PRIMARY_CONFLICT.addr}：${PRIMARY_CONFLICT.total} 台设备冲突</b></div>
+      ${PRIMARY_CONFLICT.rows.map(r => `<div class="mb-conflict-row">· ${esc(r.name)}<span class="mb-mono">（二次地址：${esc(r.sec)}）</span></div>`).join('')}
+      <div class="mb-conflict-row">… 还有 ${PRIMARY_CONFLICT.total - PRIMARY_CONFLICT.shown} 台，请下载完整报告查看</div>
+    </div></div>
+  </div>`);
+  // 二次地址冲突（不可添加）
+  parts.push(`<div class="mb-conflict ${state.conflictOpen.secondary ? 'is-open' : ''}" style="border-color:var(--color-red-03)">
+    <div class="mb-group-head" style="padding:var(--spacing-12) var(--spacing-16)" data-action="toggle-conflict" data-key="secondary">
+      <span style="color:var(--color-error-normal)">${ico('warn')}</span>
+      <span class="mb-conflict-title">二次地址冲突：${SECONDARY_CONFLICT.masks.length} 组（设备不可添加，不出现在设备列表中）</span>
+      <span class="mb-conflict-actions">
+        <button class="ms-btn ms-btn--text ms-btn--sm" data-action="noop-stop">查看详情</button>
+        <button class="ms-btn ms-btn--text ms-btn--sm" data-action="download-report">${ico('download')}下载报告</button>
+      </span>
+      <span class="mb-conflict-arrow">${ico('right', 12)}</span>
+    </div>
+    <div class="mb-conflict-body"><div class="mb-conflict-scroll">
+      ${SECONDARY_CONFLICT.masks.map(m => `<div class="mb-conflict-row"><b>地址掩码：${m}</b> — 树搜索细化到完整二次地址后仍无法唯一锁定，判定多台设备二次地址冲突</div>`).join('')}
+      <div class="mb-conflict-row">${esc(SECONDARY_CONFLICT.note)}，请现场排查并修复后重新扫描。</div>
+    </div></div>
+  </div>`);
+  return parts.join('');
+}
+
+function isAllShownChecked() {
+  const kw = state.devSearch.trim().toLowerCase();
+  const shown = state.result.groups.flatMap(g => g.devices).filter(d => !kw || d.name.toLowerCase().includes(kw));
+  return shown.length > 0 && shown.every(d => state.sel[d.id]);
+}
+
+function editNameModalHtml() {
+  const dev = state.result.groups.flatMap(g => g.devices).find(d => d.id === state.editTarget);
+  if (!dev) return '';
+  return modalHtml(`
+    <div class="ms-modal mb-edit-modal">
+      <div class="ms-modal-head"><span class="ms-modal-title">编辑设备名称</span><span class="ms-modal-close" data-action="close-editname">${ico('close')}</span></div>
+      <div class="ms-modal-body">
+        <div class="ms-form">
+          <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备名称</label>
+            <label class="ms-input"><input id="devname-input" value="${esc(dev.name)}" maxlength="127"></label>
+            <span class="ms-form-error" id="devname-error" style="display:none"></span>
+            <span class="ms-form-help">全局唯一，最大 127 字符</span></div>
+          <div class="ms-form-item"><label class="ms-form-label">二次地址</label><span class="mb-mono ms-text--secondary">${esc(dev.sec)}</span></div>
+        </div>
+      </div>
+      <div class="ms-modal-foot">
+        <button class="ms-btn" data-action="close-editname">取消</button>
+        <button class="ms-btn ms-btn--filled" data-action="save-editname" data-id="${dev.id}">保存</button>
+      </div>
+    </div>`);
+}
+
+function addingModalHtml() {
+  return modalHtml(`
+    <div class="ms-modal mb-loading-modal">
+      <div class="mb-loading-body">
+        <span class="mb-scan-spin" style="width:28px;height:28px;border-width:3px"></span>
+        <span class="mb-loading-text">设备添加中…</span>
+      </div>
+    </div>`);
+}
+
+function resultModalHtml() {
+  const r = state.resultModal; // { type: 'partial-assign' }
+  const failDevs = r.fails;
+  return modalHtml(`
+    <div class="ms-modal mb-result-modal">
+      <div class="ms-modal-head"><span class="ms-modal-title">添加完成</span></div>
+      <div class="ms-modal-body">
+        <div class="ms-space ms-space--8" style="align-items:flex-start">
+          <span style="color:var(--color-warm-normal);margin-top:2px">${ico('warn')}</span>
+          <span class="ms-text">添加成功，但以下设备一次地址分配失败，可能不支持自动分配，请手动配置一次地址。</span>
+        </div>
+        <div class="mb-result-devs" id="result-devs">
+          ${failDevs.map(n => `<span class="ms-text">· ${esc(n)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="ms-modal-foot">
+        <button class="ms-btn" data-action="copy-fails">${ico('copy')}复制</button>
+        <button class="ms-btn ms-btn--filled" data-action="confirm-result">确定</button>
+      </div>
+    </div>`);
+}
+
+/* ---------------- 步骤二事件绑定（输入类，避免重绘丢焦点） ---------------- */
+
+function bindScan2Events() {
+  syncGroupChecks();
+  const search = document.getElementById('dev-search');
+  if (search) {
+    search.addEventListener('input', () => {
+      state.devSearch = search.value;
+      // 局部刷新：仅左侧列表 + 全选态
+      refreshGroupList();
+    });
+  }
+}
+
+function refreshGroupList() {
+  // 重绘左列（搜索过滤时保持搜索框焦点：只替换列表容器）
+  const R = state.result;
+  const g = R.groups.find(x => x.id === state.activeGroup) || R.groups[0];
+  const kw = state.devSearch.trim().toLowerCase();
+  const html = R.groups.map(gr => {
+    const t = groupTitle(gr);
+    const shownDevs = gr.devices.filter(d => !kw || d.name.toLowerCase().includes(kw));
+    const allChecked = shownDevs.length > 0 && shownDevs.every(d => state.sel[d.id]);
+    return `<div class="mb-group ${gr.id === g.id ? 'mb-group--active' : ''}">
+      <div class="mb-group-head" data-action="pick-group" data-id="${gr.id}">
+        <label class="ms-checkbox" data-action="toggle-group" data-id="${gr.id}">
+          <input type="checkbox" ${allChecked ? 'checked' : ''}><span class="ms-checkbox-box"></span>
+        </label>
+        <span class="mb-group-head-label">${esc(t.label)}<span class="mb-group-count">${esc(t.count)}</span></span>
+        <span class="mb-conflict-arrow">${ico('right', 12)}</span>
+      </div>
+      <div class="mb-group-devs">${shownDevs.map(d => devRowHtml(gr, d)).join('')}</div>
+    </div>`;
+  }).join('');
+  const list = document.querySelector('.mb-group-list');
+  if (list) list.innerHTML = html || '<div class="ms-text ms-text--auxiliary" style="padding:24px;text-align:center">无匹配设备</div>';
+  const ca = document.getElementById('dev-checkall');
+  if (ca) ca.checked = isAllShownChecked();
+  syncGroupChecks();
+}
+
+function syncGroupChecks() {
+  state.result.groups.forEach(gr => {
+    const head = document.querySelector(`.mb-group-head[data-action="pick-group"][data-id="${gr.id}"] input[type="checkbox"]`);
+    if (head) head.indeterminate = gr.devices.some(d => state.sel[d.id]) && !gr.devices.every(d => state.sel[d.id]);
+  });
+}
+
+function updateSelCount() {
+  const el = document.getElementById('sel-count');
+  const n = Object.values(state.sel).filter(Boolean).length;
+  if (el) el.textContent = n;
+  const finish = document.querySelector('[data-action="finish-add"]');
+  if (finish) finish.disabled = n === 0;
+}
+
+/* ---------------- 确认添加 ---------------- */
+
+function finishAdd() {
+  state.adding = true;
+  renderScan2();
+  setTimeout(() => {
+    state.adding = false;
+    // 模拟：1 台待分配设备一次地址分配失败
+    const fails = [];
+    state.result.groups.forEach(g => g.devices.forEach(d => {
+      if (state.sel[d.id] && d.prim == null) {
+        // 演示：第一台待分配成功，后续待分配失败
+        if (fails.length === 0 && d.id === 'g1d3') { d.prim = 21; return; }
+        fails.push(d.name);
+      }
+    }));
+    if (fails.length) state.resultModal = { fails };
+    else commitDevices([]);
+    renderScan2();
+  }, 1500);
+}
+
+function commitDevices() {
+  const R = state.result;
+  const newDevs = [];
+  const now = '2026-09-15 10:26:0' + Math.floor(Math.random() * 9);
+  R.groups.forEach(g => {
+    const objN = state.objSel[g.id] ? state.objSel[g.id].filter((v, i) => v && !g.objects[i].vibUnparsed).length : 0;
+    g.devices.forEach(d => {
+      if (!state.sel[d.id]) return;
+      newDevs.push({
+        id: d.id, name: d.name, model: 'None', proto: 'M-Bus / M-Bus',
+        status: 'online', objects: objN, updated: now,
+        prim: d.prim != null ? d.prim : null, sec: d.sec,
+      });
+    });
+  });
+  addedDevices = addedDevices.concat(newDevs);
+  state.justAddedIds = newDevs.map(d => d.id);
+  state.view = 'list';
+  state.scanStep = 1;
+  state.resultModal = null;
+  state.editTarget = null;
+  renderList();
+  toast(newDevs.length + ' 台设备添加成功', 'success');
+}
+
+function downloadReport() {
+  const rows = [
+    ['Conflict Type', 'Conflict Address', 'Device Name', 'Detection Time', 'Suggestion'],
+  ];
+  const ts = new Date().toISOString();
+  PRIMARY_CONFLICT.rows.forEach(r => rows.push(['Primary Address Conflict', String(PRIMARY_CONFLICT.addr), r.name, ts, 'Please modify the primary address of this device to ensure uniqueness on the bus.']));
+  rows.push(['Primary Address Conflict', String(PRIMARY_CONFLICT.addr), 'Kamstrup Multical 302', ts, 'Please modify the primary address of this device to ensure uniqueness on the bus.']);
+  SECONDARY_CONFLICT.masks.forEach(m => rows.push(['Secondary Address Conflict', m, '—', ts, 'Secondary address conflict prevents unique device identification. Please investigate and resolve on-site then re-scan.']));
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const fname = `EG71-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}-71.0.0.4-conflict_address_details.csv`;
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('冲突报告已下载：' + fname);
+}
+
+/* ---------------- 全局事件委托 ---------------- */
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-action]');
+  if (!t) return;
+  const act = t.dataset.action;
+
+  // 阻止冒泡类：组内 checkbox / 设备 checkbox 点击不应触发行为
+  if (act === 'toggle-dev' || act === 'toggle-group' || act === 'edit-name' || act === 'toggle-obj' || act === 'noop-stop' || act === 'download-report' || act === 'unit-sel' || act === 'edit-objname') e.stopPropagation();
+
+  switch (act) {
+    case 'open-scan':
+      state.view = 'scan'; state.scanStep = 1;
+      renderScan1();
+      break;
+    case 'back-list':
+      state.view = 'list'; state.scanStep = 1;
+      renderList();
+      break;
+    case 'back-step1':
+      state.view = 'scan'; state.scanStep = 1;
+      renderScan1();
+      break;
+    case 'set-mode':
+      // radio change 也走这里
+      break;
+    case 'toggle-adv': {
+      e.preventDefault();
+      const box = document.getElementById('adv-box');
+      const body = box.querySelector('.mb-advanced-body');
+      state.cfg.advOpen = !state.cfg.advOpen;
+      box.classList.toggle('is-open', state.cfg.advOpen);
+      body.style.display = state.cfg.advOpen ? '' : 'none';
+      break;
+    }
+    case 'scan-next': {
+      if (state.cfg.mode === 'mask' && !validateMask(true)) break;
+      const to = document.getElementById('cfg-timeout');
+      const re = document.getElementById('cfg-retry');
+      if (to) {
+        const v = parseInt(to.value, 10);
+        if (isNaN(v) || v < 100 || v > 60000) { to.closest('.ms-input').classList.add('ms-input--error'); toast('请输入有效值，范围：100 到 60000。', 'error'); break; }
+        to.closest('.ms-input').classList.remove('ms-input--error');
+        state.cfg.timeout = v;
+      }
+      if (re) {
+        const v = parseInt(re.value, 10);
+        if (isNaN(v) || v < 0 || v > 30) { re.closest('.ms-input').classList.add('ms-input--error'); toast('请输入有效值，范围：0 到 30。', 'error'); break; }
+        re.closest('.ms-input').classList.remove('ms-input--error');
+        state.cfg.retry = v;
+      }
+      startScan();
+      break;
+    }
+    case 'stop-scan':
+      stopScan();
+      break;
+    case 'pick-group': {
+      state.activeGroup = t.dataset.id;
+      renderScan2();
+      break;
+    }
+    case 'toggle-conflict': {
+      const k = t.dataset.key;
+      state.conflictOpen[k] = !state.conflictOpen[k];
+      renderScan2();
+      break;
+    }
+    case 'download-report':
+      downloadReport();
+      break;
+    case 'edit-name':
+      state.editTarget = t.dataset.id;
+      renderScan2();
+      setTimeout(() => { const i = document.getElementById('devname-input'); if (i) { i.focus(); i.select(); } }, 0);
+      break;
+    case 'close-editname':
+      state.editTarget = null;
+      renderScan2();
+      break;
+    case 'save-editname': {
+      const input = document.getElementById('devname-input');
+      const err = document.getElementById('devname-error');
+      const v = input.value.trim();
+      const dev = state.result.groups.flatMap(g => g.devices).find(d => d.id === state.editTarget);
+      if (!v) { err.textContent = '此字段为必填项。'; err.style.display = 'flex'; break; }
+      if (v.length > 127) { err.textContent = '最多 127 个字符。'; err.style.display = 'flex'; break; }
+      const dupName = addedDevices.some(d => d.name === v) || state.result.groups.flatMap(g => g.devices).some(d => d.name === v && d.id !== dev.id);
+      if (dupName) { err.textContent = '设备名称已存在。'; err.style.display = 'flex'; break; }
+      dev.name = v;
+      state.editTarget = null;
+      renderScan2();
+      toast('设备名称已更新');
+      break;
+    }
+    case 'toggle-dev':
+    case 'toggle-group':
+    case 'toggle-obj':
+    case 'check-all':
+      // checkbox 逻辑统一在 change 事件中处理
+      break;
+    case 'check-all-obj': {
+      const g = state.result.groups.find(x => x.id === t.dataset.id);
+      const target = t.checked;
+      g.objects.forEach((o, i) => {
+        if (o.vibUnparsed && !o.name) return; // 未配置名称的不可选
+        state.objSel[g.id][i] = target;
+      });
+      renderScan2();
+      break;
+    }
+    case 'finish-add':
+      finishAdd();
+      break;
+    case 'copy-fails': {
+      const txt = (state.resultModal ? state.resultModal.fails : []).join('\n');
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(() => toast('已复制失败设备信息')).catch(() => toast('复制失败'));
+      break;
+    }
+    case 'confirm-result':
+      commitDevices();
+      break;
+    case 'edit-dev':
+      state.drawerDev = t.dataset.id;
+      renderList();
+      break;
+    case 'close-drawer':
+      state.drawerDev = null;
+      renderList();
+      break;
+    case 'save-drawer': {
+      const nameInput = document.getElementById('ed-name');
+      const v = nameInput.value.trim();
+      if (!v) { toast('设备名称为必填项。', 'error'); break; }
+      const d = addedDevices.find(x => x.id === t.dataset.id);
+      if (addedDevices.some(x => x.name === v && x.id !== d.id)) { toast('设备名称已存在。', 'error'); break; }
+      const primInput = document.getElementById('ed-prim');
+      if (primInput && primInput.value) {
+        const p = parseInt(primInput.value, 10);
+        if (isNaN(p) || p < 1 || p > 250) { toast('请输入有效值，范围：1 到 250。', 'error'); break; }
+        d.prim = p;
+      }
+      d.name = v;
+      state.drawerDev = null;
+      renderList();
+      toast('保存成功，已使用新地址验证设备通信');
+      break;
+    }
+    case 'del-dev':
+      state.delDev = t.dataset.id;
+      renderList();
+      break;
+    case 'close-del':
+      state.delDev = null;
+      renderList();
+      break;
+    case 'confirm-del':
+      addedDevices = addedDevices.filter(x => x.id !== t.dataset.id);
+      state.delDev = null;
+      renderList();
+      toast('设备已删除', 'success');
+      break;
+    case 'noop-close':
+      break;
+  }
+});
+
+/* radio / checkbox / select 的 change 委托 */
+document.addEventListener('change', e => {
+  const t = e.target.closest('[data-action]');
+  const act = t ? t.dataset.action : '';
+  if (act === 'set-mode') {
+    state.cfg.mode = t.value;
+    renderScan1();
+  }
+  if (act === 'toggle-dev') {
+    state.sel[t.dataset.id] = e.target.checked;
+    refreshGroupList();
+    updateSelCount();
+  }
+  if (act === 'toggle-group') {
+    const g = state.result.groups.find(x => x.id === t.dataset.id);
+    if (g) {
+      g.devices.forEach(d => state.sel[d.id] = e.target.checked);
+      refreshGroupList();
+      updateSelCount();
+    }
+  }
+  if (act === 'toggle-obj') {
+    const gid = t.dataset.group;
+    if (state.objSel[gid]) state.objSel[gid][+t.dataset.idx] = e.target.checked;
+  }
+  if (act === 'check-all') {
+    const kw = state.devSearch.trim().toLowerCase();
+    state.result.groups.flatMap(g => g.devices)
+      .filter(d => !kw || d.name.toLowerCase().includes(kw))
+      .forEach(d => state.sel[d.id] = e.target.checked);
+    refreshGroupList();
+    updateSelCount();
+  }
+  if (e.target.id === 'auto-assign') {
+    state.cfg.autoAssign = e.target.checked;
+    // 步骤二「待分配/未分配」标签随之切换
+    if (state.view === 'scan' && state.scanStep === 2) renderScan2();
+  }
+  if (act === 'unit-sel') {
+    const g = state.result.groups.find(x => x.id === t.dataset.group);
+    const o = g.objects[+t.dataset.idx];
+    o.unit = t.value === '—' ? '' : t.value;
+  }
+});
+
+/* 对象名称编辑（失焦校验设备内唯一） */
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('[data-action="edit-objname"]');
+  if (!t) return;
+  const g = state.result.groups.find(x => x.id === t.dataset.group);
+  if (!g) return;
+  const o = g.objects[+t.dataset.idx];
+  const v = t.value.trim();
+  if (v && g.objects.some((x, i) => i !== +t.dataset.idx && x.name === v)) {
+    t.value = o.name;
+    toast('该设备下对象名称已存在。', 'error');
+    return;
+  }
+  const hadName = !!o.name;
+  o.name = v;
+  // VIB 不可解析对象：配置名称后解禁勾选框
+  if (o.vibUnparsed && v && !hadName) {
+    state.objSel[g.id][+t.dataset.idx] = true;
+    renderScan2();
+  }
+});
+
+/* 首屏 */
+render();
+</script>
+</body>
+</html>
