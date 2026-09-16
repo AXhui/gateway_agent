@@ -148,6 +148,28 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
 
   # macOS 无 python 命令（仅 python3）；优先 python3 回退 python，两端兼容
   PY_BIN=$(command -v python3 || command -v python)
+
+  # 产品分类自动判断（多层兜底）：quality.json category > prompt关键词 > prd关键词 > commit msg > demo名称
+  # AI 漏写 category 时，自动根据 PRD/提示词关键词判断，避免飞书产品分类为空
+  PRD_FILE=""
+  if [ -f "$DEMO_DIR/prd.md" ]; then
+    PRD_FILE="$DEMO_DIR/prd.md"
+  fi
+  CATEGORY=$("$PY_BIN" tools/detect_category.py \
+    --quality-file "$QUALITY_FILE" \
+    --prompt-file "$DEMO_DIR/prompt.md" \
+    --prd-file "$PRD_FILE" \
+    --commit-msg "$COMMIT_MSG" \
+    --demo-name "$DEMO_NAME" 2>/dev/null || true)
+  if [ -n "$CATEGORY" ]; then
+    echo "[post-commit] 产品分类：$CATEGORY"
+  fi
+
+  CATEGORY_ARG=""
+  if [ -n "$CATEGORY" ]; then
+    CATEGORY_ARG="--category $CATEGORY"
+  fi
+
   "$PY_BIN" tools/sync_demo_to_feishu.py \
     --name "$DEMO_NAME" \
     --description "$COMMIT_MSG" \
@@ -160,6 +182,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --quality-file "$QUALITY_FILE" \
     --duration "$DURATION" \
     --req-id "$REQ_ID" \
+    $CATEGORY_ARG \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
 done
 
