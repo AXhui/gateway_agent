@@ -146,7 +146,9 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     fi
   fi
 
-  python tools/sync_demo_to_feishu.py \
+  # macOS 无 python 命令（仅 python3）；优先 python3 回退 python，两端兼容
+  PY_BIN=$(command -v python3 || command -v python)
+  "$PY_BIN" tools/sync_demo_to_feishu.py \
     --name "$DEMO_NAME" \
     --description "$COMMIT_MSG" \
     --preview-url "$PREVIEW_URL" \
