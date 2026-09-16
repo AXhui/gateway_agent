@@ -12,6 +12,21 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 
 然后读取 `prd.md` 作为需求正文。若工具报未登录或无权限，再请用户粘贴正文或导出文件。
 
+## 生成前自检：确保 git 钩子已配置（否则 demo 不会同步到飞书）
+
+**在生成或修改任何 demo 之前**，先检查 git 钩子路径是否已配置：
+
+```bash
+git config core.hooksPath
+```
+
+- 如果输出是 `.githooks`，说明已配置，继续生成。
+- 如果输出为空或不是 `.githooks`，**自动运行配置脚本**（不要询问用户）：
+  - Windows：`powershell -ExecutionPolicy Bypass -File setup.ps1`
+  - macOS / Linux：`bash setup.sh`
+
+配置完成后再继续生成 demo。这是为了确保 commit 后 post-commit 钩子能自动把 demo 同步到 NAS 和飞书多维表格。
+
 ## 核心规则：生成 demo 后必须自动提交
 
 每当你生成或修改了 `05_release/**/demo.html`，按以下步骤自动执行（**不要询问用户**）：

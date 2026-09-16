@@ -5,6 +5,23 @@
 
 ---
 
+## ⚠️ 首次使用必须先运行配置（否则 demo 不会同步到飞书）
+
+clone 项目后，**在项目根目录运行一次**配置脚本，git 钩子才会生效（自动备份 NAS + 同步飞书多维表格）：
+
+| 系统 | 命令 |
+|---|---|
+| **Windows** | `powershell -ExecutionPolicy Bypass -File setup.ps1` 或双击 `setup.bat` |
+| **macOS / Linux** | `bash setup.sh` |
+
+配置内容：设置 `git config core.hooksPath .githooks` + 检查环境变量。**只需运行一次**，之后每次 commit 都会自动同步。
+
+> 如果用 AI 工具（Claude Code / Codex / Cursor 等）生成 demo，AI 会自动检测钩子是否配置，未配置时会自动运行 setup，无需手动操作。
+
+详细配置说明见 [FEISHU_SYNC_SETUP.md](FEISHU_SYNC_SETUP.md)。
+
+---
+
 ## 〇、需求背景与文档目标
 
 **总目标**：把线上平台**已有的组件**沉淀为一套**组件 Skill**，供不同平台（工作台 / 飞书 / 各 Agent）统一调用，从而"一句话"装配出与线上版本**还原度 100%** 的业务页面。
