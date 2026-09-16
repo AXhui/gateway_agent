@@ -1613,6 +1613,16 @@ body {
 .mb-tip:hover .mb-tip-body { opacity: 1; visibility: visible; }
 .mb-tip-body::after { content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--color-gray-10); }
 
+/* 列表单元格 hover 提示（镜像 .mb-tip 视觉，宿主为单元格内容本身） */
+.mb-htip { position: relative; }
+.mb-htip > .mb-tip-body { bottom: calc(100% + 6px); }
+.mb-htip:hover > .mb-tip-body { opacity: 1; visibility: visible; }
+
+/* 手动添加两步向导（两列表单 + 步骤二对象表） */
+.mb-form-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--spacing-24); align-items: start; }
+.mb-manual-modal .ms-modal-body { max-height: 62vh; overflow: auto; }
+.mb-manual-modal .mb-step2-summary { display: flex; gap: var(--spacing-12); align-items: center; margin-bottom: var(--spacing-12); }
+
 /* ---------- 扫描向导页 ---------- */
 .mb-wizard { max-width: 1080px; margin: 0 auto; }
 .mb-wizard-head { display: flex; align-items: center; gap: var(--spacing-12); margin-bottom: var(--spacing-20); }
@@ -6743,6 +6753,27 @@ const SECONDARY_CONFLICT = {
 
 const UNITS = ['kWh', 'm³', 'kW', 'm³/h', '°C', 'h', '—'];
 
+/* 手动添加·设备型号对象模板（来源：设备库模板，线性函数默认 y = x） */
+const MODEL_OBJECTS = {
+  'Kamstrup Multical 302': [
+    { name: 'Energy', unit: 'kWh', desc: '32bit 整数 · 瞬时值' },
+    { name: 'Volume', unit: 'm³', desc: '32bit 整数 · 瞬时值' },
+    { name: 'Power', unit: 'kW', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Flow rate', unit: 'm³/h', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Flow temperature', unit: '°C', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Return temperature', unit: '°C', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Energy (最大值)', unit: 'kWh', desc: '32bit 整数 · 最大值' },
+  ],
+  'Sontex Supercal 5': [
+    { name: 'Energy', unit: 'kWh', desc: '32bit 整数 · 瞬时值' },
+    { name: 'Volume', unit: 'm³', desc: '32bit 整数 · 瞬时值' },
+    { name: 'Power', unit: 'kW', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Flow temperature', unit: '°C', desc: '16bit 整数 · 瞬时值' },
+    { name: 'Return temperature', unit: '°C', desc: '16bit 整数 · 瞬时值' },
+  ],
+};
+const MANUAL_PROTOS = ['Modbus RTU', 'Modbus TCP', 'BACnet IP', 'M-Bus', 'KNX/TP', 'LoRaWAN'];
+
 /* ---------------- 状态 ---------------- */
 
 const state = {
@@ -6760,6 +6791,11 @@ const state = {
   drawerDev: null,         // 列表页编辑设备
   delDev: null,
   justAddedIds: [],
+  manualAdd: null,         // 手动添加向导 { step, proto, model, addrMode, name, addr, desc, interval, errors, sel }
+  modelConfirm: false,     // 编辑抽屉·型号切换二次确认
+  drawerErrors: {},        // 编辑抽屉失焦校验错误
+  drawerDraft: null,       // 编辑抽屉表单草稿（型号确认弹窗重渲染时保住已输入值）
+  objLimit: null,          // 手动添加·对象数量上限拦截弹框
 };
 
 const $app = document.getElementById('app');
@@ -6812,22 +6848,39 @@ function shell(inner) {
 
 /* ================= 设备列表页 ================= */
 
+/* 告警信息来源（PRD 5.4.4.2）：多种告警共存时逐条展示 */
+function deviceWarnings(d) {
+  const w = [];
+  if (d.primConflict) w.push('一次地址与其他已纳管设备重复，可能导致通信失败，请修改设备地址。');
+  if (d.secConflict) w.push('二次地址与总线上其他未纳管设备重复，可能导致通信失败，建议移除冲突设备或更换设备。');
+  return w;
+}
+
 function statusCell(d) {
   const map = { online: ['mb-status--online', '在线'], offline: ['mb-status--offline', '离线'], never: ['mb-status--never', '从未上线'] };
   const m = map[d.status] || map.never;
-  return `<span class="mb-status ${m[0]}"><i></i>${esc(m[1])}${d.primConflict ? ' ' + ico('warn', 13) : ''}</span>`;
+  const warns = deviceWarnings(d);
+  const inner = `<span class="mb-status ${m[0]}"><i></i>${esc(m[1])}${warns.length ? ' ' + ico('warn', 13) : ''}</span>`;
+  return warns.length
+    ? `<span class="mb-htip">${inner}<span class="mb-tip-body">${warns.map(x => esc(x)).join('<br>')}</span></span>`
+    : inner;
+}
+
+function nameCell(d, isNew) {
+  const idf = d.sec ? d.sec.replace(/\s/g, '') : '未分配';
+  return `<span class="mb-htip">${esc(d.name)}${isNew ? '<span class="mb-new-tag">NEW</span>' : ''}<span class="mb-tip-body">${esc(d.name)}<br>设备标识符：${esc(idf)}</span></span>`;
 }
 
 function renderList() {
   const rows = addedDevices.map((d, i) => {
     const isNew = state.justAddedIds.includes(d.id);
-    return `<tr class="${isNew ? 'mb-row-new' : ''}">
-      <td>${esc(d.name)}${isNew ? '<span class="mb-new-tag">NEW</span>' : ''}</td>
+    return `<tr class="${isNew ? 'mb-row-new' : ''}" data-dev="${d.id}">
+      <td>${nameCell(d, isNew)}</td>
       <td><span class="ms-text ms-text--secondary">${esc(d.model || 'None')}</span></td>
       <td>${d.proto && d.proto.indexOf('M-Bus') === 0 ? `<span class="ms-text">${esc(d.proto.split(' / ')[0])}</span> <span class="ms-link">/ ${esc(d.proto.split(' / ')[1])}</span>` : `<span class="ms-text">${esc(d.proto)}</span>`}</td>
-      <td>${statusCell(d)}</td>
-      <td class="bc-num"><span class="ms-link">${d.objects}</span></td>
-      <td><span class="mb-mono ms-text--secondary">${esc(d.updated || '—')}</span></td>
+      <td><span data-cell="status">${statusCell(d)}</span></td>
+      <td class="bc-num"><span class="ms-link" data-cell="objects">${d.objects}</span></td>
+      <td><span class="mb-mono ms-text--secondary" data-cell="updated">${esc(d.updated || '—')}</span></td>
       <td class="bc-num">—</td>
       <td class="bc-eg71-table-ops">
         <button class="ms-btn ms-btn--text ms-btn--sm" data-action="edit-dev" data-id="${d.id}">编辑</button>
@@ -6846,7 +6899,7 @@ function renderList() {
           <div class="ms-table-title">设备列表</div>
           <div class="ms-space ms-space--8">
             <button class="ms-btn ms-btn--sm">${ico('download', 14)}导出</button>
-            <button class="ms-btn ms-btn--sm">${ico('plus', 14)}手动添加</button>
+            <button class="ms-btn ms-btn--sm" data-action="open-manual">${ico('plus', 14)}手动添加</button>
             <button class="ms-btn ms-btn--sm ms-btn--filled" data-action="open-scan">${ico('scan', 14)}扫描添加 M-Bus</button>
           </div>
         </div>
@@ -6859,49 +6912,85 @@ function renderList() {
         </table>
       </div>
     ${state.drawerDev ? drawerEditHtml() : ''}
+    ${state.manualAdd ? manualAddHtml() : ''}
     ${state.delDev ? delModalHtml() : ''}
+    ${state.drawerDev && state.modelConfirm ? modelConfirmHtml() : ''}
+    ${state.objLimit ? objLimitHtml() : ''}
   `;
   $app.innerHTML = shell(inner); window.MS_EG71_SHELL.bind($app);
-  const delModal = $app.querySelector('.bc-eg71-modal');
-  if (delModal && state.delDev) {
-    delModal.hidden = false;
-    delModal.classList.add('is-open');
-    const resetDel = () => { state.delDev = null; renderList(); };
-    delModal.querySelectorAll('[data-modal-close],[data-modal-cancel]').forEach(b => b.addEventListener('click', resetDel));
-    delModal.querySelector('.ms-mask').addEventListener('click', e => { if (e.target === delModal.querySelector('.ms-mask')) resetDel(); });
-    const okBtn = delModal.querySelector('[data-modal-ok]');
-    if (okBtn) okBtn.addEventListener('click', () => {
+  wireEg71BModal();
+}
+
+/* B_Eg71Modal 通用接线：删除确认 / 型号切换确认（同一时刻只存在一个 bc-eg71-modal） */
+function wireEg71BModal() {
+  const bmodal = $app.querySelector('.bc-eg71-modal');
+  if (!bmodal) return;
+  bmodal.hidden = false;
+  bmodal.classList.add('is-open');
+  const dismiss = () => { state.delDev = null; state.modelConfirm = false; state.objLimit = null; renderList(); };
+  bmodal.querySelectorAll('[data-modal-close],[data-modal-cancel]').forEach(b => b.addEventListener('click', dismiss));
+  const mask = bmodal.querySelector('.ms-mask');
+  if (mask) mask.addEventListener('click', e => { if (e.target === mask) dismiss(); });
+  const okBtn = bmodal.querySelector('[data-modal-ok]');
+  if (!okBtn) return;
+  if (state.delDev) {
+    okBtn.addEventListener('click', () => {
       addedDevices = addedDevices.filter(x => x.id !== state.delDev);
       state.delDev = null;
       renderList();
       toast('设备已删除', 'success');
     });
+  } else if (state.modelConfirm) {
+    okBtn.addEventListener('click', () => {
+      state.modelConfirm = false;
+      applyDrawerSave(true);
+    });
+  } else if (state.objLimit) {
+    okBtn.addEventListener('click', () => { state.objLimit = null; renderList(); });
   }
 }
+
+const DRAWER_MODELS = ['None', 'Kamstrup Multical 302', 'Sontex Supercal 5'];
 
 function drawerEditHtml() {
   const d = addedDevices.find(x => x.id === state.drawerDev);
   if (!d) return '';
+  const e = state.drawerErrors || {};
+  const errSpan = k => e[k] ? `<span class="ms-form-error">${ico('warn', 12)}${esc(e[k])}</span>` : '';
+  const errCls = k => e[k] ? ' ms-input--error' : '';
+  const isMBus = d.proto && d.proto.indexOf('M-Bus') === 0;
+  const draft = state.drawerDraft || {};
+  const vName = draft.name != null ? draft.name : d.name;
+  const vPrim = draft.prim != null ? draft.prim : (d.prim != null ? d.prim : '');
+  const vDesc = draft.desc != null ? draft.desc : (d.desc || '');
+  const vInterval = draft.interval != null ? draft.interval : (d.interval != null ? d.interval : 600);
+  const vModel = draft.model != null ? draft.model : (d.model || 'None');
   return modalHtml(`
     <div class="ms-modal mb-edit-modal">
       <div class="ms-modal-head"><span class="ms-modal-title">编辑设备</span><span class="ms-modal-close" data-action="close-drawer">${ico('close')}</span></div>
       <div class="ms-modal-body">
         <div class="ms-form">
           <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备名称</label>
-            <label class="ms-input"><input id="ed-name" value="${esc(d.name)}"></label></div>
+            <label class="ms-input${errCls('name')}"><input id="ed-name" value="${esc(vName)}" data-check="ed-name"></label>
+            ${errSpan('name')}</div>
           <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备型号</label>
-            <span class="ms-select"><select class="ms-select-native"><option${d.model === 'None' ? ' selected' : ''}>None</option><option>Kamstrup Multical 302</option><option>Sontex Supercal 5</option></select></span></div>
+            <span class="ms-select"><select class="ms-select-native" id="ed-model">${DRAWER_MODELS.map(mo => `<option${vModel === mo ? ' selected' : ''}>${mo}</option>`).join('')}</select></span>
+            <span class="ms-form-help">切换型号将清除该设备下已创建的对象及转发引用</span></div>
           <div class="ms-form-item"><label class="ms-form-label">协议类型</label>
             <span class="ms-text ms-text--secondary">${esc(d.proto)}</span></div>
-          <div class="ms-form-item"><label class="ms-form-label">一次地址</label>
-            <label class="ms-input"><input id="ed-prim" value="${d.prim != null ? d.prim : ''}" placeholder="1 - 250"></label>
-            <span class="ms-form-help">范围 1-250 的整数；保存时校验是否与已有设备冲突</span></div>
+          ${isMBus ? `<div class="ms-form-item"><label class="ms-form-label">一次地址</label>
+            <label class="ms-input${errCls('prim')}"><input id="ed-prim" value="${esc(vPrim)}" placeholder="1 - 250" data-check="ed-prim"></label>
+            ${errSpan('prim')}
+            <span class="ms-form-help">范围 1-250 的整数；保存时使用新地址验证设备通信</span></div>
           <div class="ms-form-item"><label class="ms-form-label">二次地址</label>
-            <span class="mb-mono ms-text--secondary">${esc(d.sec || '—')}</span></div>
+            <span class="mb-mono ms-text--secondary">${esc(d.sec || '未分配')}</span></div>` : ''}
           <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">采集间隔（秒）</label>
-            <label class="ms-input"><input id="ed-interval" value="300"></label></div>
+            <label class="ms-input${errCls('interval')}"><input id="ed-interval" value="${esc(vInterval)}" data-check="ed-interval"></label>
+            ${errSpan('interval')}
+            <span class="ms-form-help">影响该设备下所有数据对象的采集频率</span></div>
           <div class="ms-form-item"><label class="ms-form-label">描述</label>
-            <label class="ms-input ms-input--textarea"><textarea rows="2"></textarea></label></div>
+            <label class="ms-input ms-input--textarea${errCls('desc')}"><textarea rows="2" id="ed-desc" data-check="ed-desc">${esc(vDesc)}</textarea></label>
+            ${errSpan('desc')}</div>
         </div>
       </div>
       <div class="ms-modal-foot">
@@ -6909,6 +6998,336 @@ function drawerEditHtml() {
         <button class="ms-btn ms-btn--filled" data-action="save-drawer" data-id="${d.id}">保存</button>
       </div>
     </div>`);
+}
+
+/* 型号切换二次确认：调 B_Eg71Modal（action='confirm'） */
+function modelConfirmHtml() {
+  return window.MS_BIZ_INDEX && window.MS_BIZ_INDEX['bc-eg71-modal']
+    ? window.MS_BIZ_INDEX['bc-eg71-modal'].render({
+        action: 'confirm',
+        title: '切换设备型号',
+        desc: '设备型号切换后，设备当前已创建的对象以及相关的转发数据都会被清除，请确认是否要切换？',
+        okText: '确认',
+        cancelText: '取消'
+      })
+    : '';
+}
+
+/* ================= 手动添加 + 编辑抽屉共享逻辑（PRD 5.3 / 5.4） ================= */
+
+/* 校验矩阵（PRD 5.3.4.3）：name 必填/唯一/≤127；一次地址 1-250 整数+唯一；二次地址 16 位 hex+唯一；采集间隔 60-86400 */
+function validateDeviceFields(f, opts) {
+  opts = opts || {};
+  const errors = {};
+  const name = (f.name || '').trim();
+  if (!name) errors.name = '此字段为必填项。';
+  else if (name.length > 127) errors.name = '最多 127 个字符。';
+  else if (addedDevices.some(x => x.name === name && x.id !== opts.selfId)) errors.name = '设备名称已存在。';
+
+  // 地址：手动添加（needAddr）必填；编辑抽屉选填，非空才校验
+  if (opts.needAddr || (f.addr || '').trim() !== '') {
+    const addr = (f.addr || '').trim();
+    if (!addr) {
+      errors.addr = '此字段为必填项。';
+    } else if (f.addrMode === 'sec') {
+      if (!/^[0-9A-Fa-f]{16}$/.test(addr)) errors.addr = '请输入 16 位十六进制字符。';
+      else {
+        const up = addr.toUpperCase();
+        const other = addedDevices.find(x => x.sec && x.sec.replace(/\s/g, '').toUpperCase() === up && x.id !== opts.selfId);
+        if (other) errors.addr = `该地址已被设备 ${other.name} 使用。`;
+      }
+    } else {
+      const p = Number(addr);
+      if (!/^\d+$/.test(addr) || p < 1 || p > 250) errors.addr = '请输入有效值，范围：1 到 250。';
+      else {
+        const other = addedDevices.find(x => x.prim === p && x.id !== opts.selfId);
+        if (other) errors.addr = `该地址已被设备 ${other.name} 使用。`;
+      }
+    }
+  }
+
+  const interval = (f.interval || '').trim();
+  if (!interval) errors.interval = '此字段为必填项。';
+  else {
+    const n = Number(interval);
+    if (!/^\d+$/.test(interval) || n < 60 || n > 86400) errors.interval = '请输入有效值，范围：60 到 86400。';
+  }
+  return errors;
+}
+
+/* 失焦校验必须原地更新错误（不能重渲染：focusout 先于 click，重渲染会把按钮打掉） */
+function showFieldError(input, msg) {
+  if (!input) return;
+  const item = input.closest('.ms-form-item');
+  if (!item) return;
+  const box = input.closest('.ms-input');
+  let err = item.querySelector(':scope > .ms-form-error');
+  if (msg) {
+    if (box) box.classList.add('ms-input--error');
+    if (!err) {
+      err = document.createElement('span');
+      err.className = 'ms-form-error';
+      const help = item.querySelector(':scope > .ms-form-help');
+      item.insertBefore(err, help || null);
+    }
+    err.innerHTML = `${ico('warn', 12)}${esc(msg)}`;
+  } else {
+    if (box) box.classList.remove('ms-input--error');
+    if (err) err.remove();
+  }
+}
+
+function nowStr() {
+  const p = n => String(n).padStart(2, '0');
+  const t = new Date();
+  return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+}
+
+/* 异步上线（PRD 5.3.4.4）：创建后静默验证，never→online 不打扰用户；只原地刷新行，避免砸开着的弹窗 */
+function simulateVerify(devId, ok) {
+  setTimeout(() => {
+    const d = addedDevices.find(x => x.id === devId);
+    if (!d) return;
+    if (ok !== false) { d.status = 'online'; d.updated = nowStr(); }
+    updateRowInPlace(devId);
+  }, 3000);
+}
+
+function updateRowInPlace(devId) {
+  const d = addedDevices.find(x => x.id === devId);
+  const tr = $app.querySelector(`tr[data-dev="${devId}"]`);
+  if (!d || !tr) return;
+  const s = tr.querySelector('[data-cell="status"]'); if (s) s.innerHTML = statusCell(d);
+  const o = tr.querySelector('[data-cell="objects"]'); if (o) o.textContent = String(d.objects != null ? d.objects : 0);
+  const u = tr.querySelector('[data-cell="updated"]'); if (u) u.textContent = d.updated || '—';
+}
+
+let manualSeq = 0;
+
+function createManualDevice(objCount) {
+  const m = state.manualAdd;
+  const isMBus = m.proto.indexOf('M-Bus') === 0;
+  const dev = {
+    id: 'man' + (++manualSeq),
+    name: (m.name || '').trim(),
+    model: m.model || 'None',
+    proto: isMBus ? 'M-Bus / M-Bus' : m.proto,
+    status: 'never',
+    objects: objCount,
+    updated: '—',
+    interval: parseInt(m.interval, 10) || 600,
+    desc: (m.desc || '').trim()
+  };
+  if (isMBus) {
+    if (m.addrMode === 'sec') dev.sec = (m.addr || '').trim().toUpperCase();
+    else dev.prim = parseInt(m.addr, 10);
+  }
+  addedDevices.push(dev);
+  state.justAddedIds.push(dev.id);
+  simulateVerify(dev.id);
+  return dev;
+}
+
+/* Step1 → 下一步：校验矩阵 → 设备数量上限（网关 2000 / M-Bus 250，⚠️ toast）→ None 直接建档 / 其他进 Step2 */
+function manualNext() {
+  readManualInputs();
+  const m = state.manualAdd;
+  const isMBus = m.proto.indexOf('M-Bus') === 0;
+  const errors = validateDeviceFields(m, { needAddr: isMBus });
+  if (Object.keys(errors).length) { m.errors = errors; renderList(); return; }
+  m.errors = {};
+  if (addedDevices.length >= 2000) { toast('已达网关设备数量上限（2000），无法继续添加。', 'error'); return; }
+  if (isMBus && addedDevices.filter(x => x.proto && x.proto.indexOf('M-Bus') === 0).length >= 250) {
+    toast('已达 M-Bus 总线设备数量上限（250），无法继续添加。', 'error'); return;
+  }
+  m.name = (m.name || '').trim();
+  if ((m.model || 'None') === 'None') {
+    createManualDevice(0);
+    state.manualAdd = null;
+    renderList();
+    toast('设备添加成功', 'success');
+  } else {
+    m.step = 2;
+    if (!m.selInit) {
+      m.sel = {};
+      (MODEL_OBJECTS[m.model] || []).forEach((o, i) => { m.sel[i] = true; });
+      m.selInit = true;
+    }
+    renderList();
+  }
+}
+
+/* Step2 → 完成：对象数量上限（单设备 100 / 网关 20000）命中走 B_Eg71Modal 拦截 */
+function manualFinish(andMore) {
+  const m = state.manualAdd;
+  const objs = MODEL_OBJECTS[m.model] || [];
+  const selCount = objs.reduce((n, o, i) => n + (m.sel[i] ? 1 : 0), 0);
+  const totalAfter = addedDevices.reduce((n, x) => n + (x.objects || 0), 0) + selCount;
+  if (selCount > 100 || totalAfter > 20000) {
+    state.objLimit = { selCount, overDevice: selCount > 100, overGateway: totalAfter > 20000 };
+    renderList();
+    return;
+  }
+  createManualDevice(selCount);
+  toast('设备添加成功', 'success');
+  state.manualAdd = andMore
+    ? { step: 1, proto: m.proto, model: m.model, addrMode: m.addrMode, name: '', addr: '', desc: '', interval: m.interval, errors: {}, sel: {}, selInit: false }
+    : null;
+  renderList();
+}
+
+/* 对象数量超出限制：B_Eg71Modal（action='confirm'） */
+function objLimitHtml() {
+  const o = state.objLimit || {};
+  const parts = [];
+  if (o.overDevice) parts.push('单个设备可创建的数据对象数量不能超过 100 个');
+  if (o.overGateway) parts.push('网关可创建的数据对象总数不能超过 20000 个');
+  return window.MS_BIZ_INDEX && window.MS_BIZ_INDEX['bc-eg71-modal']
+    ? window.MS_BIZ_INDEX['bc-eg71-modal'].render({
+        action: 'confirm',
+        title: '对象数量超出限制',
+        desc: `已选 ${o.selCount} 个数据对象，${parts.join('；')}。`,
+        okText: '确认'
+      })
+    : '';
+}
+
+/* 把弹窗内已输入的值同步回 state（切步/切换协议/下一步前调用） */
+function readManualInputs() {
+  const m = state.manualAdd;
+  if (!m) return;
+  const g = id => { const el = document.getElementById(id); return el ? el.value : null; };
+  const pairs = [['ma-name', 'name'], ['ma-addr', 'addr'], ['ma-desc', 'desc'], ['ma-interval', 'interval']];
+  pairs.forEach(([id, key]) => { const v = g(id); if (v != null) m[key] = v; });
+}
+
+/* 手动添加弹窗（PRD 5.3.4.2）：Step1 两列表单；Step2 按型号带出对象模板勾选 */
+function manualAddHtml() {
+  const m = state.manualAdd;
+  if (m.step === 2) return manualStep2Html(m);
+  const e = m.errors || {};
+  const errSpan = k => e[k] ? `<span class="ms-form-error">${ico('warn', 12)}${esc(e[k])}</span>` : '';
+  const errCls = k => e[k] ? ' ms-input--error' : '';
+  const isMBus = m.proto.indexOf('M-Bus') === 0;
+  const addrLabel = m.addrMode === 'prim' ? '一次地址' : '二次地址';
+  const addrPh = m.addrMode === 'prim' ? '1 - 250' : '16 位十六进制字符';
+  const descItem = `<div class="ms-form-item"><label class="ms-form-label">描述</label>
+      <label class="ms-input ms-input--textarea"><textarea rows="2" id="ma-desc" data-check="ma-desc">${esc(m.desc)}</textarea></label></div>`;
+  return modalHtml(`
+    <div class="ms-modal ms-modal--lg mb-manual-modal">
+      <div class="ms-modal-head"><span class="ms-modal-title">手动添加设备</span><span class="ms-modal-close" data-action="close-manual">${ico('close')}</span></div>
+      <div class="ms-modal-body">
+        <div class="ms-form mb-form-grid">
+          <div>
+            <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">设备名称</label>
+              <label class="ms-input${errCls('name')}"><input id="ma-name" value="${esc(m.name)}" placeholder="请输入设备名称" data-check="ma-name"></label>
+              ${errSpan('name')}</div>
+            ${isMBus ? `<div class="ms-form-item"><label class="ms-form-label ms-form-label--required">寻址方式</label>
+              <div class="ms-radio-btn-group" role="radiogroup">
+                <label class="ms-radio-btn ${m.addrMode === 'prim' ? 'ms-radio-btn--checked' : ''}"><input type="radio" name="ma-addrmode" value="prim" ${m.addrMode === 'prim' ? 'checked' : ''} data-action="manual-addrmode"><span>一次地址</span></label>
+                <label class="ms-radio-btn ${m.addrMode === 'sec' ? 'ms-radio-btn--checked' : ''}"><input type="radio" name="ma-addrmode" value="sec" ${m.addrMode === 'sec' ? 'checked' : ''} data-action="manual-addrmode"><span>二次地址</span></label>
+              </div>
+              <span class="ms-form-help">一次地址：总线上唯一整数；二次地址：适用于支持二次寻址的表计</span></div>
+            <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">${addrLabel}</label>
+              <label class="ms-input${errCls('addr')}"><input id="ma-addr" value="${esc(m.addr)}" placeholder="${addrPh}" data-check="ma-addr"></label>
+              ${errSpan('addr')}</div>` : ''}
+            ${descItem}
+          </div>
+          <div>
+            <div class="ms-form-item"><label class="ms-form-label">协议类型</label>
+              <span class="ms-select"><select class="ms-select-native" id="ma-proto" data-action="manual-proto">${MANUAL_PROTOS.map(p => `<option${m.proto === p ? ' selected' : ''}>${p}</option>`).join('')}</select></span></div>
+            <div class="ms-form-item"><label class="ms-form-label">设备型号</label>
+              <span class="ms-select"><select class="ms-select-native" id="ma-model" data-action="manual-model">${DRAWER_MODELS.map(mo => `<option${(m.model || 'None') === mo ? ' selected' : ''}>${mo}</option>`).join('')}</select></span>
+              <span class="ms-form-help">选择型号后，第二步将带出该型号支持的数据对象模板</span></div>
+            <div class="ms-form-item"><label class="ms-form-label ms-form-label--required">采集间隔（秒） ${tip('影响该设备下所有数据对象的采集频率')}</label>
+              <label class="ms-input${errCls('interval')}"><input id="ma-interval" value="${esc(m.interval)}" data-check="ma-interval"></label>
+              ${errSpan('interval')}
+              <span class="ms-form-help">范围 60-86400，M-Bus 默认 600</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="ms-modal-foot">
+        <button class="ms-btn" data-action="close-manual">取消</button>
+        <button class="ms-btn ms-btn--filled" data-action="manual-next">下一步</button>
+      </div>
+    </div>`);
+}
+
+function manualStep2Html(m) {
+  const objs = MODEL_OBJECTS[m.model] || [];
+  const allChecked = objs.length > 0 && objs.every((o, i) => m.sel[i]);
+  const selCount = objs.reduce((n, o, i) => n + (m.sel[i] ? 1 : 0), 0);
+  const rows = objs.map((o, i) => `<tr>
+      <td><label class="ms-checkbox"><input type="checkbox" data-action="manual-obj" data-idx="${i}" ${m.sel[i] ? 'checked' : ''}><span class="ms-checkbox-box"></span></label></td>
+      <td>${esc(o.name)}</td>
+      <td><span class="mb-mono">y = x</span></td>
+      <td><span class="ms-text ms-text--secondary">${esc(o.desc)}</span></td>
+      <td>${esc(o.unit || '—')}</td>
+    </tr>`).join('');
+  const isMBus = m.proto.indexOf('M-Bus') === 0;
+  const addrText = isMBus ? `${m.addrMode === 'prim' ? '一次地址' : '二次地址'} ${esc(m.addr)}` : '';
+  return modalHtml(`
+    <div class="ms-modal ms-modal--lg mb-manual-modal">
+      <div class="ms-modal-head"><span class="ms-modal-title">手动添加设备</span><span class="ms-modal-close" data-action="close-manual">${ico('close')}</span></div>
+      <div class="ms-modal-body">
+        <div class="mb-step2-summary ms-text ms-text--secondary">${esc(m.name)} · ${esc(m.proto)} · ${esc(m.model || 'None')}${addrText ? ' · ' + addrText : ''}</div>
+        <div class="ms-table-wrap">
+          <table class="ms-table">
+            <thead><tr>
+              <th style="width:40px"><label class="ms-checkbox"><input type="checkbox" id="ma-obj-all" data-action="manual-obj-all" ${allChecked ? 'checked' : ''}><span class="ms-checkbox-box"></span></label></th>
+              <th>对象名称</th><th>线性函数</th><th>描述</th><th>单位</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ms-modal-foot">
+        <span class="ms-text ms-text--secondary" style="margin-right:auto">已选 <span id="ma-sel-count">${selCount}</span> / ${objs.length} 个数据对象</span>
+        <button class="ms-btn" data-action="close-manual">取消</button>
+        <button class="ms-btn" data-action="manual-prev">上一步</button>
+        <button class="ms-btn" data-action="manual-finish-more">完成并继续添加</button>
+        <button class="ms-btn ms-btn--filled" data-action="manual-finish">完成</button>
+      </div>
+    </div>`);
+}
+
+/* 编辑抽屉保存（PRD 5.4.4）：校验矩阵 → 型号变更先走 B_Eg71Modal 二次确认（确认后 objects=0）→ 应用并验证通信（状态在线） */
+function applyDrawerSave(confirmed) {
+  const d = addedDevices.find(x => x.id === state.drawerDev);
+  if (!d) { state.drawerDev = null; state.drawerDraft = null; renderList(); return; }
+  const draft = state.drawerDraft || {};
+  const f = {
+    name: draft.name != null ? draft.name : d.name,
+    addr: draft.prim != null ? draft.prim : (d.prim != null ? String(d.prim) : ''),
+    addrMode: 'prim',
+    interval: draft.interval != null ? draft.interval : (d.interval != null ? String(d.interval) : ''),
+    desc: draft.desc != null ? draft.desc : (d.desc || '')
+  };
+  const errors = validateDeviceFields(f, { selfId: d.id });
+  if (Object.keys(errors).length) {
+    state.drawerErrors = { name: errors.name || '', prim: errors.addr || '', interval: errors.interval || '' };
+    renderList();
+    return;
+  }
+  const oldModel = d.model || 'None';
+  const newModel = draft.model != null ? draft.model : oldModel;
+  const modelChanged = newModel !== oldModel;
+  if (modelChanged && !confirmed) { state.modelConfirm = true; renderList(); return; }
+  d.name = f.name.trim();
+  d.desc = (f.desc || '').trim();
+  d.interval = parseInt(f.interval, 10);
+  const isMBus = d.proto && d.proto.indexOf('M-Bus') === 0;
+  if (isMBus) { if (f.addr === '') delete d.prim; else d.prim = parseInt(f.addr, 10); }
+  if (isMBus) { delete d.primConflict; delete d.secConflict; } // 新地址验证成功，冲突告警随地址更新清除
+  if (modelChanged) { d.model = newModel; d.objects = 0; }
+  d.status = 'online';
+  d.updated = nowStr();
+  state.drawerDev = null;
+  state.modelConfirm = false;
+  state.drawerErrors = {};
+  state.drawerDraft = null;
+  renderList();
+  toast(modelChanged ? '设备型号已切换，设备下对象及转发引用已清除；保存成功，已验证设备通信' : '保存成功，已使用新地址验证设备通信', 'success');
 }
 
 /* 删除确认弹窗：调 B_Eg71Modal（bc-eg71-modal），禁止手搓（AGENTS.md 组件映射清单 + R2b） */
@@ -7512,6 +7931,7 @@ function commitDevices() {
         id: d.id, name: d.name, model: 'None', proto: 'M-Bus / M-Bus',
         status: 'online', objects: objN, updated: now,
         prim: d.prim != null ? d.prim : null, sec: d.sec,
+        ...(d.primConflict ? { primConflict: true } : {}), ...(d.secConflict ? { secConflict: true } : {}),
       });
     });
   });
@@ -7670,33 +8090,52 @@ document.addEventListener('click', e => {
       break;
     case 'edit-dev':
       state.drawerDev = t.dataset.id;
+      state.drawerErrors = {};
+      state.drawerDraft = null;
       renderList();
       break;
     case 'close-drawer':
       state.drawerDev = null;
+      state.modelConfirm = false;
+      state.drawerErrors = {};
+      state.drawerDraft = null;
       renderList();
       break;
     case 'save-drawer': {
-      const nameInput = document.getElementById('ed-name');
-      const v = nameInput.value.trim();
-      if (!v) { toast('设备名称为必填项。', 'error'); break; }
-      const d = addedDevices.find(x => x.id === t.dataset.id);
-      if (addedDevices.some(x => x.name === v && x.id !== d.id)) { toast('设备名称已存在。', 'error'); break; }
-      const primInput = document.getElementById('ed-prim');
-      if (primInput && primInput.value) {
-        const p = parseInt(primInput.value, 10);
-        if (isNaN(p) || p < 1 || p > 250) { toast('请输入有效值，范围：1 到 250。', 'error'); break; }
-        d.prim = p;
-      }
-      d.name = v;
-      state.drawerDev = null;
-      renderList();
-      toast('保存成功，已使用新地址验证设备通信');
+      const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+      state.drawerDraft = { name: g('ed-name'), prim: g('ed-prim'), desc: g('ed-desc'), interval: g('ed-interval'), model: g('ed-model') };
+      applyDrawerSave(false);
       break;
     }
     case 'del-dev':
       state.delDev = t.dataset.id;
       renderList();
+      break;
+    case 'open-manual':
+      state.manualAdd = { step: 1, proto: 'M-Bus', model: 'None', addrMode: 'prim', name: '', addr: '', desc: '', interval: '600', errors: {}, sel: {} };
+      renderList();
+      break;
+    case 'close-manual':
+      state.manualAdd = null;
+      state.objLimit = null;
+      renderList();
+      break;
+    case 'manual-next':
+      manualNext();
+      break;
+    case 'manual-prev':
+      readManualInputs();
+      state.manualAdd.step = 1;
+      renderList();
+      break;
+    case 'manual-finish':
+      manualFinish(false);
+      break;
+    case 'manual-finish-more':
+      manualFinish(true);
+      break;
+    case 'manual-addrmode':
+      // radio 切换走 change 委托
       break;
     case 'noop-close':
       break;
@@ -7746,6 +8185,33 @@ document.addEventListener('change', e => {
     const o = g.objects[+t.dataset.idx];
     o.unit = t.value === '—' ? '' : t.value;
   }
+  /* ---- 手动添加向导 ---- */
+  if (act === 'manual-addrmode') {
+    readManualInputs();
+    state.manualAdd.addrMode = t.value;
+    state.manualAdd.addr = '';
+    if (state.manualAdd.errors) state.manualAdd.errors.addr = '';
+    renderList();
+  }
+  if (act === 'manual-proto') {
+    readManualInputs();
+    state.manualAdd.proto = t.value;
+    renderList();
+  }
+  if (act === 'manual-model') {
+    state.manualAdd.model = t.value;
+  }
+  if (act === 'manual-obj') {
+    state.manualAdd.sel[+t.dataset.idx] = e.target.checked;
+    syncManualSelUI();
+  }
+  if (act === 'manual-obj-all') {
+    const m = state.manualAdd;
+    const objs = MODEL_OBJECTS[m.model] || [];
+    objs.forEach((o, i) => { m.sel[i] = e.target.checked; });
+    $app.querySelectorAll('input[data-action="manual-obj"]').forEach(c => { c.checked = e.target.checked; });
+    syncManualSelUI();
+  }
 });
 
 /* 对象名称编辑（失焦校验设备内唯一） */
@@ -7768,6 +8234,44 @@ document.addEventListener('focusout', e => {
     state.objSel[g.id][+t.dataset.idx] = true;
     renderScan2();
   }
+});
+
+/* Step2 勾选数原地同步（不重渲染，保住滚动位置） */
+function syncManualSelUI() {
+  const m = state.manualAdd;
+  if (!m) return;
+  const objs = MODEL_OBJECTS[m.model] || [];
+  const n = objs.reduce((s, o, i) => s + (m.sel[i] ? 1 : 0), 0);
+  const cnt = document.getElementById('ma-sel-count');
+  if (cnt) cnt.textContent = String(n);
+  const all = document.getElementById('ma-obj-all');
+  if (all) all.checked = objs.length > 0 && n === objs.length;
+}
+
+/* 手动添加 / 编辑抽屉字段失焦校验：原地显错（PRD 5.3.4.3 校验矩阵） */
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('[data-check]');
+  if (!t) return;
+  const key = t.dataset.check;
+  let f, opts, errObj, errKey;
+  if (key.indexOf('ma-') === 0 && state.manualAdd) {
+    readManualInputs();
+    const m = state.manualAdd;
+    f = m;
+    opts = { needAddr: m.proto.indexOf('M-Bus') === 0 };
+    errObj = m.errors = m.errors || {};
+    errKey = key.slice(3);
+  } else if (key.indexOf('ed-') === 0 && state.drawerDev) {
+    const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    f = { name: g('ed-name'), addr: g('ed-prim'), addrMode: 'prim', interval: g('ed-interval'), desc: g('ed-desc') };
+    opts = { selfId: state.drawerDev };
+    errObj = state.drawerErrors;
+    errKey = key === 'ed-prim' ? 'prim' : key.slice(3);
+  } else return;
+  const errors = validateDeviceFields(f, opts);
+  const msg = errors[errKey === 'prim' ? 'addr' : errKey] || '';
+  showFieldError(t, msg);
+  if (errObj) errObj[errKey] = msg;
 });
 
 /* 首屏 */
