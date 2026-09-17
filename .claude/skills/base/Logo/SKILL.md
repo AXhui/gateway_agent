@@ -1,7 +1,7 @@
 ---
 name: Logo
-version: 2.0.0
-description: 品牌标识（基础组件，直接引用官方 SVG 原图）
+version: 2.0.1
+description: 品牌标识（基础组件，官方 SVG 内联渲染，永不因路径丢失）
 ---
 
 # Logo · 品牌标识
@@ -68,14 +68,19 @@ description: 品牌标识（基础组件，直接引用官方 SVG 原图）
 无动画，静态品牌展示。
 
 ### 品牌资产说明
-Logo 通过 `<img>` 直接引用官方 SVG 原图（`frontend/components/Logo/assets/`），
-四个文件与 Milesight 官方导出一致：`Type=Logo, Color=Default.svg`（full/brand）、
-`Type=Logo M, Color=Default.svg`（compact/brand）、`Type=Logo, Color=White.svg`（full/white）、
-`Type=Logo M, Color=White.svg`（compact/white）。
+官方 SVG 原图存档于 `frontend/components/Logo/assets/`（四个文件，与 Milesight 官方导出一致）。
+**运行时渲染一律内联**：`assets/js/registry-base.js` 的 logo 段以单行字符串内嵌四份官方 SVG
+（`MS_BASE_LOGO_SVGS`），渲染器 `MS_BASE_LOGO_SVG({ variant, color, height, width })` 输出
+内联 `<svg>`，**不引用任何外部文件**——单文件 demo、组件页、任意目录深度的宿主一律出图。
+
+两个全局均以 `Object.defineProperty` 冻结（`writable:false / configurable:false`）：
+任何后续脚本重定义（如手写假 logo 覆盖）都会静默失效（module 严格模式下直接抛错），
+确保「任何时候 logo 只有一个、且统一」。**换标流程**：替换 `assets/` 原图后，必须同步
+更新 `registry-base.js` 内联副本与 `frontend/components/Logo/index.html` 内嵌段（两处均源自原图）。
 
 > **例外说明**：官方 SVG 内含硬编码品牌色（`#3491FA` / `#1351AD` / `#272E3B` / `#FFFFFF`），
-> 属外部品牌资源，**保留官方原色、不走 token 变量**（encapsulation.md §3 的品牌资产豁免，
-> 依据「直接引用官方 SVG 原图」决策）。组件不再消费 `--color-*` 令牌渲染图形/文字颜色。
+> 属外部品牌资产，**保留官方原色、不走 token 变量**（encapsulation.md §3 的品牌资产豁免）。
+> 组件不消费 `--color-*` 令牌渲染图形/文字颜色。
 
 ---
 
@@ -84,7 +89,9 @@ Logo 通过 `<img>` 直接引用官方 SVG 原图（`frontend/components/Logo/as
 ## 三、研发层（代码架构 / Props 契约）
 
 ### 导入方式
-组件为独立 HTML 实现（React 18 + esm.sh），通过 `<img>` 引用官方 SVG 品牌资产，第三方开发者**通过 Skill 契约 + 资产文件**复刻：
+组件为独立 HTML 实现（React 18 + esm.sh）。页面内嵌与 `registry-base.js` 相同的冻结 logo 段
+（`MS_BASE_LOGO_SVGS` + `MS_BASE_LOGO_SVG`），React 组件经 `dangerouslySetInnerHTML` 调用该
+渲染器输出内联 `<svg>`——自包含、零外部文件依赖：
 
 ```html
 <script type="importmap">
@@ -123,4 +130,5 @@ Logo 通过 `<img>` 直接引用官方 SVG 原图（`frontend/components/Logo/as
 
 - Preview 文件：`logo-preview.html`
 - 组件目录：`../../../../frontend/components/Logo/index.html`
-- 品牌资产：`../../../../frontend/components/Logo/assets/`（官方 SVG 原图 ×4）
+- 品牌资产：`../../../../frontend/components/Logo/assets/`（官方 SVG 原图 ×4，存档源）
+- 权威渲染源：`../../../../assets/js/registry-base.js` logo 段（内联副本，demo 链路唯一取图入口）

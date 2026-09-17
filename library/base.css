@@ -532,7 +532,7 @@ body {
    豁免 token 约束（外部品牌资产）。业务层通过 MS_BASE_LOGO_SVG({ variant, color, height })
    切换完整/图形、标准/反白，渲染为 <img> 而非内联 <svg>。 */
 .ms-logo { display: inline-flex; align-items: center; text-decoration: none; }
-.ms-logo img { display: block; }
+.ms-logo img, .ms-logo svg { display: block; }
 
 /* ---------- Affix ---------- */
 .ms-affix { position: relative; }

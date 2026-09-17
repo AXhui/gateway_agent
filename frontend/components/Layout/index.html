@@ -110,6 +110,7 @@ body{font:400 14px/1.5 var(--font-sans);color:var(--color-text-primary);backgrou
 </head>
 <body>
 <div id="root"></div>
+<script src="../../../assets/js/registry-base.js"></script>
 <script type="importmap">
 { "imports": {
   "react":"https://esm.sh/react@18.3.1",
@@ -156,10 +157,10 @@ const Footer = ({ style, ...rest }) => h('footer', {
     font:'400 14px/1.5 var(--font-sans)', textAlign:'center', ...style }, ...rest
 });
 
+// 官方 Logo：经 registry 冻结渲染器 MS_BASE_LOGO_SVG 输出内联 <svg>，与所有 demo 同源
 const Logo = ({ dark }) => h('div', {
-  style:{ font:'600 18px/1.2 var(--font-sans)',
-    color: dark?'var(--color-text-constant-normal)':'var(--color-primary-normal)',
-    padding:'var(--spacing-16) var(--spacing-24)' } }, 'Milesight IOT');
+  style:{ display:'flex', alignItems:'center', padding:'var(--spacing-16) var(--spacing-24)' },
+  dangerouslySetInnerHTML:{ __html: window.MS_BASE_LOGO_SVG({ variant: 'full', color: dark ? 'white' : 'brand', height: 28 }) } });
 
 const NavItem = ({ active, dark, children }) => h('div', {
   style:{ height:40, display:'flex', alignItems:'center', padding:'0 var(--spacing-24)',

@@ -38,4 +38,5 @@ color: purple
 ## 待补
 
 - 渲染规则：内联 `library/*.css` + `assets/js/registry-*.js`（含 `MS_EG71_SHELL`）到单文件 demo，样式/类名一律取自已注册资产。
+- Logo 铁律：registry 中的 `MS_BASE_LOGO_SVGS` / `MS_BASE_LOGO_SVG` 是官方 Logo 唯一渲染器，已 `Object.defineProperty` 冻结——内联 registry 时**原样拷贝、禁止删改该段、禁止任何形式的手写/重定义 logo 覆盖**（重定义会被冻结锁静默拦截，module 严格模式下直接抛错）。业务层取图一律 `MS_BASE_LOGO_SVG({ variant, color, height, width })`。
 - 图表纯内联 SVG 的生成约定。
