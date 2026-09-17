@@ -176,9 +176,9 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     echo "[post-commit] 产品分类：$CATEGORY"
   fi
 
-  CATEGORY_ARG=""
+  CATEGORY_ARG=()
   if [ -n "$CATEGORY" ]; then
-    CATEGORY_ARG="--category $CATEGORY"
+    CATEGORY_ARG=(--category "$CATEGORY")
   fi
 
   python tools/sync_demo_to_feishu.py \
@@ -193,7 +193,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --quality-file "$QUALITY_FILE" \
     --duration "$DURATION" \
     --req-id "$REQ_ID" \
-    $CATEGORY_ARG \
+    "${CATEGORY_ARG[@]}" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
 done
 

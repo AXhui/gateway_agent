@@ -29,6 +29,9 @@ import urllib.request
 import urllib.error
 
 
+ALLOWED_CATEGORIES = {"", "云平台", "CCTV", "CV", "网关", "路由器", "uink"}
+
+
 def sync_to_feishu(payload: dict, webhook_url: str, webhook_token: str) -> bool:
     """发送 POST 请求到飞书多维表格 Webhook。"""
     headers = {"Content-Type": "application/json"}
@@ -88,7 +91,7 @@ def main():
     parser.add_argument("--prompt", default="", help="用户本次的原始提示词/需求原话")
     parser.add_argument("--duration", type=float, default=None, help="生成耗时（分钟），由 post-commit 自动计算")
     parser.add_argument("--req-id", default="", help="需求编号（如 REQ-004），供工作流按需求查找/更新旧记录")
-    parser.add_argument("--category", default="", choices=["", "云平台", "CCTV", "CV", "网关", "路由器", "uink"], help="产品分类：IOT/CCTV/路由器/网关（AI 自动判断）")
+    parser.add_argument("--category", default="", help="产品分类：云平台/CCTV/CV/网关/路由器/uink（AI 自动判断）")
     # AI 自评的 5 维度分数（0-100，整数）；不填则为空，等待 UED 复核
     parser.add_argument("--structure", type=int, help="结构还原度 0-100（AI 自评）")
     parser.add_argument("--component", type=int, help="组件类型还原度 0-100（AI 自评）")
@@ -130,7 +133,25 @@ def main():
     interaction = _pick(args.interaction, "interaction")
     visual = _pick(args.visual, "visual")
     field_score = _pick(args.field_score, "field")
-    category = args.category or q.get("category", "")
+    def _normalize_category(value):
+        if value is None:
+            return ""
+        value = str(value).strip()
+        if not value:
+            return ""
+        if value in ALLOWED_CATEGORIES:
+            return value
+        for encoding in ("latin1", "cp1252"):
+            try:
+                decoded = value.encode(encoding).decode("gbk").strip()
+            except UnicodeError:
+                continue
+            if decoded in ALLOWED_CATEGORIES:
+                return decoded
+        print(f"[警告] 产品分类无效，已置空: {value}", file=sys.stderr)
+        return ""
+
+    category = _normalize_category(args.category) or _normalize_category(q.get("category", ""))
     # AI 已提供任一分数即视为已自评，等待 UED 复核
     check_status = args.check_status
     if any(v is not None for v in (structure, component, interaction, visual, field_score)):
