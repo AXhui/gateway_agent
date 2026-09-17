@@ -146,19 +146,50 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     fi
   fi
 
-  # 上传 demo 到飞书云空间，生成可在线预览的链接（优先使用，失败则回退到 NAS 路径）
+  # 上传 demo 到飞书云空间，生成可在线预览的链接（优先使用，失败则回退到 NAS 路径）。
+  # 注意：Windows 上 lark-cli 的 user token 由 Git Bash/PowerShell 直接调用可读取，
+  # 但经 Python subprocess 启动会读不到 Keychain token，因此这里在 Bash 钩子内直接调用 lark-cli。
   FEISHU_FOLDER_TOKEN="${FEISHU_DEMO_FOLDER_TOKEN:-JZeofZysclhJKbd2UCzcAiKDn5d}"
-  FEISHU_PREVIEW_URL=$(python tools/upload_demo_to_feishu.py \
-    --demo-file "$DEMO_PATH" \
-    --req-id "$REQ_ID" \
-    --version "$VERSION_NO" \
-    --folder-token "$FEISHU_FOLDER_TOKEN" | tail -1 || true)
+  FEISHU_FILE_NAME="${REQ_ID}_v${VERSION_NO}.html"
+  FEISHU_UPLOAD_ERR=$(mktemp 2>/dev/null || echo "")
+  FEISHU_UPLOAD_JSON=$(lark-cli drive +upload \
+    --file "$DEMO_PATH" \
+    --folder-token "$FEISHU_FOLDER_TOKEN" \
+    --name "$FEISHU_FILE_NAME" \
+    --as user 2>"$FEISHU_UPLOAD_ERR" || true)
+  FEISHU_PREVIEW_URL=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python -c "import json,sys; data=sys.stdin.read();
+try:
+ r=json.loads(data); print(r.get('data',{}).get('url','') if r.get('ok') else '')
+except Exception:
+ print('')" 2>/dev/null || true)
+  FEISHU_FILE_TOKEN=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python -c "import json,sys; data=sys.stdin.read();
+try:
+ r=json.loads(data); print(r.get('data',{}).get('file_token','') if r.get('ok') else '')
+except Exception:
+ print('')" 2>/dev/null || true)
   if [ -n "$FEISHU_PREVIEW_URL" ]; then
+    if [ -n "$FEISHU_FILE_TOKEN" ]; then
+      FEISHU_PERM_JSON=$(mktemp 2>/dev/null || echo "")
+      if [ -n "$FEISHU_PERM_JSON" ]; then
+        printf '{"link_share_entity":"tenant_readable"}' > "$FEISHU_PERM_JSON"
+        lark-cli drive permission.public patch \
+          --token "$FEISHU_FILE_TOKEN" \
+          --type file \
+          --data "@$FEISHU_PERM_JSON" \
+          --yes \
+          --as user >/dev/null 2>&1 || echo "[post-commit] 警告：飞书云空间分享权限设置失败（不影响表格同步）"
+        rm -f "$FEISHU_PERM_JSON" 2>/dev/null || true
+      fi
+    fi
     echo "[post-commit] 已上传飞书云空间：$FEISHU_PREVIEW_URL"
     PREVIEW_URL="$FEISHU_PREVIEW_URL"
   else
+    if [ -n "$FEISHU_UPLOAD_ERR" ] && [ -s "$FEISHU_UPLOAD_ERR" ]; then
+      cat "$FEISHU_UPLOAD_ERR" >&2
+    fi
     echo "[post-commit] 警告：飞书云空间上传失败，使用原预览 URL"
   fi
+  [ -n "$FEISHU_UPLOAD_ERR" ] && rm -f "$FEISHU_UPLOAD_ERR" 2>/dev/null || true
 
   # 产品分类自动判断（多层兜底）：quality.json category > prompt关键词 > prd关键词 > commit msg > demo名称
   # AI 漏写 category 时，自动根据 PRD/提示词关键词判断，避免飞书产品分类为空
