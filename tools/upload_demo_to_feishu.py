@@ -20,8 +20,36 @@ import sys
 import tempfile
 
 
+def resolve_lark_cli():
+    """返回可由 subprocess 直接执行的 lark-cli 路径。
+
+    Windows 下 npm 会生成 lark-cli.cmd；Python subprocess 在 shell=False
+    且传入 "lark-cli" 时不会稳定套用这个 .cmd shim，所以需要先解析完整路径。
+    """
+    candidates = [
+        os.environ.get("LARK_CLI"),
+        shutil.which("lark-cli"),
+        shutil.which("lark-cli.cmd"),
+        os.path.expandvars(r"%APPDATA%\npm\lark-cli.cmd"),
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    return "lark-cli"
+
+
 def run_cmd(args, capture_output=True):
-    """执行命令，返回 (returncode, stdout, stderr)"""
+    """执行命令，返回 (returncode, stdout, stderr)
+    明确传递当前进程环境变量，确保 lark-cli 能找到用户配置（USERPROFILE/HOME）。
+    某些 AI 工具（Codex/Claude Code）的子进程环境可能会重置这些变量。
+    """
+    env = os.environ.copy()
+    # 确保 USERPROFILE 和 HOME 指向当前用户目录
+    user_home = os.path.expanduser("~")
+    if not env.get("USERPROFILE"):
+        env["USERPROFILE"] = user_home
+    if not env.get("HOME"):
+        env["HOME"] = user_home
     try:
         result = subprocess.run(
             args,
@@ -30,6 +58,7 @@ def run_cmd(args, capture_output=True):
             timeout=120,
             encoding="utf-8",
             errors="replace",
+            env=env,
         )
         return result.returncode, result.stdout, result.stderr
     except Exception as e:
@@ -43,6 +72,13 @@ def main():
     parser.add_argument("--version", required=True, help="版本号，如 01")
     parser.add_argument("--folder-token", required=True, help="飞书云空间文件夹 token")
     args = parser.parse_args()
+
+    # 调试信息：打印环境变量和 lark-cli 路径，方便排查子进程环境问题
+    lark_cli_path = resolve_lark_cli()
+    print(f"[upload] 调试：lark-cli 路径 = {lark_cli_path}", file=sys.stderr)
+    print(f"[upload] 调试：USERPROFILE = {os.environ.get('USERPROFILE', '(未设置)')}", file=sys.stderr)
+    print(f"[upload] 调试：HOME = {os.environ.get('HOME', '(未设置)')}", file=sys.stderr)
+    print(f"[upload] 调试：expanduser('~') = {os.path.expanduser('~')}", file=sys.stderr)
 
     if not os.path.isfile(args.demo_file):
         print(f"[upload] 错误：文件不存在 {args.demo_file}", file=sys.stderr)
@@ -60,16 +96,18 @@ def main():
 
     # 2. 上传到飞书云空间
     upload_cmd = [
-        "lark-cli", "drive", "+upload",
+        lark_cli_path, "drive", "+upload",
         "--file", temp_path,
         "--folder-token", args.folder_token,
         "--name", file_name,
         "--as", "user",
     ]
+    print(f"[upload] 调试：执行命令 = {' '.join(upload_cmd)}", file=sys.stderr)
     rc, stdout, stderr = run_cmd(upload_cmd)
     if rc != 0:
         print(f"[upload] 错误：上传失败 rc={rc}", file=sys.stderr)
-        print(stderr or stdout, file=sys.stderr)
+        print(f"[upload] 错误：stdout = {stdout[:500]}", file=sys.stderr)
+        print(f"[upload] 错误：stderr = {stderr[:500]}", file=sys.stderr)
         # 清理临时文件
         try:
             os.remove(temp_path)
@@ -101,7 +139,7 @@ def main():
 
     if perm_json:
         perm_cmd = [
-            "lark-cli", "drive", "permission.public", "patch",
+            lark_cli_path, "drive", "permission.public", "patch",
             "--token", file_token,
             "--type", "file",
             "--data", f"@{perm_json}",
