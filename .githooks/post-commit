@@ -152,7 +152,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --demo-file "$DEMO_PATH" \
     --req-id "$REQ_ID" \
     --version "$VERSION_NO" \
-    --folder-token "$FEISHU_FOLDER_TOKEN" 2>/dev/null | tail -1 || true)
+    --folder-token "$FEISHU_FOLDER_TOKEN" | tail -1 || true)
   if [ -n "$FEISHU_PREVIEW_URL" ]; then
     echo "[post-commit] 已上传飞书云空间：$FEISHU_PREVIEW_URL"
     PREVIEW_URL="$FEISHU_PREVIEW_URL"
