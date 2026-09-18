@@ -5,13 +5,12 @@
 # 安装（仓库根目录执行一次）：
 #   git config core.hooksPath .githooks
 #
-# 环境变量：
-#   FEISHU_WEBHOOK_URL    飞书 Webhook 地址（必填）
-#   FEISHU_WEBHOOK_TOKEN  飞书 Webhook Token（必填）
-#   FEISHU_DEMO_BASE_URL  预览地址前缀（可选）
-#                          - HTTP 地址：http://server/demos → 预览 URL 用 http://，并自动把文件复制到对应 NAS 路径
-#                          - UNC 网络路径：\\server\share\dir → 预览 URL 用 UNC，自动复制到该路径
-#                          不填则预览 URL 留空。
+# 已内置团队默认配置（Webhook 地址、Token、NAS 路径），所有同事 clone 下来即可直接使用，无需额外配置。
+# 如需覆盖，可通过环境变量设置：
+#   FEISHU_WEBHOOK_URL    飞书 Webhook 地址
+#   FEISHU_WEBHOOK_TOKEN  飞书 Webhook Token
+#   FEISHU_DEMO_BASE_URL  预览地址前缀（HTTP 或 UNC 路径）
+#   FEISHU_DEMO_FOLDER_TOKEN  飞书云空间文件夹 token
 
 set -e
 
@@ -33,7 +32,9 @@ fi
 COMMIT_MSG=$(git log -1 --pretty=%s)
 COMMIT_AUTHOR=$(git log -1 --pretty=%an)
 COMMIT_SHA=$(git rev-parse --short HEAD)
-BASE_URL="${FEISHU_DEMO_BASE_URL:-}"
+# 默认内置团队 NAS 路径，所有同事 clone 下来就能用；如果设置了环境变量则优先用环境变量
+DEFAULT_DEMO_BASE_URL='\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo'
+BASE_URL="${FEISHU_DEMO_BASE_URL:-$DEFAULT_DEMO_BASE_URL}"
 
 echo "[post-commit] 检测到 demo 更新，同步到飞书..."
 
@@ -136,7 +137,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
         mkdir -p "$(dirname "$SNAPSHOT_FILE")" 2>/dev/null || true
         cp "$DEMO_PATH" "$SNAPSHOT_FILE" 2>/dev/null && \
           echo "[post-commit] 已保存版本快照 $SNAPSHOT_FILE" || \
-          echo "[post-commit] 警告：保存版本快照失败（不影响同步）"
+          echo "[post-commit] 警告：保存快照失败（不影响同步）"
       fi
       # 预览 URL 统一指向最新版固定地址（LATEST），同一个需求只有一个可访问地址
       # Mac 下预览 URL 仍用 UNC 格式（飞书表格里显示 UNC 路径，Windows 同事可直接访问）

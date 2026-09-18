@@ -14,11 +14,8 @@
         --status "已生成" \
         --structure 90 --component 85 --interaction 80 --visual 88 --field-score 92
 
-环境变量（必填）：
-    FEISHU_WEBHOOK_URL    飞书多维表格 Webhook 地址
-    FEISHU_WEBHOOK_TOKEN  Webhook Bearer Token
-
-也可以用 --webhook-url 和 --webhook-token 命令行参数覆盖。
+默认已内置团队 Webhook 配置，所有同事 clone 下来即可直接使用，无需额外配置。
+也可以通过环境变量 FEISHU_WEBHOOK_URL / FEISHU_WEBHOOK_TOKEN 覆盖。
 """
 
 import argparse
@@ -30,6 +27,10 @@ import urllib.error
 
 
 ALLOWED_CATEGORIES = {"", "云平台", "CCTV", "CV", "网关", "路由器", "uink"}
+
+# 默认内置团队 Webhook 配置（所有同事 clone 下来就能用）
+DEFAULT_WEBHOOK_URL = "https://milesight.feishu.cn/base/workflow/webhook/event/ShLZa9qoWwcCBihQSjccAlV5nEd"
+DEFAULT_WEBHOOK_TOKEN = "Uq7RWQID5Ht8mpGjvJg5ESG7"
 
 
 def sync_to_feishu(payload: dict, webhook_url: str, webhook_token: str) -> bool:
@@ -108,13 +109,14 @@ def main():
         default="",
         help="AI 自评文件 quality.json 路径；提供后自动读取 5 维度分数",
     )
-    parser.add_argument("--webhook-url", default="", help="飞书 Webhook 地址（覆盖环境变量）")
-    parser.add_argument("--webhook-token", default="", help="飞书 Webhook Token（覆盖环境变量）")
+    parser.add_argument("--webhook-url", default="", help="飞书 Webhook 地址（覆盖环境变量/默认值）")
+    parser.add_argument("--webhook-token", default="", help="飞书 Webhook Token（覆盖环境变量/默认值）")
 
     args = parser.parse_args()
 
-    webhook_url = args.webhook_url or os.environ.get("FEISHU_WEBHOOK_URL", "")
-    webhook_token = args.webhook_token or os.environ.get("FEISHU_WEBHOOK_TOKEN", "")
+    # 默认内置团队配置，环境变量优先，命令行参数最优先
+    webhook_url = args.webhook_url or os.environ.get("FEISHU_WEBHOOK_URL", DEFAULT_WEBHOOK_URL)
+    webhook_token = args.webhook_token or os.environ.get("FEISHU_WEBHOOK_TOKEN", DEFAULT_WEBHOOK_TOKEN)
 
     # 读取 AI 自评文件 quality.json（命令行显式分数优先于文件）
     q = {}
@@ -156,14 +158,6 @@ def main():
     check_status = args.check_status
     if any(v is not None for v in (structure, component, interaction, visual, field_score)):
         check_status = "待校验"
-
-    if not webhook_url:
-        print(
-            "[错误] 未配置飞书 Webhook 地址。请设置环境变量 FEISHU_WEBHOOK_URL，"
-            "或使用 --webhook-url 参数。",
-            file=sys.stderr,
-        )
-        sys.exit(1)
 
     payload = {
         "Demo 名称": args.name,
