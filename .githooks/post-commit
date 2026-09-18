@@ -158,12 +158,12 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     --folder-token "$FEISHU_FOLDER_TOKEN" \
     --name "$FEISHU_FILE_NAME" \
     --as user 2>"$FEISHU_UPLOAD_ERR" || true)
-  FEISHU_PREVIEW_URL=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python -c "import json,sys; data=sys.stdin.read();
+  FEISHU_PREVIEW_URL=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python3 -c "import json,sys; data=sys.stdin.read();
 try:
  r=json.loads(data); print(r.get('data',{}).get('url','') if r.get('ok') else '')
 except Exception:
  print('')" 2>/dev/null || true)
-  FEISHU_FILE_TOKEN=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python -c "import json,sys; data=sys.stdin.read();
+  FEISHU_FILE_TOKEN=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python3 -c "import json,sys; data=sys.stdin.read();
 try:
  r=json.loads(data); print(r.get('data',{}).get('file_token','') if r.get('ok') else '')
 except Exception:
@@ -198,7 +198,7 @@ except Exception:
   if [ -f "$DEMO_DIR/prd.md" ]; then
     PRD_FILE="$DEMO_DIR/prd.md"
   fi
-  CATEGORY=$(python tools/detect_category.py \
+  CATEGORY=$(python3 tools/detect_category.py \
     --quality-file "$QUALITY_FILE" \
     --prompt-file "$DEMO_DIR/prompt.md" \
     --prd-file "$PRD_FILE" \
@@ -213,7 +213,7 @@ except Exception:
     CATEGORY_ARG=(--category "$CATEGORY")
   fi
 
-  python tools/sync_demo_to_feishu.py \
+  python3 tools/sync_demo_to_feishu.py \
     --name "$DEMO_NAME" \
     --description "$COMMIT_MSG" \
     --preview-url "$PREVIEW_URL" \
