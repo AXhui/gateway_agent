@@ -35,8 +35,27 @@ color: purple
    - 危险操作：`B_ComDangerAction`（删除/卸载/重置等不可恢复操作统一规范）
 4. **自我生产判负例**：demo 源码中不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（例：手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal({action:'delete', ...})`）。
 
+## 必读规则清单（硬性，渲染前逐份引用，未读先渲染即违规）
+
+1. `.claude/rules/business-specific.md` —— 业务组件样式铁律 + 组装契约要求。
+2. `.claude/rules/page-assembly.md` —— §0 映射清单入口铁律 + §5 交付物纯净性。
+3. `.claude/rules/spacing.md` —— 内容区间距 / 图标尺寸 / 字号红线（按钮间 ≥12px、图标 16–44 阶梯、字号 30/24/20/16/14/12）。
+4. `.claude/rules/naming.md` —— `ms-*` / `bc-*` / `mod-*` 类名边界。
+5. 涉及组件的 SKILL.md §2 组装契约（atoms + ctx）。
+
+## 交付物纯净性（硬性，见 page-assembly.md §5）
+
+**demo 只输出完整的产品 UI，不输出任何生成过程内容。** 渲染进可见 UI 即违规、退回重做：
+
+1. **禁止 PRD / 评审注记**：如「按 PRD：本行仅提供编辑/查看，不提供删除」——这是实现说明，不是产品文案。
+2. **禁止交互评审指引**：如「点击卡片查看详情抽屉；点击配置进入编辑」——评审者自己会点，不需要页面教。
+3. **禁止装配/校验痕迹**：组件映射清单、模块编号、R1–R5 校验徽标、调试工具条、水印、「Powered by」尾注。
+4. 页头允许「面包屑 + 标题 + 操作区」；**页头 desc 只放产品真实文案**（PRD 中的产品级描述），交互说明与 PRD 摘要一律不放。
+5. 需要留档的说明（PRD 对齐点、交互补充、校验结果）写入 `05_release/REQ-###/validation.md`，不进 demo。
+6. **判断标准**：这句话是给最终用户看的还是给评审/开发者看的？后者不进可见 UI。
+
 ## 待补
 
-- 渲染规则：内联 `library/*.css` + `assets/js/registry-*.js`（含 `MS_EG71_SHELL`）到单文件 demo，样式/类名一律取自已注册资产。
+- 渲染规则：内联 `library/*.css` + `assets/js/registry-*.js`（含 `MS_EG71_SHELL`）到单文件 demo，样式/类名一律取自已注册资产。**内联后按 `rules/spacing.md` §7 存量偏差清单就地修正**（只改 demo 文件，不动 assets 源头）：`ico(*,14)`→`ico(*,16)`、按钮组 `ms-space--8`→`ms-space--12`（非交互标签组保留 `--8`）、`.ms-stat-title` 13px→12px、`.bc-eg71-protocol-card` 竖向 padding→16px。
 - Logo 铁律：registry 中的 `MS_BASE_LOGO_SVGS` / `MS_BASE_LOGO_SVG` 是官方 Logo 唯一渲染器，已 `Object.defineProperty` 冻结——内联 registry 时**原样拷贝、禁止删改该段、禁止任何形式的手写/重定义 logo 覆盖**（重定义会被冻结锁静默拦截，module 严格模式下直接抛错）。业务层取图一律 `MS_BASE_LOGO_SVG({ variant, color, height, width })`。
 - 图表纯内联 SVG 的生成约定。

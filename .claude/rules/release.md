@@ -15,6 +15,7 @@
 - [ ] **五轴交互**（基础组件）：hover/active/keyboard/loading/error 可测（encapsulation.md §4）。
 - [ ] **注册契约**：`_index.json` / `registry-*.js` 中 `id/cn/cat/dir/src` 已登记或更新。
 - [ ] **示例可运行**：代码示例在当前 token 下真实渲染，非伪代码。
+- [ ] **demo 纯净**（涉及 demo 交付时）：可见 UI 无 PRD 注记 / 交互评审指引 / 装配校验痕迹（page-assembly.md §5）。
 
 **判定**：任一项不满足 → 不发布，退回修复；修复后按 versioning.md 只 bump patch。
 

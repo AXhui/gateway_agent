@@ -88,6 +88,12 @@ Milesight 网关 Dashboard 上展示单个协议接口（Cellular / WLAN / Ether
 
 `--color-border-base` / `--color-border-primary-normal` / `--color-text-primary` / `--color-text-success-normal` / `--color-text-auxiliary` / `--color-text-link-normal` / `--color-text-link-hover` / `--color-icon-primary-normal` / `--spacing-4` / `--spacing-8` / `--spacing-12` / `--spacing-16` / `--duration-normal` / `--ease`
 
+### 间距与尺寸红线（见 `rules/spacing.md`）
+
+- 卡片内边距 **≥16px**（推荐 `--spacing-16` 竖向 × `--spacing-20` 横向）；旧 12px 竖向档废止。
+- 数值展示字号走数值家族（16 / 18 / 20），标题/说明走正文字号集合（14 / 12），**禁止 13px**。
+- 图标经 `S_Icon`，16px 起、阶梯 16/20/24；卡片内图标与标题 gap ≥ `--spacing-8`。
+
 ## 6. 依赖
 
 `atoms`：`card` / `icon` / `tag`（见第 2 节表），不新增基础原子，仅编排。

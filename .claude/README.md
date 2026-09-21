@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | **基础组件** | `.claude/tokens/` + `.claude/skills/base/` | 唯一真源 · 只读 | 设计令牌 + 63 个基础组件 Skill（62 物理 + 1 派生 S_Table） | `S_<PascalCase>` → `ms-*` |
 | **业务组件** | `.claude/skills/business/` | 仅封装基础组件，零新增样式 | 业务组件（组合基础组件） | `B_<域>_<组件>` → `bc-<域>-<组件>` |
-| **治理规则** | `.claude/rules/` | 基础/业务共用一份 | 封装 / 版本 / 命名 / 文档 / 发布 + 业务补充 | — |
+| **治理规则** | `.claude/rules/` | 基础/业务共用一份 | 封装 / 版本 / 命名 / 文档 / 发布 / 间距红线 + 业务补充 | — |
 | **Agent 规则** | `.claude/agents/` + `.claude/knowledge/` | 驱动链路 + 页面装配知识 | 18 个 agent 定义 + 需求→组件映射（`K_*`） | `A*` / `D*` / `T*` / `K_*` |
 
 > 原「五层」中的 **L1 设计令牌并入基础组件层**、**L2 知识并入 Agent 规则层**，`M_*` 模块 / `T_*` 模板归为「页面装配知识」，由 Agent 规则层承载，不再单列层。
@@ -148,6 +148,6 @@ A0 三角色提炼（a0-prd-decomposer 一 agent，依次产出）
 
 - **组件运行时**（`assets/js/registry-*.js` + `library/*.css` + `frontend/` + `tools/`）保留在仓库根，是**运行时**（demo 渲染时内联）；本目录是**契约层**，两者通过 `_index.json` + 相对路径衔接。工作台（index.html + engine-*）已移除，页面产出全走 agent 链路（A1–A5）。
 - **`.claude/skills/iot-track-*`**：8 个赛道 skill + 赛道路由器，是**管控层**（PRD 把关红线），不迁入本目录。
-- **`.claude/rules/`**：治理规则层（封装 / 版本 / 命名 / 文档 / 发布 / 产出目录 / 业务补充），6 + 1 份，只写一份。
+- **`.claude/rules/`**：治理规则层（封装 / 版本 / 命名 / 文档 / 发布 / 产出目录 / 页面装配 / Figma 资产库 / 间距红线 + 业务补充），只写一份。
 - **`.claude/agents/`**：Agent 规则层 · 18 个 agent 定义（A0 + A1–A8 + D1–D5 + T1–T4）。
 - **`milesight-ui-prototype-workspace/`**：渲染器回归用例，不迁入本目录。

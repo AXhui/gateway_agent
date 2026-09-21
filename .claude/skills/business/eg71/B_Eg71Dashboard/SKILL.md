@@ -63,6 +63,11 @@ EG71 Dashboard 页内容区容器：以三列栅格编排一组 [[B_Eg71Protocol
 
 无自有 token（栅格间距由 `ms-grid-3` 基础类的 `--spacing-16` 提供），卡片级 token 见 [[B_Eg71ProtocolCard]] 第 5 节。
 
+### 间距红线（见 `rules/spacing.md` §1）
+
+- 卡片墙栅格 gap `--spacing-16`（合规下限，不得低于）。
+- 本组件作为一个**模块**接入页面时，与上下相邻模块的纵向间距 **≥ `--spacing-24`**，由页面内容容器（`mod-*` / 内容区 flex gap）承载，卡片墙自身不管。
+
 ## 6. 依赖
 
 `atoms`：`grid`（复用基础栅格工具类）；组装依赖 `bc-eg71-protocol-card`，不新增基础原子。
