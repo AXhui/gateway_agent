@@ -19,6 +19,12 @@ color: purple
 
 - `04_pages/REQ-###/page.json`（PageDocument schema）。
 
+## 必读规则清单（硬性，合成前逐份引用，未读先合成即违规）
+
+1. `.claude/rules/page-assembly.md` —— §0 映射清单铁律 + §5 交付物纯净性：page.json 的可见文案字段（标题 / desc / 按钮 / 提示语）**只放产品真实文案**；PRD 摘要、交互评审指引、映射信息一律不写入可见字段（留给 `validation.md`），从契约层阻断注记流入 demo。
+2. `.claude/rules/naming.md` —— page.json 中组件引用一律用注册名（`B_*` / `S_*` / `M_*` / `T_*`），与 `_index.json` 一致（R3 依赖闭环的前置）。
+3. `.claude/rules/spacing.md` —— page.json 若携带布局参数（模块 gap / 图标尺寸 / 字号档），取值必须落在红线映射表内。
+
 ## 职责（骨架）
 
 1. 汇总三角色文档 + 02-review 结论。

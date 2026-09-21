@@ -41,7 +41,14 @@ color: purple
 2. `.claude/rules/page-assembly.md` —— §0 映射清单入口铁律 + §5 交付物纯净性。
 3. `.claude/rules/spacing.md` —— 内容区间距 / 图标尺寸 / 字号红线（按钮间 ≥12px、图标 16–44 阶梯、字号 30/24/20/16/14/12）。
 4. `.claude/rules/naming.md` —— `ms-*` / `bc-*` / `mod-*` 类名边界。
-5. 涉及组件的 SKILL.md §2 组装契约（atoms + ctx）。
+5. `.claude/rules/interaction-completeness.md` —— §1 交互链完整性红线：每个 PRD 功能点渲染前先过链路清单（入口→操作→反馈→结果态）。
+6. 涉及组件的 SKILL.md §2 组装契约（atoms + ctx）。
+
+## 交互链补全（硬性，见 interaction-completeness.md §1）
+
+1. **渲染前产出交互链清单**：每个 PRD 功能点一行——`功能点 → 入口 / 操作 / 即时反馈 / 结果态`，对照必备状态集（列表：加载/空/数据/危险确认；表单：默认/校验失败/提交中/成功；操作：默认/hover/loading/确认弹窗…）逐项核对。
+2. **PRD 未写但链路必需的状态：允许且必须补全**，用资产库既有组件补；映射清单对应行标注 `【PRD 缺省 · demo 补全】`，补全原因与形态写入 `validation.md`——**该标注不进可见 UI**（纯净性）。
+3. **补全边界**：只补链路必需态（loading/error/empty/确认），不发明 PRD 没有的功能、入口、业务规则；业务级缺口按 PRD 字面实现，留给 A5 判 C/D 类缺口走评论回流。
 
 ## 交付物纯净性（硬性，见 page-assembly.md §5）
 

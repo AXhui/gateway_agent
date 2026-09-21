@@ -57,6 +57,31 @@ export FEISHU_WEBHOOK_TOKEN="Uq7RWQID5Ht8mpGjvJg5ESG7"
 - `--preview-url` 填内网可访问地址；若 demo 尚未部署到内网服务器，可留空或填本地路径说明。
 - 同一 REQ-### 多次迭代会产生多条记录，以「更新时间」区分版本。
 
+## PRD 反馈闭环（硬性，见 rules/interaction-completeness.md §3–§4）
+
+读 `validation.md` 专节「交互链缺口（A5）」，对每条 B/C/D 缺口执行两步：
+
+1. **写台账**（多维表格「PRD 反馈台账」表，一行一缺口）：
+
+```bash
+lark-cli base +record-batch-create \
+  --app "<台账表 URL，取 tools/feishu_issue_table.txt>" \
+  --records '<[{"fields": {"REQ": "REQ-###", "功能点": "...", "类别": "B 链路断", "缺口描述": "...", "demo 处理": "已补全（loading 态）", "PRD 文档链接": "...", "PRD 评论状态": "未评论", "demo 版本": "<commit sha>"}}]>'
+```
+
+2. **评论回 PRD**（以登录用户身份发到 PRD 原始飞书文档）：
+
+```bash
+lark-cli drive +add-comment \
+  --doc "<PRD 飞书 URL，取 REQ 目录 source.txt>" \
+  --content '【UED 反馈 · REQ-###】功能点「X」：链路缺口——<缺什么>。Demo 处理：<…>。建议：<给 PRD 作者的补充建议>。Demo 预览：<链接>' \
+  --as user
+```
+
+- 评论成功后回填台账行（`base +record-batch-update` 置「已评论」+ 评论链接）。
+- **发送门禁**：每批评论发送前在会话展示清单（功能点 + 正文），确认后批量发；同 REQ 增量缺口可直接发。
+- **降级不阻断**：`tools/feishu_issue_table.txt` 未配置 → **台账与 PRD 评论回写整体跳过**，报告警告「PRD 反馈闭环降级」（2026-09-21 用户确认先不配）；REQ 目录无 `source.txt`（PRD 非飞书源）→ 单独跳过评论并标注。质量记录主流程照常。
+
 ## 待补
 
 - 多维表格 schema（列：需求 / R1 / R2 / R3 / R4 / R5 / 总分 / 证据）。

@@ -20,11 +20,19 @@ color: purple
 
 - 组件映射清单：模块 → `B_*`（业务）→ `S_*`（基础）的映射，含 `atoms` 依赖序列。
 
+## 必读规则清单（硬性，匹配前逐份引用，未读先匹配即违规）
+
+1. `.claude/rules/business-specific.md` —— 业务组件组装契约（atoms 序列 + ctx 字段）：匹配结果必须按 §2 组装契约表达，不能只写组件名。
+2. `.claude/rules/page-assembly.md` —— §0 映射清单格式（`形态描述 → B_* 组件 ID + ctx 参数`）+ §3 缺形态走铸造注册回库，禁止「手写/现场实现」条目。
+3. `.claude/rules/naming.md` —— `B_<域>_<组件>` / `bc-<域>-<组件>` 命名边界：清单里的组件 ID 必须与 `_index.json` / `registry-*.js` 注册条目一致。
+4. **涉及组件的 SKILL.md §2 组装契约**（强制引用业务组件规则）：对拟映射到的每个 `B_*`，先读其 SKILL.md §2（atoms + ctx 字段），映射清单里的 ctx 参数必须逐字段对得上契约——对不上 = 匹配不成立，改选其他组件或走铸造。
+
 ## 职责（骨架）
 
 1. 读 `K_mapping`，确认需求要素 → 已有组件。
 2. 对每个模块声明 `atoms`（依赖的 `S_*`）与业务组件 `B_*`。
-3. 无现成组件的，标记「需铸造」（走 Learner），不硬造。
+3. 无现成组件的，标记「需铸造」（走 Learner 注册回库），不硬造。
+4. EG71 涉及即必查：壳 `MS_EG71_SHELL`、弹窗 `B_Eg71Modal`（delete/disable/confirm/select 按 `ctx.action`）、危险操作 `B_ComDangerAction`。
 
 ## 待补
 
