@@ -37,6 +37,13 @@
 | 成员 / 权限 | `M_Member` | `mod-member` |
 | 日志 / 审计 | `M_Log` | `mod-log` |
 | 空态 / 引导 | `M_Empty` | `mod-empty` |
+| 全局扫描提示条 / 跨页进行中提示（REQ-012） | `M_GlobalNotice` | `mod-global-notice` |
+| 页内引导/异常横幅（REQ-012） | `M_GuideBanner` | `mod-guide-banner` |
+| 扫描 Key 配置 / AppKey 批量管理（REQ-012） | `M_ScanKeyConfig` | `mod-scan-key-config` |
+| 扫描双 Tab 设备表 / 发现+已忽略（REQ-012） | `M_ScanDeviceTable` | `mod-scan-device-table` |
+| 扫描编辑抽屉 / 单台/批量编辑（REQ-012） | `M_ScanEditDrawer` | `mod-scan-edit-drawer` |
+| 激活设置灰卡 / OTAA·ABP（REQ-012） | `M_ActivationCard` | `mod-activation-card` |
+| 设备添加/编辑表单 / LoRaWAN（REQ-012） | `M_DeviceForm` | `mod-device-form` |
 
 ## 三、字段/实体 → 业务组件（`B_*`）
 
@@ -56,5 +63,13 @@
 | 操作日志时间轴 | `B_LogTimeline` | `bc-log-timeline` |
 | 空态引导 | `B_EmptyState` | `bc-empty-state` |
 | 快捷操作区 | `B_QuickActions` | `bc-quick-actions` |
+| 全局扫描提示条（LoRaWAN 扫描进行中，REQ-012） | `B_Eg71ScanBanner` | `bc-eg71-scan-banner` |
+| 页内业务横幅 / 引导·异常提示（REQ-012） | `B_Eg71AlertBar` | `bc-eg71-alert-bar` |
+| 激活设置灰卡 / OTAA·ABP + AppKey（REQ-012） | `B_Eg71ActivationCard` | `bc-eg71-activation-card` |
+| 扫描 Key 配置卡 / AppKey 批量增删·导入（REQ-012） | `B_Eg71ScanAppkeyCard` | `bc-eg71-scan-appkey-card` |
+| 扫描编辑抽屉 / 单台·批量字段编辑（REQ-012） | `B_Eg71ScanEditDrawer` | `bc-eg71-scan-edit-drawer` |
+| 扫描双 Tab 设备表 / 发现+已忽略（REQ-012） | `B_Eg71ScanDeviceTable` | `bc-eg71-scan-device-table` |
+| LoRaWAN 设备添加/编辑表单（REQ-012） | `B_Eg71DeviceForm` | `bc-eg71-device-form` |
+| 设备列表（数据服务，存量补登，v1.1.0 含 Join failed） | `B_Eg71DeviceList` | `bc-eg71-device-list` |
 
 > 实体词典与确定性造数工厂在 `assets/js/registry-entities.js`（`device` / `gateway` / `sensor` 等），字段迁移时以最相似实体为源。

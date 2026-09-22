@@ -931,22 +931,33 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-form-footer', cn: '表单底部操作栏', cat: '系统设置',
-      desc: 'Milesight 网关配置表单底部固定悬浮操作栏：Affix 固钉吸底（offsetBottom=0）+ 左侧弹性占位把 取消/重置/保存 按钮靠右排列（保存为主按钮）；只读模式整体不渲染，弹窗内部表单禁用本栏。',
+      desc: 'Milesight 网关配置表单底部固定悬浮操作栏：Affix 固钉吸底（offsetBottom=0）+ 左侧弹性占位把按钮组靠右排列。默认渲染 取消/重置/保存（保存为主按钮）；v1.1.0 起支持 ctx.buttons 自定义按钮组（label/kind/disabled/action）。只读模式整体不渲染，弹窗内部表单禁用本栏。点击以 eg71-footer-action {action, label, index} 冒泡（默认组 action = cancel/reset/save）。',
       atoms: ['affix', 'space', 'button'],
       entityHint: 'gateway',
-      tags: ['表单', '操作栏', '底部固定', '固钉', '保存', '取消', '重置', 'EG71'],
+      tags: ['表单', '操作栏', '底部固定', '固钉', '保存', '取消', '重置', '自定义按钮', 'EG71'],
       render(ctx) {
         if (ctx.readonly) return '';
+        const KIND_CLS = { filled: 'ms-btn--filled', danger: 'ms-btn--danger', dashed: 'ms-btn--dashed' };
+        const custom = Array.isArray(ctx.buttons) ? ctx.buttons : null;
+        const buttons = custom && custom.length
+          ? custom.map((b, i) => `<button type="button" class="ms-btn${b.kind && KIND_CLS[b.kind] ? ' ' + KIND_CLS[b.kind] : ''}" data-footer-btn="${esc(b.action || '')}" data-footer-index="${i}"${b.disabled ? ' disabled' : ''}>${esc(b.label)}</button>`).join('')
+          : `<button type="button" class="ms-btn" data-footer-btn="cancel" data-footer-index="0">取消</button>
+             <button type="button" class="ms-btn" data-footer-btn="reset" data-footer-index="1">重置</button>
+             <button type="button" class="ms-btn ms-btn--filled" data-footer-btn="save" data-footer-index="2">保存</button>`;
         return `<div class="ms-affix ms-affix--fixed ms-affix--bottom">
           <div class="ms-affix-body bc-eg71-formfooter">
             <span class="bc-eg71-formfooter-spacer"></span>
-            <div class="ms-space ms-space--12">
-              <button class="ms-btn">取消</button>
-              <button class="ms-btn">重置</button>
-              <button class="ms-btn ms-btn--filled">保存</button>
-            </div>
+            <div class="ms-space ms-space--12">${buttons}</div>
           </div>
         </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('.bc-eg71-formfooter [data-footer-btn]').forEach(b => {
+          b.addEventListener('click', () => {
+            b.dispatchEvent(new CustomEvent('eg71-footer-action', { bubbles: true, detail: { action: b.getAttribute('data-footer-btn') || '', label: b.textContent.trim(), index: Number(b.getAttribute('data-footer-index')) || 0 } }));
+          });
+        });
       }
     },
     {
@@ -1193,10 +1204,10 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-device-list', cn: '设备列表', cat: '数据服务',
-      desc: 'Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（刷新 + Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 bc-eg71-modal 删除确认弹窗。',
+      desc: 'Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（刷新 + Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 bc-eg71-modal 删除确认弹窗。v1.1.0（REQ-012）：状态新增「入网失败 Join failed」（error 态），failReason = key_error / no_join_accept 时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。',
       atoms: ['button', 'table', 'checkbox', 'tag', 'icon', 'pagination', 'empty', 'modal'],
       entityHint: 'gateway',
-      tags: ['设备', 'Device', '设备数采', 'Data Acquisition', '数据服务', '列表', '信号', 'Signal', '空态', '删除确认', '批量删除', 'EG71'],
+      tags: ['设备', 'Device', '设备数采', 'Data Acquisition', '数据服务', '列表', '信号', 'Signal', '空态', '删除确认', '批量删除', '入网失败', 'Join failed', '失败原因', 'EG71'],
       render(ctx) {
         const rows = ctx.rows || [
           { id: '3423', name: 'WT201', model: 'WT201', protocol: 'Modbus TCP', network: 'Modbus TCP12', signal: { level: 'good', tip: ['SF:7', 'SNR: -199dB', 'RSSI: -188dBm'] }, updated: '2024-12-23 09:34', status: 'Online', objects: 11 },
@@ -1211,8 +1222,11 @@ window.MS_BIZ_UTIL = (function () {
         const STATUS = {
           'Online': { cn: 'Online', tone: 'success' },
           'Offline': { cn: 'Offline', tone: 'muted' },
-          'Not activated': { cn: 'Not activated', tone: 'warm' }
+          'Not activated': { cn: 'Not activated', tone: 'warm' },
+          'Join failed': { cn: 'Join failed', tone: 'error' }
         };
+        // REQ-012 §6.2：失败原因仅作状态右侧提示注记，不做成独立状态
+        const FAIL_REASON = { key_error: '密钥错误', no_join_accept: '节点未收到入网应答包' };
         const SIGNAL_BARS = { good: 4, medium: 3, poor: 2 };
         const signalHtml = s => {
           if (!s) return '<span class="ms-text">—</span>';
@@ -1241,7 +1255,7 @@ window.MS_BIZ_UTIL = (function () {
               <td><span class="ms-text">${esc(r.protocol)}${r.network ? `<span class="ms-text--auxiliary"> / ${esc(r.network)}</span>` : ''}</span></td>
               <td>${signalHtml(r.signal)}</td>
               <td><span class="ms-text">${r.updated ? esc(r.updated) : '—'}</span></td>
-              <td>${U.statusTag(STATUS[r.status] || STATUS.Online)}</td>
+              <td>${U.statusTag(STATUS[r.status] || STATUS.Online)}${r.status === 'Join failed' || r.failReason ? `<span class="bc-eg71-fail-tipwrap">${ico('question', 16)}<span class="bc-eg71-fail-tip" hidden>${esc(FAIL_REASON[r.failReason] || (r.failReasonText != null ? r.failReasonText : '密钥错误'))}</span></span>` : ''}</td>
               <td class="bc-num">${esc(r.objects)}</td>
               <td class="bc-eg71-table-ops">${opsHtml}</td>
             </tr>`).join('')}</tbody>`;
@@ -1340,6 +1354,13 @@ window.MS_BIZ_UTIL = (function () {
         }
         rootEl.querySelectorAll('.bc-eg71-signal-cell').forEach(cell => {
           const tip = cell.querySelector('.bc-eg71-signal-tip');
+          if (!tip) return;
+          cell.addEventListener('mouseenter', () => { tip.hidden = false; });
+          cell.addEventListener('mouseleave', () => { tip.hidden = true; });
+        });
+        // REQ-012：入网失败原因提示——与信号列同款 hover 气泡交互
+        rootEl.querySelectorAll('.bc-eg71-fail-tipwrap').forEach(cell => {
+          const tip = cell.querySelector('.bc-eg71-fail-tip');
           if (!tip) return;
           cell.addEventListener('mouseenter', () => { tip.hidden = false; });
           cell.addEventListener('mouseleave', () => { tip.hidden = true; });
@@ -2903,6 +2924,834 @@ window.MS_BIZ_UTIL = (function () {
           const pos = b.getAttribute('data-app-card-button').split(':');
           b.dispatchEvent(new CustomEvent('eg71-app-card-button', { bubbles: true, detail: { row: Number(pos[0]), col: Number(pos[1]) } }));
         }));
+      }
+    },
+    /* ==================== EG71 · REQ-012 LoRaWAN 扫描入网（7 新组件） ==================== */
+    {
+      id: 'bc-eg71-alert-bar', cn: '页内业务横幅', cat: '反馈',
+      desc: 'EG71 页内业务横幅：S_Alert 的业务封装（info 引导 / error 异常），标题可选、正文必填（desc 为空整体不渲染），可带关闭钮；关闭以 eg71-alert-close 冒泡事件对外通知。扫描 Key 导入 4 种失败场景横幅与页内引导横幅共用本组件。',
+      atoms: ['alert', 'icon'],
+      entityHint: 'gateway',
+      tags: ['横幅', 'Alert', '提示', '引导', '导入失败', '异常', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        if (!ctx.desc) return '';
+        const tone = ctx.tone === 'error' ? 'error' : 'info';
+        const icon = tone === 'error' ? 'warn' : 'info';
+        return `<div class="bc-eg71-alert-bar">
+          <div class="ms-alert ms-alert--${tone}">
+            <span class="ms-alert-icon">${ico(icon, 16)}</span>
+            <div class="ms-alert-body">
+              ${ctx.title ? `<div class="ms-alert-title">${esc(ctx.title)}</div>` : ''}
+              <div class="ms-alert-desc">${esc(ctx.desc)}</div>
+            </div>
+            ${ctx.closable ? `<button type="button" class="bc-eg71-alert-close" data-alert-close aria-label="关闭">${ico('close', 16)}</button>` : ''}
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-alert-close]').forEach(btn => btn.addEventListener('click', () => {
+          const bar = btn.closest('.bc-eg71-alert-bar');
+          if (bar) bar.hidden = true;
+          btn.dispatchEvent(new CustomEvent('eg71-alert-close', { bubbles: true, detail: {} }));
+        }));
+      }
+    },
+    {
+      id: 'bc-eg71-scan-banner', cn: '全局扫描提示条', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 全局扫描提示条：扫描中常驻，LoRaWAN 图标 + 红点/未添加设备数角标（active 态蓝、visited 态去红点变灰、设备数保留）；整条可点击跳扫描确认页。结构类 div + data-route 委托（迁移自 bc-eg71-protocol-card，不嵌 <a>），点击以 eg71-scan-navigate {route} 冒泡。',
+      atoms: ['icon', 'badge', 'typography'],
+      entityHint: 'gateway',
+      tags: ['扫描', 'LoRaWAN', '全局提示', '红点', '角标', '导航', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        if (!ctx.scanning) return '';
+        const visited = !!ctx.visited;
+        const count = Number(ctx.unaddedCount || 0);
+        const route = ctx.route || '/data-services/data-acquisition/lorawan-scan/confirm';
+        const badge = count > 0 ? `${visited ? '' : '<i class="ms-badge-dot"></i>'}<span class="ms-badge-count">${esc(count)}</span>` : '';
+        return `<div class="bc-eg71-scan-banner${visited ? ' bc-eg71-scan-banner--visited' : ' bc-eg71-scan-banner--active'}" data-route="${esc(route)}" role="link" tabindex="0" aria-label="查看扫描确认页">
+          <span class="ms-badge bc-eg71-scan-banner-badge">${ico('lorawan', 20)}${badge}</span>
+          <span class="ms-text bc-eg71-scan-banner-text">正在LoRaWAN扫描中</span>
+          <span class="ms-text ms-text--secondary ms-text--sm bc-eg71-scan-banner-count">未添加设备 <b class="bc-num">${esc(count)}</b></span>
+          <span class="bc-eg71-scan-banner-arrow">${ico('chevronRight', 16)}</span>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('.bc-eg71-scan-banner[data-route]').forEach(el => {
+          el.addEventListener('click', () => {
+            el.dispatchEvent(new CustomEvent('eg71-scan-navigate', { bubbles: true, detail: { route: el.getAttribute('data-route'), visited: el.classList.contains('bc-eg71-scan-banner--visited') } }));
+          });
+          el.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-activation-card', cn: '激活设置灰卡', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 激活设置灰卡：单选组「默认值/自定义值」（非 Milesight 设备禁用默认值）+ AppKey 输入（32 位十六进制校验；OTAA 态才渲染，ABP 态只渲染单选组）。单选切换保留已输入 AppKey（交互 #8）；切换以 eg71-activation-change {kind, mode, appKey} 冒泡，输入以 eg71-activation-appkey {value, valid} 冒泡。ABP 默认值置灰联动由消费方（bc-eg71-device-form）监听 eg71-activation-change 实现，本组件不越界。',
+      atoms: ['radio', 'form', 'input', 'icon'],
+      entityHint: 'device',
+      tags: ['激活', 'OTAA', 'ABP', 'AppKey', '默认值', '自定义值', 'LoRaWAN', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const kind = ctx.kind === 'abp' ? 'abp' : 'otaa';
+        const value = ctx.value || {};
+        const mode = value.mode === 'custom' ? 'custom' : 'default';
+        const appKey = value.appKey || '';
+        const milesight = !!ctx.milesight;
+        const readonly = !!ctx.readonly;
+        const keyBad = !!appKey && !/^[0-9A-Fa-f]{32}$/.test(appKey);
+        const radioBtn = (label, val, disabled) => `<span class="ms-radio-btn${mode === val ? ' ms-radio-btn--checked' : ''}${disabled ? ' bc-eg71-activation-btn--disabled' : ''}" role="radio" aria-checked="${mode === val}" aria-disabled="${disabled ? 'true' : 'false'}" tabindex="-1" data-activation-mode="${val}">${esc(label)}</span>`;
+        return `<div class="ms-form-item bc-eg71-subarea bc-eg71-activation-card" data-activation-kind="${kind}">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label ms-form-label--required">${kind === 'otaa' ? '激活设置（OTAA）' : '激活设置（ABP）'}${ico('info', 16)}</label>
+          </div>
+          <div class="ms-radio-btn-group bc-eg71-form-item-radio-group bc-eg71-activation-group" role="radiogroup" aria-label="激活设置">
+            ${radioBtn('默认值', 'default', !milesight)}
+            ${radioBtn('自定义值', 'custom', false)}
+          </div>
+          ${kind === 'otaa' ? `<div class="bc-eg71-activation-key">
+            <div class="bc-eg71-form-item-labelrow">
+              <label class="ms-form-label ms-form-label--required">应用程序密钥 AppKey${ico('info', 16)}</label>
+              <span class="bc-eg71-form-item-count">${appKey.length}/32</span>
+            </div>
+            <label class="ms-input${keyBad ? ' ms-input--error' : ''}${readonly ? ' ms-input--disabled' : ''}">
+              <input data-activation-appkey value="${esc(appKey)}" maxlength="32" placeholder="请输入 32 位十六进制 AppKey"${readonly ? ' readonly' : ''}>
+            </label>
+            <div class="bc-eg71-form-item-msg${keyBad ? ' bc-eg71-form-item-msg--error' : ''}">${keyBad ? 'AppKey 必须为 32 位十六进制字符（0-9 / A-F）' : 'Milesight 设备默认密钥出厂内置；自定义值需与节点侧配置一致。'}</div>
+          </div>` : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('.bc-eg71-activation-group').forEach(group => {
+          const card = group.closest('.bc-eg71-activation-card');
+          if (!card) return;
+          group.querySelectorAll('.ms-radio-btn[data-activation-mode]').forEach(btn => {
+            if (btn.getAttribute('aria-disabled') === 'true') return;
+            btn.addEventListener('click', () => {
+              const mode = btn.getAttribute('data-activation-mode');
+              group.querySelectorAll('.ms-radio-btn').forEach(b => {
+                const on = b === btn;
+                b.classList.toggle('ms-radio-btn--checked', on);
+                b.setAttribute('aria-checked', on ? 'true' : 'false');
+              });
+              // 交互 #8：切换只读输入框取当前值，绝不清空（保留用户输入）
+              const keyInput = card.querySelector('[data-activation-appkey]');
+              btn.dispatchEvent(new CustomEvent('eg71-activation-change', { bubbles: true, detail: { kind: card.getAttribute('data-activation-kind') || 'otaa', mode, appKey: keyInput ? keyInput.value : '' } }));
+            });
+          });
+        });
+        rootEl.querySelectorAll('[data-activation-appkey]').forEach(input => {
+          const card = input.closest('.bc-eg71-activation-card');
+          const syncErr = () => {
+            if (!card) return;
+            const count = card.querySelector('.bc-eg71-form-item-count');
+            if (count) count.textContent = input.value.length + '/32';
+            const bad = !!input.value && !/^[0-9A-Fa-f]{32}$/.test(input.value);
+            const box = input.closest('.ms-input');
+            if (box) box.classList.toggle('ms-input--error', bad);
+            const msg = card.querySelector('.bc-eg71-form-item-msg');
+            if (msg) {
+              msg.classList.toggle('bc-eg71-form-item-msg--error', bad);
+              msg.textContent = bad ? 'AppKey 必须为 32 位十六进制字符（0-9 / A-F）' : 'Milesight 设备默认密钥出厂内置；自定义值需与节点侧配置一致。';
+            }
+          };
+          input.addEventListener('input', syncErr);
+          input.addEventListener('change', () => {
+            syncErr();
+            input.dispatchEvent(new CustomEvent('eg71-activation-appkey', { bubbles: true, detail: { value: input.value, valid: /^[0-9A-Fa-f]{32}$/.test(input.value) } }));
+          });
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-scan-appkey-card', cn: '扫描 Key 配置卡', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 扫描配置卡：Milesight 默认 Key 勾选 + 自定义 AppKey 列表（逐条添加 / CSV 文件导入 / 搜索过滤 / 危险描边清空——仅清自定义 Key、无确认弹窗）+ N/1000 容量计数。勾选/增/删/搜索以 eg71-scan-keys-change {keys, defaultKeyChecked, canStart} 冒泡（canStart = 默认勾选 || 自定义非空，驱动【开始扫描】置灰）；导入 4 种失败场景以 eg71-scan-import-error {case: size|count|no-header|invalid, remaining?} 冒泡，由页内 bc-eg71-alert-bar 横幅呈现。',
+      atoms: ['checkbox', 'button', 'upload', 'input', 'tag', 'icon', 'empty'],
+      entityHint: 'gateway',
+      tags: ['扫描', 'AppKey', 'LoRaWAN', '导入', 'CSV', '清空', '搜索', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const keys = Array.isArray(ctx.keys) ? ctx.keys.slice() : [];
+        const maxKeys = ctx.maxKeys != null ? ctx.maxKeys : 1000;
+        const keyword = ctx.keyword || '';
+        const defaultChecked = ctx.defaultKeyChecked !== false;
+        const rowHtml = k => `<div class="bc-eg71-scan-key-row" data-scan-key="${esc(k)}">
+            <span class="ms-text bc-num bc-eg71-scan-key-text">${esc(k)}</span>
+            <button type="button" class="bc-eg71-scan-key-del" data-scan-key-del="${esc(k)}" aria-label="删除该 Key">${ico('trash', 16)}</button>
+          </div>`;
+        const listHtml = keys.length
+          ? keys.map(rowHtml).join('')
+          : '';
+        return `<div class="bc-eg71-scan-appkey-card" data-scan-max="${esc(maxKeys)}">
+          <section class="ms-card">
+            <div class="ms-card-body bc-eg71-scan-key-body">
+              <label class="ms-checkbox bc-eg71-scan-key-default"><input type="checkbox" data-scan-key-default${defaultChecked ? ' checked' : ''}><span class="ms-checkbox-box"></span><span class="ms-text">Milesight 默认 AppKey</span></label>
+              <div class="ms-space ms-space--12 bc-eg71-scan-key-actions">
+                <button type="button" class="ms-btn" data-scan-key-import>${ico('download', 16)}导入文件</button>
+                <button type="button" class="ms-btn ms-btn--danger" data-scan-key-clear${keys.length ? '' : ' disabled'}>${ico('trash', 16)}清空</button>
+                <label class="ms-upload bc-eg71-scan-key-upload" hidden><input type="file" accept=".csv,.xlsx" data-scan-key-file></label>
+              </div>
+              <label class="ms-input bc-eg71-scan-key-search"><input data-scan-key-search value="${esc(keyword)}" placeholder="搜索 AppKey">${ico('search', 16)}</label>
+              <div class="bc-eg71-scan-key-head">
+                <span class="ms-h5">自定义 AppKey</span>
+                <span class="ms-tag ms-tag--round ms-tag--outline">${keys.length}/${esc(maxKeys)}</span>
+              </div>
+              <div class="bc-eg71-scan-key-list" data-scan-key-list${keys.length ? '' : ' hidden'}>${listHtml}</div>
+              <div class="bc-eg71-scan-key-empty"${keys.length ? ' hidden' : ''}><div class="ms-empty"><span class="ms-empty-illu">${ico('lorawan', 32)}</span><div class="ms-empty-text">暂无自定义 AppKey，可逐条添加或从文件导入</div></div></div>
+              <div class="bc-eg71-scan-key-addrow">
+                <label class="ms-input"><input data-scan-key-input maxlength="32" placeholder="请输入 32 位十六进制 AppKey"></label>
+                <button type="button" class="ms-btn" data-scan-key-add>${ico('plus', 16)}添加</button>
+              </div>
+              <div class="bc-eg71-form-item-msg bc-eg71-scan-key-msg" hidden></div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const card = rootEl.classList && rootEl.classList.contains('bc-eg71-scan-appkey-card') ? rootEl : rootEl.querySelector('.bc-eg71-scan-appkey-card');
+        if (!card) return;
+        const maxKeys = Number(card.getAttribute('data-scan-max')) || 1000;
+        const listEl = card.querySelector('[data-scan-key-list]');
+        const emptyEl = card.querySelector('.bc-eg71-scan-key-empty');
+        const countTag = card.querySelector('.bc-eg71-scan-key-head .ms-tag');
+        const clearBtn = card.querySelector('[data-scan-key-clear]');
+        const searchInput = card.querySelector('[data-scan-key-search]');
+        const addInput = card.querySelector('[data-scan-key-input]');
+        const msgEl = card.querySelector('.bc-eg71-scan-key-msg');
+        const defaultBox = card.querySelector('[data-scan-key-default]');
+        const fire = (ev, detail) => card.dispatchEvent(new CustomEvent(ev, { bubbles: true, detail }));
+        let keys = Array.prototype.slice.call(card.querySelectorAll('[data-scan-key-del]')).map(b => b.getAttribute('data-scan-key-del'));
+        const canStart = () => !!(defaultBox && defaultBox.checked) || keys.length > 0;
+        const notify = () => fire('eg71-scan-keys-change', { keys: keys.slice(), defaultKeyChecked: !!(defaultBox && defaultBox.checked), canStart: canStart() });
+        const setMsg = (text, isErr) => {
+          if (!msgEl) return;
+          if (!text) { msgEl.hidden = true; msgEl.textContent = ''; }
+          else { msgEl.hidden = false; msgEl.textContent = text; }
+          msgEl.classList.toggle('bc-eg71-form-item-msg--error', !!isErr);
+        };
+        const rowHtml = k => `<div class="bc-eg71-scan-key-row" data-scan-key="${esc(k)}"><span class="ms-text bc-num bc-eg71-scan-key-text">${esc(k)}</span><button type="button" class="bc-eg71-scan-key-del" data-scan-key-del="${esc(k)}" aria-label="删除该 Key">${ico('trash', 16)}</button></div>`;
+        const applyFilter = () => {
+          const kw = ((searchInput && searchInput.value) || '').trim().toLowerCase();
+          card.querySelectorAll('.bc-eg71-scan-key-row').forEach(row => {
+            const k = row.getAttribute('data-scan-key') || '';
+            row.hidden = !!kw && k.toLowerCase().indexOf(kw) < 0;
+          });
+        };
+        const sync = () => {
+          if (countTag) countTag.textContent = keys.length + '/' + maxKeys;
+          if (clearBtn) clearBtn.disabled = keys.length === 0;
+          if (listEl) listEl.hidden = keys.length === 0;
+          if (emptyEl) emptyEl.hidden = keys.length > 0;
+          applyFilter();
+        };
+        if (defaultBox) defaultBox.addEventListener('change', notify);
+        if (searchInput) searchInput.addEventListener('input', () => { applyFilter(); notify(); });
+        // 删除行：容器级事件委托（增删后无需重挂）
+        if (listEl) listEl.addEventListener('click', e => {
+          const btn = e.target && e.target.closest ? e.target.closest('[data-scan-key-del]') : null;
+          if (!btn) return;
+          const k = btn.getAttribute('data-scan-key-del');
+          keys = keys.filter(x => x !== k);
+          const row = btn.closest('.bc-eg71-scan-key-row');
+          if (row) row.remove();
+          sync(); notify();
+        });
+        if (clearBtn) clearBtn.addEventListener('click', () => {
+          // 仅清空自定义 Key（不动默认 Key 勾选），危险描边 + 无确认弹窗（mapping §4.2）
+          keys = [];
+          if (listEl) listEl.innerHTML = '';
+          sync(); notify();
+        });
+        const addBtn = card.querySelector('[data-scan-key-add]');
+        if (addBtn) addBtn.addEventListener('click', () => {
+          const v = ((addInput && addInput.value) || '').trim();
+          if (!v) { setMsg('请输入 AppKey 后再添加', true); return; }
+          if (!/^[0-9A-Fa-f]{32}$/.test(v)) { setMsg('AppKey 必须为 32 位十六进制字符（0-9 / A-F）', true); return; }
+          if (keys.indexOf(v) >= 0) { setMsg('该 AppKey 已存在', true); return; }
+          if (keys.length >= maxKeys) { setMsg('自定义 AppKey 数量已达上限 ' + maxKeys, true); return; }
+          keys.push(v);
+          if (listEl) listEl.insertAdjacentHTML('beforeend', rowHtml(v));
+          if (addInput) addInput.value = '';
+          setMsg('', false); sync(); notify();
+        });
+        const importBtn = card.querySelector('[data-scan-key-import]');
+        const fileInput = card.querySelector('[data-scan-key-file]');
+        if (importBtn && fileInput) importBtn.addEventListener('click', () => fileInput.click());
+        if (fileInput) fileInput.addEventListener('change', () => {
+          const f = fileInput.files && fileInput.files[0];
+          fileInput.value = '';
+          if (!f) return;
+          const fail = c => fire('eg71-scan-import-error', c === 'count' ? { case: 'count', remaining: Math.max(0, maxKeys - keys.length) } : { case: c });
+          const name = f.name || '';
+          if (!/\.(csv|xlsx)$/i.test(name)) return fail('invalid');
+          if (f.size > 1 * 1024 * 1024) return fail('size');
+          const done = text => {
+            const lines = String(text || '').split(/\r?\n/).filter(l => l.trim());
+            if (!lines.length || !/appkey/i.test(lines[0])) return fail('no-header');
+            const vals = lines.slice(1).map(l => l.split(/[,;\t]/)[0].trim()).filter(Boolean);
+            if (!vals.length || keys.length + vals.length > maxKeys) return fail('count');
+            vals.forEach(x => { if (keys.indexOf(x) < 0) keys.push(x); });
+            if (listEl) listEl.innerHTML = keys.map(rowHtml).join('');
+            sync(); notify();
+          };
+          if (/\.csv$/i.test(name)) {
+            const fr = new FileReader();
+            fr.onload = () => done(fr.result);
+            fr.onerror = () => fail('invalid');
+            fr.readAsText(f);
+          } else {
+            // xlsx 为二进制，前端无解析库：demo 语义按「文件无效」冒泡，由宿主接真实解析
+            fail('invalid');
+          }
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-scan-edit-drawer', cn: '扫描编辑抽屉', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 扫描确认页编辑抽屉：single = DevEUI 只读 + 设备名/描述/型号 + 公共 4 项（配置文件——过滤 ABP/fPort/超时分钟/帧计数校验开关），multi = 仅公共 4 项；标题「编辑设备 / 编辑多个设备」。开合骨架镜像 bc-eg71-protocol-detail（hidden + is-open + [data-*-close] + 遮罩点击关闭 + 内部 stopPropagation），保存以 eg71-scan-save {mode, targets, value} 冒泡后自动 close。',
+      atoms: ['drawer', 'form', 'input', 'input-number', 'select', 'switch', 'button', 'icon'],
+      entityHint: 'device',
+      tags: ['抽屉', 'Drawer', '扫描', '批量编辑', '编辑设备', 'LoRaWAN', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const mode = ctx.mode === 'single' ? 'single' : 'multi';
+        const v = Object.assign({ profile: 'ClassA-OTAA', fPort: 1, timeout: 1440, frameCheck: false, name: '', description: '', model: 'None' }, ctx.value || {});
+        const profiles = (ctx.profiles && ctx.profiles.length ? ctx.profiles : ['ClassA-OTAA']).filter(p => !/ABP/i.test(p));
+        const models = (ctx.models && ctx.models.length ? ctx.models : []).concat(['None']).filter((m, i, a) => a.indexOf(m) === i);
+        const device = ctx.device || {};
+        const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
+        const title = mode === 'single' ? '编辑设备' : '编辑多个设备';
+        const devEui = device.devEui || (targets.length === 1 ? targets[0] : '');
+        const opt = (list, val) => list.map(o => `<option${o === val ? ' selected' : ''}>${esc(o)}</option>`).join('');
+        const num = field => `<span class="ms-input-number"><input data-scan-edit-field="${field}"><span class="ms-input-number-step"><button type="button" aria-label="减小">−</button><button type="button" aria-label="增大">+</button></span></span>`;
+        const singleFields = mode === 'single' ? `
+          <div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">DevEUI</label></div>
+            <label class="ms-input ms-input--disabled"><input value="${esc(devEui)}" readonly></label>
+          </div>
+          <div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">设备名称</label></div>
+            <label class="ms-input"><input data-scan-edit-field="name" value="${esc(v.name || devEui)}" placeholder="默认为 DevEUI"></label>
+          </div>
+          <div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">设备描述</label></div>
+            <label class="ms-input"><input data-scan-edit-field="description" value="${esc(v.description || '')}" placeholder="选填"></label>
+          </div>
+          <div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">设备型号</label></div>
+            <span class="ms-select"><select data-scan-edit-field="model">${opt(models, v.model || 'None')}</select></span>
+          </div>` : '';
+        return `<div class="bc-eg71-scan-edit-drawer" data-scan-mode="${mode}" data-scan-targets="${esc(targets.join(','))}" hidden>
+          <div class="ms-mask ms-mask--drawer">
+            <div class="ms-drawer bc-eg71-scan-edit-drawer-panel" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+              <div class="ms-drawer-head">
+                <span class="ms-h4">${esc(title)}</span>
+                <span class="ms-modal-close" data-scan-drawer-close aria-label="关闭">${ico('close', 20)}</span>
+              </div>
+              <div class="ms-drawer-body">
+                <div class="ms-form bc-eg71-scan-edit-form">
+                  ${singleFields}
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">配置文件</label><span class="bc-eg71-form-item-unit">（不含 ABP 模式）</span></div>
+                    <span class="ms-select"><select data-scan-edit-field="profile">${opt(profiles, v.profile)}</select></span>
+                  </div>
+                  <div class="bc-eg71-formgrid">
+                    <div class="ms-form-item">
+                      <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">fPort</label><span class="bc-eg71-form-item-unit">(1-223)</span></div>
+                      ${num('fPort')}
+                    </div>
+                    <div class="ms-form-item">
+                      <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">超时时间</label><span class="bc-eg71-form-item-unit">(min)</span></div>
+                      ${num('timeout')}
+                    </div>
+                  </div>
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">帧计数校验</label></div>
+                    <label class="ms-switch"><input type="checkbox" data-scan-edit-field="frameCheck"${v.frameCheck ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span><span class="ms-text">启用帧计数校验</span></label>
+                  </div>
+                </div>
+              </div>
+              <div class="ms-drawer-foot ms-space ms-space--12">
+                <button type="button" class="ms-btn" data-scan-drawer-cancel>取消</button>
+                <button type="button" class="ms-btn ms-btn--filled" data-scan-drawer-save>保存</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelector) ? root : document;
+        const wrap = rootEl.classList && rootEl.classList.contains('bc-eg71-scan-edit-drawer') ? rootEl : rootEl.querySelector('.bc-eg71-scan-edit-drawer');
+        if (!wrap) return;
+        const open = () => { wrap.hidden = false; wrap.classList.add('is-open'); };
+        const close = () => { wrap.hidden = true; wrap.classList.remove('is-open'); };
+        wrap.querySelectorAll('[data-scan-drawer-close], [data-scan-drawer-cancel]').forEach(el => el.addEventListener('click', close));
+        const mask = wrap.querySelector('.ms-mask');
+        if (mask) mask.addEventListener('click', e => { if (e.target === mask) close(); });
+        const panel = wrap.querySelector('.ms-drawer');
+        if (panel) panel.addEventListener('click', e => e.stopPropagation());
+        // 数值步进（L2 S_InputNumber 契约：步进钮组内上减下加）
+        wrap.querySelectorAll('.ms-input-number').forEach(numBox => {
+          const input = numBox.querySelector('input');
+          numBox.querySelectorAll('.ms-input-number-step button').forEach((btn, i) => btn.addEventListener('click', () => {
+            if (!input) return;
+            input.value = Math.max(0, (parseInt(input.value, 10) || 0) + (i === 0 ? -1 : 1));
+          }));
+        });
+        const saveBtn = wrap.querySelector('[data-scan-drawer-save]');
+        if (saveBtn) saveBtn.addEventListener('click', () => {
+          const value = { profile: 'ClassA-OTAA', fPort: 1, timeout: 1440, frameCheck: false };
+          wrap.querySelectorAll('[data-scan-edit-field]').forEach(el => {
+            const field = el.getAttribute('data-scan-edit-field');
+            if (field === 'frameCheck') value.frameCheck = el.checked;
+            else if (field === 'fPort' || field === 'timeout') value[field] = parseInt(el.value, 10) || 0;
+            else value[field] = el.value;
+          });
+          saveBtn.dispatchEvent(new CustomEvent('eg71-scan-save', { bubbles: true, detail: { mode: wrap.getAttribute('data-scan-mode') || 'multi', targets: (wrap.getAttribute('data-scan-targets') || '').split(',').filter(Boolean), value } }));
+          close();
+        });
+        wrap.open = open;
+        wrap.close = close;
+      }
+    },
+    {
+      id: 'bc-eg71-scan-device-table', cn: '扫描设备双页签表', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 扫描确认页设备表：页签条（发现设备/已忽略设备，带计数）→ 分 Tab 工具栏（编辑/忽略 或 取消忽略 随勾选启停；添加设备主钮 + 放弃扫描危险钮）→ 8 列表（选择/DevEUI/设备名/描述/设备型号——单值行内下拉、多匹配 Tag 展示/信号强度三档条+SNR·RSSI 常显/更新时间倒序/操作）→ 空态保留表头「扫描进行中，离开此页面不会打断扫描」→ 表尾刷新。行内编辑 blur 以 eg71-scan-row-edit 冒泡；忽略/取消忽略以 eg71-scan-ignore 冒泡；添加设备经内嵌 bc-eg71-modal 确认后 eg71-scan-add + Toast「xx个设备添加成功」+ 移除行；超限（D4）经确认弹窗拦截；放弃扫描经删除弹窗确认后 eg71-scan-abandon + 行淡出移除；批量/单台编辑以 eg71-scan-edit-multi / eg71-scan-edit-single 冒泡由宿主开 bc-eg71-scan-edit-drawer。',
+      atoms: ['tabs', 'button', 'table', 'checkbox', 'input', 'select', 'tag', 'icon', 'empty', 'message', 'modal'],
+      entityHint: 'device',
+      tags: ['扫描', 'LoRaWAN', '设备表', '页签', '发现设备', '已忽略', '添加设备', '放弃扫描', '行内编辑', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const tab = ctx.tab === 'ignored' ? 'ignored' : 'found';
+        const rowsAll = (Array.isArray(ctx.rows) ? ctx.rows : [
+          { devEui: '24E124FFFE00A001', name: 'AM319-车间A', description: '温湿度传感器', model: 'AM319', rssi: -78, snr: 9.5, level: 'good', lastUpdateAt: '2024-12-23 09:34:12' },
+          { devEui: '24E124FFFE00A002', name: 'AM102-仓库', description: '', model: ['AM102', 'AM102L'], rssi: -102, snr: -2.5, level: 'medium', lastUpdateAt: '2024-12-23 09:33:58' },
+          { devEui: '0018B20000AB12F4', name: '0018B20000AB12F4', description: '第三方节点', model: 'None', rssi: -121, snr: -15, level: 'poor', lastUpdateAt: '2024-12-23 09:31:20' },
+          { devEui: '24E124FFFE00A003', name: 'WS202-门口', description: '门磁', model: 'WS202', rssi: -95, snr: 4, level: 'medium', lastUpdateAt: '2024-12-23 09:30:02', ignored: true }
+        ]).slice().sort((a, b) => String(b.lastUpdateAt || '').localeCompare(String(a.lastUpdateAt || '')));
+        const found = rowsAll.filter(r => !r.ignored);
+        const ignored = rowsAll.filter(r => r.ignored);
+        const active = tab === 'ignored' ? ignored : found;
+        const MODEL_OPTIONS = ['None', 'AM102', 'AM103', 'AM319', 'EM500-PT100', 'WS202', 'UC50x'];
+        const SIGNAL_BARS = { good: 4, medium: 3, poor: 2 };
+        const modelHtml = m => {
+          if (Array.isArray(m) && m.length > 1) {
+            const cands = m.concat(['None']).filter((x, i, a) => a.indexOf(x) === i);
+            return `<span class="bc-eg71-scan-model-tags">${cands.map(x => `<span class="ms-tag ms-tag--round${x === 'None' ? ' ms-tag--outline' : ''}">${esc(x)}</span>`).join('')}</span>`;
+          }
+          const cur = (Array.isArray(m) ? m[0] : m) || 'None';
+          const opts = [cur].concat(MODEL_OPTIONS.filter(o => o !== cur));
+          return `<span class="ms-select ms-select--sm bc-eg71-scan-model-select"><select data-scan-row-field="model">${opts.map(o => `<option${o === cur ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>`;
+        };
+        const signalHtml = r => {
+          if (!r || !r.level) return '<span class="ms-text">—</span>';
+          const on = SIGNAL_BARS[r.level] || 2;
+          const bars = [1, 2, 3, 4].map(n => `<i class="bc-eg71-scan-signal-bar${n <= on ? ' bc-eg71-scan-signal-bar--' + esc(r.level) : ''}"></i>`).join('');
+          return `<span class="bc-eg71-scan-signal"><span class="bc-eg71-scan-signal-bars">${bars}</span><span class="bc-num bc-eg71-scan-signal-vals">RSSI ${r.rssi != null ? esc(r.rssi) : '-'}dBm / SNR ${r.snr != null ? esc(r.snr) : '-'}dB</span></span>`;
+        };
+        const OPS = tab === 'ignored'
+          ? [['unignore', 'check', '取消忽略', '']]
+          : [['edit', 'edit', '编辑', ''], ['ignore', 'minus', '忽略', ' ms-btn--danger']];
+        const opsHtml = OPS.map(o => `<button type="button" class="ms-btn ms-btn--sm${o[3]}" data-scan-op="${o[0]}" aria-label="${o[2]}" title="${o[2]}">${ico(o[1], 16)}${o[2]}</button>`).join('');
+        const rowHtml = r => `<tr data-scan-row="${esc(r.devEui)}" class="bc-eg71-scan-row">
+            <td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-scan-check><span class="ms-checkbox-box"></span></label></td>
+            <td><span class="ms-text bc-num">${esc(r.devEui)}</span></td>
+            <td><label class="ms-input ms-input--sm"><input data-scan-row-field="name" value="${esc(r.name || r.devEui)}"></label></td>
+            <td><label class="ms-input ms-input--sm"><input data-scan-row-field="description" value="${esc(r.description || '')}" placeholder="-"></label></td>
+            <td>${modelHtml(r.model)}</td>
+            <td>${signalHtml(r)}</td>
+            <td><span class="ms-text bc-time">${esc(r.lastUpdateAt || '—')}</span></td>
+            <td class="bc-eg71-table-ops">${opsHtml}</td>
+          </tr>`;
+        const batch = tab === 'ignored'
+          ? `<button type="button" class="ms-btn ms-btn--sm" data-scan-batch="unignore" disabled>${ico('check', 16)}取消忽略</button>`
+          : `<button type="button" class="ms-btn ms-btn--sm" data-scan-batch="edit" disabled>${ico('edit', 16)}编辑</button>
+             <button type="button" class="ms-btn ms-btn--sm ms-btn--danger" data-scan-batch="ignore" disabled>${ico('minus', 16)}忽略</button>`;
+        const toolbar = `<div class="ms-space ms-space--12 bc-eg71-scan-toolbar">
+            ${batch}
+            ${tab === 'found' ? `<span class="bc-eg71-scan-toolbar-spacer"></span>
+            <button type="button" class="ms-btn ms-btn--sm ms-btn--filled" data-scan-add disabled>${ico('plus', 16)}添加设备</button>
+            <button type="button" class="ms-btn ms-btn--sm ms-btn--danger" data-scan-abandon>${ico('close', 16)}放弃扫描</button>` : ''}
+          </div>`;
+        const emptyHtml = tab === 'ignored'
+          ? `<div class="ms-empty"><span class="ms-empty-illu">${ico('device', 32)}</span><div class="ms-empty-text">暂无已忽略设备</div></div>`
+          : `<div class="ms-empty"><span class="ms-empty-illu">${ico('lorawan', 32)}</span><div class="ms-empty-text">扫描进行中，离开此页面不会打断扫描</div></div>`;
+        const foot = `<div class="bc-table-foot">
+            <button type="button" class="ms-btn ms-btn--sm" data-scan-refresh>${ico('refresh', 16)}刷新</button>
+            <span class="ms-text ms-text--secondary ms-text--sm" data-scan-total>共 ${active.length} 台</span>
+          </div>`;
+        const modalHtml = (id, mctx) => window.MS_BIZ_INDEX && window.MS_BIZ_INDEX['bc-eg71-modal']
+          ? `<div class="bc-eg71-scan-modal" data-scan-modal="${id}">${window.MS_BIZ_INDEX['bc-eg71-modal'].render(mctx)}</div>`
+          : '';
+        return `<div class="bc-eg71-scan-device-table" data-scan-tab="${tab}" data-scan-max-devices="${esc(ctx.maxDevices != null ? ctx.maxDevices : 2000)}" data-scan-existing="${esc(ctx.existingDevices != null ? ctx.existingDevices : 0)}">
+          <section class="ms-card">
+            <div class="bc-eg71-event-bar" role="tablist" aria-label="扫描设备页签">
+              <button type="button" class="bc-eg71-event-tab${tab === 'found' ? ' bc-eg71-event-tab--active' : ''}" role="tab" aria-selected="${tab === 'found'}" data-scan-tab="found">发现设备<span class="ms-tag ms-tag--round ms-tag--outline bc-count" data-scan-count="found">${found.length}</span></button>
+              <button type="button" class="bc-eg71-event-tab${tab === 'ignored' ? ' bc-eg71-event-tab--active' : ''}" role="tab" aria-selected="${tab === 'ignored'}" data-scan-tab="ignored">已忽略设备<span class="ms-tag ms-tag--round ms-tag--outline bc-count" data-scan-count="ignored">${ignored.length}</span></button>
+            </div>
+            <div class="ms-card-body bc-eg71-scan-body">
+              ${toolbar}
+              <div class="ms-table-wrap">
+                <table class="ms-table">
+                  <thead><tr>
+                    <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-scan-check-all><span class="ms-checkbox-box"></span></label></th>
+                    <th>DevEUI</th><th>设备名</th><th>描述</th><th>设备型号</th><th>信号强度</th><th>更新时间</th>
+                    <th class="bc-eg71-table-ops">操作</th>
+                  </tr></thead>
+                  ${active.length
+                    ? `<tbody>${active.map(rowHtml).join('')}</tbody>`
+                    : `<tbody><tr><td colspan="8">${emptyHtml}</td></tr></tbody>`}
+                </table>
+              </div>
+              ${foot}
+            </div>
+          </section>
+          ${modalHtml('add', { action: 'confirm', title: '添加设备', desc: '确认将所选设备添加到设备列表？', okText: '确认' })}
+          ${modalHtml('abandon', { action: 'delete', title: '放弃扫描', desc: '放弃后将终止本次扫描并清空扫描结果，已扫描到的设备将全部丢弃。', okText: '放弃扫描' })}
+          ${modalHtml('limit', { action: 'confirm', title: '超过数量上限', desc: '所选设备数量超过设备上限（2000 台），请减少选择后重试。', okText: '知道了' })}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.classList && rootEl.classList.contains('bc-eg71-scan-device-table') ? rootEl : rootEl.querySelector('.bc-eg71-scan-device-table');
+        if (!wrap) return;
+        const BIZ = window.MS_BIZ_INDEX || {};
+        const fire = (el, ev, detail) => el.dispatchEvent(new CustomEvent(ev, { bubbles: true, detail }));
+        const currentTab = () => wrap.getAttribute('data-scan-tab') || 'found';
+        // 三个弹窗：bindEg71Modal 收敛到 root 内第一个 .bc-eg71-modal —— 每实例独立 wrapper 分别 bind
+        const modals = {};
+        wrap.querySelectorAll('[data-scan-modal]').forEach(w => {
+          if (BIZ['bc-eg71-modal']) BIZ['bc-eg71-modal'].bind(w);
+          const m = w.querySelector('.bc-eg71-modal');
+          if (m) modals[w.getAttribute('data-scan-modal')] = m;
+        });
+        // Toast：L2 .ms-message-stack / .ms-message 直组（无独立 S_Message 运行时助手）
+        const toast = text => {
+          let stack = document.querySelector('.ms-message-stack');
+          if (!stack) { stack = document.createElement('div'); stack.className = 'ms-message-stack'; document.body.appendChild(stack); }
+          const item = document.createElement('div');
+          item.className = 'ms-message';
+          item.innerHTML = `${ico('check', 16)}<span>${esc(text)}</span>`;
+          stack.appendChild(item);
+          setTimeout(() => item.remove(), 2400);
+        };
+        const sync = () => {
+          const checks = Array.prototype.slice.call(wrap.querySelectorAll('[data-scan-check]'));
+          const n = checks.filter(c => c.checked).length;
+          ['edit', 'ignore', 'unignore', 'add'].forEach(k => {
+            const b = wrap.querySelector(k === 'add' ? '[data-scan-add]' : `[data-scan-batch="${k}"]`);
+            if (b) b.disabled = n === 0;
+          });
+          const all = wrap.querySelector('[data-scan-check-all]');
+          if (all) {
+            all.checked = checks.length > 0 && n === checks.length;
+            all.indeterminate = n > 0 && n < checks.length;
+          }
+        };
+        const updateCounts = () => {
+          const n = wrap.querySelectorAll('tbody tr[data-scan-row]').length;
+          const tag = wrap.querySelector('[data-scan-count]');
+          if (tag) tag.textContent = n;
+          const totalEl = wrap.querySelector('[data-scan-total]');
+          if (totalEl) totalEl.textContent = `共 ${n} 台`;
+        };
+        const removeRows = trs => {
+          if (!trs.length) return;
+          trs.forEach(tr => tr.classList.add('bc-eg71-scan-row--leaving'));
+          setTimeout(() => {
+            trs.forEach(tr => tr.remove());
+            sync(); updateCounts();
+          }, 240);
+        };
+        const checkedTrs = () => Array.prototype.slice.call(wrap.querySelectorAll('[data-scan-check]')).filter(c => c.checked).map(c => c.closest('tr'));
+        const trEuis = trs => trs.map(tr => tr.getAttribute('data-scan-row'));
+        wrap.querySelectorAll('[data-scan-check]').forEach(c => c.addEventListener('change', sync));
+        const all = wrap.querySelector('[data-scan-check-all]');
+        if (all) all.addEventListener('change', () => {
+          wrap.querySelectorAll('[data-scan-check]').forEach(c => { c.checked = all.checked; });
+          sync();
+        });
+        // 页签 / 刷新
+        wrap.querySelectorAll('.bc-eg71-event-tab[data-scan-tab]').forEach(btn => btn.addEventListener('click', () => {
+          if (btn.getAttribute('data-scan-tab') === currentTab()) return;
+          fire(btn, 'eg71-scan-tab', { tab: btn.getAttribute('data-scan-tab') });
+        }));
+        const refreshBtn = wrap.querySelector('[data-scan-refresh]');
+        if (refreshBtn) refreshBtn.addEventListener('click', () => fire(refreshBtn, 'eg71-scan-refresh', { tab: currentTab() }));
+        // 行内编辑：change（文本 blur / 下拉选中即触发）→ eg71-scan-row-edit
+        wrap.querySelectorAll('[data-scan-row-field]').forEach(el => el.addEventListener('change', () => {
+          const tr = el.closest('tr[data-scan-row]');
+          if (!tr) return;
+          fire(el, 'eg71-scan-row-edit', { devEui: tr.getAttribute('data-scan-row'), field: el.getAttribute('data-scan-row-field'), value: el.value });
+        }));
+        // 行操作：编辑（单台）/ 忽略 / 取消忽略
+        wrap.querySelectorAll('[data-scan-op]').forEach(btn => btn.addEventListener('click', () => {
+          const tr = btn.closest('tr[data-scan-row]');
+          if (!tr) return;
+          const devEui = tr.getAttribute('data-scan-row');
+          const op = btn.getAttribute('data-scan-op');
+          if (op === 'edit') fire(btn, 'eg71-scan-edit-single', { devEui });
+          else if (op === 'ignore') fire(btn, 'eg71-scan-ignore', { devEuis: [devEui], ignored: true });
+          else if (op === 'unignore') fire(btn, 'eg71-scan-ignore', { devEuis: [devEui], ignored: false });
+        }));
+        // 工具栏：批量编辑 / 批量忽略 / 取消忽略
+        const editBtn = wrap.querySelector('[data-scan-batch="edit"]');
+        if (editBtn) editBtn.addEventListener('click', () => fire(editBtn, 'eg71-scan-edit-multi', { devEuis: trEuis(checkedTrs()) }));
+        const igBtn = wrap.querySelector('[data-scan-batch="ignore"]');
+        if (igBtn) igBtn.addEventListener('click', () => fire(igBtn, 'eg71-scan-ignore', { devEuis: trEuis(checkedTrs()), ignored: true }));
+        const unigBtn = wrap.querySelector('[data-scan-batch="unignore"]');
+        if (unigBtn) unigBtn.addEventListener('click', () => fire(unigBtn, 'eg71-scan-ignore', { devEuis: trEuis(checkedTrs()), ignored: false }));
+        // 添加设备：确认弹窗 → 超限拦截（D4）或 eg71-scan-add + Toast + 移除行
+        const addBtn = wrap.querySelector('[data-scan-add]');
+        if (addBtn) {
+          const addOk = modals.add ? modals.add.querySelector('[data-modal-ok]') : null;
+          if (addOk) addOk.addEventListener('click', () => {
+            const trs = checkedTrs();
+            if (!trs.length) return;
+            fire(addBtn, 'eg71-scan-add', { devEuis: trEuis(trs) });
+            toast(`${trs.length}个设备添加成功`);
+            removeRows(trs);
+          });
+          addBtn.addEventListener('click', () => {
+            const trs = checkedTrs();
+            const max = Number(wrap.getAttribute('data-scan-max-devices')) || 2000;
+            const existing = Number(wrap.getAttribute('data-scan-existing')) || 0;
+            if (modals.limit && existing + trs.length > max) { modals.limit.open(); return; }
+            if (modals.add) { modals.add.open(); return; }
+            fire(addBtn, 'eg71-scan-add', { devEuis: trEuis(trs) });
+            toast(`${trs.length}个设备添加成功`);
+            removeRows(trs);
+          });
+        }
+        // 放弃扫描：删除确认弹窗 → eg71-scan-abandon + 全部行淡出移除（时长走 --duration-normal 令牌）
+        const abandonBtn = wrap.querySelector('[data-scan-abandon]');
+        if (abandonBtn) {
+          const allRows = () => Array.prototype.slice.call(wrap.querySelectorAll('tbody tr[data-scan-row]'));
+          const doAbandon = () => {
+            fire(abandonBtn, 'eg71-scan-abandon', {});
+            removeRows(allRows());
+          };
+          const abOk = modals.abandon ? modals.abandon.querySelector('[data-modal-ok]') : null;
+          if (abOk) abOk.addEventListener('click', doAbandon);
+          abandonBtn.addEventListener('click', () => {
+            if (modals.abandon) { modals.abandon.open(); return; }
+            doAbandon();
+          });
+        }
+      }
+    },
+    {
+      id: 'bc-eg71-device-form', cn: 'LoRaWAN 设备添加/编辑表单', cat: '数据服务',
+      desc: 'EG71 LoRaWAN 设备添加/编辑整页表单：基本信息卡（DevEUI 添加可填/编辑只读 + 名称/描述/型号）→ 配置文件卡（配置文件/fPort/超时分钟/帧计数校验开关）→ 激活设置区（内嵌 bc-eg71-activation-card 灰卡；OTAA 编辑态附 DevAddr/NwkSKey/AppSKey 三只读字段；ABP 态为 ABP 参数卡——三密钥 + Uplink/Downlink Frame-counter/Timeout 三计数器，默认值态三密钥置灰、计数器保持可编辑）。内部消费 eg71-activation-change 做 ABP 置灰联动（#7），单选切换全程保留输入（#8）；切换配置文件/型号/激活类型走组件内 stash 暂存/恢复（#9），保存（eg71-footer-action action=save）清除暂存；值变更统一以 eg71-device-form-change {dirty, activation, values} 冒泡。',
+      atoms: ['card', 'form', 'input', 'input-number', 'select', 'switch', 'icon'],
+      entityHint: 'device',
+      tags: ['设备', '表单', 'LoRaWAN', 'OTAA', 'ABP', '添加', '编辑', 'AppKey', '暂存', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const mode = ctx.mode === 'edit' ? 'edit' : 'add';
+        const activation = ctx.activation === 'abp' ? 'abp' : 'otaa';
+        const devEui = ctx.devEui || '';
+        const model0 = ctx.model || '';
+        // Milesight 判定（03-ued §6.3）：DevEUI OUI 24E124 前缀，或型号命中 Milesight SKU 族
+        const milesight = /^24e124/i.test(devEui) || /^(am|em|ws|uc|wt|vs|gs|ts)\d/i.test(model0);
+        const v = Object.assign({
+          name: '', description: '', model: model0 || 'None', profile: 'ClassA-OTAA', fPort: 1, timeout: 1440, frameCheck: false,
+          activation: { mode: milesight ? 'default' : 'custom', appKey: '' },
+          abp: { devAddr: '', nwkSKey: '', appSKey: '', uplink: 0, downlink: 0, timeout: 1440 }
+        }, ctx.values || {});
+        const PROFILES = ['ClassA-OTAA', 'ClassB-OTAA', 'ClassC-OTAA', 'ClassA-ABP'];
+        const MODELS = ['None', 'AM102', 'AM102L', 'AM103', 'AM319', 'EM500-PT100', 'WS202', 'UC50x'];
+        const BIZ = window.MS_BIZ_INDEX || {};
+        const opt = (list, val) => list.map(o => `<option${o === val ? ' selected' : ''}>${esc(o)}</option>`).join('');
+        const fitem = (label, inner, required, unit) => `<div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${required === false ? '' : ' ms-form-label--required'}">${esc(label)}${unit ? `<span class="bc-eg71-form-item-unit">(${esc(unit)})</span>` : ''}</label></div>
+            ${inner}
+          </div>`;
+        const input = (field, val, ph, dis) => `<label class="ms-input${dis ? ' ms-input--disabled' : ''}"><input data-form-field="${field}" value="${esc(val != null ? val : '')}"${ph ? ` placeholder="${esc(ph)}"` : ''}${dis ? ' disabled' : ''}></label>`;
+        const roInput = val => `<label class="ms-input ms-input--disabled"><input value="${esc(val != null ? val : '')}" readonly></label>`;
+        const num = field => `<span class="ms-input-number"><input data-form-field="${field}"><span class="ms-input-number-step"><button type="button" aria-label="减小">−</button><button type="button" aria-label="增大">+</button></span></span>`;
+        const switchHtml = (field, on) => `<label class="ms-switch"><input type="checkbox" data-form-field="${field}"${on ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
+        const actCard = kind => BIZ['bc-eg71-activation-card']
+          ? BIZ['bc-eg71-activation-card'].render({ kind, value: v.activation, milesight, readonly: false })
+          : '';
+        const basicCard = `<section class="ms-card">
+          <div class="ms-card-head"><span class="ms-card-title ms-h4">基本信息</span></div>
+          <div class="ms-card-body">
+            <div class="bc-eg71-formgrid">
+              ${fitem('DevEUI', mode === 'add' ? input('devEui', devEui, '请输入 16 位十六进制 DevEUI') : roInput(devEui), mode === 'add')}
+              ${fitem('设备名称', input('name', v.name || devEui, '默认为 DevEUI'), false)}
+              ${fitem('设备描述', input('description', v.description, '选填'), false)}
+              ${fitem('设备型号', `<span class="ms-select"><select data-form-field="model">${opt(MODELS, v.model || 'None')}</select></span>`, false)}
+            </div>
+          </div>
+        </section>`;
+        const profilesCard = `<section class="ms-card">
+          <div class="ms-card-head"><span class="ms-card-title ms-h4">配置文件</span></div>
+          <div class="ms-card-body">
+            <div class="bc-eg71-formgrid">
+              ${fitem('配置文件', `<span class="ms-select"><select data-form-field="profile">${opt(PROFILES, v.profile)}</select></span>`, true)}
+              ${fitem('fPort', num('fPort'), true, '1-223')}
+              ${fitem('超时时间', num('timeout'), true, 'min')}
+              ${fitem('启用帧计数校验', switchHtml('frameCheck', v.frameCheck), false)}
+            </div>
+          </div>
+        </section>`;
+        const otaaBlock = `<div class="bc-eg71-subarea bc-eg71-device-form-act" data-device-form-act="otaa"${activation === 'otaa' ? '' : ' hidden'}>
+          ${actCard('otaa')}
+          ${mode === 'edit' ? `<div class="bc-eg71-formgrid bc-eg71-device-form-rokeys">
+            ${fitem('设备地址 DevAddr', roInput(v.abp.devAddr), false)}
+            ${fitem('网络会话秘钥 NwkSKey', roInput(v.abp.nwkSKey), false)}
+            ${fitem('应用程序会话秘钥 AppSKey', roInput(v.abp.appSKey), false)}
+          </div>` : ''}
+        </div>`;
+        const keyInput = (field, label) => fitem(label, input('abp.' + field, v.abp[field], ''), false);
+        const abpBlock = `<div class="bc-eg71-device-form-act" data-device-form-act="abp"${activation === 'abp' ? '' : ' hidden'}>
+          <div class="bc-eg71-subarea">${actCard('abp')}</div>
+          <section class="ms-card">
+            <div class="ms-card-head"><span class="ms-card-title ms-h4">ABP 参数</span></div>
+            <div class="ms-card-body">
+              <div class="bc-eg71-formgrid">
+                ${keyInput('devAddr', '设备地址 DevAddr')}
+                ${keyInput('nwkSKey', '网络会话秘钥 NwkSKey')}
+                ${keyInput('appSKey', '应用程序会话秘钥 AppSKey')}
+              </div>
+              <div class="bc-eg71-formgrid">
+                ${fitem('Uplink Frame-counter', num('abp.uplink'), false)}
+                ${fitem('Downlink Frame-counter', num('abp.downlink'), false)}
+                ${fitem('超时时间', num('abp.timeout'), false, 'min')}
+              </div>
+            </div>
+          </section>
+        </div>`;
+        return `<div class="bc-eg71-device-form" data-mode="${mode}" data-activation="${activation}">
+          <div class="bc-eg71-content">
+            ${basicCard}
+            ${profilesCard}
+            <section class="ms-card">
+              <div class="ms-card-head">
+                <span class="ms-card-title ms-h4">激活设置</span>
+                <span class="ms-card-extra ms-select ms-select--sm"><select data-form-switch="activation" aria-label="激活类型">
+                  <option value="otaa"${activation === 'otaa' ? ' selected' : ''}>OTAA</option>
+                  <option value="abp"${activation === 'abp' ? ' selected' : ''}>ABP</option>
+                </select></span>
+              </div>
+              <div class="ms-card-body">
+                ${otaaBlock}
+                ${abpBlock}
+              </div>
+            </section>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.classList && rootEl.classList.contains('bc-eg71-device-form') ? rootEl : rootEl.querySelector('.bc-eg71-device-form');
+        if (!wrap) return;
+        const fire = (detail) => wrap.dispatchEvent(new CustomEvent('eg71-device-form-change', { bubbles: true, detail }));
+        const currentAct = () => wrap.getAttribute('data-activation') || 'otaa';
+        const setActivation = act => {
+          wrap.setAttribute('data-activation', act);
+          const otaaEl = wrap.querySelector('[data-device-form-act="otaa"]');
+          const abpEl = wrap.querySelector('[data-device-form-act="abp"]');
+          if (otaaEl) otaaEl.hidden = act !== 'otaa';
+          if (abpEl) abpEl.hidden = act !== 'abp';
+        };
+        const q = k => wrap.querySelector(`[data-form-field="${k}"]`);
+        const collect = () => {
+          const values = { devEui: '', name: '', description: '', model: 'None', profile: 'ClassA-OTAA', fPort: 1, timeout: 1440, frameCheck: false, activation: { mode: 'default', appKey: '' }, abp: { devAddr: '', nwkSKey: '', appSKey: '', uplink: 0, downlink: 0, timeout: 1440 } };
+          wrap.querySelectorAll('[data-form-field]').forEach(el => {
+            const key = el.getAttribute('data-form-field');
+            if (key === 'frameCheck') values.frameCheck = el.checked;
+            else if (key === 'fPort' || key === 'timeout') values[key] = parseInt(el.value, 10) || 0;
+            else if (key.indexOf('abp.') === 0) {
+              const f = key.slice(4);
+              values.abp[f] = (f === 'uplink' || f === 'downlink' || f === 'timeout') ? (parseInt(el.value, 10) || 0) : el.value;
+            } else values[key] = el.value;
+          });
+          const checkedRadio = wrap.querySelector('.bc-eg71-activation-group .ms-radio-btn--checked');
+          if (checkedRadio) values.activation.mode = checkedRadio.getAttribute('data-activation-mode') || 'default';
+          const appkeyInput = wrap.querySelector('[data-activation-appkey]');
+          if (appkeyInput) values.activation.appKey = appkeyInput.value;
+          return values;
+        };
+        const apply = values => {
+          const set = (k, val) => {
+            const el = q(k);
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = !!val;
+            else el.value = val != null ? val : '';
+          };
+          ['devEui', 'name', 'description', 'fPort', 'timeout', 'frameCheck', 'abp.devAddr', 'abp.nwkSKey', 'abp.appSKey', 'abp.uplink', 'abp.downlink', 'abp.timeout'].forEach(k => set(k, k.indexOf('abp.') === 0 ? values.abp[k.slice(4)] : values[k]));
+          if (q('model')) q('model').value = values.model;
+          if (q('profile')) q('profile').value = values.profile;
+        };
+        const notify = dirty => fire({ dirty: !!dirty, activation: currentAct(), values: collect() });
+        // 场景切换暂存（交互 #9）：key = activation:profile:model，切回恢复、保存清除
+        const stash = new Map();
+        const scenarioKey = () => `${currentAct()}:${(q('profile') || {}).value || ''}:${(q('model') || {}).value || ''}`;
+        const scenarioSwitch = recompute => {
+          const oldKey = stash.get('__current');
+          if (oldKey) stash.set(oldKey, collect());
+          if (recompute) recompute();
+          stash.set('__current', scenarioKey());
+          const snap = stash.get(stash.get('__current'));
+          if (snap) apply(snap);
+          notify(true);
+        };
+        const profileSel = q('profile');
+        if (profileSel) profileSel.addEventListener('change', () => {
+          scenarioSwitch(() => setActivation(/ABP/i.test(profileSel.value) ? 'abp' : 'otaa'));
+        });
+        const modelSel = q('model');
+        if (modelSel) modelSel.addEventListener('change', () => scenarioSwitch(null));
+        const actSel = wrap.querySelector('[data-form-switch="activation"]');
+        if (actSel) actSel.addEventListener('change', () => {
+          const act = actSel.value === 'abp' ? 'abp' : 'otaa';
+          scenarioSwitch(() => {
+            setActivation(act);
+            if (profileSel) profileSel.value = act === 'abp' ? 'ClassA-ABP' : 'ClassA-OTAA';
+          });
+        });
+        // 普通字段变更 → 统一冒泡（profile/model 已由场景切换处理）
+        wrap.querySelectorAll('[data-form-field]').forEach(el => {
+          if (['profile', 'model'].indexOf(el.getAttribute('data-form-field')) >= 0) return;
+          el.addEventListener('change', () => notify(true));
+        });
+        // 数值步进（S_InputNumber 契约）
+        wrap.querySelectorAll('.ms-input-number').forEach(numBox => {
+          const input = numBox.querySelector('input');
+          numBox.querySelectorAll('.ms-input-number-step button').forEach((btn, i) => btn.addEventListener('click', () => {
+            if (!input) return;
+            input.value = Math.max(0, (parseInt(input.value, 10) || 0) + (i === 0 ? -1 : 1));
+            notify(true);
+          }));
+        });
+        // 消费内嵌激活卡的 eg71-activation-change：ABP 默认值三密钥置灰、自定义恢复，全程保留输入（#7/#8）
+        wrap.addEventListener('eg71-activation-change', e => {
+          const lock = e.detail && e.detail.mode === 'default';
+          ['abp.devAddr', 'abp.nwkSKey', 'abp.appSKey'].forEach(k => {
+            const inp = q(k);
+            if (!inp) return;
+            inp.disabled = lock;
+            const box = inp.closest('.ms-input');
+            if (box) box.classList.toggle('ms-input--disabled', lock);
+          });
+          notify(true);
+        });
+        // 保存（页尾 bc-eg71-form-footer 的 eg71-footer-action）：清除暂存（#9）
+        wrap.addEventListener('eg71-footer-action', e => {
+          if (e.detail && e.detail.action === 'save') {
+            stash.clear();
+            notify(false);
+          }
+        });
       }
     }
   ];

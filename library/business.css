@@ -685,3 +685,98 @@
   .bc-eg71-app-head { flex-wrap: wrap; }
   .bc-eg71-app-head-actions { flex: none; width: 100%; justify-content: flex-start; margin-left: 0; }
 }
+
+/* ============================================================
+   EG71 · REQ-012 LoRaWAN 扫描入网（7 新组件 + device-list 扩展）
+   仅布局/显隐结构类；颜色/字号/间距/阴影一律走 L1 --* 令牌
+   ============================================================ */
+
+/* ---- B_Eg71AlertBar 页内业务横幅 ---- */
+.bc-eg71-alert-bar { display: block; }
+.bc-eg71-alert-close {
+  margin-left: auto; align-self: flex-start; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--spacing-24); height: var(--spacing-24); /* 16px 图标撑足 24px 热区 */
+  padding: 0; border: 0; background: transparent; border-radius: var(--radius-4);
+  color: var(--color-icon-secondary); cursor: pointer;
+}
+.bc-eg71-alert-close:hover { color: var(--color-icon-normal); }
+
+/* ---- B_Eg71ScanBanner 全局扫描提示条 ---- */
+.bc-eg71-scan-banner {
+  display: flex; align-items: center; gap: var(--spacing-12);
+  padding: var(--spacing-12) var(--spacing-16); border-radius: var(--radius-4);
+  cursor: pointer;
+}
+.bc-eg71-scan-banner--active { background: var(--color-primary-bg); border: 1px solid var(--color-primary-normal); }
+.bc-eg71-scan-banner--visited { background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); }
+.bc-eg71-scan-banner:hover.bc-eg71-scan-banner--active { border-color: var(--color-primary-hover); }
+.bc-eg71-scan-banner-badge { color: var(--color-icon-primary-normal); }
+.bc-eg71-scan-banner--visited .bc-eg71-scan-banner-badge { color: var(--color-icon-secondary); }
+.bc-eg71-scan-banner-count { margin-left: auto; }
+.bc-eg71-scan-banner-arrow { display: inline-flex; color: var(--color-icon-secondary); }
+.bc-eg71-scan-banner:focus-visible { outline: 2px solid var(--color-primary-normal); outline-offset: 2px; }
+
+/* ---- B_Eg71ActivationCard 激活设置灰卡 ---- */
+.bc-eg71-activation-card { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-activation-group { display: flex; gap: var(--spacing-12); }
+.bc-eg71-activation-btn--disabled { color: var(--color-text-auxiliary); cursor: not-allowed; pointer-events: none; }
+.bc-eg71-activation-key { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.bc-eg71-device-form-rokeys { margin-top: var(--spacing-12); }
+
+/* ---- B_Eg71ScanAppkeyCard 扫描 Key 配置卡 ---- */
+.bc-eg71-scan-key-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-scan-key-actions { display: flex; align-items: center; }
+.bc-eg71-scan-key-search { width: 260px; /* Figma：搜索框 260px */ }
+.bc-eg71-scan-key-head { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); }
+.bc-eg71-scan-key-list { display: flex; flex-direction: column; gap: var(--spacing-8); max-height: 320px; overflow: auto; }
+.bc-eg71-scan-key-row {
+  display: flex; align-items: center; gap: var(--spacing-8);
+  padding: var(--spacing-8); border-radius: var(--radius-4);
+  background: var(--color-fill-base-normal);
+}
+.bc-eg71-scan-key-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
+.bc-eg71-scan-key-del {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--spacing-24); height: var(--spacing-24); /* 16px 图标撑足 24px 热区 */
+  padding: 0; border: 0; background: transparent; border-radius: var(--radius-4);
+  color: var(--color-icon-secondary); cursor: pointer;
+}
+.bc-eg71-scan-key-del:hover { color: var(--color-icon-normal); }
+.bc-eg71-scan-key-empty { display: flex; justify-content: center; }
+.bc-eg71-scan-key-addrow { display: flex; align-items: center; gap: var(--spacing-12); }
+.bc-eg71-scan-key-addrow .ms-input { flex: 1; min-width: 0; }
+
+/* ---- B_Eg71ScanEditDrawer 扫描编辑抽屉（开合骨架镜像 protocol-detail） ---- */
+.bc-eg71-scan-edit-form { display: flex; flex-direction: column; gap: var(--spacing-16); }
+
+/* ---- B_Eg71ScanDeviceTable 扫描设备双页签表 ---- */
+.bc-eg71-scan-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-scan-toolbar { display: flex; align-items: center; }
+.bc-eg71-scan-toolbar-spacer { flex: 1; }
+.bc-eg71-scan-signal { display: inline-flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-scan-signal-bars { display: inline-flex; align-items: flex-end; gap: var(--spacing-2); }
+.bc-eg71-scan-signal-bar { display: block; width: var(--spacing-2); border-radius: var(--radius-2); background: var(--color-divider-base-2); }
+.bc-eg71-scan-signal-bar:nth-child(1) { height: var(--spacing-4); }
+.bc-eg71-scan-signal-bar:nth-child(2) { height: var(--spacing-6); }
+.bc-eg71-scan-signal-bar:nth-child(3) { height: var(--spacing-8); }
+.bc-eg71-scan-signal-bar:nth-child(4) { height: var(--spacing-12); }
+.bc-eg71-scan-signal-bar--good { background: var(--color-success-normal); }
+.bc-eg71-scan-signal-bar--medium { background: var(--color-primary-normal); }
+.bc-eg71-scan-signal-bar--poor { background: var(--color-warm-normal); }
+.bc-eg71-scan-signal-vals { color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
+.bc-eg71-scan-model-tags { display: inline-flex; flex-wrap: wrap; gap: var(--spacing-8); }
+.bc-eg71-scan-model-select { min-width: 120px; /* Figma：行内型号下拉最小宽 */ }
+.bc-eg71-scan-row--leaving { opacity: 0; transition: opacity var(--duration-normal); }
+
+/* ---- B_Eg71DeviceForm LoRaWAN 设备添加/编辑表单 ---- */
+.bc-eg71-device-form-act { display: flex; flex-direction: column; gap: var(--spacing-12); }
+
+/* ---- device-list v1.1.0 扩展：入网失败原因提示（气泡交互同信号列） ---- */
+.bc-eg71-device-list .bc-eg71-fail-tipwrap { position: relative; display: inline-flex; align-items: center; margin-left: var(--spacing-4); color: var(--color-icon-secondary); cursor: help; }
+.bc-eg71-device-list .bc-eg71-fail-tip {
+  position: absolute; bottom: calc(100% + var(--spacing-8)); left: 50%; transform: translateX(-50%);
+  padding: var(--spacing-8); background: var(--color-bg-card); border: 1px solid var(--color-divider-base-1);
+  border-radius: var(--radius-6); box-shadow: var(--shadow-3); white-space: nowrap; z-index: 10;
+  color: var(--color-text-secondary); font-size: 12px;
+}

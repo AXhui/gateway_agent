@@ -821,6 +821,104 @@
       "dir": ".claude/skills/business/eg71/B_Eg71AppCard",
       "src": "assets/js/registry-business.js#bc-eg71-app-card",
       "status": "已固化"
+    },
+    "B_Eg71DeviceList": {
+      "id": "bc-eg71-device-list",
+      "cn": "设备列表",
+      "dir": ".claude/skills/business/eg71/B_Eg71DeviceList",
+      "src": "assets/js/registry-business.js#bc-eg71-device-list",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemInput": {
+      "id": "bc-eg71-form-item-input",
+      "cn": "表单输入项",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemInput",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-input",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemSelect": {
+      "id": "bc-eg71-form-item-select",
+      "cn": "表单下拉项",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemSelect",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-select",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemInputButton": {
+      "id": "bc-eg71-form-item-input-button",
+      "cn": "表单输入按钮项",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemInputButton",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-input-button",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemDatePicker": {
+      "id": "bc-eg71-form-item-date-picker",
+      "cn": "表单日期范围项",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemDatePicker",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-date-picker",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemRadioGroup": {
+      "id": "bc-eg71-form-item-radio-group",
+      "cn": "表单单选按钮组",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemRadioGroup",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-radio-group",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemButton": {
+      "id": "bc-eg71-form-item-button",
+      "cn": "表单按钮项",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemButton",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-button",
+      "status": "已固化"
+    },
+    "B_Eg71AlertBar": {
+      "id": "bc-eg71-alert-bar",
+      "cn": "页内业务横幅",
+      "dir": ".claude/skills/business/eg71/B_Eg71AlertBar",
+      "src": "assets/js/registry-business.js#bc-eg71-alert-bar",
+      "status": "已固化"
+    },
+    "B_Eg71ScanBanner": {
+      "id": "bc-eg71-scan-banner",
+      "cn": "全局扫描提示条",
+      "dir": ".claude/skills/business/eg71/B_Eg71ScanBanner",
+      "src": "assets/js/registry-business.js#bc-eg71-scan-banner",
+      "status": "已固化"
+    },
+    "B_Eg71ActivationCard": {
+      "id": "bc-eg71-activation-card",
+      "cn": "激活设置灰卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71ActivationCard",
+      "src": "assets/js/registry-business.js#bc-eg71-activation-card",
+      "status": "已固化"
+    },
+    "B_Eg71ScanAppkeyCard": {
+      "id": "bc-eg71-scan-appkey-card",
+      "cn": "扫描 Key 配置卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71ScanAppkeyCard",
+      "src": "assets/js/registry-business.js#bc-eg71-scan-appkey-card",
+      "status": "已固化"
+    },
+    "B_Eg71ScanEditDrawer": {
+      "id": "bc-eg71-scan-edit-drawer",
+      "cn": "扫描编辑抽屉",
+      "dir": ".claude/skills/business/eg71/B_Eg71ScanEditDrawer",
+      "src": "assets/js/registry-business.js#bc-eg71-scan-edit-drawer",
+      "status": "已固化"
+    },
+    "B_Eg71ScanDeviceTable": {
+      "id": "bc-eg71-scan-device-table",
+      "cn": "扫描设备双页签表",
+      "dir": ".claude/skills/business/eg71/B_Eg71ScanDeviceTable",
+      "src": "assets/js/registry-business.js#bc-eg71-scan-device-table",
+      "status": "已固化"
+    },
+    "B_Eg71DeviceForm": {
+      "id": "bc-eg71-device-form",
+      "cn": "LoRaWAN 设备添加/编辑表单",
+      "dir": ".claude/skills/business/eg71/B_Eg71DeviceForm",
+      "src": "assets/js/registry-business.js#bc-eg71-device-form",
+      "status": "已固化"
     }
   },
   "modules": {

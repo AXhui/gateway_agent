@@ -1,0 +1,728 @@
+{
+  "$schema": "modulor-page-document/1.0",
+  "meta": {
+    "req": "REQ-012",
+    "title": "【设备数采】LoRaWAN 设备入网优化与扫描",
+    "productLine": "eg71",
+    "entityHint": "gateway",
+    "prdVersion": "V0.9（产品黄淳峰，2026-6-23）",
+    "prdSource": "https://milesight.feishu.cn/docx/SidJdmUYMol5HyxxLppcxqppn7e",
+    "figma": "https://www.figma.com/design/yye5WFB0rbsf0IdDnwSIel/71.0.03?node-id=255-116041",
+    "generatedBy": "ued-a3-intent-parser",
+    "inputs": [
+      "05_release/REQ-012/plan.md（A1 装配计划）",
+      "05_release/REQ-012/mapping.md（A2 组件映射清单，唯一权威）",
+      "05_release/REQ-012/03-ued.md（字段默认值/状态枚举/文案权威源）",
+      "05_release/REQ-012/04-dev.md（数据模型/业务规则）",
+      "05_release/REQ-012/05-test.md（验收口径）"
+    ],
+    "rulesBaseline": [
+      ".claude/rules/page-assembly.md §0/§1/§5（映射清单铁律/两级装配/交付物纯净性）",
+      ".claude/rules/naming.md（组件引用一律注册名，与 .claude/_index.json 一致）",
+      ".claude/rules/spacing.md（布局参数落红线映射表；§7 存量偏差 A4 就地修正）",
+      ".claude/rules/interaction-completeness.md §1（交互链字段 + stateSupplements）",
+      "AGENTS.md EG71 唯一壳契约（MS_EG71_SHELL + navGroups 唯一源；列表/流程类页单卡片四周 20px）"
+    ],
+    "exclusions": [
+      "PRD §3.3 数据埋点（扫描行为日志）——本迭代不实现",
+      "PRD §2.3.1-1 ABP 模式 Application Key 输入框及关联「非必填」描述——本迭代不实现（ABP 态不渲染 AppKey 字段）"
+    ],
+    "purity": "本契约可见文案字段（title/desc/label/text/toast）仅承载产品真实文案（03-ued §6 原文照录 + 既有组件 runtime 文案 + A2 占位文案）；映射信息、评审指引、装配说明一律只落在 review / stateSupplements 节，不进可见字段。"
+  },
+
+  "shell": {
+    "component": "MS_EG71_SHELL",
+    "callContract": "window.MS_EG71_SHELL.render(ctx, { content, footer }) + bind(root)",
+    "navEntry": "Data Services > Data Acquisition",
+    "routePrefix": "/data-services/data-acquisition",
+    "navGroupsChanged": false,
+    "note": "P2–P5 为该入口下二级页，从 P1 按钮进入，不加菜单项；面包屑按路由 2 级渲染（Data Services > Data Acquisition），更深层级折叠。壳资产冻结零改动。"
+  },
+
+  "layout": {
+    "moduleGap": { "px": 24, "token": "--spacing-2xl", "applies": "全局提示条→首个业务模块；引导横幅→卡片；P2 卡片区→footer 区" },
+    "contentPaddingListFlow": { "px": 20, "token": "--spacing-xl", "applies": "P1/P2/P3 列表/流程类页页面级覆写（AGENTS 壳契约第 3 条），单卡片、卡内不再套卡" },
+    "cardPadding": { "px": 16, "token": "--spacing-l", "note": "最小 16，推荐 20/24；上下对称" },
+    "cardGridGap": { "px": 16, "token": "--spacing-l", "applies": "P4/P5 多区块卡栅格（mod-* 结构类承载）" },
+    "toolbarTableGap": { "px": 12, "token": "--spacing-m", "applies": "P1/P3 工具栏→表格；表尾→表格" },
+    "buttonGap": { "px": 12, "token": "--spacing-m", "applies": "全部工具栏/footer/灰卡操作（按钮类一律 ≥12）" },
+    "formItemGap": { "px": 16, "token": "--spacing-l", "note": "推荐 24（--spacing-2xl）；P2 Key 卡 / P4/P5 表单" },
+    "listRowGap": { "px": 8, "token": "--spacing-s", "note": "纯展示紧凑列表允许 8，标准 12（--spacing-m）" },
+    "titleBodyGap": { "px": 12, "token": "--spacing-m", "applies": "区块卡标题→卡体" },
+    "iconSize": { "min": 16, "ladder": [16, 20, 24, 32, 44], "note": "A4 内联后按 spacing.md §7 就地修正：ico(*,14)→16、工具栏 ms-space--8(按钮组)→--12、.ms-stat-title 13px→12px、bc-eg71-protocol-card 竖向 padding 12→16，不回写 assets 源头" }
+  },
+
+  "sharedModules": {
+    "M_GlobalNotice": {
+      "id": "M_GlobalNotice",
+      "cn": "全局扫描提示条",
+      "slot": "每页内容区第一个模块（P1–P5，扫描中常驻）",
+      "component": "B_Eg71ScanBanner",
+      "componentId": "bc-eg71-scan-banner",
+      "version": "1.0.0",
+      "ctx": {
+        "scanning": "boolean（= 扫描会话 state；false 时组件 render 返回空串，整条不挂载）",
+        "unaddedCount": "number（= 扫描确认池未被添加节点数）",
+        "visited": "boolean（false=红点态 / true=灰态：去红点保留计数）",
+        "route": "/data-services/data-acquisition/lorawan-scan/confirm"
+      },
+      "visibleCopy": {
+        "text": "正在LoRaWAN扫描中",
+        "countPrefix": "未添加设备"
+      },
+      "events": ["eg71-scan-navigate {route, visited}"]
+    }
+  },
+
+  "pages": [
+    {
+      "id": "P1",
+      "name": "设备数采页",
+      "changeType": "modified",
+      "route": "/data-services/data-acquisition",
+      "template": "T_List",
+      "pageKind": "list",
+      "modules": [
+        { "ref": "M_GlobalNotice" },
+        {
+          "id": "M_DeviceList",
+          "cn": "设备列表",
+          "component": "B_Eg71DeviceList",
+          "componentId": "bc-eg71-device-list",
+          "version": "1.1.0",
+          "extensionNote": "v1.1.0 扩展：STATUS 枚举增 'Join failed'(tone error) + rows 可选字段 failReason（右侧提示图标 + hover 气泡，镜像 signal-tip）",
+          "ctx": {
+            "rows": "$datasource demoSeed.p1DeviceRows",
+            "state": "data"
+          },
+          "failReasonCopy": {
+            "key_error": "密钥错误",
+            "no_join_accept": "节点未收到入网应答包"
+          },
+          "embedded": [
+            {
+              "component": "B_Eg71Modal",
+              "componentId": "bc-eg71-modal",
+              "version": "1.0.0",
+              "instance": "delete-confirm",
+              "ctx": { "action": "delete", "title": "Delete Device", "okText": "Delete" },
+              "behavior": "B_ComDangerAction 规范（规范引用，无运行时条目）：确认→行移除+Toast"
+            }
+          ]
+        }
+      ],
+      "hostWiring": [
+        { "on": "eg71-device-add {path:'scan'}", "do": "MS_EG71_SHELL.navigate('/data-services/data-acquisition/lorawan-scan')（注册表零改动，宿主监听既有事件）" },
+        { "on": "eg71-scan-navigate", "do": "navigate(ctx.route)，不中断扫描" }
+      ],
+      "states": ["data", "empty（ctx.state='empty'，保留表头）", "loading【S1 补全】"]
+    },
+
+    {
+      "id": "P2",
+      "name": "LoRaWAN 扫描配置页",
+      "changeType": "new",
+      "route": "/data-services/data-acquisition/lorawan-scan",
+      "template": "T_Config",
+      "pageKind": "config",
+      "modules": [
+        { "ref": "M_GlobalNotice", "note": "仅扫描中重新进入态挂载（路径 C）" },
+        {
+          "id": "M_ScanKeyConfig",
+          "cn": "AppKey 配置卡",
+          "component": "B_Eg71ScanAppkeyCard",
+          "componentId": "bc-eg71-scan-appkey-card",
+          "version": "1.0.0",
+          "ctx": {
+            "defaultKeyChecked": true,
+            "keys": [],
+            "maxKeys": 1000,
+            "keyword": ""
+          },
+          "visibleCopy": {
+            "checkbox": "Milesight默认Key",
+            "importButton": "导入文件",
+            "clearButton": "清空",
+            "addKeyPlaceholder": "请输入 32 位十六进制 AppKey",
+            "countFormat": "{n}/1000",
+            "emptyText": "暂无自定义 AppKey"
+          },
+          "validation": { "appKey": "32 位 16 进制，大小写均合法；非法 → bc-eg71-form-item-msg--error【S4 补全呈现】", "maxKeys": "自定义+导入合计 ≤1000，不去重" },
+          "importAccept": "csv/xlsx，≤1M，表头 AppKey（大小写不敏感）"
+        },
+        {
+          "id": "M_AlertBar",
+          "cn": "导入异常横幅",
+          "component": "B_Eg71AlertBar",
+          "componentId": "bc-eg71-alert-bar",
+          "version": "1.0.0",
+          "ctx": { "tone": "error", "desc": "按 eg71-scan-import-error 的 case 动态替换（N 由宿主拼好）" },
+          "visibleCopy": {
+            "size": "文件超过1M无法上传，请重新上传文件",
+            "count": "AppKey数量超过1000条，当前仅能再添加{N}条，请重新上传文件",
+            "no-header": "文件内没有找到AppKey，请重新上传文件",
+            "invalid": "存在非法AppKey，请重新上传文件"
+          },
+          "showHide": "随导入动作显隐（宿主按 eg71-scan-import-error 换 ctx 重渲染）"
+        },
+        {
+          "id": "M_FormFooter",
+          "cn": "底部吸底操作栏",
+          "slot": "shell opts.footer",
+          "component": "B_Eg71FormFooter",
+          "componentId": "bc-eg71-form-footer",
+          "version": "1.1.0",
+          "extensionNote": "v1.1.0 扩展：ctx.buttons 化 + bind（eg71-footer-action 冒泡）；缺省保持 取消/重置/保存 向后兼容",
+          "ctx": {
+            "buttons": [
+              { "label": "取消", "action": "cancel" },
+              { "label": "开始扫描", "kind": "filled", "action": "start-scan", "disabled": "!canStart" }
+            ]
+          },
+          "dynamic": "扫描中重进：label 开始扫描 → 应用（宿主换 ctx.buttons 重渲染）；disabled 由 eg71-scan-keys-change {canStart} 联动"
+        }
+      ],
+      "hostWiring": [
+        { "on": "eg71-scan-keys-change {keys, defaultKeyChecked, canStart}", "do": "canStart = defaultKeyChecked || keys.length>0 → 重渲染 footer 按钮态" },
+        { "on": "eg71-scan-import-error {case, remaining}", "do": "按 case 映射 M_AlertBar 文案（count 场景拼 N=remaining）重渲染横幅" },
+        { "on": "eg71-footer-action {action:'cancel'}", "do": "navigate('/data-services/data-acquisition') 回设备列表" },
+        { "on": "eg71-footer-action {action:'start-scan'}", "do": "启动/应用扫描会话 → navigate 确认页【S5 提交反馈补全】" }
+      ],
+      "states": ["default（默认 Key 勾选）", "canStart=false 主钮置灰", "扫描中重进（label=应用）", "导入解析中【S3 补全】", "Key 校验失败【S4 补全】", "导入 4 类失败横幅"]
+    },
+
+    {
+      "id": "P3",
+      "name": "扫描确认页",
+      "changeType": "new",
+      "route": "/data-services/data-acquisition/lorawan-scan/confirm",
+      "template": "T_List",
+      "templateVariant": "页签变体",
+      "pageKind": "list",
+      "modules": [
+        { "ref": "M_GlobalNotice", "ctxOverride": { "visited": true } },
+        {
+          "id": "M_GuideBanner",
+          "cn": "交互引导横幅",
+          "component": "B_Eg71AlertBar",
+          "componentId": "bc-eg71-alert-bar",
+          "version": "1.0.0",
+          "ctx": {
+            "tone": "info",
+            "desc": "扫描仅能发现OTAA入网模式的设备，请核对 DevEUI是否与您的设备一致。若长时间未发现目标设备，请确认设备处于开机状态，缩短设备与网关距离并重启设备后再试。"
+          }
+        },
+        {
+          "id": "M_ScanDeviceTable",
+          "cn": "双 Tab 设备表",
+          "component": "B_Eg71ScanDeviceTable",
+          "componentId": "bc-eg71-scan-device-table",
+          "version": "1.0.0",
+          "ctx": {
+            "tab": "found",
+            "rows": "$datasource demoSeed.p3ScanRows",
+            "scanning": true
+          },
+          "visibleCopy": {
+            "tabs": ["发现设备", "已忽略设备"],
+            "toolbarFound": ["添加设备", "放弃扫描", "编辑", "忽略"],
+            "toolbarIgnored": ["取消忽略"],
+            "refresh": "刷新",
+            "emptyText": "扫描进行中，离开此页面不会打断扫描",
+            "defaultName": "默认 = DevEUI",
+            "modelNone": "None"
+          },
+          "columns": ["选择框", "DevEUI", "设备名(行内编辑)", "描述(行内编辑)", "设备型号(行内快速选择)", "信号强度(三档图示+SNR/RSSI 常显)", "更新时间(带时区,倒序)", "操作"],
+          "tableContract": "数字列 bc-num、操作列 bc-eg71-table-ops（EG71 左对齐契约）",
+          "embedded": [
+            {
+              "component": "B_Eg71Modal", "componentId": "bc-eg71-modal", "version": "1.0.0",
+              "instance": "add-confirm",
+              "ctx": { "action": "confirm", "title": "添加设备", "okText": "确认", "desc": "确认将所选{N}台设备添加到网关？" },
+              "note": "desc 为 D3 占位产品文案，Figma 定稿仅换字符串"
+            },
+            {
+              "component": "B_Eg71Modal", "componentId": "bc-eg71-modal", "version": "1.0.0",
+              "instance": "abandon-confirm",
+              "ctx": { "action": "delete", "title": "放弃扫描", "okText": "放弃扫描", "desc": "放弃扫描将结束本次扫描并清空所有未添加的设备，确定放弃吗？" },
+              "note": "不传 confirmKeyword；desc 为 D3 占位；行为按 B_ComDangerAction 规范（规范引用）"
+            },
+            {
+              "component": "B_Eg71Modal", "componentId": "bc-eg71-modal", "version": "1.0.0",
+              "instance": "overlimit",
+              "ctx": { "action": "confirm", "title": "超出上限", "okText": "确认", "desc": "所选设备数量超过上限 2000，请减少选择后重试" },
+              "descCopy": {
+                "device": "所选设备数量超过上限 2000，请减少选择后重试",
+                "object": "对象总数超过上限 20000，无法添加所选设备"
+              },
+              "descSwap": "desc 按 device/object 触发分支替换（宿主逻辑）；两分支文案均为 D4 占位，Figma 定稿换字符串",
+              "trigger": "提交时拦截（D4 默认）"
+            }
+          ]
+        },
+        {
+          "id": "M_ScanEditDrawer",
+          "cn": "多设备编辑抽屉",
+          "component": "B_Eg71ScanEditDrawer",
+          "componentId": "bc-eg71-scan-edit-drawer",
+          "version": "1.0.0",
+          "ctx": {
+            "mode": "multi",
+            "open": false,
+            "targets": "勾选 devEui[]",
+            "value": { "profile": "ClassA-OTAA", "fPort": 1, "timeout": 1440, "frameCheck": false },
+            "profiles": ["ClassA-OTAA"]
+          },
+          "visibleCopy": { "title": "编辑多个设备", "fields": ["配置文件", "fPort", "超时时间 (min)", "是否启用帧计数校验"], "buttons": ["取消", "保存"] },
+          "constraint": "配置文件过滤且不显示 ABP 模式；不显示名称/描述/DevEUI/型号；保存应用到全部勾选设备"
+        },
+        {
+          "id": "M_ScanEditSingle",
+          "cn": "单设备编辑（同壳 single 态）",
+          "component": "B_Eg71ScanEditDrawer",
+          "componentId": "bc-eg71-scan-edit-drawer",
+          "version": "1.0.0",
+          "ctx": {
+            "mode": "single",
+            "open": false,
+            "device": "{ devEui, name=devEui, description:'', model }",
+            "value": { "profile": "ClassA-OTAA", "fPort": 1, "timeout": 1440, "frameCheck": false, "name": "=devEui", "description": "", "model": "None" }
+          },
+          "visibleCopy": { "title": "编辑设备", "fields": ["DevEUI(只读)", "设备名称", "设备描述", "设备型号", "配置文件", "fPort", "超时时间 (min)", "是否启用帧计数校验"], "buttons": ["取消", "保存"] },
+          "decision": "D2：抽屉同壳 ctx.mode='single'（与多设备编辑交互一致）"
+        },
+        {
+          "id": "M_UrlGuardModal",
+          "cn": "URL 直入守卫弹窗（宿主级独立实例）",
+          "component": "B_Eg71Modal",
+          "componentId": "bc-eg71-modal",
+          "version": "1.0.0",
+          "ctx": { "action": "confirm", "title": "提示", "okText": "确认", "desc": "请先完成扫描配置，页面即将返回配置步骤。" },
+          "note": "3 秒定时跳转 P2 为页面级流程逻辑（宿主 setTimeout + navigate + close），Modal 只负责展示/关闭；title '提示' 为占位（D3 族）"
+        }
+      ],
+      "hostWiring": [
+        { "on": "route enter 且 ctx.scanning=false（URL 直入）", "do": "打开 M_UrlGuardModal → setTimeout 3000ms → navigate('/…/lorawan-scan') + close" },
+        { "on": "eg71-scan-navigate", "do": "navigate 确认页，不中断扫描" },
+        { "on": "eg71-scan-tab {tab}", "do": "换 ctx.tab 重渲染" },
+        { "on": "eg71-scan-refresh {tab}", "do": "重取 rows + 刷新钮 loading【S6 补全】" },
+        { "on": "eg71-scan-row-edit {devEui, field, value}", "do": "更新池数据（就地保存）" },
+        { "on": "eg71-scan-ignore {devEuis, ignored}", "do": "改 rows[].ignored 重渲染（Tab 间移动；被忽略设备信号/更新时间仍更新=数据层语义）" },
+        { "on": "eg71-scan-add {devEuis}", "do": "提交时超限判定(D4) → 批量注册 → Toast「{N}个设备添加成功」+ 刷新 + 移除已添加行；冲突 Toast「{N}个设备已存在」不拦截" },
+        { "on": "eg71-scan-abandon", "do": "结束扫描 + 未添加行（含已忽略）淡出 0.3s 移除 + 回 P1（提示条消失）" },
+        { "on": "eg71-scan-edit-multi {devEuis} / eg71-scan-edit-single {devEui}", "do": "打开对应抽屉 wrap.open" },
+        { "on": "eg71-scan-save {mode, targets, value}", "do": "应用到目标设备 → 关抽屉 → 刷新列表" }
+      ],
+      "states": ["found 数据态", "found 空态（保留表头）", "ignored 数据态/空态", "表格加载中/刷新 loading【S6 补全】", "添加提交中【S7 补全】", "抽屉保存校验失败【S8 补全】"]
+    },
+
+    {
+      "id": "P4",
+      "name": "LoRaWAN 设备添加页",
+      "changeType": "modified",
+      "route": "/data-services/data-acquisition/device/add?protocol=lorawan",
+      "template": "T_Config",
+      "pageKind": "form",
+      "modules": [
+        { "ref": "M_GlobalNotice" },
+        {
+          "id": "M_DeviceForm",
+          "cn": "LoRaWAN 设备表单（添加态）",
+          "component": "B_Eg71DeviceForm",
+          "componentId": "bc-eg71-device-form",
+          "version": "1.0.0",
+          "ctx": {
+            "mode": "add",
+            "activation": "otaa",
+            "devEui": "",
+            "model": "",
+            "values": {
+              "name": "", "description": "", "model": "",
+              "profile": "ClassA-OTAA", "fPort": 1, "timeout": 1440, "frameCheck": false,
+              "activation": { "mode": "default", "appKey": "" }
+            }
+          },
+          "blocks": ["Basic（DevEUI/设备名/描述/设备型号）", "Profiles（配置文件/fPort/超时时间 (min)/帧计数校验）", "激活设置灰卡（内嵌 B_Eg71ActivationCard）"],
+          "removed": "OTAA 添加态不再渲染 设备地址/应用程序会话秘钥/网络会话秘钥 三字段（PRD §2.1.2 移除）",
+          "embedded": [
+            {
+              "component": "B_Eg71ActivationCard",
+              "componentId": "bc-eg71-activation-card",
+              "version": "1.0.0",
+              "ctx": { "kind": "otaa", "value": "{mode:'default'|'custom', appKey}", "milesight": "L3 内判定（DevEUI 24E124 前缀或 Milesight 型号）", "readonly": false },
+              "visibleCopy": { "radio": ["默认值", "自定义值"], "keyField": "应用程序密钥", "keyCount": "0/32" }
+            }
+          ],
+          "milesightRule": "Milesight（oui 匹配）→ 默认「默认值」；非 Milesight → 默认「自定义值」且「默认值」disabled；判定在 L3 内，页面层只传 devEui/model",
+          "keyConstraint": "应用程序密钥 32 位 16 进制；无左侧下拉（已移除）；切换单选保留已输入内容（特殊交互 #8）"
+        },
+        {
+          "id": "M_FormFooter",
+          "slot": "shell opts.footer",
+          "component": "B_Eg71FormFooter",
+          "componentId": "bc-eg71-form-footer",
+          "version": "1.1.0",
+          "ctx": {
+            "buttons": [
+              { "label": "取消", "action": "cancel" },
+              { "label": "保存", "kind": "filled", "action": "save" }
+            ]
+          }
+        }
+      ],
+      "hostWiring": [
+        { "on": "eg71-footer-action {action:'cancel'}", "do": "navigate 回上一页（设备数采）" },
+        { "on": "eg71-footer-action {action:'save'}", "do": "提交中 loading → 成功 Toast【S5 补全】" },
+        { "on": "eg71-device-form-change {dirty, activation, values}", "do": "宿主持状态（可选重渲染）" }
+      ],
+      "states": ["Milesight 默认态", "非 Milesight 禁用态", "单选切换保留输入", "AppKey 校验失败【S9 补全】", "提交中/成功反馈【S5 补全】"]
+    },
+
+    {
+      "id": "P5",
+      "name": "LoRaWAN 设备编辑页",
+      "changeType": "modified",
+      "route": "/data-services/data-acquisition/device/edit",
+      "template": "T_Config",
+      "pageKind": "form",
+      "modules": [
+        { "ref": "M_GlobalNotice" },
+        {
+          "id": "M_DeviceForm",
+          "cn": "LoRaWAN 设备表单（编辑态）",
+          "component": "B_Eg71DeviceForm",
+          "componentId": "bc-eg71-device-form",
+          "version": "1.0.0",
+          "ctx": {
+            "mode": "edit",
+            "activation": "otaa | abp",
+            "devEui": "",
+            "model": "",
+            "values": {
+              "name": "", "description": "", "model": "",
+              "profile": "", "fPort": 1, "timeout": 1440, "frameCheck": false,
+              "activation": { "mode": "default|custom", "appKey": "" },
+              "abp": { "devAddr": "", "nwkSKey": "", "appSKey": "", "uplink": 0, "downlink": 0, "timeout": 1440 }
+            }
+          },
+          "blocks": ["Basic / Profiles（同 P4）", "OTAA 态：AppKey 可编辑 + DevAddr/AppSKey/NwkSKey 只读（入网后自动填充）", "激活设置灰卡（ABP 段复用，kind='abp'，不渲染密钥输入=排除项 2）", "ABP 参数卡：三密钥 + Uplink/Downlink Frame-counter + Timeout"],
+          "abpDefaultRule": "ABP「默认值」→ DevAddr/NwkSKey/AppSKey 置灰不可编辑；三计数器与 Timeout 保持可编辑；「自定义值」全恢复（联动由 DeviceForm 消费 eg71-activation-change 实现）",
+          "sceneSwitch": {
+            "s1 同类型切换": "状态与字段值保持不变",
+            "s2 ABP→OTAA": "状态不变；AppKey 空(必填)；DevAddr/AppSKey/NwkSKey 从 ABP 带入且不可编辑",
+            "s3 OTAA→ABP": "状态不变；三密钥从 OTAA 入网数据带入（未入网则空）可编辑；AppKey 不显示"
+          },
+          "stash": "未保存切换前端暂存、切回恢复、保存后未激活类型字段清除——组件内部状态机（04-dev §3.8/§3.9），页面层不参与"
+        },
+        {
+          "id": "M_FormFooter",
+          "slot": "shell opts.footer",
+          "component": "B_Eg71FormFooter",
+          "componentId": "bc-eg71-form-footer",
+          "version": "1.1.0",
+          "ctx": {
+            "buttons": [
+              { "label": "取消", "action": "cancel" },
+              { "label": "保存", "kind": "filled", "action": "save" }
+            ]
+          }
+        }
+      ],
+      "hostWiring": [
+        { "on": "eg71-footer-action {action:'save'}", "do": "提交中 loading → 成功 Toast【S5 补全】；保存即清除未激活类型暂存（组件内）" },
+        { "on": "eg71-activation-change {kind, mode, appKey}", "do": "DeviceForm 内消费：ABP 默认值 → 三密钥置灰；切换保留输入" }
+      ],
+      "states": ["OTAA 编辑态（AppKey 可编辑+三只读）", "ABP 自定义态（全可编辑）", "ABP 默认值态（三密钥置灰+计数器可编辑）", "三场景切换暂存/恢复/保存清除", "提交中/成功反馈【S5 补全】"]
+    }
+  ],
+
+  "flows": [
+    {
+      "id": "F01", "name": "主路径 A · 扫描入网", "page": "P1→P2→P3",
+      "entry": "P1 工具栏 Scan Add（既有按钮，data-device-add='scan'）",
+      "operation": "P2 勾选默认 Key / 导入 csv·xlsx / 逐条输入 32hex Key → 开始扫描",
+      "feedback": "主钮置灰（无任何 Key）；导入失败 4 场景横幅；Key 非法 error 提示【S4】",
+      "resultStates": ["跳转 P3 + 开始扫描", "扫描中重进 P2：label=应用，已扫设备与匹配 Key 保留（即使 Key 已删）"]
+    },
+    {
+      "id": "F02", "name": "主路径 B · 放弃扫描", "page": "P3",
+      "entry": "发现 Tab 工具栏【放弃扫描】(danger 描边)",
+      "operation": "B_Eg71Modal action='delete'（无 confirmKeyword）→ 确认",
+      "feedback": "危险弹窗（红图标+红实心确认钮，B_ComDangerAction 规范）",
+      "resultStates": ["结束扫描 + 未添加设备（含已忽略）淡出 0.3s 移除 + 回 P1 + 全局提示条消失"]
+    },
+    {
+      "id": "F03", "name": "路径 C · 扫描中重进配置页", "page": "P2",
+      "entry": "扫描中从 P1 重新进入 P2",
+      "operation": "增/删 AppKey → 应用",
+      "feedback": "主钮文案=应用【S5 提交反馈】",
+      "resultStates": ["已扫设备及各自匹配 AppKey 保留；全局提示条保持挂载"]
+    },
+    {
+      "id": "F04", "name": "路径 D · 全局提示条", "page": "G（P1–P5）",
+      "entry": "扫描中任意页面内容区顶部（含状态页）",
+      "operation": "整条可点击（data-route 结构类，非按钮元素）",
+      "feedback": "红点 + 未添加设备数（visited 前）；hover 可点态",
+      "resultStates": ["跳 P3 不中断扫描；红点去除、变灰、计数保留（--active → --visited）"]
+    },
+    {
+      "id": "F05", "name": "入网失败状态展示", "page": "P1",
+      "entry": "设备列表状态列（既有列）",
+      "operation": "无操作（数据态展示）",
+      "feedback": "状态 tag 'Join failed' + 右侧提示图标 hover 气泡（镜像 signal-tip）",
+      "resultStates": ["failReason=key_error → 密钥错误", "failReason=no_join_accept → 节点未收到入网应答包", "两值之外不渲染提示"]
+    },
+    {
+      "id": "F06", "name": "添加设备（批量确认）", "page": "P3",
+      "entry": "发现 Tab 勾选（单/多/全选 indeterminate）→【添加设备】",
+      "operation": "确认弹窗（okText=确认）→ 确认",
+      "feedback": "提交中 loading【S7】；成功 Toast「{N}个设备添加成功」",
+      "resultStates": ["刷新当前页 + 已添加行移除", "冲突 Toast「{N}个设备已存在」不拦截、其余正常添加", "提交时超限拦截（>2000 设备 / >20000 对象，D4）", "无型号(None)设备：注册但不添加对象"]
+    },
+    {
+      "id": "F07", "name": "忽略流转", "page": "P3",
+      "entry": "发现 Tab 行选/勾选 →【忽略】；已忽略 Tab →【取消忽略】",
+      "operation": "Tab 间移动（组件冒泡，宿主改 rows 重渲染）",
+      "feedback": "行即时移动；页签计数更新",
+      "resultStates": ["移入已忽略 Tab（信号与更新时间仍更新）", "移回发现 Tab 按最后更新时间排序"]
+    },
+    {
+      "id": "F08", "name": "行内编辑", "page": "P3",
+      "entry": "设备名/描述/型号 单元格",
+      "operation": "S_Input 失焦 / S_Select 快速选择（含 None）",
+      "feedback": "就地保存生效（失焦冒泡 eg71-scan-row-edit）",
+      "resultStates": ["值更新", "型号多值展示（AM102/AM102L/…）"]
+    },
+    {
+      "id": "F09", "name": "单/多设备编辑", "page": "P3",
+      "entry": "操作列【编辑】(single) / 勾选多台工具栏【编辑】(multi)",
+      "operation": "抽屉表单：single 7 字段（+DevEUI 只读）/ multi 4 字段；配置文件已过滤 ABP",
+      "feedback": "必填校验失败 error【S8】；遮罩/关闭钮可关闭（幂等 bind）",
+      "resultStates": ["保存 → 应用到全部目标设备 → 关抽屉 → 列表刷新"]
+    },
+    {
+      "id": "F10", "name": "URL 直入守卫", "page": "P3",
+      "entry": "非扫描中直接访问 /lorawan-scan/confirm",
+      "operation": "无（宿主路由守卫自动触发）",
+      "feedback": "弹窗「请先完成扫描配置，页面即将返回配置步骤。」",
+      "resultStates": ["3 秒后自动跳回 P2（页面级定时逻辑）"]
+    },
+    {
+      "id": "F11", "name": "导入文件", "page": "P2",
+      "entry": "AppKey 卡【导入文件】（S_Upload，csv/xlsx）",
+      "operation": "选择文件 → 前端模拟解析（demo 读文件名/行数 mock）",
+      "feedback": "解析中 loading【S3】；失败按 case 出 error 横幅（4 文案，count 场景 N=剩余可加数）",
+      "resultStates": ["成功：Key 入列表 + 计数更新（允许重复不去重）", "存在任一非法 → 全部失败不导入", ">1M / 无表头 / 超限各自横幅"]
+    },
+    {
+      "id": "F12", "name": "清空自定义 Key", "page": "P2",
+      "entry": "AppKey 卡【清空】(danger 描边)",
+      "operation": "直接清空（无确认弹窗，PRD 未要求；Figma 复核）",
+      "feedback": "列表清空 + 计数归零 + 空态",
+      "resultStates": ["Milesight 默认 Key 勾选态不变"]
+    },
+    {
+      "id": "F13", "name": "添加页激活设置", "page": "P4",
+      "entry": "Profiles 下方灰底卡（内嵌 B_Eg71ActivationCard）",
+      "operation": "默认值/自定义值 单选；应用程序密钥 32hex 输入（无左侧下拉）",
+      "feedback": "非 Milesight「默认值」disabled；非法 hex error【S9】",
+      "resultStates": ["Milesight 默认选「默认值」", "切换保留已输入内容（#8）", "OTAA 态不出现三只读字段（已移除）"]
+    },
+    {
+      "id": "F14", "name": "编辑页三场景 + 暂存", "page": "P5",
+      "entry": "切换配置文件/设备型号/激活类型",
+      "operation": "组件内部 stash 状态机（页面层不参与）",
+      "feedback": "字段带入/置灰即时联动",
+      "resultStates": ["S1 同类型：不变", "S2 ABP→OTAA：AppKey 空+三字段带入只读", "S3 OTAA→ABP：三字段带入（或空）可编辑+AppKey 不显示", "未保存切换暂存/切回恢复", "保存后未激活类型清除"]
+    },
+    {
+      "id": "F15", "name": "设备删除（既有回归面）", "page": "P1",
+      "entry": "行内 Delete",
+      "operation": "内嵌 B_Eg71Modal action='delete' → Delete",
+      "feedback": "危险确认弹窗（B_ComDangerAction 规范）",
+      "resultStates": ["行移除 + Toast【S2 补全】"]
+    }
+  ],
+
+  "events": [
+    { "name": "eg71-device-add", "from": "B_Eg71DeviceList", "detail": "{path:'scan'}", "host": "navigate P2" },
+    { "name": "eg71-scan-navigate", "from": "B_Eg71ScanBanner", "detail": "{route, visited}", "host": "navigate P3（不中断扫描）" },
+    { "name": "eg71-scan-keys-change", "from": "B_Eg71ScanAppkeyCard", "detail": "{keys, defaultKeyChecked, canStart}", "host": "footer 主钮置灰联动" },
+    { "name": "eg71-scan-import-error", "from": "B_Eg71ScanAppkeyCard", "detail": "{case:'size'|'count'|'no-header'|'invalid', remaining?}", "host": "M_AlertBar 文案替换" },
+    { "name": "eg71-footer-action", "from": "B_Eg71FormFooter", "detail": "{action, label, index}", "host": "取消/开始扫描|应用/保存 分发" },
+    { "name": "eg71-scan-tab", "from": "B_Eg71ScanDeviceTable", "detail": "{tab}", "host": "换 ctx.tab 重渲染" },
+    { "name": "eg71-scan-refresh", "from": "B_Eg71ScanDeviceTable", "detail": "{tab}", "host": "重取 rows" },
+    { "name": "eg71-scan-row-edit", "from": "B_Eg71ScanDeviceTable", "detail": "{devEui, field, value}", "host": "池数据更新" },
+    { "name": "eg71-scan-ignore", "from": "B_Eg71ScanDeviceTable", "detail": "{devEuis, ignored}", "host": "rows[].ignored 切换" },
+    { "name": "eg71-scan-add", "from": "B_Eg71ScanDeviceTable", "detail": "{devEuis}", "host": "批量注册 + Toast + 行移除" },
+    { "name": "eg71-scan-abandon", "from": "B_Eg71ScanDeviceTable", "detail": "{}", "host": "结束扫描 + 清空 + 回 P1" },
+    { "name": "eg71-scan-edit-multi", "from": "B_Eg71ScanDeviceTable", "detail": "{devEuis}", "host": "开 multi 抽屉" },
+    { "name": "eg71-scan-edit-single", "from": "B_Eg71ScanDeviceTable", "detail": "{devEui}", "host": "开 single 抽屉" },
+    { "name": "eg71-scan-save", "from": "B_Eg71ScanEditDrawer", "detail": "{mode, targets, value}", "host": "应用 + 关抽屉 + 刷新" },
+    { "name": "eg71-activation-change", "from": "B_Eg71ActivationCard", "detail": "{kind, mode, appKey}", "host": "B_Eg71DeviceForm 内消费（ABP 置灰联动）" },
+    { "name": "eg71-activation-appkey", "from": "B_Eg71ActivationCard", "detail": "{value}", "host": "DeviceForm 持值" },
+    { "name": "eg71-device-form-change", "from": "B_Eg71DeviceForm", "detail": "{dirty, activation, values}", "host": "宿主持状态（可选）" },
+    { "name": "eg71-alert-close", "from": "B_Eg71AlertBar", "detail": "{}", "host": "本需求两用例均 closable=false，不触发" }
+  ],
+
+  "dataSources": {
+    "entities": {
+      "LoRaWanDevice": {
+        "extends": "既有实体，本需求新增 3 字段",
+        "fields": {
+          "status": { "type": "enum", "values": ["online", "offline", "join_failed(新增)"], "display": ["Online", "Offline", "Join failed"] },
+          "joinFailReason": { "type": "enum?", "values": ["key_error", "no_join_accept"], "display": ["密钥错误", "节点未收到入网应答包"], "note": "仅 join_failed 时有值；右侧注记非独立状态" },
+          "activationMode": { "type": "enum", "values": ["default", "custom"], "note": "历史兼容：旧版本升级设备自动标记 custom" },
+          "appKey": { "type": "string(32hex)", "note": "OTAA 必填；ABP 无此字段" },
+          "fPort": { "type": "number", "default": 1 },
+          "timeout": { "type": "number", "default": 1440, "unit": "min（D5）" },
+          "frameCounterCheck": { "type": "boolean", "default": false }
+        }
+      },
+      "ScanPoolDevice": {
+        "note": "扫描确认池（不包含在备份文件）；上限 2000，超出覆盖 lastUpdateAt 最旧",
+        "fields": {
+          "devEUI": "16hex，池内唯一",
+          "name": "默认 = devEUI，可行内编辑",
+          "description": "默认空，可行内编辑",
+          "model": "识别规则：内置库 > 自定义 > ID 靠后；内置重复显示多个（AM102/AM102L/AM103/AM103L）；不识别 None",
+          "matchedAppKey": "MIC 校验成功的那把 Key；即使后续被删仍保留",
+          "rssi/snr": "数值，三档判定：都高=高 / 任一低=低 / 其他=中（阈值沿用既有信号列，PRD 未给）",
+          "lastUpdateAt": "带时区时间，列表倒序键",
+          "ignored": "false=发现 Tab / true=已忽略 Tab"
+        }
+      },
+      "ScanAppKeyConfig": {
+        "note": "网关配置（升级保留+备份还原）；custom+import 合计 ≤1000，允许重复不去重",
+        "fields": { "keyValue": "32hex 大小写均合法", "source": "milesight_default | custom | import" }
+      },
+      "ScanSession": {
+        "note": "全局单例",
+        "fields": { "state": "idle | scanning", "unaddedDeviceCount": "number（全局提示条计数源）" }
+      }
+    },
+    "limits": { "appKeys": 1000, "importFileSize": "1M", "scanPool": 2000, "objects": 20000 },
+    "demoSeed": {
+      "p1DeviceRows": [
+        { "id": "dev-001", "name": "AM102-Office", "model": "AM102", "protocol": "LoRaWAN", "signal": { "level": "good", "tip": ["SF7", "SNR 9.5 dB", "RSSI -62 dBm"] }, "updated": "2026-09-21 15:20:11 (UTC+8)", "status": "Online" },
+        { "id": "dev-002", "name": "EM500-PP1", "model": "EM500-PP", "protocol": "LoRaWAN", "signal": { "level": "medium", "tip": ["SF9", "SNR 2.1 dB", "RSSI -97 dBm"] }, "updated": "2026-09-21 14:58:40 (UTC+8)", "status": "Join failed", "failReason": "key_error" },
+        { "id": "dev-003", "name": "AM103L-Warehouse", "model": "AM103L", "protocol": "LoRaWAN", "signal": { "level": "poor", "tip": ["SF12", "SNR -12.4 dB", "RSSI -118 dBm"] }, "updated": "2026-09-21 13:41:02 (UTC+8)", "status": "Join failed", "failReason": "no_join_accept" },
+        { "id": "dev-004", "name": "WS136-Outdoor", "model": "WS136", "protocol": "LoRaWAN", "signal": { "level": "good", "tip": ["SF8", "SNR 6.8 dB", "RSSI -74 dBm"] }, "updated": "2026-09-21 09:12:33 (UTC+8)", "status": "Offline" },
+        { "id": "dev-005", "name": "AM319-Lab", "model": "AM319", "protocol": "LoRaWAN", "signal": { "level": "medium", "tip": ["SF10", "SNR 0.5 dB", "RSSI -104 dBm"] }, "updated": "2026-09-20 18:05:27 (UTC+8)", "status": "Not activated" }
+      ],
+      "p3ScanRows": [
+        { "devEui": "24E124136E445120", "name": "24E124136E445120", "description": "", "model": ["AM102", "AM102L", "AM103", "AM103L"], "rssi": -62, "snr": 9.5, "level": "good", "lastUpdateAt": "2026-09-21 15:42:07 (UTC+8)", "ignored": false },
+        { "devEui": "24E124FFFEA1B2C3", "name": "24E124FFFEA1B2C3", "description": "", "model": "None", "rssi": -97, "snr": 2.1, "level": "medium", "lastUpdateAt": "2026-09-21 15:40:55 (UTC+8)", "ignored": false },
+        { "devEui": "24E124136E99AA01", "name": "24E124136E99AA01", "description": "车间入口", "model": "EM500-PP", "rssi": -118, "snr": -12.4, "level": "poor", "lastUpdateAt": "2026-09-21 15:38:12 (UTC+8)", "ignored": false },
+        { "devEui": "24E124FFFE44D5E6", "name": "24E124FFFE44D5E6", "description": "", "model": "None", "rssi": -85, "snr": 4.0, "level": "medium", "lastUpdateAt": "2026-09-21 15:30:44 (UTC+8)", "ignored": true }
+      ]
+    }
+  },
+
+  "stateSupplements": [
+    {
+      "id": "S1", "page": "P1", "feature": "设备列表加载", "category": "B 链路断",
+      "missing": "列表加载中状态（PRD 未写）",
+      "supplement": "首次进入/刷新时表格 loading（骨架或 S_Spin），数据就绪后切数据态/空态",
+      "visible": false, "note": "补全标注不进可见 UI；形态记 validation.md"
+    },
+    {
+      "id": "S2", "page": "P1", "feature": "设备删除反馈", "category": "B 链路断",
+      "missing": "删除确认后的结果反馈（本需求 PRD 未写，属既有行为规范面）",
+      "supplement": "确认后行移除 + S_Message Toast（英文界面文案，Figma 复核）",
+      "visible": false
+    },
+    {
+      "id": "S3", "page": "P2", "feature": "导入文件解析中", "category": "B 链路断",
+      "missing": "文件选择后到横幅/入列表之间的处理中反馈（PRD 未写）",
+      "supplement": "导入按钮 loading（防重复点击），解析完成出结果（4 失败横幅或入列表）",
+      "visible": false
+    },
+    {
+      "id": "S4", "page": "P2", "feature": "自定义 Key 校验失败态", "category": "B 链路断",
+      "missing": "32hex 非法时的失败呈现（PRD 只写限制未写反馈形态）",
+      "supplement": "bc-eg71-form-item-msg--error 行内错误提示（mapping §4.2 已定形态）",
+      "visible": false
+    },
+    {
+      "id": "S5", "page": "P2/P4/P5", "feature": "表单提交反馈", "category": "B 链路断",
+      "missing": "开始扫描/应用/保存的提交中与成功反馈（PRD 仅写跳转/无反馈描述）",
+      "supplement": "提交按钮 loading；成功后 S_Message Toast（P4/P5 保存成功；P2 应用成功——文案以 Figma 定稿为准，demo 用最小合理默认）；P2 首次开始扫描的结果态=跳转 P3（PRD 明写，不属补全）",
+      "visible": false, "note": "不发明保存后业务去向（C 类口径归 validation.md）"
+    },
+    {
+      "id": "S6", "page": "P3", "feature": "扫描表加载/刷新", "category": "B 链路断",
+      "missing": "进入页面与手动刷新的加载反馈（PRD 未写）",
+      "supplement": "表格 loading（保留表头，与空态同构）+ 刷新按钮 loading；完成切数据态/空态",
+      "visible": false
+    },
+    {
+      "id": "S7", "page": "P3", "feature": "添加设备提交中", "category": "B 链路断",
+      "missing": "确认弹窗点击后的批量注册处理中状态（PRD 未写）",
+      "supplement": "确认后按钮 loading → Toast「{N}个设备添加成功」/「{N}个设备已存在」（Toast 文案为 PRD 原文）+ 行移除 + 刷新",
+      "visible": false
+    },
+    {
+      "id": "S8", "page": "P3", "feature": "编辑抽屉保存校验", "category": "B 链路断",
+      "missing": "fPort/超时时间必填与数值校验失败呈现（PRD 只写约束）",
+      "supplement": "表单 error 态 + 行内提示，校验失败不关抽屉不冒泡 save",
+      "visible": false
+    },
+    {
+      "id": "S9", "page": "P4/P5", "feature": "设备表单校验失败态", "category": "B 链路断",
+      "missing": "DevEUI 16hex / AppKey 32hex / ABP 三密钥 hex 必填校验的失败呈现（PRD 只写限制）",
+      "supplement": "表单项 error 态 + 行内提示；保存按钮不吞错误（校验失败停在当前卡滚动到首个错误项）",
+      "visible": false
+    },
+    {
+      "id": "S10", "page": "P5", "feature": "编辑页数据回填", "category": "B 链路断",
+      "missing": "进入编辑页的数据加载状态（PRD 未写）",
+      "supplement": "表单区 loading（骨架），数据就绪后回填各场景值",
+      "visible": false
+    }
+  ],
+
+  "review": {
+    "registryConsistency": {
+      "checkedAgainst": ".claude/_index.json + assets/js/registry-business.js + SKILL.md frontmatter",
+      "result": "PASS —— 本契约引用的 10 个 B_* 组件全部在 _index.json/registry-business.js/SKILL.md 三处一致登记",
+      "references": [
+        { "name": "MS_EG71_SHELL", "runtime": "registry-business.js（render/navigate/bind + navGroups）", "note": "壳工具非 B_* 条目，AGENTS.md 唯一壳契约" },
+        { "name": "B_Eg71DeviceList", "id": "bc-eg71-device-list", "version": "1.1.0", "dir": ".claude/skills/business/eg71/B_Eg71DeviceList" },
+        { "name": "B_Eg71FormFooter", "id": "bc-eg71-form-footer", "version": "1.1.0", "dir": ".claude/skills/business/eg71/B_Eg71FormFooter" },
+        { "name": "B_Eg71Modal", "id": "bc-eg71-modal", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71Modal" },
+        { "name": "B_Eg71ScanBanner", "id": "bc-eg71-scan-banner", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71ScanBanner" },
+        { "name": "B_Eg71ScanAppkeyCard", "id": "bc-eg71-scan-appkey-card", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71ScanAppkeyCard" },
+        { "name": "B_Eg71AlertBar", "id": "bc-eg71-alert-bar", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71AlertBar" },
+        { "name": "B_Eg71ScanDeviceTable", "id": "bc-eg71-scan-device-table", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71ScanDeviceTable" },
+        { "name": "B_Eg71ScanEditDrawer", "id": "bc-eg71-scan-edit-drawer", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71ScanEditDrawer" },
+        { "name": "B_Eg71ActivationCard", "id": "bc-eg71-activation-card", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71ActivationCard" },
+        { "name": "B_Eg71DeviceForm", "id": "bc-eg71-device-form", "version": "1.0.0", "dir": ".claude/skills/business/eg71/B_Eg71DeviceForm" }
+      ],
+      "specOnly": [
+        { "name": "B_ComDangerAction", "note": "规范引用（_shared 规范稿 v0.1.0 待实现，无运行时条目）——不作为组件节点引用；危险行为按其元素矩阵执行（danger 描边钮/红实心确认钮/确认后 Toast），弹窗一律由 B_Eg71Modal action='delete' 变体承载" }
+      ],
+      "embeddedChaining": "B_Eg71DeviceForm 内嵌 B_Eg71ActivationCard 与 bc-eg71-form-item-*（6 条已在册）、B_Eg71ScanDeviceTable/B_Eg71DeviceList 内嵌 B_Eg71Modal——均镜像 registry 既有内嵌范式，R3 依赖闭环可过"
+    },
+    "stats": { "pages": 5, "globalElements": 1, "modules": 18, "componentRefs": 10, "flows": 15, "events": 18, "stateSupplements": 10 },
+    "decisions": [
+      { "id": "D1", "item": "扫描入口控件", "resolved": "用既有 Scan Add 工具栏按钮（data-device-add='scan'），注册表零改动" },
+      { "id": "D2", "item": "单设备编辑形态", "resolved": "抽屉同壳 ctx.mode='single'（与多设备编辑交互一致）" },
+      { "id": "D3", "item": "添加/放弃确认弹窗文案", "resolved": "以合理产品文案占位进 ctx（本契约 M_ConfirmModals / M_UrlGuardModal visibleCopy），Figma 定稿仅换字符串不改结构" },
+      { "id": "D4", "item": "超限提示时机与文案", "resolved": "提交时拦截；双分支占位文案（device/object）" },
+      { "id": "D5", "item": "超时时间单位", "resolved": "分钟（min），字段标签「超时时间 (min)」" }
+    ],
+    "openItems": [
+      "03-ued 待确认 #3（D3）/ #4（D4）文案——占位已进契约，定稿替换字符串即可",
+      "03-ued 待确认 #5 信号三档 SNR/RSSI 阈值——沿用既有信号列实现，demo 取既定三档",
+      "03-ued 待确认 #6 已忽略 Tab 是否支持行内编辑——按字段清单两 Tab 通用理解，工具栏【编辑】仅发现 Tab（C 类，记 validation.md）",
+      "K_mapping.md 词条回写（mapping §7 建议 8 条）——待用户确认后执行，本轮未擅动"
+    ],
+    "purityStatement": "本契约全部可见文案来自：03-ued §6/§4 原文照录、既有组件 runtime 文案（P1 英文工具栏/状态）、A2 决策的占位产品文案（D3/D4/D5，标注于位）。无 PRD 摘要、交互评审指引、映射编号、校验徽标进入可见字段；此类信息仅存于本 review / stateSupplements / flows 节。",
+    "a4Notes": [
+      "单文件多路由 demo：页面渲染函数表按 route 分发，壳 navigate 复用；每页可在 ctx.scanning=true 下叠加全局提示条",
+      "装配顺序（plan §6）：主路径 A（P1→P2→P3）→ 忽略流转/编辑/添加 → P4/P5 改动页 → URL 直入守卫",
+      "P3 同页 3 个 B_Eg71Modal 实例（添加/放弃/超限）各放独立 wrapper 分别 bind（bindEg71Modal 收敛到 root 内第一个 .bc-eg71-modal）；URL 守卫为宿主级独立实例"
+    ]
+  }
+}
