@@ -919,6 +919,41 @@
       "dir": ".claude/skills/business/eg71/B_Eg71DeviceForm",
       "src": "assets/js/registry-business.js#bc-eg71-device-form",
       "status": "已固化"
+    },
+    "B_Eg71PageTabs": {
+      "id": "bc-eg71-page-tabs",
+      "cn": "EG71 页级页签壳",
+      "dir": ".claude/skills/business/eg71/B_Eg71PageTabs",
+      "src": "assets/js/registry-business.js#bc-eg71-page-tabs",
+      "status": "已固化"
+    },
+    "B_Eg71Toolbar": {
+      "id": "bc-eg71-toolbar",
+      "cn": "EG71 列表工具栏",
+      "dir": ".claude/skills/business/eg71/B_Eg71Toolbar",
+      "src": "assets/js/registry-business.js#bc-eg71-toolbar",
+      "status": "已固化"
+    },
+    "B_Eg71PageBack": {
+      "id": "bc-eg71-page-back",
+      "cn": "EG71 子页返回头",
+      "dir": ".claude/skills/business/eg71/B_Eg71PageBack",
+      "src": "assets/js/registry-business.js#bc-eg71-page-back",
+      "status": "已固化"
+    },
+    "B_Eg71FormItemUpload": {
+      "id": "bc-eg71-form-item-upload",
+      "cn": "表单上传项（Import/Export）",
+      "dir": ".claude/skills/business/eg71/B_Eg71FormItemUpload",
+      "src": "assets/js/registry-business.js#bc-eg71-form-item-upload",
+      "status": "已固化"
+    },
+    "B_Eg71BatchImport": {
+      "id": "bc-eg71-batch-import",
+      "cn": "EG71 批量导入向导页",
+      "dir": ".claude/skills/business/eg71/B_Eg71BatchImport",
+      "src": "assets/js/registry-business.js#bc-eg71-batch-import",
+      "status": "已固化"
     }
   },
   "modules": {

@@ -1,14 +1,14 @@
 ---
 name: B_DataTable
-version: 1.1.0
-description: 数据表格（业务组件）
+version: 1.2.0
+description: 数据表格（业务组件）：v1.2.0 站点转录新增 icon 操作列形态与 link 计数下钻单元格
 ---
 
 # 数据表格 · B_DataTable
 
 ## 1. 描述
 
-带多选、状态列、进度列与行内操作的主数据表，列定义由实体字段自动装配 —— 是「列表管理页」的主表格骨架。
+带多选、状态列、进度列与行内操作的主数据表，列定义由实体字段自动装配 —— 是「列表管理页」的主表格骨架。v1.2.0（站点转录，依据 `output/eg71-site-distill/diff-matrix.md` §1#5）：① `ctx.opsMode="icon"` 操作列形态；② 字段 `type:"link"` 计数下钻链接单元格（站点 data-forwarding Object Count `<a>31</a>` 同构）。默认行为不变，向后兼容。
 
 **不是什么**：不是基础组件（表格视觉/交互属 `S_Table`）；不是成员/告警等专属表格（见 §4 替代表）。
 
@@ -32,11 +32,12 @@ description: 数据表格（业务组件）
 
 | 字段 | 说明 |
 |---|---|
-| `ctx.entity.fields` | 列定义（`type` 驱动单元格分派） |
+| `ctx.entity.fields` | 列定义（`type` 驱动单元格分派；**v1.2.0 新增 `type:"link"`** = 计数下钻链接单元格） |
 | `ctx.entity.actions` | 行内操作，取前 3 |
 | `ctx.rows` | 行数据；缺省时 `MS_DATA.build(entity, 6)` 造数 |
 | `ctx.plain` | 真 = 省略表尾（批量操作 + 分页） |
 | `ctx.embedded` | 真 = 卡片内嵌形态：省略工具栏 / 复选列 / 表尾，首行不高亮（v1.1.0 新增，列表管理页以外的卡片表格场景） |
+| `ctx.opsMode` | `'link'`（默认，文字按钮）/ `'icon'`（**v1.2.0 站点转录**：icon-only 反馈色操作钮 + `aria-label` + 16px 间距；站点 ms-table-pro 操作列同构，如 equipment-data / data-forwarding 的 edit·delete icon 钮）。动作名→图标映射：edit/delete/monitor/view/detail/copy，其余 moreHoriz |
 
 ## 3. 状态
 

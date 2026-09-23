@@ -1,7 +1,7 @@
 ---
 name: B_Eg71DeviceList
-version: 1.1.0
-description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 新增入网失败状态与失败原因 hover 提示
+version: 1.1.1
+description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 入网失败状态；v1.1.1 站点转录色票勘误 Offline→暖橙
 ---
 
 # 设备数采 · 设备列表 · B_Eg71DeviceList
@@ -10,7 +10,7 @@ description: EG71 设备数采设备列表（业务组件，存量补档）：�
 
 ## 1. 描述
 
-**这是什么**：Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 `bc-eg71-modal` 删除确认弹窗。v1.1.0（REQ-012）：状态新增 **Join failed（入网失败，error 态）**，`failReason` 存在时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。
+**这是什么**：Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 `bc-eg71-modal` 删除确认弹窗。v1.1.0（REQ-012）：状态新增 **Join failed（入网失败，error 态）**，`failReason` 存在时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。v1.1.1（站点转录）：Offline 色票勘误 `muted→warm`——真实站 equipment-data 页 Offline 渲染为暖橙 tag（`ant-tag-orange`），依据 `output/eg71-site-distill/diff-matrix.md` §1#14；Props 与结构零变化。
 
 **不是什么**：不是扫描确认页的发现设备表（那是 `bc-eg71-scan-device-table`，双 Tab + 行内编辑 + 添加/放弃）；不做真实增删改——操作以冒泡事件交宿主。
 

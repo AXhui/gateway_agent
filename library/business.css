@@ -780,3 +780,46 @@
   border-radius: var(--radius-6); box-shadow: var(--shadow-3); white-space: nowrap; z-index: 10;
   color: var(--color-text-secondary); font-size: 12px;
 }
+
+/* ==========================================================================
+   站点转录批（source: output/eg71-site-distill · 36 页真实产品站对照铸造）
+   依据与差异见 output/eg71-site-distill/diff-matrix.md；值全部引 L1 令牌，
+   结构性 min-width 沿用本文件既有惯例（px + 来源注释，如 bc-filter-search）。
+   ========================================================================== */
+
+/* ---- B_Eg71PageTabs 页级页签壳（站点 16 页 ant-tabs-top 同构；视觉同 bc-eg71-app-bar 范式） ---- */
+.bc-eg71-page-tabs { display: flex; align-items: center; gap: var(--spacing-24); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); overflow-x: auto; }
+.bc-eg71-page-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); white-space: nowrap; }
+.bc-eg71-page-tab:hover { color: var(--color-text-primary); }
+.bc-eg71-page-tab--active { color: var(--color-text-primary); font-weight: 500; }
+.bc-eg71-page-tab--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary); }
+
+/* ---- B_Eg71Toolbar 列表工具栏（站点 .device-list-toolbar / .table-header 同构，31/37 页） ---- */
+.bc-eg71-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-12); }
+.bc-eg71-toolbar-spacer { flex: 1; }
+.bc-eg71-toolbar-search { width: 260px; /* 站点 .ms-table-topbar-search .ant-input 202px → 库既有搜索宽档 260px（bc-filter-search 同源） */ }
+.bc-eg71-toolbar-select { min-width: 140px; /* 站点筛选下拉 min-width 220px → 库既有下拉宽档 140px（bc-filter-select 同源） */ }
+
+/* ---- B_Eg71PageBack 子页返回头（站点 .title-back 同构，9 页） ---- */
+.bc-eg71-page-back { display: flex; align-items: center; height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }
+.bc-eg71-page-back-btn { flex: none; padding: var(--spacing-4); color: var(--color-text-primary); } /* 20px 返回图标 + padding 撑 24px+ 热区 */
+.bc-eg71-page-back-btn .ms-ico { color: var(--color-icon-normal); }
+.bc-eg71-page-back-title { margin-left: var(--spacing-12); }
+
+/* ---- B_Eg71FormItemUpload 表单上传项（站点 ysd-upload button 形态，8 页） ---- */
+.bc-eg71-form-item-file { display: flex; align-items: center; gap: var(--spacing-8); margin-top: var(--spacing-8); color: var(--color-text-secondary); }
+.bc-eg71-form-item-file .ms-ico { color: var(--color-icon-secondary); }
+.bc-eg71-form-item-file--error { color: var(--color-text-error-normal); }
+.bc-eg71-form-item-file--error .ms-ico { color: var(--color-icon-secondary); }
+.bc-eg71-form-item-file .ms-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- B_Eg71BatchImport 批量导入向导（站点 batch-import 页同构） ---- */
+.bc-eg71-batch-import { display: flex; flex-direction: column; gap: var(--spacing-24); /* 站点 gap:16px → 红线模块分节 ≥24px，库规则赢（diff-matrix D2） */ }
+.bc-eg71-import-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-16); }
+.bc-eg71-import-proto { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-8); padding: var(--spacing-16); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); }
+.bc-eg71-import-children { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-8); padding-left: var(--spacing-24); }
+.bc-eg71-import-filetype { width: 100%; }
+.bc-eg71-import-filetype .ms-radio-btn { flex: 1; }
+.bc-eg71-import-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-8); margin-top: var(--spacing-12); padding: var(--spacing-64) var(--spacing-16); background: var(--color-fill-base-normal); border: 1px dashed var(--color-border-base); border-radius: var(--radius-4); text-align: center; }
+.bc-eg71-import-drop .ms-ico { color: var(--color-icon-secondary); }
+.bc-eg71-import-hintlink { padding: 0; }

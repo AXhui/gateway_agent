@@ -64,7 +64,9 @@ window.MS_ICONS = {
   rs485: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 17h16"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>',
   io: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>',
   knx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
-  mbus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-6"/><path d="M12 8V2"/><circle cx="12" cy="12" r="4"/></svg>'
+  mbus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-6"/><path d="M12 8V2"/><circle cx="12" cy="12" r="4"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+  scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" x2="17" y1="12" y2="12"/></svg>'
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -96,6 +98,7 @@ window.MS_BIZ_UTIL = (function () {
         return `<span class="bc-bar"><i class="bc-bar-track bc-bar-track--${tone}"><b style="width:${p}%"></b></i><em>${esc(v)}%</em></span>`;
       }
       case 'code': return `<code class="bc-code">${esc(v)}</code>`;
+      case 'link': return `<button type="button" class="ms-btn ms-btn--link bc-cell-link" data-cell-link="${esc(field.key)}">${esc(v)}</button>`;
       case 'user': return `<span class="bc-user"><span class="ms-avatar ms-avatar--sm">${esc(String(v).slice(0, 1))}</span>${esc(v)}</span>`;
       case 'role': return `<span class="ms-select ms-select--inline"><select class="ms-select-native"><option>${esc(v)}</option></select></span>`;
       case 'num': return `<span class="bc-num">${esc(v)}${field.unit ? '<em>' + esc(field.unit) + '</em>' : ''}</span>`;
@@ -201,15 +204,23 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-data-table', cn: '数据表格', cat: '列表',
-      desc: '带多选、状态列、进度列与行内操作的主数据表，列定义由实体字段自动装配。',
+      desc: '带多选、状态列、进度列与行内操作的主数据表，列定义由实体字段自动装配。v1.2.0（站点转录）：新增 ctx.opsMode="icon" 操作列形态（icon-only 反馈色按钮 + aria-label，站点 ms-table-pro 操作列同构，如 equipment-data 的 edit/delete icon 钮 16px 间距）与字段 type:"link"（计数下钻链接，站点 data-forwarding Object Count <a>31</a> 同构）；默认 opsMode="link"（文字按钮）行为不变。',
       atoms: ['table', 'checkbox', 'tag', 'button', 'pagination', 'empty', 'avatar'],
       entityHint: 'device',
-      tags: ['列表', '表格', '管理', '批量', '数据', '分页', '明细'],
+      tags: ['列表', '表格', '管理', '批量', '数据', '分页', '明细', '操作列', '图标操作'],
       render(ctx) {
         const e = ctx.entity, rows = ctx.rows || MS_DATA.build(e, 6);
         const cols = e.fields;
         const ops = e.actions.slice(0, 3);
         const embedded = !!ctx.embedded; // 卡片内嵌形态：无工具栏/复选列/表尾，首行不高亮
+        // v1.2.0 站点转录：icon 操作列——icon-only 反馈色按钮（站点 equipment-data/data-forwarding Operation 列同构）
+        const OPS_ICON = { edit: 'edit', delete: 'trash', monitor: 'chart', view: 'search', detail: 'chevronRight', copy: 'copy' };
+        const iconOps = acts => acts.map((a, k) => {
+          const key = String(a).toLowerCase();
+          const icon = OPS_ICON[key] || 'moreHoriz';
+          return `<button type="button" class="ms-btn ms-btn--sm${k === acts.length - 1 ? ' ms-btn--danger' : ''}" data-table-op="${esc(a)}" aria-label="${esc(a)}" title="${esc(a)}">${ico(icon, 16)}</button>`;
+        }).join('');
+        const opsHtml = ctx.opsMode === 'icon' ? `<span class="ms-space ms-space--16">${iconOps(ops)}</span>` : '';
         return `<div class="ms-table-wrap">
           ${embedded ? '' : `<div class="ms-table-toolbar">
             <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">${rows.length * 214}</span></div>
@@ -228,7 +239,7 @@ window.MS_BIZ_UTIL = (function () {
             <tbody>${rows.map((r, i) => `<tr${!embedded && i === 0 ? ' class="ms-table-row--active"' : ''}>
               ${embedded ? '' : `<td class="bc-col-check"><label class="ms-checkbox"><input type="checkbox"${i < 2 ? ' checked' : ''}><span class="ms-checkbox-box"></span></label></td>`}
               ${cols.map(c => `<td${c.type === 'num' || c.type === 'percent' ? ' class="ms-table-num"' : ''}>${U.cellHtml(c, r, e)}</td>`).join('')}
-              <td class="ms-table-ops">${ops.map((a, k) => `<button class="ms-btn ms-btn--link${k === ops.length - 1 ? ' ms-btn--danger' : ''}">${esc(a)}</button>`).join('')}</td>
+              <td class="ms-table-ops">${ctx.opsMode === 'icon' ? opsHtml : ops.map((a, k) => `<button class="ms-btn ms-btn--link${k === ops.length - 1 ? ' ms-btn--danger' : ''}">${esc(a)}</button>`).join('')}</td>
             </tr>`).join('')}</tbody>
           </table>
           ${(ctx.plain || embedded) ? '' : `<div class="bc-table-foot">
@@ -1204,7 +1215,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-device-list', cn: '设备列表', cat: '数据服务',
-      desc: 'Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（刷新 + Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 bc-eg71-modal 删除确认弹窗。v1.1.0（REQ-012）：状态新增「入网失败 Join failed」（error 态），failReason = key_error / no_join_accept 时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。',
+      desc: 'Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（刷新 + Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 bc-eg71-modal 删除确认弹窗。v1.1.0（REQ-012）：状态新增「入网失败 Join failed」（error 态），failReason = key_error / no_join_accept 时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。v1.1.1（站点转录）：Offline 色票勘误 muted→warm（真实站 equipment-data 为 ant-tag-orange 暖橙）。',
       atoms: ['button', 'table', 'checkbox', 'tag', 'icon', 'pagination', 'empty', 'modal'],
       entityHint: 'gateway',
       tags: ['设备', 'Device', '设备数采', 'Data Acquisition', '数据服务', '列表', '信号', 'Signal', '空态', '删除确认', '批量删除', '入网失败', 'Join failed', '失败原因', 'EG71'],
@@ -1219,10 +1230,11 @@ window.MS_BIZ_UTIL = (function () {
         ];
         const cols = ['Identifier', 'Name', 'Model', 'Protocol Type', 'Signal', 'Last updated', 'Status', 'Number of objects'];
         const FILTERED = ['Signal', 'Status'];
+        // 站点转录 v1.1.1：equipment-data 页 Offline 渲染为 ant-tag-orange（暖橙），非灰——色票勘误 muted→warm（见 diff-matrix.md §1#14）
         const STATUS = {
           'Online': { cn: 'Online', tone: 'success' },
-          'Offline': { cn: 'Offline', tone: 'muted' },
-          'Not activated': { cn: 'Not activated', tone: 'warm' },
+          'Offline': { cn: 'Offline', tone: 'warm' },
+          'Not activated': { cn: 'Not activated', tone: 'muted' },
           'Join failed': { cn: 'Join failed', tone: 'error' }
         };
         // REQ-012 §6.2：失败原因仅作状态右侧提示注记，不做成独立状态
@@ -3752,6 +3764,224 @@ window.MS_BIZ_UTIL = (function () {
             notify(false);
           }
         });
+      }
+    },
+    /* ===================== 站点转录批（source: output/eg71-site-distill，36 页真实产品站对照铸造，见 diff-matrix.md） ===================== */
+    {
+      id: 'bc-eg71-page-tabs', cn: 'EG71 页级页签壳', cat: '数据服务',
+      desc: 'Milesight 网关页级页签条（48px 白底 + 2px 墨条下划线）：顶栏面包屑之下的第一层内容区导航。站点 16 页共用形态（Equipment Data：Device/IO Device/Device Access Network/LoRaWAN；Network VPN 八页签；System User 三页签…）。ctx.tabs 泛化任意页签组，是 EG71 页签壳的泛化唯一源；app/event/maintenance/snmp 等专用壳可按 release.md 宽限期逐步收编到本组件。',
+      atoms: ['tab', 'icon'],
+      entityHint: 'gateway',
+      tags: ['页签', 'Tabs', '页级', '导航', '泛化', '壳', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const tabs = ctx.tabs && ctx.tabs.length ? ctx.tabs : [
+          { key: 'device', label: 'Device' },
+          { key: 'io-device', label: 'IO Device' },
+          { key: 'access-network', label: 'Device Access Network' },
+          { key: 'lorawan', label: 'LoRaWAN' }
+        ];
+        const cur = ctx.tab || tabs[0].key;
+        return `<div class="bc-eg71-page-tabs" role="tablist" aria-label="${esc(ctx.ariaLabel || 'Page navigation')}">${tabs.map(t => {
+          const active = t.key === cur;
+          return `<button type="button" role="tab" aria-selected="${active}" class="bc-eg71-page-tab${active ? ' bc-eg71-page-tab--active' : ''}" data-page-tab="${esc(t.key)}" tabindex="${active ? '0' : '-1'}">${esc(t.label)}</button>`;
+        }).join('')}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-page-tab]').forEach(b => b.addEventListener('click', () =>
+          b.dispatchEvent(new CustomEvent('eg71-page-tab', { bubbles: true, detail: { tab: b.getAttribute('data-page-tab') } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-toolbar', cn: 'EG71 列表工具栏', cat: '列表',
+      desc: 'Milesight 网关列表页工具栏（站点 .device-list-toolbar / .table-header 同构）：无卡片壳单行，左操作组（主按钮 + ghost 链 + 危险钮随勾选启停）+ 右筛选组（关键词搜索 + 下拉筛选 + Reset 链接钮），组内 12px 间距。站点 31/37 页出现，是 ms-table-pro 体系的标准头部；配合 bc-data-table（opsMode=icon）+ 分页表尾构成完整列表页。',
+      atoms: ['button', 'input', 'select', 'icon', 'space', 'dropdown'],
+      entityHint: 'gateway',
+      tags: ['工具栏', 'toolbar', '操作', '筛选', '搜索', '列表', 'Reset', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        // 左操作组：kind = primary(默认ghost) / danger；disabled 随勾选态；dropdown 加展开箭头
+        const actions = (ctx.actions && ctx.actions.length ? ctx.actions : [
+          { action: 'add', label: 'Manually Add', icon: 'plus', kind: 'primary' },
+          { action: 'scan', label: 'Scan to add', icon: 'scan', dropdown: true },
+          { action: 'import', label: 'Batch Import', icon: 'upload' },
+          { action: 'export', label: 'Batch Export', icon: 'download', disabled: true },
+          { action: 'delete', label: 'Delete', icon: 'trash', kind: 'danger', disabled: true }
+        ]).map(a => {
+          const cls = ['ms-btn'];
+          if (a.kind === 'primary') cls.push('ms-btn--filled');
+          if (a.kind === 'danger') cls.push('ms-btn--danger');
+          return `<button type="button" class="${cls.join(' ')}" data-toolbar-action="${esc(a.action || a.label)}"${a.disabled ? ' disabled' : ''}>${a.icon ? ico(a.icon, 16) : ''}${esc(a.label)}${a.dropdown ? ico('chevronDown', 16) : ''}</button>`;
+        }).join('');
+        // 右筛选组：search 输入 + select 下拉 + Reset 链接钮
+        const filters = (ctx.filters || []).map(f => {
+          if (f.type === 'select') {
+            const opts = f.options || [];
+            return `<span class="ms-select bc-eg71-toolbar-select"><select data-toolbar-filter="${esc(f.key || f.placeholder || '')}"><option>${esc(f.placeholder || 'All')}</option>${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select></span>`;
+          }
+          const ph = f.placeholder || 'Search';
+          return `<label class="ms-input bc-eg71-toolbar-search" data-toolbar-filter="${esc(f.key || 'search')}">${ico('search', 16)}<input type="text" placeholder="${esc(ph)}" value="${esc(f.value || '')}"></label>`;
+        }).join('');
+        const reset = ctx.reset === false ? '' : `<button type="button" class="ms-btn ms-btn--link" data-toolbar-action="reset">${ico('refresh', 16)}Reset</button>`;
+        const opsEl = actions ? `<div class="ms-space ms-space--12">${actions}</div>` : '';
+        const filterEl = (filters || reset) ? `<div class="ms-space ms-space--12">${filters}${reset}</div>` : '';
+        return `<div class="bc-eg71-toolbar">${opsEl}<span class="bc-eg71-toolbar-spacer"></span>${filterEl}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-toolbar-action]').forEach(b => b.addEventListener('click', () => {
+          if (b.disabled) return;
+          b.dispatchEvent(new CustomEvent('eg71-toolbar-action', { bubbles: true, detail: { action: b.getAttribute('data-toolbar-action'), label: b.textContent.trim() } }));
+        }));
+        rootEl.querySelectorAll('[data-toolbar-filter]').forEach(el => {
+          const key = el.getAttribute('data-toolbar-filter');
+          if (el.classList.contains('ms-input')) {
+            const inp = el.querySelector('input');
+            if (inp) inp.addEventListener('change', () => el.dispatchEvent(new CustomEvent('eg71-toolbar-filter', { bubbles: true, detail: { key, value: inp.value } })));
+          } else {
+            const sel = el.querySelector('select');
+            if (sel) sel.addEventListener('change', () => el.dispatchEvent(new CustomEvent('eg71-toolbar-filter', { bubbles: true, detail: { key, value: sel.value } })));
+          }
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-page-back', cn: 'EG71 子页返回头', cat: '数据服务',
+      desc: 'Milesight 网关子页/向导页返回头（站点 .title-back 同构，9 页共用：Add Device / Batch Import / Scan Config / Scan Confirm / Scan Device / Multicast 表单 / 转发表单 / 解析库详情 ×2）：48px 白底下边框条，左 20px 返回箭头按钮 + 页标题。面包屑仍在顶栏（bc-eg71-topnav），本组件只承载子页标题与返回动作。',
+      atoms: ['button', 'icon', 'typography'],
+      entityHint: 'gateway',
+      tags: ['返回', '页头', '子页', 'title-back', '向导', '面包屑', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const title = ctx.title || 'Upload File';
+        const backLabel = ctx.backLabel || ('Back to ' + title);
+        return `<div class="bc-eg71-page-back">
+          <button type="button" class="ms-btn ms-btn--text bc-eg71-page-back-btn" data-page-back aria-label="${esc(backLabel)}">${ico('arrowLeft', 20)}</button>
+          <span class="ms-h2 bc-eg71-page-back-title">${esc(title)}</span>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-page-back]').forEach(b => b.addEventListener('click', () =>
+          b.dispatchEvent(new CustomEvent('eg71-page-back', { bubbles: true, detail: { from: b.closest('.bc-eg71-page-back') ? b.closest('.bc-eg71-page-back').querySelector('.bc-eg71-page-back-title').textContent : '' } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-form-item-upload', cn: '表单上传项（Import/Export）', cat: '表单',
+      desc: 'Milesight 网关配置表单「导入/导出」上传项（站点 ysd-upload button 形态，8 页共用：Docker 引擎包 .tar.gz / VPN 证书 .crt / HTTPS 证书 / 扫描配置 / 自定义解析库…）：标签 + Import 主按钮（隐藏 file input，accept 约束）+ Export ghost 按钮（无文件时置灰）+ 已选文件行（文件名 + 移除）+ 提示文案。与 bc-eg71-form-item-* 族同骨架。',
+      atoms: ['form', 'button', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['表单', '上传', '导入', '导出', 'Import', 'Export', '证书', '文件', 'FormItem', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const err = ctx.status === 'error';
+        const label = ctx.label || 'Certificate';
+        const unit = ctx.unit ? `<span class="bc-eg71-form-item-unit">(${esc(ctx.unit)})</span>` : '';
+        const required = ctx.required !== false;
+        const msg = ctx.msg != null ? ctx.msg : `Only ${ctx.accept || '.crt'} files are supported.`;
+        const importLabel = ctx.importLabel || 'Import';
+        const exportLabel = ctx.exportLabel || 'Export';
+        const showExport = ctx.showExport !== false;
+        const file = ctx.fileName || '';
+        return `<div class="ms-form-item" data-accept="${esc(ctx.accept || '')}">
+          <div class="bc-eg71-form-item-labelrow">
+            <label class="ms-form-label${required ? ' ms-form-label--required' : ''}">${esc(label)}${unit}${ico('info', 16)}</label>
+          </div>
+          <div class="bc-eg71-form-item-btnrow">
+            <span class="ms-space ms-space--12">
+              <button type="button" class="ms-btn ms-btn--filled" data-upload-import>${esc(importLabel)}</button>
+              ${showExport ? `<button type="button" class="ms-btn" data-upload-export${file ? '' : ' disabled'}>${esc(exportLabel)}</button>` : ''}
+            </span>
+          </div>
+          ${file ? `<div class="bc-eg71-form-item-file${err ? ' bc-eg71-form-item-file--error' : ''}">${ico('log', 16)}<span class="ms-text">${esc(file)}</span><button type="button" class="ms-btn ms-btn--text" data-upload-remove aria-label="Remove file">${ico('close', 16)}</button></div>` : ''}
+          ${msg ? `<div class="bc-eg71-form-item-msg${err ? ' bc-eg71-form-item-msg--error' : ''}">${esc(msg)}</div>` : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-upload-import]').forEach(b => b.addEventListener('click', () =>
+          b.dispatchEvent(new CustomEvent('eg71-upload-import', { bubbles: true, detail: { accept: b.closest('.ms-form-item') ? (b.closest('.ms-form-item').getAttribute('data-accept') || '') : '' } }))));
+        rootEl.querySelectorAll('[data-upload-export]').forEach(b => b.addEventListener('click', () => {
+          if (b.disabled) return;
+          b.dispatchEvent(new CustomEvent('eg71-upload-export', { bubbles: true }));
+        }));
+        rootEl.querySelectorAll('[data-upload-remove]').forEach(b => b.addEventListener('click', () =>
+          b.dispatchEvent(new CustomEvent('eg71-upload-remove', { bubbles: true }))));
+      }
+    },
+    {
+      id: 'bc-eg71-batch-import', cn: 'EG71 批量导入向导页', cat: '数据服务',
+      desc: 'Milesight 网关设备批量导入向导首步（站点 batch-import 页同构）：协议选择卡（协议 checkbox 卡网格 + 子协议嵌套 checkbox 组，如 Modbus RTU/TCP/RTU over TCP）+ 上传卡（.xlsx/.csv 文件类型分段单选 + 模板下载/批量导出提示链接 + 空态上传区）。底部 Cancel/Next Step 由 bc-eg71-form-footer 组合（ctx.buttons），未选协议时 Next 置灰；本组件 bind 同步禁用态并冒泡选择变化。',
+      atoms: ['card', 'checkbox', 'radio', 'button', 'icon', 'text', 'empty'],
+      entityHint: 'gateway',
+      tags: ['批量导入', 'Batch Import', '向导', '协议选择', '上传', '模板', 'xlsx', 'csv', 'EG71'],
+      render(ctx) {
+        ctx = ctx || {};
+        const protocols = (ctx.protocols && ctx.protocols.length ? ctx.protocols : [
+          { key: 'lorawan', label: 'LoRaWAN' },
+          { key: 'knx', label: 'KNX' },
+          { key: 'bacnet', label: 'BACnet', children: ['BACnet MS/TP', 'BACnet/IP'] },
+          { key: 'modbus', label: 'Modbus', children: ['Modbus RTU', 'Modbus TCP', 'Modbus RTU over TCP'] }
+        ]);
+        const selected = ctx.selected || [];
+        const sel = v => selected.indexOf(v) >= 0;
+        const cb = (val, label, child) => `<label class="ms-checkbox${child ? ' bc-eg71-import-subcb' : ''}"><input type="checkbox" data-import-proto="${esc(val)}"${sel(val) ? ' checked' : ''}><span class="ms-checkbox-box"></span>${esc(label)}</label>`;
+        const protoCards = protocols.map(p => `
+          <div class="bc-eg71-import-proto">
+            ${cb(p.key, p.label)}
+            ${p.children && p.children.length ? `<div class="bc-eg71-import-children">${p.children.map(c => cb(c, c, true)).join('')}</div>` : ''}
+          </div>`).join('');
+        const fileTypes = ctx.fileTypes || ['.xlsx', '.csv'];
+        const fileType = ctx.fileType || fileTypes[0];
+        const hint = ctx.hint || 'Download the Template File, or upload a file exported from Batch Export. Supports .xlsx only. Max 1 MB, up to 5,000 rows.';
+        const dropHint = ctx.dropHint || 'Please select a protocol before uploading';
+        return `<div class="bc-eg71-batch-import">
+          <section class="ms-card">
+            <div class="ms-card-head"><div class="ms-card-title">Protocol Selection</div><button type="button" class="ms-btn ms-btn--link" data-import-rules>Import Rules</button></div>
+            <div class="ms-card-body">
+              <div class="bc-eg71-import-grid">${protoCards}</div>
+            </div>
+          </section>
+          <section class="ms-card">
+            <div class="ms-card-head"><div class="ms-card-title">Upload File</div></div>
+            <div class="ms-card-body">
+              <div class="ms-form-item">
+                <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Select File Type</label></div>
+                <div class="ms-radio-btn-group bc-eg71-import-filetype" role="radiogroup" aria-label="File type">
+                  ${fileTypes.map(t => `<span class="ms-radio-btn${t === fileType ? ' ms-radio-btn--checked' : ''}" role="radio" aria-checked="${t === fileType}" data-import-filetype="${esc(t)}" tabindex="${t === fileType ? '0' : '-1'}">${esc(t)}</span>`).join('')}
+                </div>
+                <div class="bc-eg71-form-item-msg">${esc(hint).replace(/(Template File|Batch Export)/g, '<button type="button" class="ms-btn ms-btn--link bc-eg71-import-hintlink" data-import-hint="$1">$1</button>')}</div>
+              </div>
+              <div class="bc-eg71-import-drop${selected.length ? '' : ' bc-eg71-import-drop--empty'}">
+                <span class="ms-empty-illu">${ico('upload', 32)}</span>
+                <div class="ms-empty-text">${selected.length ? (ctx.dropReadyText || 'Click or drag file to this area to upload') : dropHint}</div>
+                <div class="bc-empty-sub">${ctx.dropSub || 'Only .xlsx files are supported (up to 1 MB and 5,000 rows per file)'}</div>
+              </div>
+            </div>
+          </section>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-batch-import');
+        if (!wrap) return;
+        const syncNext = () => {
+          const any = wrap.querySelectorAll('[data-import-proto]:checked').length > 0;
+          const next = document.querySelector('[data-footer-btn="next"]') || document.querySelector('.bc-eg71-formfooter [data-footer-btn]:last-child');
+          if (next) next.disabled = !any;
+          wrap.dispatchEvent(new CustomEvent('eg71-import-change', { bubbles: true, detail: { selected: Array.prototype.map.call(wrap.querySelectorAll('[data-import-proto]:checked'), c => c.getAttribute('data-import-proto')) } }));
+        };
+        wrap.querySelectorAll('[data-import-proto]').forEach(c => c.addEventListener('change', syncNext));
+        wrap.querySelectorAll('[data-import-filetype]').forEach(r => r.addEventListener('click', () => {
+          wrap.querySelectorAll('[data-import-filetype]').forEach(x => { x.classList.remove('ms-radio-btn--checked'); x.setAttribute('aria-checked', 'false'); x.tabIndex = -1; });
+          r.classList.add('ms-radio-btn--checked'); r.setAttribute('aria-checked', 'true'); r.tabIndex = 0;
+          wrap.dispatchEvent(new CustomEvent('eg71-import-filetype', { bubbles: true, detail: { fileType: r.getAttribute('data-import-filetype') } }));
+        }));
+        const rules = wrap.querySelector('[data-import-rules]');
+        if (rules) rules.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-import-rules', { bubbles: true })));
+        wrap.querySelectorAll('[data-import-hint]').forEach(l => l.addEventListener('click', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-import-hint', { bubbles: true, detail: { target: l.getAttribute('data-import-hint') } }))));
       }
     }
   ];
