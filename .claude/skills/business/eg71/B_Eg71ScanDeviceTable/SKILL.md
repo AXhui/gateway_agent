@@ -1,7 +1,7 @@
 ---
 name: B_Eg71ScanDeviceTable
-version: 1.0.0
-description: EG71 扫描设备双页签表（业务组件）：发现/已忽略双 Tab + 行内编辑 + 批量操作 + 添加设备/放弃扫描（内嵌确认弹窗 + Toast + 行淡出）
+version: 1.0.1
+description: EG71 扫描设备双页签表（业务组件）：发现/已忽略双 Tab + 行内编辑 + 批量操作 + 添加设备/放弃扫描（内嵌确认弹窗 + Toast + 行淡出）；v1.0.1 表格卡 20px 内边距（hover 内收）+ 卡内工具栏与表格间距 20px
 ---
 
 # 扫描设备双页签表 · B_Eg71ScanDeviceTable
@@ -21,7 +21,7 @@ description: EG71 扫描设备双页签表（业务组件）：发现/已忽略�
 |---|---|---|
 | `S_Card` | `ms-card` / `ms-card-body` | 表卡容器（页签条复用全局 `bc-eg71-event-bar/-tab`） |
 | `S_Button` | `ms-btn(--sm/--filled/--danger)` | 批量/行操作/添加/放弃/刷新 |
-| `S_Table` | `ms-table` / `ms-table-wrap` / `th/td` | 8 列表格骨架 |
+| `S_Table` | `ms-table` / `ms-table-wrap bc-eg71-table` / `th/td` | 8 列表格骨架 |
 | `S_Checkbox` | `ms-checkbox` | 行选择 + 表头全选（indeterminate） |
 | `S_Input` | `ms-input--sm` | 行内名称/描述编辑 |
 | `S_Select` | `ms-select--sm` | 行内型号快速选择 |

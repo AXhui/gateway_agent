@@ -409,7 +409,7 @@
 /* ---------- EG71 设备列表（B_Eg71DeviceList · 数据服务） ---------- */
 /* Figma 2016:89755「设备」列表实测：工具栏 + 复选列 8 数据列 + 行操作 + 表尾分页；
    视觉全部由 L2 .ms-table/.ms-btn/.ms-tag 等承担，此处仅编排布局与信号条/气泡 */
-.bc-eg71-device-list { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-device-list { display: flex; flex-direction: column; gap: var(--spacing-20); /* 操作栏按钮与表格卡间距 20px */ }
 /* 信号列 hover 气泡需越出表格卡片边界（作用域内覆写，不改基础组件本体） */
 .bc-eg71-device-list .ms-table-wrap { overflow: visible; }
 .bc-eg71-device-list .bc-eg71-th-filter { display: inline-flex; align-items: center; gap: var(--spacing-4); }
@@ -563,6 +563,15 @@
 /* EG71 线所有表格单元格一律左对齐：数字列用 .bc-num（mono+tabular，继承左对齐），操作列用本类（仅 nowrap）；
    禁用 ms-table-num / ms-table-ops（二者在 base.css 定义了右对齐，跨线共享不可改） */
 .bc-eg71-table-ops { white-space: nowrap; }
+
+/* ---------- EG71 业务表格卡（仅 EG71 线） ---------- */
+/* 白底继承 ms-table-wrap；20px 内边距使 hover 行高亮内收、任何页面底色上可见。
+   L2 ms-table-wrap 保持 0 padding 不动 —— hvac 等其他线沿用旧形态，即回退处理。
+   卡内工具栏/分页脚与表格的间距固定 20px；上下 padding 场景化可调：--tb-12 紧凑档。 */
+.bc-eg71-table { padding: var(--spacing-20); }
+.bc-eg71-table .ms-table-toolbar { padding: 0 0 var(--spacing-20); }
+.bc-eg71-table .bc-table-foot { padding: var(--spacing-20) 0 0; }
+.bc-eg71-table--tb-12 { padding-top: var(--spacing-12); padding-bottom: var(--spacing-12); }
 
 /* ---------- EG71 SNMP（B_Eg71Snmp* · 系统设置 → SNMP 五页签） ---------- */
 /* 三级页签条：与维护一级页签同规格（48px 白底 + 底分隔线 + 2px 墨条），页签间距 32 = 2×16 */
@@ -751,7 +760,7 @@
 .bc-eg71-scan-edit-form { display: flex; flex-direction: column; gap: var(--spacing-16); }
 
 /* ---- B_Eg71ScanDeviceTable 扫描设备双页签表 ---- */
-.bc-eg71-scan-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-scan-body { display: flex; flex-direction: column; gap: var(--spacing-20); /* 工具栏按钮与表格卡间距 20px */ }
 .bc-eg71-scan-toolbar { display: flex; align-items: center; }
 .bc-eg71-scan-toolbar-spacer { flex: 1; }
 .bc-eg71-scan-signal { display: inline-flex; align-items: center; gap: var(--spacing-8); }

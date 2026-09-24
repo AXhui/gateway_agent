@@ -1,7 +1,7 @@
 ---
 name: B_Eg71DeviceList
-version: 1.1.1
-description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 入网失败状态；v1.1.1 站点转录色票勘误 Offline→暖橙
+version: 1.1.2
+description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 入网失败状态；v1.1.1 站点转录色票勘误 Offline→暖橙；v1.1.2 表格卡 20px 内边距（hover 内收）+ 工具栏与表格卡间距 20px
 ---
 
 # 设备数采 · 设备列表 · B_Eg71DeviceList
@@ -22,7 +22,7 @@ description: EG71 设备数采设备列表（业务组件，存量补档）：�
 | 依赖 S_* | ms-* 控件 | 在本组件的作用 |
 |---|---|---|
 | `S_Button` | `ms-btn(--sm/--filled/--danger)` | 工具栏与行内操作 |
-| `S_Table` | `ms-table` / `ms-table-wrap` | 设备表骨架 |
+| `S_Table` | `ms-table` / `ms-table-wrap bc-eg71-table` | 设备表骨架 |
 | `S_Checkbox` | `ms-checkbox` | 行选择 + 表头全选（indeterminate） |
 | `S_Tag` | statusTag（`ms-tag` 语义色） | 状态列（Online/Offline/Not activated/**Join failed**） |
 | `S_Icon` | `ico(...)`（refresh/filter/操作图标/问号） | 工具栏、表头筛选、失败原因提示 |

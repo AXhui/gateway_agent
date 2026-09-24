@@ -1,5 +1,6 @@
 ---
 name: B_Eg71Alarm
+version: 1.0.0
 description: 告警事件列表（业务组件）
 ---
 

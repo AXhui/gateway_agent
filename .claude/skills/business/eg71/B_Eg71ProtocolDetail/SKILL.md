@@ -1,7 +1,7 @@
 ---
 name: B_Eg71ProtocolDetail
-version: 0.1.0
-description: EG71 Dashboard 协议接口详情抽屉（schema 驱动，10 个协议接口复用同一框架）
+version: 0.1.1
+description: EG71 Dashboard 协议接口详情抽屉（schema 驱动，10 个协议接口复用同一框架）；v0.1.1 表格卡 20px 内边距（hover 内收）
 ---
 
 # 协议接口详情抽屉 · B_Eg71ProtocolDetail
@@ -30,7 +30,7 @@ Milesight 网关 Dashboard 总览页的协议接口详情抽屉：统一 schema 
 | `S_Drawer` | `ms-drawer` / `ms-mask--drawer` | 详情容器，右侧滑出，内联 `width:600px`（`size:number` 用法，调用基础组件自身数值分支，非业务层新造样式常量） |
 | `S_Descriptions` | `ms-desc` / `ms-desc-item` / `ms-desc-label` / `ms-desc-value` | 每个 section 的字段分组，作用域内覆写标签列宽/字号/颜色对齐 Figma（见第 5 节） |
 | `S_Tag` | `ms-tag` / `ms-tag--<tone>` | 头部/子卡头/分组标签（Online/Enable/Pin Error 等状态标签） |
-| `S_Table` | `ms-table` / `ms-table-wrap` | 可选表格分组（VPN/Routing/Host/WLAN 的关联站点/路由表/ARP 缓存/DHCP 租约） |
+| `S_Table` | `ms-table` / `ms-table-wrap bc-eg71-table` | 可选表格分组（VPN/Routing/Host/WLAN 的关联站点/路由表/ARP 缓存/DHCP 租约） |
 | `S_Button` | `ms-btn` / `ms-btn--filled` | 底栏单按钮 Confirm（关闭抽屉） |
 | `S_Icon` | `ms-ico` | 头部/子卡头图标、关闭按钮图标 |
 
@@ -57,7 +57,7 @@ Milesight 网关 Dashboard 总览页的协议接口详情抽屉：统一 schema 
 
 1. `.bc-eg71-protocol-detail[hidden]`（默认隐藏根节点）→ `.ms-mask.ms-mask--drawer` → `.ms-drawer`（内联 `width:600px`）。
 2. `ms-drawer-head`：固定标题「Detail」+ 关闭图标按钮（`data-drawer-close`）。
-3. `ms-drawer-body`（`ms-stack`）：若 `d.title` 存在先渲染头部图标卡（icon+title+tags），再逐个渲染 `sections[]`——每个 section 内 `headcard` 或 `title/tag` 头 → `fields` 用 `ms-desc` → `table` 用 `ms-table-wrap`。
+3. `ms-drawer-body`（`ms-stack`）：若 `d.title` 存在先渲染头部图标卡（icon+title+tags），再逐个渲染 `sections[]`——每个 section 内 `headcard` 或 `title/tag` 头 → `fields` 用 `ms-desc` → `table` 用 `ms-table-wrap bc-eg71-table`。
 4. `ms-drawer-foot`：单个 `ms-btn--filled` Confirm（`data-drawer-close`，语义等价关闭，无额外提交副作用）。
 
 ### bind(root) 骨架

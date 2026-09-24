@@ -1158,7 +1158,7 @@ window.MS_BIZ_UTIL = (function () {
             </span>
           </div></div></div>`;
         const opBtn = a => `<button class="ms-btn ms-btn--link${a === '忽略' ? ' ms-btn--danger' : ''}" data-alarm-op="${esc(a)}">${esc(a)}</button>`;
-        const table = `<div class="ms-table-wrap">
+        const table = `<div class="ms-table-wrap bc-eg71-table">
           <div class="ms-table-toolbar">
             <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">共 1,286 条</span></div>
             <div class="ms-space ms-space--8">
@@ -1290,7 +1290,7 @@ window.MS_BIZ_UTIL = (function () {
           ? window.MS_BIZ_INDEX['bc-eg71-modal'].render({ action: 'delete', title: 'Delete Device', desc: 'Are you sure you want to delete this device? This operation cannot be undone.', okText: 'Delete' })
           : '';
         return `<div class="bc-eg71-device-list">${toolbar}
-          <div class="ms-table-wrap">
+          <div class="ms-table-wrap bc-eg71-table">
             <table class="ms-table">
               <thead><tr>
                 <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-device-check-all><span class="ms-checkbox-box"></span></label></th>
@@ -1667,7 +1667,7 @@ window.MS_BIZ_UTIL = (function () {
           const fieldsHtml = Array.isArray(sec.fields) && sec.fields.length
             ? `<div class="ms-desc">${sec.fields.map(fieldRow).join('')}</div>` : '';
           const tableHtml = sec.table
-            ? `<div class="ms-table-wrap"><table class="ms-table">
+            ? `<div class="ms-table-wrap bc-eg71-table"><table class="ms-table">
                 <thead><tr>${sec.table.columns.map(c => `<th>${esc(c.title)}</th>`).join('')}</tr></thead>
                 <tbody>${sec.table.rows.length
                   ? sec.table.rows.map(row => `<tr>${sec.table.columns.map(c => `<td>${esc(row[c.key] != null ? row[c.key] : '-')}</td>`).join('')}</tr>`).join('')
@@ -3410,7 +3410,7 @@ window.MS_BIZ_UTIL = (function () {
             </div>
             <div class="ms-card-body bc-eg71-scan-body">
               ${toolbar}
-              <div class="ms-table-wrap">
+              <div class="ms-table-wrap bc-eg71-table">
                 <table class="ms-table">
                   <thead><tr>
                     <th class="bc-col-check"><label class="ms-checkbox"><input type="checkbox" data-scan-check-all><span class="ms-checkbox-box"></span></label></th>
