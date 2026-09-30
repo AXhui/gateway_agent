@@ -6540,14 +6540,17 @@ function tableHtml(){
   const list=rows(),n=selN();
   const body=list.length?list.map(rowHtml).join(''):`<tr><td colspan="10"><div class="ms-empty"><div class="ms-empty-text">暂无转发对象，点击「添加对象」从 M-Bus 设备选择</div></div></td></tr>`;
   return `<div class="ms-table-wrap bc-eg71-table">
-    <div class="ms-table-toolbar"><div class="ms-space ms-space--12"><button class="ms-btn ms-btn--sm ms-btn--filled" data-add>${ico('plus',16)}添加对象</button></div></div>
-    <table class="ms-table"><thead><tr>${headCells()}</tr></thead><tbody>${body}</tbody></table>
-    <div class="bc-table-foot req013-foot">
-      <span class="ms-text ms-text--sm ms-text--secondary">共 ${list.length} 个对象${n?` · 已选 ${n} 个`:''}</span>
+    <div class="ms-table-toolbar">
+      <div class="ms-table-title">转发对象<span class="ms-tag ms-tag--round ms-tag--outline bc-count">${list.length}</span></div>
       <div class="ms-space ms-space--12">
+        <button class="ms-btn ms-btn--sm ms-btn--filled" data-add>${ico('plus',16)}添加对象</button>
         <button class="ms-btn ms-btn--sm" data-export ${list.length?'':'disabled'}>${ico('download',16)}批量导出</button>
         <button class="ms-btn ms-btn--sm ms-btn--danger" data-batch-del ${n?'':'disabled'}>${ico('trash',16)}批量删除</button>
       </div>
+    </div>
+    <table class="ms-table"><thead><tr>${headCells()}</tr></thead><tbody>${body}</tbody></table>
+    <div class="bc-table-foot req013-foot">
+      <span class="ms-text ms-text--sm ms-text--secondary">共 ${list.length} 个对象${n?` · 已选 ${n} 个`:''}</span>
     </div>
   </div>`;
 }

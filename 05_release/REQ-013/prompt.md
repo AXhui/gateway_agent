@@ -1,1 +1,1 @@
-https://milesight.feishu.cn/wiki/CqYjwRIS9ieQPikk3O0ck4mOnOe?from=from_copylink 帮我实现这份需求，我需要你帮我做一件事，你告知我当前你是如何用这份需求一步步完称demo设计的，并告知我需要给你加什么规则
+你先补充规则。然后针对table的样式，你要做一个挑战，如批量导出 和批量删除，等表格操作，应该是放表格顶部，这些我们的基础组件业务组件都有明确的样式，但是你并没有符合要求。

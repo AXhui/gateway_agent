@@ -14,7 +14,7 @@
 | 4 | 对象表格卡（列表类页面单卡） | `.bc-eg71-table` 结构类（白底 20px）+ `ms-table-wrap`/`ms-table`（bc-data-table 同源原子） | 按服务类型切换列集 |
 | 5 | 表格数字列（对象ID/实例编号/寄存器*） | `bc-num`（mono+tabular，左对齐）—— EG71 左对齐契约，禁 `ms-table-num` | — |
 | 6 | 表格操作列 | `bc-eg71-table-ops`（禁 `ms-table-ops`）；BACnet/Modbus=编辑+删除，HTTP/MQTT=仅删除 | `opsMode:'icon'` |
-| 7 | 工具栏按钮组 | `ms-btn`（Add=filled sm / 批量导出=default sm / 批量删除=danger sm，选中 0 时 disabled），组间距 `ms-space--12` | — |
+| 7 | 表格顶部工具栏 | `ms-table-toolbar`（左：`ms-table-title`「转发对象」+ `bc-count` 计数；右：`ms-btn` 组 = 添加对象 filled sm → 批量导出 default sm → 批量删除 danger sm（选中 0 时 disabled），`ms-space ms-space--12`）；底部 `bc-table-foot` 仅放计数（T9：EG71 批量操作一律顶部工具栏，参照 bc-eg71-device-list） | — |
 | 8 | 删除确认弹窗 | **`B_Eg71Modal`（bc-eg71-modal）** via `B['bc-eg71-modal'].render/bind` | `action:'delete'`, desc='您确认要删除所选的对象吗？' |
 | 9 | 添加对象抽屉 | 结构类 `req013-drawer`（REQ-011 drawer 范式）+ `ms-tree`/`ms-tree-node` 设备树 + `ms-checkbox` 对象复选 | 无对象设备→⚠ 图标+tooltip+置灰 |
 | 10 | 编辑对象抽屉（仅 BACnet/Modbus） | `bc-eg71-form-item-input` + `bc-eg71-form-item-select`（L3 表单项，按 SKILL 契约 ctx 调用） | label/value/placeholder/options/msg/status/showCount |
