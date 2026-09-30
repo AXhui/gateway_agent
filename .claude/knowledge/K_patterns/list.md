@@ -87,7 +87,9 @@ bc-eg71-topnav(面包屑在顶栏) → [bc-eg71-page-tabs 页签条(可选)] →
 
 ### T9 批量选择条
 
-- 站点模式：勾选驱动**工具栏危险钮启停**（Delete disabled→enabled），不另渲染独立批量条；已选计数可出现在表尾。库装配：`B_Eg71Toolbar` actions `disabled` 由宿主随勾选态重渲染；`bc-data-table` 表尾含「已选 N 项 + 批量动作」形态（两线并存，按页面密度选择）。
+- **EG71 线一律顶部工具栏形态**：批量操作（批量导出 / 批量删除等）放**表格顶部** `ms-table-toolbar`（或 `B_Eg71Toolbar`）——filled 新增在前、danger 批量删除在后，勾选驱动危险钮 disabled→enabled 启停；不另渲染独立批量条。参照 `bc-eg71-device-list`（真实站点 31/37 页同构）。
+- 底部 `bc-table-foot` 只放**计数与分页**（Total / 已选 N 项 / 页码），**不放操作按钮**。
+- 「已选 N 项 + 批量动作」放表尾的形态仅存在于 `bc-data-table` 通用模板（非 EG71 线 / 高密度后台可选）；EG71 demo 选用表尾批量形态即违规（REQ-013 首版实证返工）。
 
 ### T10 行内控件列
 

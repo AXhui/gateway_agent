@@ -76,6 +76,7 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 4. 组件运行时真源：`library/*.css` + `assets/js/registry-*.js`，A4 渲染时内联进 demo.html（工作台与 engine-* 已移除，不做本地预览，`tools/build-css-bundle.py` 已随工作台删除）
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
 6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
+7. **装配完整性自检**（见 `.claude/rules/assembly-integrity.md`）：内联完 tokens / base.css / business.css / registry 后，必须断言 `--spacing-24` computed 值非空或对每个内联块做首尾 64 字节 diff；内联块首字节截断零报错，只能靠此自检拦截（REQ-011 丢 `<style>` 开标签、REQ-013 丢 tokens 首行 `/*` 即此族）
 
 ## Demo 生成前置：组件映射清单（硬性，含一把梭场景）
 
@@ -85,6 +86,7 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
 3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
 4. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
+5. **PRD 版本 diff 驱动范围**：同一 PRD 的新版本（changelog 迭代版）进来时，先产出**模块级版本差异表**（added / changed / removed），再对照已交付 REQ（`05_release/`）圈定本 REQ 真实范围；禁止对已交付模块全量重做，也禁止无 diff 依据就整份照单全收。差异表与排除理由落 mapping.md 头注（案例：REQ-013 靠 diff 定为仅 5.8 数据转发，排除 5.6/5.9 并记录依据）。
 
 > 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
 

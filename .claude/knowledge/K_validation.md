@@ -41,6 +41,7 @@ R2 只查「类名是否注册」，拦不住「类名合规但绕过 `B_*` 手�
 5. 装配计划里的每一个模块都必须在生成稿中落地；
 6. **demo 纯净性**：可见 UI 不得出现 PRD 注记、交互评审指引、装配/校验痕迹（见 `rules/page-assembly.md` §5）——命中即退回 A4 重渲染。
 7. **交互链完整性**：PRD 功能点断链（缺 loading/error/empty/确认等必要状态）未补全 → 退回 A4；B/C/D 缺口必须产出缺口清单（A6 台账 + PRD 评论回写的唯一输入），见 `rules/interaction-completeness.md`。
+8. **装配完整性**：R1 执行前先跑令牌活性断言 / 内联块首尾 diff（见 `rules/assembly-integrity.md`），断言失败 R1 直接 fail。
 
 ---
 
@@ -63,3 +64,14 @@ R2 只查「类名是否注册」，拦不住「类名合规但绕过 `B_*` 手�
 - 交付 `05_release/REQ-###/` 前，跑一遍 R1~R4 + R2b，把报告与 demo 一并归档。
 - R2b 命中即整体 fail：分数无意义，先退回按组件契约重做再重跑。
 - 样例实测基线：R1 693 项引用 0 异常 / R2 92 个 class 全部可溯源 / R3 / R4 全通过 → 100。
+
+---
+
+## 附：弹窗可见性断言模式（自动化测试）
+
+`B_Eg71Modal` 的 render 产物是 `<div class="bc-eg71-modal" hidden>` 包裹 `.ms-mask`（`position:fixed` 脱离文档流），wrapper 自身高度**恒为 0**。因此：
+
+- Playwright / 自动化**禁止**对 wrapper（`.bc-eg71-modal`）做 `is_visible()` / 高度断言——`open()` 后仍恒 False，必误报。
+- **正确断言目标**：内层 `.ms-modal`（可见、有尺寸、居中），或 `wrapper.hidden === false` + `is-open` class。
+- REQ-013 实测基准：`.ms-modal` 520×228 居中。
+

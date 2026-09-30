@@ -93,6 +93,7 @@ R1 校验范围从「查色值」扩展为「查色值 + 间距/字号/图标尺
 | 按钮组 `ms-space--8` ×11 | `registry-business.js`（工具栏/批量操作/卡片底操作） | 按钮间 ≥12 | 替换为 `ms-space--12`（标签组等非交互场景保留 `--8`） |
 | `.ms-stat-title` 13px | `library/base.css` | 字号 12 或 14，13 全场景禁用 | 内联 CSS 改 12px |
 | `.bc-eg71-protocol-card` 竖向 padding 12px | `library/business.css` | 卡片内边距 ≥16 | 内联 CSS 改 16px |
+| `.ms-ico--12` 无规则 | `library/base.css`（图标阶梯仅 14/16/20/24/32） | §3 允许装饰性微标 12px，但 base.css 无对应类 | demo 内联自补 `.ms-ico--12{width:12px;height:12px}`（REQ-013 面包屑 chevron 实证：无规则时 svg 按 300×300 渲染） |
 
 ### 同步约定
 
