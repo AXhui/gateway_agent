@@ -4752,7 +4752,7 @@ window.MS_BIZ_UTIL = (function () {
         return `<div class="ms-table-wrap">
           ${embedded ? '' : `<div class="ms-table-toolbar">
             <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">${rows.length * 214}</span></div>
-            <div class="ms-space--12">
+            <div class="ms-space ms-space--12">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">${ico('filter', 16)}列设置</button>
               <button class="ms-btn ms-btn--sm">${ico('download', 16)}导出</button>
               <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 16)}新增${esc(e.cn)}</button>
@@ -4772,7 +4772,7 @@ window.MS_BIZ_UTIL = (function () {
           </table>
           ${(ctx.plain || embedded) ? '' : `<div class="bc-table-foot">
             <span class="ms-text--secondary ms-text--sm">已选 <b>2</b> 项</span>
-            <div class="ms-space--12">
+            <div class="ms-space ms-space--12">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">批量配置</button>
               <button class="ms-btn ms-btn--sm ms-btn--danger">批量删除</button>
               <span class="ms-pagination">
@@ -4913,7 +4913,7 @@ window.MS_BIZ_UTIL = (function () {
                 </div>
               </div>
               <div class="ms-alert ms-alert--warn">${ico('warn', 16)}<div class="ms-alert-body"><div class="ms-alert-title">阈值校验</div><div class="ms-alert-desc">当前条件预计影响 1,284 台设备，日均产生约 42 条告警。</div></div></div>
-              <div class="ms-space--12">
+              <div class="ms-space ms-space--12">
                 <button class="ms-btn">取消</button>
                 <button class="ms-btn ms-btn--dashed">存为草稿</button>
                 <button class="ms-btn ms-btn--filled">保存并启用</button>
@@ -5048,7 +5048,7 @@ window.MS_BIZ_UTIL = (function () {
         return `<div class="ms-table-wrap">
           <div class="ms-table-toolbar">
             <div class="ms-table-title">成员与权限<span class="ms-tag ms-tag--round ms-tag--outline bc-count">248</span></div>
-            <div class="ms-space--12">
+            <div class="ms-space ms-space--12">
               <label class="ms-input ms-input--sm" style="width:200px">${ico('search', 16)}<input placeholder="搜索成员 / 邮箱"></label>
               <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 16)}邀请成员</button>
             </div>
@@ -5678,7 +5678,7 @@ window.MS_BIZ_UTIL = (function () {
         const table = `<div class="ms-table-wrap">
           <div class="ms-table-toolbar">
             <div class="ms-table-title">${esc(e.cn)}列表<span class="ms-tag ms-tag--round ms-tag--outline bc-count">共 1,286 条</span></div>
-            <div class="ms-space--12">
+            <div class="ms-space ms-space--12">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">${ico('filter', 16)}列设置</button>
               <button class="ms-btn ms-btn--sm">${ico('download', 16)}导出</button>
               <button class="ms-btn ms-btn--sm ms-btn--filled">${ico('plus', 16)}新增规则</button>
@@ -5700,7 +5700,7 @@ window.MS_BIZ_UTIL = (function () {
           </table>
           <div class="bc-table-foot">
             <span class="ms-text--secondary ms-text--sm">已选 <b>2</b> 项</span>
-            <div class="ms-space--12">
+            <div class="ms-space ms-space--12">
               <button class="ms-btn ms-btn--sm ms-btn--dashed">批量处理</button>
               <button class="ms-btn ms-btn--sm ms-btn--danger">批量忽略</button>
               <span class="ms-pagination">
@@ -5762,7 +5762,7 @@ window.MS_BIZ_UTIL = (function () {
         };
         const OPS = [['edit', 'edit', 'Edit'], ['monitor', 'chart', 'Monitor'], ['delete', 'trash', 'Delete']];
         const opsHtml = OPS.map(o => `<button type="button" class="ms-btn ms-btn--sm${o[0] === 'delete' ? ' ms-btn--danger' : ''}" data-device-op="${o[0]}" aria-label="${o[2]}" title="${o[2]}">${ico(o[1], 16)}</button>`).join('');
-        const toolbar = `<div class="ms-space--12">
+        const toolbar = `<div class="ms-space ms-space--12">
           <button type="button" class="ms-btn ms-btn--sm ms-btn--filled" data-device-add="manual">${ico('plus', 16)}Manually Add</button>
           <button type="button" class="ms-btn ms-btn--sm" data-device-add="scan">${ico('search', 16)}Scan Add</button>
           <button type="button" class="ms-btn ms-btn--sm" data-device-add="batch">${ico('download', 16)}Batch Add</button>
