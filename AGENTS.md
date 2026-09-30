@@ -118,6 +118,32 @@ EG71 线表格一律左对齐，写死不改：
 - 空态占位（`ms-empty`）居中除外；com / router / cctv / cv 线不受此约束。
 - 存量已修正：`bc-eg71-alarm`、`bc-eg71-device-list`（2026-09-15）。
 
+## EG71 Alert 位置契约（硬性）
+
+来源：Figma 业务组件库「.Alert 警告提示」页（网关/路由器通用业务组件库）。Alert（`ms-alert`）在 EG71 页面只允许以下 4 个位置，**按提示的作用范围选位置**，位置与宽度写死：
+
+| 位置 | 摆放 | 宽度 | 提示范围 |
+|---|---|---|---|
+| ① 全局顶部 | 整页最顶（侧边栏与顶栏之上） | 视口通栏 | 系统/设备级，影响所有页面 |
+| ② 导航栏与 Tab 栏之间 | 右列，紧贴导航栏下沿 | 右列通栏（**无左右边距**） | 本页全部 Tab 共享 |
+| ③ Tab 栏与内容之间 | 右列，紧贴 Tab 栏下沿 | 右列通栏（**无左右边距**） | 当前 Tab |
+| ④ 卡片内 | 卡片标题正下方、内容上方 | 卡片内容宽（随卡片内边距缩进） | 本卡片/表单 |
+
+- **宽度铁律**：①②③ 通栏不缩进；④ 随卡片 padding 缩进。内容区 20px 边距约束内容与 Tab 栏，**不约束 ②③ 的 Alert**（demo 内用负 margin 结构类拉通）。
+- **范围判断**：影响多大范围放多高；只影响当前 Tab 不上 ②，只影响一张卡不上 ③。禁止把 Tab 级提示塞进卡片、把卡片级提示拉到通栏。
+- **持久性**：error/warn 类不自动消失；成功类瞬时反馈走 toast（右下角），不占以上四个位置。
+- 弹窗/抽屉 body 内的 Alert 属表单级提示，置于 body 顶部（④ 的精神）。
+
+## EG71 Tab 栏契约（硬性）
+
+来源：Figma 业务组件库「Tabs/Top」组件。EG71 页面级 Tab 栏规格写死：
+
+- **位置**：右列顶部、导航栏正下方；左起 20px（与内容区边距对齐），右侧到列边；内容区从 Tab 栏分隔线下沿开始。
+- **规格**：高 48px（`--spacing-5xl`）、白底、底部 1px 分隔线 `--color-divider-base-2`；tab 项间 gap 32px（`--spacing-3xl`）；tab 文字 14px。
+- **两态**：未选中 = Regular 400 + `--color-text-secondary`；选中 = Medium 500 + `--color-text-primary` + 底部 2px 下划线 `--color-primary-normal`（撑满 tab 项）。hover（未选中）→ `--color-text-primary`。
+- **与 Alert 组合**：Alert 走位置 ② 时 Tab 栏随之下移、自身 20px 左边距不变；走位置 ③ 时 Alert 贴 Tab 栏分隔线下沿通栏。
+- **runtime 偏差（A4 内联时就地修正，不回写 assets 源头）**：`library/base.css` 的 `.ms-tabs` 现状 gap 24 / tab `padding:8px 0`（高≈38）/ active 文字 `--color-primary-normal`，与本契约不一致；内联时改为 gap 32、容器定高 48 垂直居中、active 与 hover 文字改 `--color-text-primary`。源头统一升级时同步删除本条。
+
 ## 提交信息格式
 
 - 生成新 demo：`feat: 生成 REQ-XXX <页面名称> demo`

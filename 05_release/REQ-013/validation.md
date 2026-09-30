@@ -2,13 +2,13 @@
 
 > demo：`05_release/REQ-013/demo.html`（单文件，367KB，全量内联）
 > 范围：PRD（【EG71】AI测试，2026-8-25 版）5.8 数据转发；5.9 Node-RED / 5.6 引擎逻辑不入（见 mapping.md 头注）。
-> 校验时间：2026-09-30。
+> 校验时间：2026-09-30（首轮交付）；2026-09-30 复验（Alert 位置 / Tab 栏两条新契约驱动调整，见 §三.5）。
 
 ## 一、R1–R5 五维结果
 
 | 规则 | 结果 | 证据 |
 |---|---|---|
-| **R1 令牌合规** | ✅ 通过 | 无裸色值；间距/字号/图标尺寸均落 spacing.md 阶梯；§7 偏差就地修正：ico(*,14)→16（37 处）、按钮组 ms-space--8→--12（7 处）、.ms-stat-title 13→12、bc-eg71-protocol-card padding 12→16，未回写 assets 源头 |
+| **R1 令牌合规** | ✅ 通过 | 无裸色值；间距/字号/图标尺寸均落 spacing.md 阶梯；§7 偏差就地修正：ico(*,14)→16（37 处）、按钮组 ms-space--8→--12（7 处）、.ms-stat-title 13→12、bc-eg71-protocol-card padding 12→16，未回写 assets 源头；复验追加：`.ms-tabs` 偏差修正（gap 24→32 / 高 38→48 / active+hover 文字 primary→text-primary，AGENTS.md Tab 栏契约 runtime 偏差条） |
 | **R2 组件溯源** | ✅ 通过 | 全部 class 落 `bc-eg71-*` / `ms-*` / demo 结构前缀 `req013-*`；无手写 `<svg>`（图标全经 S_Icon/MS_ICONS）；标题经 S_Typography 阶梯（ms-h2） |
 | **R2b L3 复用率** | ✅ 通过 | 删除确认走 `B_Eg71Modal`（render+bind 按 SKILL §2 契约，desc 用 PRD 原话「您确认要删除所选的对象吗？」）；无手搓 ConfirmHtml；壳走 `MS_EG71_SHELL`，navGroups 零改动 |
 | **R3 依赖闭环** | ✅ 通过 | demo 消费的 L3（bc-eg71-modal / bc-eg71-form-item-* / bc-eg71-subarea / bc-eg71-table 结构类）其 atoms 均为已注册 S_*，无越级引用 |
@@ -32,6 +32,11 @@
 2. **`.ms-ico--12` 无 base.css 规则**：base.css 图标阶梯为 14/16/20/24/32，面包屑 chevron 用的 `ms-ico--12` 未受约束导致 svg 300×300。修复：demo 内 `.ms-ico--12{width:12px;height:12px}`（spacing.md §3 允许装饰性微标 12px）。
 3. **视觉终审两轮全绿**：主页面（页签间距均匀/侧边栏无挤压/表格对齐/面包屑小箭头）+ 抽屉（遮罩布局/树层级/已添加置灰/底部按钮禁用态）均经视觉模型复核通过。
 4. **批量操作位置返工（用户指出）**：首版把「批量导出 / 批量删除」放在底部 `bc-table-foot`（误用 `bc-data-table` 通用表尾形态）。正确形态 = EG71 一律**表格顶部** `ms-table-toolbar`（T9 / `bc-eg71-device-list` 范式：filled 新增在前 → 次操作 → danger 批量删除随勾选启停；表尾只放计数）。已返工并复验：按钮序/种类/禁用态、按钮间距 12/12、工具栏紧邻表头上方、表尾 0 按钮、勾选启停、删除确认、空态禁用全过。同族规则收紧：K_patterns/list.md T9 已消除「两线并存」歧义。
+5. **Alert 位置 / Tab 栏契约驱动调整（2026-09-30，Figma 业务组件库「.Alert 警告提示」+「Tabs/Top」两条新硬性契约落 AGENTS.md 后复验）**：
+   - **Tab 栏规格**：`.ms-tabs` 按 Tabs/Top 契约就地修正——gap `--spacing-3xl`(32)、容器定高 `--spacing-5xl`(48) 垂直居中（tab 项 `align-self:stretch + inline-flex` 保下划线贴底）、active/hover 文字改 `--color-text-primary`（选中态仅下划线保留 `--color-primary-normal`）、未选中 Regular + `--color-text-secondary` 不变。
+   - **Alert 位置③**：当前服务机制说明（`svc().desc`）从「只在添加抽屉内」升格为 Tab 栏与内容之间**右列通栏**提示——`req013-strip` 结构类负 margin 拉通（20px / 760 断点 16px 联动）、方角、去三边框仅留底部分隔线（`--color-divider-base-2` 与 Tab 栏同源）、文字左起 20px 与 Tab 项对齐、`margin-top:-16` 抵页面 gap 贴 Tab 栏下沿。作用范围=当前 Tab（只影响本服务），符合契约「范围判断」：不上②（非全 Tab 共享）、不进卡片（非单卡范围）。
+   - **内容区对齐**：`.ms-content` 页面级覆写 `--spacing-20`（列表类页面，壳契约 3），Tab 左起 20 与内容区严格对齐。
+   - 添加/编辑抽屉 body 顶部 info alert 保留（表单级，④ 的精神）；toast（右下角）不变，符合契约「持久性」条。
 
 ## 四、跨 REQ 存量问题（不在本 demo 修，建议立项）
 

@@ -6418,6 +6418,19 @@ const esc=s=>U.esc(String(s==null?'':s)),ico=(n,sz)=>U.ico(n,sz||16);
 
 document.head.insertAdjacentHTML('beforeend',`<style>
 .req013-page{display:flex;flex-direction:column;gap:var(--spacing-16);padding-bottom:var(--spacing-24)}
+/* 列表类页面（壳契约 3）：内容区 20px */
+.ms-shell .ms-content{padding:var(--spacing-20)}
+@media (max-width:760px){.ms-shell .ms-content{padding:var(--spacing-16)}}
+/* Tab 栏契约（AGENTS.md · Tabs/Top）：gap 32 / 定高 48 / 两态文字 —— base.css 偏差就地修正，不回写源头 */
+.req013-page .ms-tabs{gap:var(--spacing-3xl);height:var(--spacing-5xl)}
+.req013-page .ms-tab{padding:0;align-self:stretch;display:inline-flex;align-items:center}
+.req013-page .ms-tab:hover{color:var(--color-text-primary)}
+.req013-page .ms-tab--active{color:var(--color-text-primary)}
+/* Alert 位置③（AGENTS.md）：Tab 栏与内容之间 · 右列通栏无边距，贴 Tab 栏分隔线下沿 */
+.req013-strip{margin-inline:calc(var(--spacing-20) * -1)}
+.req013-strip .ms-alert{border:0;border-bottom:1px solid var(--color-divider-base-2);border-radius:0;padding-inline:var(--spacing-20)}
+.ms-tabs + .req013-strip{margin-top:calc(var(--spacing-16) * -1)}
+@media (max-width:760px){.req013-strip{margin-inline:calc(var(--spacing-16) * -1)}.req013-strip .ms-alert{padding-inline:var(--spacing-16)}}
 .req013-head{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--spacing-16)}
 .req013-title{display:flex;flex-direction:column;gap:var(--spacing-6)}
 .req013-kicker{display:inline-flex;align-items:center;gap:var(--spacing-6);font-size:12px;color:var(--color-primary-normal);font-weight:600}
@@ -6566,6 +6579,7 @@ function globHtml(){
   </div>`;
 }
 function tabsHtml(){return `<div class="ms-tabs">${SVCS.map(s=>`<span class="ms-tab${s.key===S.svc?' ms-tab--active':''}" data-svc="${s.key}" role="tab" tabindex="0" aria-selected="${s.key===S.svc}">${esc(s.name)}</span>`).join('')}</div>`}
+function svcAlertHtml(){return `<div class="req013-strip"><div class="ms-alert ms-alert--info">${ico('info',16)}<div class="ms-alert-body">${esc(svc().desc)}</div></div></div>`}
 
 /* ---------- 添加对象抽屉 ---------- */
 function devCheckState(key){
@@ -6633,6 +6647,7 @@ function fwdPage(){
   return `<div class="bc-eg71-content req013-page">
     ${pageHead()}
     ${tabsHtml()}
+    ${svcAlertHtml()}
     ${globHtml()}
     ${tableHtml()}
     ${S.drawer==='add'?addDrawerHtml():''}
