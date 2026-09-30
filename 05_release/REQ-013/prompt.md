@@ -1,1 +1,1 @@
-https://www.figma.com/design/gk1bNgQElGFZ03B1sFDTjG/%EF%BC%88%E6%96%B0%E7%89%88%E6%9C%AC%EF%BC%89%E7%BD%91%E5%85%B3-%E8%B7%AF%E7%94%B1%E5%99%A8-%E9%80%9A%E7%94%A8%E4%B8%9A%E5%8A%A1%E7%BB%84%E4%BB%B6%E5%BA%93?node-id=10-12042&t=8eu2S1CBRckTzHVu-1 需要你补充2个EG71业务规则，一个是alert的位置规则，一个是tab栏的规则，然后根据新的规则调整req-013这个demo
+我打开后，tab还是没有在固定的位置

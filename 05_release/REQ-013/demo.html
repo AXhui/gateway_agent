@@ -6422,7 +6422,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .ms-shell .ms-content{padding:var(--spacing-20)}
 @media (max-width:760px){.ms-shell .ms-content{padding:var(--spacing-16)}}
 /* Tab 栏契约（AGENTS.md · Tabs/Top）：gap 32 / 定高 48 / 两态文字 —— base.css 偏差就地修正，不回写源头 */
-.req013-page .ms-tabs{gap:var(--spacing-3xl);height:var(--spacing-5xl)}
+.req013-page .ms-tabs{gap:var(--spacing-3xl);height:var(--spacing-5xl);margin-top:calc(var(--spacing-20) * -1)}
 .req013-page .ms-tab{padding:0;align-self:stretch;display:inline-flex;align-items:center}
 .req013-page .ms-tab:hover{color:var(--color-text-primary)}
 .req013-page .ms-tab--active{color:var(--color-text-primary)}
@@ -6430,7 +6430,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .req013-strip{margin-inline:calc(var(--spacing-20) * -1)}
 .req013-strip .ms-alert{border:0;border-bottom:1px solid var(--color-divider-base-2);border-radius:0;padding-inline:var(--spacing-20)}
 .ms-tabs + .req013-strip{margin-top:calc(var(--spacing-16) * -1)}
-@media (max-width:760px){.req013-strip{margin-inline:calc(var(--spacing-16) * -1)}.req013-strip .ms-alert{padding-inline:var(--spacing-16)}}
+@media (max-width:760px){.req013-page .ms-tabs{margin-top:calc(var(--spacing-16) * -1)}.req013-strip{margin-inline:calc(var(--spacing-16) * -1)}.req013-strip .ms-alert{padding-inline:var(--spacing-16)}}
 .req013-head{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--spacing-16)}
 .req013-title{display:flex;flex-direction:column;gap:var(--spacing-6)}
 .req013-kicker{display:inline-flex;align-items:center;gap:var(--spacing-6);font-size:12px;color:var(--color-primary-normal);font-weight:600}
@@ -6645,9 +6645,9 @@ function editDrawerHtml(){
 /* ---------- 页面与壳装配 ---------- */
 function fwdPage(){
   return `<div class="bc-eg71-content req013-page">
-    ${pageHead()}
     ${tabsHtml()}
     ${svcAlertHtml()}
+    ${pageHead()}
     ${globHtml()}
     ${tableHtml()}
     ${S.drawer==='add'?addDrawerHtml():''}

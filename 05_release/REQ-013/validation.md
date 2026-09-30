@@ -34,6 +34,7 @@
 4. **批量操作位置返工（用户指出）**：首版把「批量导出 / 批量删除」放在底部 `bc-table-foot`（误用 `bc-data-table` 通用表尾形态）。正确形态 = EG71 一律**表格顶部** `ms-table-toolbar`（T9 / `bc-eg71-device-list` 范式：filled 新增在前 → 次操作 → danger 批量删除随勾选启停；表尾只放计数）。已返工并复验：按钮序/种类/禁用态、按钮间距 12/12、工具栏紧邻表头上方、表尾 0 按钮、勾选启停、删除确认、空态禁用全过。同族规则收紧：K_patterns/list.md T9 已消除「两线并存」歧义。
 5. **Alert 位置 / Tab 栏契约驱动调整（2026-09-30，Figma 业务组件库「.Alert 警告提示」+「Tabs/Top」两条新硬性契约落 AGENTS.md 后复验）**：
    - **Tab 栏规格**：`.ms-tabs` 按 Tabs/Top 契约就地修正——gap `--spacing-3xl`(32)、容器定高 `--spacing-5xl`(48) 垂直居中（tab 项 `align-self:stretch + inline-flex` 保下划线贴底）、active/hover 文字改 `--color-text-primary`（选中态仅下划线保留 `--color-primary-normal`）、未选中 Regular + `--color-text-secondary` 不变。
+   - **Tab 栏固定位置返工（用户复验指出）**：首版仅改了 tabs 内部规格，装配顺序仍是「页头 → tabs」——tabs 被压在 H2/描述之下，不在契约位置。已修正装配顺序为 **tabs → Alert③ → 页头 → 内容**，并以 `margin-top: calc(var(--spacing-20) * -1)`（760 断点 -16）抵消 `.ms-content` 顶部内边距，使 Tab 栏**贴 topnav 正下方**（右列第一行），页头（H2/描述）成为 Tab 分隔线下方内容。
    - **Alert 位置③**：当前服务机制说明（`svc().desc`）从「只在添加抽屉内」升格为 Tab 栏与内容之间**右列通栏**提示——`req013-strip` 结构类负 margin 拉通（20px / 760 断点 16px 联动）、方角、去三边框仅留底部分隔线（`--color-divider-base-2` 与 Tab 栏同源）、文字左起 20px 与 Tab 项对齐、`margin-top:-16` 抵页面 gap 贴 Tab 栏下沿。作用范围=当前 Tab（只影响本服务），符合契约「范围判断」：不上②（非全 Tab 共享）、不进卡片（非单卡范围）。
    - **内容区对齐**：`.ms-content` 页面级覆写 `--spacing-20`（列表类页面，壳契约 3），Tab 左起 20 与内容区严格对齐。
    - 添加/编辑抽屉 body 顶部 info alert 保留（表单级，④ 的精神）；toast（右下角）不变，符合契约「持久性」条。
