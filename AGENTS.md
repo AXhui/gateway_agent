@@ -47,27 +47,57 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
 3. **同步到飞书（二选一，禁止重复同步）**：
 
-   - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，用下面命令直接同步（脚本已内置 Webhook，零配置）：
+   - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，按下面两步同步（脚本已内置 Webhook，零配置）：
 
-   ```bash
-   python tools/sync_demo_to_feishu.py \
-     --name "REQ-XXX · <简短描述>" \
-     --description "<commit 描述>" \
-     --preview-url "\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html" \
-     --generator "$(git config user.name)" \
-     --version "01" \
-     --source "Agent 生成" \
-     --action-type "新建" \
-     --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
-     --quality-file "05_release/REQ-XXX/quality.json" \
-     --req-id "REQ-XXX" \
-     --category "<云平台/CCTV/CV/网关/路由器/uink 之一>" \
-     --status "已生成"
-   ```
+     **步骤 A：先尝试上传飞书云空间，拿到可在线预览的链接（推荐，保证同事能点开看）**
 
-   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（**不要再手动调脚本**，避免重复记录）。
+     检查 lark-cli 是否可用：
+     ```bash
+     lark-cli --version
+     ```
+     如果命令不存在或提示未登录，先登录一次（飞书官方 CLI，公司内已普遍安装；一次性，之后自动）：`lark-cli auth login`
+
+     上传 demo 到「AI Demo 预览」文件夹，并从返回 JSON 里取出预览链接和文件 token：
+     ```bash
+     UPLOAD_JSON=$(lark-cli drive +upload \
+       --file "05_release/REQ-XXX/demo.html" \
+       --folder-token "JZeofZysclhJKbd2UCzcAiKDn5d" \
+       --name "REQ-XXX_v01.html" \
+       --as user 2>/dev/null || echo "")
+     PREVIEW_URL=$(printf '%s' "$UPLOAD_JSON" | python3 -c "import json,sys; r=json.loads(sys.stdin.read()); print(r['data']['url'] if r.get('ok') and r.get('data',{}).get('url') else '')" 2>/dev/null)
+     FILE_TOKEN=$(printf '%s' "$UPLOAD_JSON" | python3 -c "import json,sys; r=json.loads(sys.stdin.read()); print(r['data']['file_token'] if r.get('ok') and r.get('data',{}).get('file_token') else '')" 2>/dev/null)
+     ```
+     设置组织内可读（否则同事打不开）：
+     ```bash
+     if [ -n "$FILE_TOKEN" ]; then
+       printf '{"link_share_entity":"tenant_readable"}' > /tmp/feishu_perm.json
+       lark-cli drive permission.public patch --token "$FILE_TOKEN" --type file --data "@/tmp/feishu_perm.json" --yes --as user 2>/dev/null || true
+       echo "[同步] 已上传飞书云空间：$PREVIEW_URL"
+     else
+       echo "[同步] 警告：飞书云空间上传失败（lark-cli 未装或未登录），将使用 NAS 路径占位"
+     fi
+     ```
+
+     **步骤 B：同步到飞书表格**。`--preview-url` 优先填步骤 A 的 `$PREVIEW_URL`（上传成功时）；若为空则填下面的 UNC 路径占位，并提示用户运行 `lark-cli auth login` 后重试上传：
+     ```bash
+     python tools/sync_demo_to_feishu.py \
+       --name "REQ-XXX · <简短描述>" \
+       --description "<commit 描述>" \
+       --preview-url "$PREVIEW_URL" \
+       --generator "$(git config user.name)" \
+       --version "01" \
+       --source "Agent 生成" \
+       --action-type "新建" \
+       --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
+       --quality-file "05_release/REQ-XXX/quality.json" \
+       --req-id "REQ-XXX" \
+       --category "<云平台/CCTV/CV/网关/路由器/uink 之一>" \
+       --status "已生成"
+     ```
+     若 `$PREVIEW_URL` 为空，把 `--preview-url` 换成 `\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html`（仅占位，同事无法直接点开）。
+
+   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（含 NAS 备份 + 云空间上传，**不要再手动调脚本**，避免重复记录）。
    - 参数填写规则：`--version` = 该需求第几次生成就是第几版，两位数补零（01、02…）；首次生成 `--action-type 新建`，再次修改 `--action-type 更新`；`--duration` 可选（生成耗时分钟数）；`--generator` 从 `git config user.name` 读取（显示为飞书「生成人」）。
-   - 预览 URL：未配置钩子时 demo 不会自动上传飞书云空间，上面的 UNC 路径仅作记录占位；若本机装有 lark-cli 且已登录，可自行上传后填入真实云空间链接。
    - 同步成功标志：脚本输出 `[同步成功] HTTP 200`。若输出 `[同步失败]`，把错误信息告知用户，**不要跳过同步**。
 
 4. **提交**：
