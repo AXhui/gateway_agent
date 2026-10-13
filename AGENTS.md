@@ -12,20 +12,13 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 
 然后读取 `prd.md` 作为需求正文。若工具报未登录或无权限，再请用户粘贴正文或导出文件。
 
-## 生成前自检：确保 git 钩子已配置（否则 demo 不会同步到飞书）
+## 同步机制说明（零配置，不依赖 git 钩子）
 
-**在生成或修改任何 demo 之前**，先检查 git 钩子路径是否已配置：
+本项目的飞书同步**不依赖 git 钩子**：`tools/sync_demo_to_feishu.py` 已内置团队 Webhook 配置，任何机器 clone 下来直接运行即可同步（只需 Python 3，无需环境变量、无需 lark-cli）。
 
-```bash
-git config core.hooksPath
-```
-
-- 如果输出是 `.githooks`，说明已配置，继续生成。
-- 如果输出为空或不是 `.githooks`，**自动运行配置脚本**（不要询问用户）：
-  - Windows：`powershell -ExecutionPolicy Bypass -File setup.ps1`
-  - macOS / Linux：`bash setup.sh`
-
-配置完成后再继续生成 demo。这是为了确保 commit 后 post-commit 钩子能自动把 demo 同步到 NAS 和飞书多维表格。
+- 已配置钩子的电脑（`git config core.hooksPath` 输出 `.githooks`）：commit 后 post-commit 钩子会自动同步（含 NAS 备份 + 飞书云空间上传）。
+- 未配置钩子的电脑（新人默认情况）：按下面「核心规则」第 3 步，直接用同步脚本同步表格记录，然后照常提交即可。
+- **不要运行 setup 脚本的交互模式**（它包含 Read-Host 提问，会阻塞等待输入）；本方案已不需要它。
 
 ## 核心规则：生成 demo 后必须自动提交
 
@@ -52,18 +45,39 @@ git config core.hooksPath
    - category=产品分类，必须是以下六个之一：**云平台 / CCTV / CV / 网关 / 路由器 / uink**
    - 根据需求内容和产品名称判断：提到"云平台"、"Cloud"、"平台管理"选「云平台」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；提到"CV"、"计算机视觉"、"AI识别"选「CV」；提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"uink"、"Ulink"选「uink」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
-3. **提交**：
+3. **同步到飞书（二选一，禁止重复同步）**：
+
+   - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，用下面命令直接同步（脚本已内置 Webhook，零配置）：
+
+   ```bash
+   python tools/sync_demo_to_feishu.py \
+     --name "REQ-XXX · <简短描述>" \
+     --description "<commit 描述>" \
+     --preview-url "\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html" \
+     --generator "$(git config user.name)" \
+     --version "01" \
+     --source "Agent 生成" \
+     --action-type "新建" \
+     --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
+     --quality-file "05_release/REQ-XXX/quality.json" \
+     --req-id "REQ-XXX" \
+     --category "<云平台/CCTV/CV/网关/路由器/uink 之一>" \
+     --status "已生成"
+   ```
+
+   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（**不要再手动调脚本**，避免重复记录）。
+   - 参数填写规则：`--version` = 该需求第几次生成就是第几版，两位数补零（01、02…）；首次生成 `--action-type 新建`，再次修改 `--action-type 更新`；`--duration` 可选（生成耗时分钟数）；`--generator` 从 `git config user.name` 读取（显示为飞书「生成人」）。
+   - 预览 URL：未配置钩子时 demo 不会自动上传飞书云空间，上面的 UNC 路径仅作记录占位；若本机装有 lark-cli 且已登录，可自行上传后填入真实云空间链接。
+   - 同步成功标志：脚本输出 `[同步成功] HTTP 200`。若输出 `[同步失败]`，把错误信息告知用户，**不要跳过同步**。
+
+4. **提交**：
 
 ```bash
 git add .
 git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 ```
 
-直接执行。提交后 git 钩子会自动：
-- 把 demo 复制到 NAS 共享文件夹
-- 同步记录到飞书多维表格
-
-如果提交失败（如环境变量未配置），告知用户需要重启终端后重试，不要跳过提交。
+直接执行。已配置钩子时，提交后钩子会自动把 demo 复制到 NAS 并同步飞书；未配置钩子时，同步已在第 3 步完成，提交仅用于保存代码。
 
 ## Demo 生成规范
 
