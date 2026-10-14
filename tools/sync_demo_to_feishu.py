@@ -114,6 +114,12 @@ def main():
         default="",
         help="AI 对该 Demo 的自评说明（如扣分原因）；quality.json 的 reason 字段优先",
     )
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=80.0,
+        help="综合还原度最低门槛（默认 80）：低于该分数拒绝同步到飞书（按结构0.2+组件0.2+交互0.25+视觉0.2+字段0.15 计算）",
+    )
     parser.add_argument("--webhook-url", default="", help="飞书 Webhook 地址（覆盖环境变量/默认值）")
     parser.add_argument("--webhook-token", default="", help="飞书 Webhook Token（覆盖环境变量/默认值）")
 
@@ -165,6 +171,22 @@ def main():
     check_status = args.check_status
     if any(v is not None for v in (structure, component, interaction, visual, field_score)):
         check_status = "待校验"
+
+    # 综合还原度门槛：按飞书「综合还原度」公式口径计算（结构0.2+组件0.2+交互0.25+视觉0.2+字段0.15）
+    # 5 维齐全才计算；任一缺失则跳过门槛检查（等 UED 打分，不拦截）
+    if all(v is not None for v in (structure, component, interaction, visual, field_score)):
+        overall = structure * 0.2 + component * 0.2 + interaction * 0.25 + visual * 0.2 + field_score * 0.15
+        if overall < args.min_score:
+            print(
+                f"[门槛拦截] 综合还原度 {overall:.1f} 分 < 最低门槛 {args.min_score} 分，"
+                f"该 Demo 不进入飞书多维表格。请修复后重新生成/自评，再运行同步。",
+                file=sys.stderr,
+            )
+            print(
+                f"[门槛明细] 结构{structure} 组件{component} 交互{interaction} 视觉{visual} 字段{field_score}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
     payload = {
         "Demo 名称": args.name,
