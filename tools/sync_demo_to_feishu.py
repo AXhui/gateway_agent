@@ -107,7 +107,12 @@ def main():
     parser.add_argument(
         "--quality-file",
         default="",
-        help="AI 自评文件 quality.json 路径；提供后自动读取 5 维度分数",
+        help="AI 自评文件 quality.json 路径；提供后自动读取 5 维度分数和 reason 自评文字",
+    )
+    parser.add_argument(
+        "--ai-comment",
+        default="",
+        help="AI 对该 Demo 的自评说明（如扣分原因）；quality.json 的 reason 字段优先",
     )
     parser.add_argument("--webhook-url", default="", help="飞书 Webhook 地址（覆盖环境变量/默认值）")
     parser.add_argument("--webhook-token", default="", help="飞书 Webhook Token（覆盖环境变量/默认值）")
@@ -154,6 +159,8 @@ def main():
         return ""
 
     category = _normalize_category(args.category) or _normalize_category(q.get("category", ""))
+    # AI 自评文字：quality.json 的 reason 优先，其次命令行 --ai-comment
+    ai_comment = (q.get("reason") or "").strip() or (args.ai_comment or "").strip()
     # AI 已提供任一分数即视为已自评，等待 UED 复核
     check_status = args.check_status
     if any(v is not None for v in (structure, component, interaction, visual, field_score)):
@@ -178,6 +185,7 @@ def main():
         "字段还原度": field_score,
         "校验状态": check_status,
         "产品分类": category,
+        "AI自评": ai_comment,
     }
 
     print(f"[同步中] {args.name} → {webhook_url}")

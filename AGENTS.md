@@ -37,12 +37,14 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
   "interaction": 80,
   "visual": 88,
   "field": 92,
-  "category": "网关"
+  "category": "网关",
+  "reason": "结构还原度 90：路由与页面骨架完整，但确认弹窗缺一层引导；组件还原度 85：2 处页面私有类未走组件库；交互还原度 80：表格行内编辑缺少防抖；视觉还原度 88：主色与间距接近基准，表格行距略有偏差；字段还原度 92：表单字段与 PRD 一致，仅缺校验提示文案。"
 }
 ```
 
    - structure=结构还原度、component=组件类型还原度、interaction=交互逻辑还原度、visual=视觉还原度、field=字段还原度
    - category=产品分类，必须是以下六个之一：**云平台 / CCTV / CV / 网关 / 路由器 / uink**
+   - reason=AI 对该 demo 的**简单自评文字**（必填）：用 2~5 句话说明每个维度为什么是这个分数（扣分点/亮点），供 UED 复核时快速理解打分依据；按实际表现客观写，不要只写"良好/优秀"这类空话
    - 根据需求内容和产品名称判断：提到"云平台"、"Cloud"、"平台管理"选「云平台」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；提到"CV"、"计算机视觉"、"AI识别"选「CV」；提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"uink"、"Ulink"选「uink」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
 3. **组件分自动校准（硬性，--write 覆盖自评分）**：自评写入 quality.json 后，必须运行组件打分脚本校准 `component` 分：
@@ -94,7 +96,7 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
    - pre-commit 钩子会检查 demo.html 是否包含组件库标识（`bc-` 前缀 class 或 `base.css`/`business.css` 引用），未使用组件库会中止提交
 4. 组件运行时真源：`library/*.css` + `assets/js/registry-*.js`，A4 渲染时内联进 demo.html（工作台与 engine-* 已移除，不做本地预览，`tools/build-css-bundle.py` 已随工作台删除）
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
-6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
+6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（含 `reason` 自评文字；供飞书质检，UED 复核）
 
 ## Demo 生成前置：组件映射清单（硬性，含一把梭场景）
 
