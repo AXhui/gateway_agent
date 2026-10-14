@@ -45,59 +45,34 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
    - category=产品分类，必须是以下六个之一：**云平台 / CCTV / CV / 网关 / 路由器 / uink**
    - 根据需求内容和产品名称判断：提到"云平台"、"Cloud"、"平台管理"选「云平台」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；提到"CV"、"计算机视觉"、"AI识别"选「CV」；提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"uink"、"Ulink"选「uink」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
+3. **组件分自动校准（硬性，--write 覆盖自评分）**：自评写入 quality.json 后，必须运行组件打分脚本校准 `component` 分：
+   ```bash
+   python tools/score_component.py --demo 05_release/REQ-XXX/demo.html --write
+   ```
+   脚本按 5 条规则自动算分（①组件库命中率 20% ②注册表覆盖 20% ③契约调用 25% ④壳契约 15% ⑤设计令牌 20%），并把 `component` 覆盖为脚本分（其余 4 维仍为自评）。若与自评分差异大，说明组件实现与规则不符，先修复 demo 再同步；不要跳过本步直接同步。
 3. **同步到飞书（二选一，禁止重复同步）**：
 
-   - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，按下面两步同步（脚本已内置 Webhook，零配置）：
+   - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，用下面命令直接同步（脚本已内置 Webhook，零配置）：
 
-     **步骤 A：先尝试上传飞书云空间，拿到可在线预览的链接（推荐，保证同事能点开看）**
+   ```bash
+   python tools/sync_demo_to_feishu.py \
+     --name "REQ-XXX · <简短描述>" \
+     --description "<commit 描述>" \
+     --preview-url "\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html" \
+     --generator "$(git config user.name)" \
+     --version "01" \
+     --source "Agent 生成" \
+     --action-type "新建" \
+     --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
+     --quality-file "05_release/REQ-XXX/quality.json" \
+     --req-id "REQ-XXX" \
+     --category "<云平台/CCTV/CV/网关/路由器/uink 之一>" \
+     --status "已生成"
+   ```
 
-     检查 lark-cli 是否可用：
-     ```bash
-     lark-cli --version
-     ```
-     如果命令不存在或提示未登录，先登录一次（飞书官方 CLI，公司内已普遍安装；一次性，之后自动）：`lark-cli auth login`
-
-     上传 demo 到「AI Demo 预览」文件夹，并从返回 JSON 里取出预览链接和文件 token：
-     ```bash
-     UPLOAD_JSON=$(lark-cli drive +upload \
-       --file "05_release/REQ-XXX/demo.html" \
-       --folder-token "JZeofZysclhJKbd2UCzcAiKDn5d" \
-       --name "REQ-XXX_v01.html" \
-       --as user 2>/dev/null || echo "")
-     PREVIEW_URL=$(printf '%s' "$UPLOAD_JSON" | python3 -c "import json,sys; r=json.loads(sys.stdin.read()); print(r['data']['url'] if r.get('ok') and r.get('data',{}).get('url') else '')" 2>/dev/null)
-     FILE_TOKEN=$(printf '%s' "$UPLOAD_JSON" | python3 -c "import json,sys; r=json.loads(sys.stdin.read()); print(r['data']['file_token'] if r.get('ok') and r.get('data',{}).get('file_token') else '')" 2>/dev/null)
-     ```
-     设置组织内可读（否则同事打不开）：
-     ```bash
-     if [ -n "$FILE_TOKEN" ]; then
-       printf '{"link_share_entity":"tenant_readable"}' > /tmp/feishu_perm.json
-       lark-cli drive permission.public patch --token "$FILE_TOKEN" --type file --data "@/tmp/feishu_perm.json" --yes --as user 2>/dev/null || true
-       echo "[同步] 已上传飞书云空间：$PREVIEW_URL"
-     else
-       echo "[同步] 警告：飞书云空间上传失败（lark-cli 未装或未登录），将使用 NAS 路径占位"
-     fi
-     ```
-
-     **步骤 B：同步到飞书表格**。`--preview-url` 优先填步骤 A 的 `$PREVIEW_URL`（上传成功时）；若为空则填下面的 UNC 路径占位，并提示用户运行 `lark-cli auth login` 后重试上传：
-     ```bash
-     python tools/sync_demo_to_feishu.py \
-       --name "REQ-XXX · <简短描述>" \
-       --description "<commit 描述>" \
-       --preview-url "$PREVIEW_URL" \
-       --generator "$(git config user.name)" \
-       --version "01" \
-       --source "Agent 生成" \
-       --action-type "新建" \
-       --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
-       --quality-file "05_release/REQ-XXX/quality.json" \
-       --req-id "REQ-XXX" \
-       --category "<云平台/CCTV/CV/网关/路由器/uink 之一>" \
-       --status "已生成"
-     ```
-     若 `$PREVIEW_URL` 为空，把 `--preview-url` 换成 `\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html`（仅占位，同事无法直接点开）。
-
-   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（含 NAS 备份 + 云空间上传，**不要再手动调脚本**，避免重复记录）。
+   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（**不要再手动调脚本**，避免重复记录）。
    - 参数填写规则：`--version` = 该需求第几次生成就是第几版，两位数补零（01、02…）；首次生成 `--action-type 新建`，再次修改 `--action-type 更新`；`--duration` 可选（生成耗时分钟数）；`--generator` 从 `git config user.name` 读取（显示为飞书「生成人」）。
+   - 预览 URL：未配置钩子时 demo 不会自动上传飞书云空间，上面的 UNC 路径仅作记录占位；若本机装有 lark-cli 且已登录，可自行上传后填入真实云空间链接。
    - 同步成功标志：脚本输出 `[同步成功] HTTP 200`。若输出 `[同步失败]`，把错误信息告知用户，**不要跳过同步**。
 
 4. **提交**：
@@ -120,7 +95,6 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 4. 组件运行时真源：`library/*.css` + `assets/js/registry-*.js`，A4 渲染时内联进 demo.html（工作台与 engine-* 已移除，不做本地预览，`tools/build-css-bundle.py` 已随工作台删除）
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
 6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（供飞书质检，UED 复核）
-7. **装配完整性自检**（见 `.claude/rules/assembly-integrity.md`）：内联完 tokens / base.css / business.css / registry 后，必须断言 `--spacing-24` computed 值非空或对每个内联块做首尾 64 字节 diff；内联块首字节截断零报错，只能靠此自检拦截（REQ-011 丢 `<style>` 开标签、REQ-013 丢 tokens 首行 `/*` 即此族）
 
 ## Demo 生成前置：组件映射清单（硬性，含一把梭场景）
 
@@ -130,7 +104,6 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
 3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
 4. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
-5. **PRD 版本 diff 驱动范围**：同一 PRD 的新版本（changelog 迭代版）进来时，先产出**模块级版本差异表**（added / changed / removed），再对照已交付 REQ（`05_release/`）圈定本 REQ 真实范围；禁止对已交付模块全量重做，也禁止无 diff 依据就整份照单全收。差异表与排除理由落 mapping.md 头注（案例：REQ-013 靠 diff 定为仅 5.8 数据转发，排除 5.6/5.9 并记录依据）。
 
 > 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
 
@@ -161,32 +134,6 @@ EG71 线表格一律左对齐，写死不改：
 - **操作列**：`bc-eg71-table-ops`（`library/business.css`，仅 nowrap，左对齐），禁用 `ms-table-ops`。
 - 空态占位（`ms-empty`）居中除外；com / router / cctv / cv 线不受此约束。
 - 存量已修正：`bc-eg71-alarm`、`bc-eg71-device-list`（2026-09-15）。
-
-## EG71 Alert 位置契约（硬性）
-
-来源：Figma 业务组件库「.Alert 警告提示」页（网关/路由器通用业务组件库）。Alert（`ms-alert`）在 EG71 页面只允许以下 4 个位置，**按提示的作用范围选位置**，位置与宽度写死：
-
-| 位置 | 摆放 | 宽度 | 提示范围 |
-|---|---|---|---|
-| ① 全局顶部 | 整页最顶（侧边栏与顶栏之上） | 视口通栏 | 系统/设备级，影响所有页面 |
-| ② 导航栏与 Tab 栏之间 | 右列，紧贴导航栏下沿 | 右列通栏（**无左右边距**） | 本页全部 Tab 共享 |
-| ③ Tab 栏与内容之间 | 右列，紧贴 Tab 栏下沿 | 右列通栏（**无左右边距**） | 当前 Tab |
-| ④ 卡片内 | 卡片标题正下方、内容上方 | 卡片内容宽（随卡片内边距缩进） | 本卡片/表单 |
-
-- **宽度铁律**：①②③ 通栏不缩进；④ 随卡片 padding 缩进。内容区 20px 边距约束内容与 Tab 栏，**不约束 ②③ 的 Alert**（demo 内用负 margin 结构类拉通）。
-- **范围判断**：影响多大范围放多高；只影响当前 Tab 不上 ②，只影响一张卡不上 ③。禁止把 Tab 级提示塞进卡片、把卡片级提示拉到通栏。
-- **持久性**：error/warn 类不自动消失；成功类瞬时反馈走 toast（右下角），不占以上四个位置。
-- 弹窗/抽屉 body 内的 Alert 属表单级提示，置于 body 顶部（④ 的精神）。
-
-## EG71 Tab 栏契约（硬性）
-
-来源：Figma 业务组件库「Tabs/Top」组件。EG71 页面级 Tab 栏规格写死：
-
-- **位置**：右列顶部、导航栏正下方；左起 20px（与内容区边距对齐），右侧到列边；内容区从 Tab 栏分隔线下沿开始。
-- **规格**：高 48px（`--spacing-5xl`）、白底、底部 1px 分隔线 `--color-divider-base-2`；tab 项间 gap 32px（`--spacing-3xl`）；tab 文字 14px。
-- **两态**：未选中 = Regular 400 + `--color-text-secondary`；选中 = Medium 500 + `--color-text-primary` + 底部 2px 下划线 `--color-primary-normal`（撑满 tab 项）。hover（未选中）→ `--color-text-primary`。
-- **与 Alert 组合**：Alert 走位置 ② 时 Tab 栏随之下移、自身 20px 左边距不变；走位置 ③ 时 Alert 贴 Tab 栏分隔线下沿通栏。
-- **runtime 偏差（A4 内联时就地修正，不回写 assets 源头）**：`library/base.css` 的 `.ms-tabs` 现状 gap 24 / tab `padding:8px 0`（高≈38）/ active 文字 `--color-primary-normal`，与本契约不一致；内联时改为 gap 32、容器定高 48 垂直居中、active 与 hover 文字改 `--color-text-primary`。源头统一升级时同步删除本条。
 
 ## 提交信息格式
 
