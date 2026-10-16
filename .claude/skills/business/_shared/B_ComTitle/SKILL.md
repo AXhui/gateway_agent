@@ -1,6 +1,6 @@
 ---
 name: B_ComTitle
-version: 1.0.0
+version: 1.1.0
 description: 标题（业务组件）
 ---
 
@@ -24,10 +24,12 @@ description: 标题（业务组件）
 ### 层级划分（level，高 → 低）
 | 层级 | 位置 | 视觉 |
 |------|------|------|
-| `page`（页面级） | 页面最顶部，面包屑下方 | 主标题变体（16px） |
+| `page`（页面级） | 页面最顶部，面包屑下方 | 主标题变体（16px/500/行高24） |
 | `tab`（Tab 级） | Tab 栏下方，内容区顶部 | 主标题 + 开关（Enable） |
 | `card`（卡片/区块级） | 卡片/区块顶部，内边距内左对齐 | 主标题，下方到表格/表单有固定间距 |
-| `group`（分组级） | 表单分组内，字段组上方 | 次标题变体（14px，左竖条） |
+| `group`（分组级） | 表单分组内，字段组上方 | 次标题变体（14px/500/行高22，左竖条） |
+
+> 规格权威源：Figma 网关/路由器通用业务组件库「标题」页（node 41:33628）；EG71 侧硬性契约见 `AGENTS.md`「EG71 标题契约」。
 
 ### 对齐方式（align）
 - `left`（默认）— 常规场景。
@@ -64,7 +66,7 @@ description: 标题（业务组件）
 | 参数 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | `title` | string | — | 标题文字（必填） |
-| `variant` | `'main' \| 'sub'` | `'main'` | 主标题（16px/600）/ 次标题（14px/600） |
+| `variant` | `'main' \| 'sub'` | `'main'` | 主标题（16px/500/行高24）/ 次标题（14px/500/行高22），色 `--color-text-primary` |
 | `level` | `'page' \| 'tab' \| 'card' \| 'group'` | `'card'` | 层级，决定位置与默认形态 |
 | `align` | `'left' \| 'center' \| 'right'` | `'left'` | 对齐方式 |
 | `showTag` | boolean | `false` | 是否显示 Tag |
@@ -78,13 +80,13 @@ description: 标题（业务组件）
 | `buttons` | `{ t: string, kind?: 'filled'\|'outline'\|'text' }[]` | — | 按钮组 |
 | `showDescribe` | boolean | `false` | 是否显示描述文案 |
 | `describe` | string | — | 描述文案 |
-| `describeMode` | `'inline' \| 'tip'` | `'inline'` | 描述展示模式：inline=下一行小字；tip=并入提示图标 tooltip |
+| `describeMode` | `'inline' \| 'below' \| 'tip'` | `'inline'` | 描述展示模式：inline=**同行**（标题/Tag 后，16px/400/行高24 + `--color-text-auxiliary`，Figma「备注」形态）；below=下一行小字；tip=并入提示图标 tooltip |
 
 ### render 骨架（业务框架）
 1. `.bc-com-title` 容器（按 `level` 加 `.bc-com-title--page/tab/card/group`，按 `align` 加 `.bc-com-title--center/right`）。
-2. 左侧：标题文字（`variant=main` → `.ms-h4`；`variant=sub` 或 `level=group` → `.ms-h5` / `.ms-form-section-title`）。
-3. 右侧（按需）：Tag → 提示图标 → 开关 → 按钮组，同一行两端对齐（`space-between`）或紧邻小间距。
-4. `showDescribe && describeMode='inline'`：标题下一行 `.ms-text.ms-text--auxiliary`。
+2. 左组 `.bc-com-title-main`（gap 8）：标题文字（`variant=main` → `.ms-h4`；`variant=sub` 或 `level=group` → `.ms-h5` / `.ms-form-section-title`）→ Tag（轻量形态：fill-base 底、12px/行高20、px4、radius4、text-primary、**无边框**）→ 备注（`describeMode='inline'`）→ 提示图标（**18px**，图标阶梯唯一 18px 场景）→ 开关（28×16 `ms-switch--xs`，**紧跟左组**、不在行尾）。
+3. 右组 `.bc-com-title-extra`（flex-1 右对齐）：操作按钮区，**独立按钮、按钮间 gap 12px**、高 32（`ms-btn--sm`）；禁止拼贴合式 `ms-btn-group`。
+4. `describeMode='below'`：标题下一行 `.ms-text.ms-text--auxiliary`。
 
 ### bind 骨架
 无 bind。开关态、按钮点击均由父级通过回调持有，组件只读 Props、只发事件。
@@ -101,19 +103,20 @@ description: 标题（业务组件）
 - 无强制单一来源；`title` / `describe` / `switchChecked` 等由调用方 Props 传入。
 
 ### 结构类（`library/business.css`）
-`.bc-com-title`（容器布局 + 层级/对齐修饰符；标题与同行元素间距、标题下方间距）。
+`.bc-com-title`（容器布局 + 层级/对齐修饰符；标题与同行元素间距、标题下方间距）；组件域覆写 `.bc-com-title .ms-h4/.ms-h5`（字重 500、`ms-h5` 行高 22px）与 `.bc-com-title .ms-tag`（轻量形态）——A4 内联时随 business.css 生效，页面层不得重复覆写。
 
 ---
 
 ## 四、交互说明
 
 ### 开关（Tab 级 Enable）
-- 复用 `.ms-switch.ms-switch--xs`（28×16），与标题两端对齐。
+- 复用 `.ms-switch.ms-switch--xs`（28×16），**紧跟标题左组之后**（与按钮区之间由 flex-1 拉开），不在行尾。
 - 状态由父级 Props 持有，变更走回调（`onSwitchChange`），组件内部不改状态。
 
-### 描述文案双模式
-- `describeMode='inline'`：必要描述放标题下一行，16px `--color-text-auxiliary` 小字。
-- `describeMode='tip'`：非必要描述并入提示图标，点击/悬浮显示 `.ms-tip-bubble`。
+### 描述文案三模式
+- `describeMode='inline'`：必要备注**同行**排布（标题/Tag 之后、提示图标之前），16px/400/行高24 + `--color-text-auxiliary`（Figma「备注」形态）。
+- `describeMode='below'`：次要说明放标题下一行 `.ms-text.ms-text--auxiliary`。
+- `describeMode='tip'`：非必要描述并入提示图标（18px），点击/悬浮显示 `.ms-tip-bubble`。
 
 ---
 

@@ -138,6 +138,33 @@ EG71 线表格一律左对齐，写死不改：
 - 空态占位（`ms-empty`）居中除外；com / router / cctv / cv 线不受此约束。
 - 存量已修正：`bc-eg71-alarm`、`bc-eg71-device-list`（2026-09-15）。
 
+## EG71 标题契约（硬性）
+
+来源：Figma 业务组件库「标题」页（网关/路由器通用业务组件库，node 41:33628，主/次标题两变体）。EG71 一切标题经 `B_ComTitle`（`bc-com-title`）表达，规格写死：
+
+### 两变体规格
+
+| 变体 | 规格 | 用途 |
+|---|---|---|
+| 主标题（`variant='main'`） | **16px / 500 / 行高 24px** / `--color-text-primary` | 页面主标题、卡片/区块标题 |
+| 次标题（`variant='sub'`） | **14px / 500 / 行高 22px** / `--color-text-primary` | 表单分组标题（`ms-form-section-title` 左竖条形态同规格） |
+
+- 与通用红线（spacing.md §4）的关系：**EG71 页面主标题不用 H2 24px**，一律主标题变体 16px/500；卡片/区块标题 = 主标题变体；分组标题 = 次标题变体。字重 500（Medium），不是 600。
+- 标题颜色只允许 `--color-text-primary`。
+
+### 标题行解剖（自左向右，同行 gap 8px、行高 32、items-center）
+
+1. **标题文字**（变体规格如上）；
+2. **Tag**（可选）：背景 `--color-fill-base-normal`、12px/400/行高 20、水平内边距 4px、圆角 4px、字色 `--color-text-primary`、**无边框**（轻量形态）；
+3. **备注 describe**（可选，`describeMode='inline'`）：**同行**排布，16px/400/行高 24、`--color-text-auxiliary`；下一行备注用 `describeMode='below'`；
+4. **提示图标 tip**（可选）：**18px**（图标阶梯唯一 18px 场景，见 spacing.md §3）；
+5. **开关**（可选）：28×16（`ms-switch--xs`），**紧跟标题组**、不在行尾；
+6. **按钮区**（可选）：右对齐占满剩余宽（flex-1 justify-end），**独立按钮、按钮间 gap 12px**、高 32（`ms-btn--sm`）；**禁止**把标题操作按钮拼成贴合式 `ms-btn-group`。
+
+### 实现落点
+
+- 以上视觉值（500 字重、22px 行高、Tag 轻量形态）以 `.bc-com-title` 组件域作用覆写落在 `library/business.css`，render 骨架（开关位置 / tip 18 / describe 同行 / 独立按钮）落在 `registry-business.js`——A4 内联时随两源自动生效，**无需手工修正**；不得在页面层重复覆写。
+
 ## PRD 评论锚定（生成 demo 后，如用户要求发 review 到 PRD）
 
 生成 demo 后，若用户要求把 review 评论发到飞书 PRD 文档，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：

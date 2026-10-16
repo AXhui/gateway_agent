@@ -343,13 +343,18 @@
 .bc-eg71-form-item-radio-group .ms-radio-btn { flex: 1; }
 
 /* ---------- 标题（跨产品线通用 B_ComTitle） ---------- */
-/* 视觉（字号/字重/色）全部由 L2 原子承担（.ms-h4/.ms-h5/.ms-form-section-title），
-   此处仅编排布局与层级间距，不写视觉常量 */
+/* 视觉（字号/色）由 L2 原子承担（.ms-h4/.ms-h5/.ms-form-section-title），此处仅编排布局；
+   组件域覆写区（B_ComTitle v1.1.0 · Figma 业务组件库「标题」页 · AGENTS.md「EG71 标题契约」）：
+   字重 500 / 次标题行高 22 / 标题行 Tag 轻量形态 / 备注行高 24，值为契约真值，A4 内联时随本文件生效 */
 .bc-com-title { display: flex; flex-direction: column; gap: var(--spacing-8); }
-.bc-com-title-row { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); }
+.bc-com-title-row { display: flex; align-items: center; gap: var(--spacing-12); }
 .bc-com-title-main { display: flex; align-items: center; gap: var(--spacing-8); min-width: 0; }
-.bc-com-title-extra { display: flex; align-items: center; gap: var(--spacing-8); flex: none; }
+.bc-com-title-extra { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-12); flex: 1 1 0; min-width: 0; }
 .bc-com-title-desc { display: block; }
+.bc-com-title-note { line-height: 24px; }
+.bc-com-title .ms-h4, .bc-com-title .ms-h5, .bc-com-title .ms-form-section-title { font-weight: 500; }
+.bc-com-title .ms-h5 { line-height: 22px; }
+.bc-com-title .ms-tag { height: auto; padding: 0 var(--spacing-4); line-height: 20px; border-color: transparent; color: var(--color-text-primary); }
 
 /* 层级间距：标题到下方内容（表格/表单/字段组）的固定间距 */
 .bc-com-title--page { margin-bottom: var(--spacing-24); }
@@ -357,7 +362,7 @@
 .bc-com-title--card { margin-bottom: var(--spacing-16); }
 .bc-com-title--group { margin-bottom: var(--spacing-12); }
 
-/* 对齐方式（默认左对齐 = space-between 两端布局） */
+/* 对齐方式（默认左对齐 = 左组在左、按钮区 flex-1 右对齐） */
 .bc-com-title--center .bc-com-title-row { justify-content: center; }
 .bc-com-title--right .bc-com-title-row { justify-content: flex-end; }
 

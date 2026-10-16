@@ -723,7 +723,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-com-title', cn: '标题', cat: '通用',
-      desc: '跨产品线通用标题编排：按 level（page/tab/card/group）× variant（main/sub）双维度决定形态，标题右侧可编排 Tag/提示图标/开关/按钮组，describe 分必要展示（下一行小字）与非必要提示（tooltip）双模式；只编排不写样式常量。',
+      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。',
       atoms: ['typography', 'form', 'tag', 'icon', 'tooltip', 'switch', 'button', 'text'],
       entityHint: 'com',
       tags: ['标题', '页面', 'Tab', '卡片', '分组', 'Tag', '开关', '按钮'],
@@ -732,35 +732,36 @@ window.MS_BIZ_UTIL = (function () {
         const level = ctx.level || 'card';
         const align = ctx.align || 'left';
         const alignCls = align === 'center' ? ' bc-com-title--center' : (align === 'right' ? ' bc-com-title--right' : '');
+        const mode = ctx.describeMode || 'inline';
         // 标题原子：group 级复用 .ms-form-section-title（14px + 左竖条），否则 main→ms-h4 / sub→ms-h5
         const titleCls = level === 'group'
           ? 'ms-form-section-title'
           : (variant === 'sub' ? 'ms-h5' : 'ms-h4');
-        // 左组：标题 + Tag（紧邻小间距）+ 提示图标（紧邻小间距）
+        // 左组（Figma 标题行解剖）：标题 → Tag → 备注(inline) → 提示图标(18) → 开关（紧跟左组）
         const main = [`<span class="${titleCls}">${esc(ctx.title || '')}</span>`];
         if (ctx.showTag && ctx.tag) main.push(`<span class="ms-tag">${esc(ctx.tag)}</span>`);
-        if (ctx.showTip) {
-          const tipText = (ctx.describeMode === 'tip' && ctx.describe) ? ctx.describe : (ctx.tip || '');
-          main.push(`<span class="ms-tip">${ico('info', 14)}<span class="ms-tip-bubble">${esc(tipText)}</span></span>`);
+        if (ctx.showDescribe && ctx.describe && mode === 'inline') {
+          main.push(`<span class="bc-com-title-note ms-text ms-text--lg ms-text--auxiliary">${esc(ctx.describe)}</span>`);
         }
-        // 右组：开关（两端对齐）+ 按钮组
-        const extra = [];
+        if (ctx.showTip) {
+          const tipText = (mode === 'tip' && ctx.describe) ? ctx.describe : (ctx.tip || '');
+          main.push(`<span class="ms-tip">${ico('info', 18)}<span class="ms-tip-bubble">${esc(tipText)}</span></span>`);
+        }
         if (ctx.showSwitch) {
           const label = ctx.switchLabel ? `<span class="ms-text">${esc(ctx.switchLabel)}</span>` : '';
           const sw = `<label class="ms-switch ms-switch--xs"><input type="checkbox"${ctx.switchChecked ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
-          extra.push(`${label}${sw}`);
+          main.push(`${label}${sw}`);
         }
+        // 右组：操作按钮区——独立按钮、gap 12（契约禁贴合式 ms-btn-group）
+        let extraEl = '';
         if (ctx.showButton && Array.isArray(ctx.buttons) && ctx.buttons.length) {
-          const btns = ctx.buttons.map(b => {
+          extraEl = `<div class="bc-com-title-extra">${ctx.buttons.map(b => {
             const kind = b.kind === 'filled' ? ' ms-btn--filled' : (b.kind === 'text' ? ' ms-btn--text' : '');
             return `<button class="ms-btn ms-btn--sm${kind}">${esc(b.t)}</button>`;
-          }).join('');
-          extra.push(`<div class="ms-btn-group">${btns}</div>`);
+          }).join('')}</div>`;
         }
-        const mainEl = `<div class="bc-com-title-main">${main.join('')}</div>`;
-        const extraEl = extra.length ? `<div class="bc-com-title-extra">${extra.join('')}</div>` : '';
-        const row = `<div class="bc-com-title-row">${mainEl}${extraEl}</div>`;
-        const descEl = (ctx.showDescribe && ctx.describeMode !== 'tip' && ctx.describe)
+        const row = `<div class="bc-com-title-row"><div class="bc-com-title-main">${main.join('')}</div>${extraEl}</div>`;
+        const descEl = (ctx.showDescribe && ctx.describe && mode === 'below')
           ? `<span class="bc-com-title-desc ms-text ms-text--auxiliary">${esc(ctx.describe)}</span>`
           : '';
         return `<div class="bc-com-title bc-com-title--${level}${alignCls}">${row}${descEl}</div>`;
