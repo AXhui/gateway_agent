@@ -139,6 +139,7 @@ window.MS_BIZ_UTIL = (function () {
   // EG71 一级侧边导航分组（侧栏与顶栏面包屑共享的唯一源，避免两处各写一份）
   const navGroups = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+    { label: 'LoRa', icon: 'lorawan', route: '/lora', children: ['General', 'Radio', 'Gateway Fleet'] },
     { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
     { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
     { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
@@ -151,6 +152,21 @@ window.MS_BIZ_UTIL = (function () {
 /* ---------- 业务组件定义 ---------- */
 (function () {
   const U = MS_BIZ_UTIL, esc = U.esc, ico = U.ico;
+
+  /* ---------- LoRa Mesh 角色表（REQ-014 铸造批，bc-eg71-mesh-* 共用唯一源） ---------- */
+  const MESH_ROLES = [
+    { key: 'ip-master', conn: 'IP Connection', cn: 'Master', cert: true,
+      hint: 'Gateways are interconnected via wired/cellular networks, for scenarios where every gateway is online and mutual backup or wider coverage is needed. This gateway acts as the master, receiving and managing member gateway data, with full network server capability.' },
+    { key: 'ip-agent', conn: 'IP Connection', cn: 'Agent',
+      hint: 'Gateways are interconnected via wired/cellular networks, for scenarios where every gateway is online and mutual backup or wider coverage is needed. This gateway acts as an agent, forwarding raw packets over the network to the master gateway for centralized decoding and filtering.' },
+    { key: 'mesh-master', conn: 'LoRa Mesh', cn: 'Master',
+      hint: 'Gateways communicate over LoRa Mesh, for sites with no or weak network where relay gateways forward data without Internet access. Higher max relay hops and spreading factor reduce gateway capacity - configure per site scale.' },
+    { key: 'mesh-relay', conn: 'LoRa Mesh', cn: 'Relay', relay: true,
+      hint: 'Gateways communicate over LoRa Mesh, for sites with no or weak network where relay gateways forward data without Internet access. Higher max relay hops and spreading factor reduce gateway capacity - configure per site scale.' },
+    { key: 'ipmesh-master', conn: 'IP & Mesh', cn: 'Master',
+      hint: 'Gateways are interconnected via both wired/cellular networks and LoRa Mesh, for hybrid sites where some gateways are online while others are not. Online gateways back each other up or extend coverage; offline gateways send data back via LoRa Mesh relay.' }
+  ];
+  const MESH_ROLE_HINT = r => `${esc(r.hint)}${r.cert ? ' <button type="button" class="ms-btn ms-btn--link bc-eg71-mesh-role-cert" data-mesh-role-cert>Download Certificate</button>' : ''}`;
 
   window.MS_BIZ_COMPONENTS = [
     {
@@ -3982,6 +3998,601 @@ window.MS_BIZ_UTIL = (function () {
         if (rules) rules.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-import-rules', { bubbles: true })));
         wrap.querySelectorAll('[data-import-hint]').forEach(l => l.addEventListener('click', () =>
           wrap.dispatchEvent(new CustomEvent('eg71-import-hint', { bubbles: true, detail: { target: l.getAttribute('data-import-hint') } }))));
+      }
+    },
+
+    /* ================= LoRa Mesh 铸造批（REQ-014） ================= */
+
+    {
+      id: 'bc-eg71-mesh-role', cn: 'Mesh 角色级联卡', cat: 'LoRa 设置',
+      desc: 'LoRa General 的 Gateway Role 区块：组网方式 + 角色级联单选（optgroup）、角色提示文案联动、Relay 角色自动生成 Relay ID 展示、IP Master 证书下载入口。',
+      atoms: ['form', 'select', 'card', 'icon', 'tag', 'button'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '角色', '级联', 'Relay', 'Master', 'Agent', '组网方式', 'RelayID', '证书', '设置', 'EG71'],
+      render(ctx) {
+        const cur = MESH_ROLES.find(r => r.key === ctx.role) || MESH_ROLES[2];
+        const relayId = ctx.relayId || '24E124FFFE123456';
+        const groups = [];
+        MESH_ROLES.forEach(r => {
+          let g = groups.find(x => x.conn === r.conn);
+          if (!g) { g = { conn: r.conn, items: [] }; groups.push(g); }
+          g.items.push(r);
+        });
+        const dep = ctx.deployment;
+        const depHtml = !dep ? '' : `<div class="ms-card bc-eg71-mesh-deploy">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Deployment Mode</div></div>
+          <div class="ms-card-body bc-eg71-mesh-role-body">
+            <div class="ms-form-item">
+              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Mode</label></div>
+              <div class="ms-radio-btn-group bc-eg71-form-item-radio-group" role="radiogroup" aria-label="Deployment Mode" data-mesh-deploy>
+                ${(dep.options || []).map(o => {
+                  const on = o.value === dep.value;
+                  return `<span class="ms-radio-btn${on ? ' ms-radio-btn--checked' : ''}" role="radio" aria-checked="${on}" tabindex="${on ? '-1' : '0'}" data-mesh-deploy-opt="${esc(o.value)}">${esc(o.label)}</span>`;
+                }).join('')}
+              </div>
+              ${dep.msg ? `<div class="bc-eg71-form-item-msg">${esc(dep.msg)}</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+        return `${depHtml}<div class="ms-card bc-eg71-mesh-role" data-mesh-role="${cur.key}">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('gateway', 20)}Gateway Role</div></div>
+          <div class="ms-card-body bc-eg71-mesh-role-body">
+            <div class="ms-form-item">
+              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Role</label></div>
+              <span class="ms-select bc-eg71-form-item-select">
+                <select data-mesh-role-select aria-label="Gateway role">
+                  ${groups.map(g => `<optgroup label="${esc(g.conn)}">${g.items.map(r => `<option value="${r.key}"${r.key === cur.key ? ' selected' : ''}>${esc(r.conn)} - ${esc(r.cn)}</option>`).join('')}</optgroup>`).join('')}
+                </select>
+              </span>
+            </div>
+            <div class="bc-eg71-mesh-role-hint" data-mesh-role-hint>${MESH_ROLE_HINT(cur)}</div>
+            <div class="bc-eg71-mesh-role-relay" data-mesh-role-relay${cur.relay ? '' : ' hidden'}>
+              <span class="bc-eg71-mesh-role-relay-label">Relay ID (auto-generated, globally unique)</span>
+              <div class="bc-eg71-mesh-role-relay-value"><code class="bc-code">${esc(relayId)}</code><button type="button" class="ms-btn ms-btn--link" data-mesh-role-copy title="Copy">${ico('copy', 16)}</button></div>
+            </div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const depWrap = rootEl.querySelector('.bc-eg71-mesh-deploy');
+        if (depWrap) depWrap.addEventListener('click', e => {
+          const opt = e.target.closest('[data-mesh-deploy-opt]');
+          if (!opt) return;
+          depWrap.querySelectorAll('[data-mesh-deploy-opt]').forEach(x => {
+            const on = x === opt;
+            x.classList.toggle('ms-radio-btn--checked', on);
+            x.setAttribute('aria-checked', on);
+            x.tabIndex = on ? '-1' : '0';
+          });
+          depWrap.dispatchEvent(new CustomEvent('eg71-mesh-deployment-change', { bubbles: true, detail: { value: opt.getAttribute('data-mesh-deploy-opt') } }));
+        });
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-role');
+        if (!wrap) return;
+        const sel = wrap.querySelector('[data-mesh-role-select]');
+        const hint = wrap.querySelector('[data-mesh-role-hint]');
+        const relayRow = wrap.querySelector('[data-mesh-role-relay]');
+        if (sel) sel.addEventListener('change', () => {
+          const r = MESH_ROLES.find(x => x.key === sel.value);
+          if (!r) return;
+          wrap.setAttribute('data-mesh-role', r.key);
+          if (hint) hint.innerHTML = MESH_ROLE_HINT(r);
+          if (relayRow) relayRow.hidden = !r.relay;
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-role-change', { bubbles: true, detail: { role: r.key, conn: r.conn, roleCn: r.cn } }));
+        });
+        wrap.addEventListener('click', e => {
+          const cert = e.target.closest('[data-mesh-role-cert]');
+          if (cert) { wrap.dispatchEvent(new CustomEvent('eg71-mesh-cert', { bubbles: true })); return; }
+          const cp = e.target.closest('[data-mesh-role-copy]');
+          if (cp) {
+            const code = wrap.querySelector('.bc-eg71-mesh-role-relay-value .bc-code');
+            if (code && navigator.clipboard) { try { navigator.clipboard.writeText(code.textContent); } catch (err) { /* 剪贴板不可用时静默 */ } }
+            wrap.dispatchEvent(new CustomEvent('eg71-mesh-copy', { bubbles: true, detail: { value: code ? code.textContent : '' } }));
+          }
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-config', cn: 'Mesh 配置卡', cat: 'LoRa 设置',
+      desc: 'LoRa General 的 Mesh Configuration 卡：签名密钥（密码框）、最大中继跳数（实时风险提示区）、Mesh 频段多选（禁用告警）、高级折叠（功率/SF/BW/CR/忽略直连/心跳间隔），按 Master/Relay 角色出字段变体。',
+      atoms: ['form', 'input', 'select', 'checkbox', 'card', 'icon', 'alert'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '配置', '签名密钥', '中继跳数', '频段', '发射功率', '扩频因子', '心跳', '高级设置', '设置', 'EG71'],
+      render(ctx) {
+        const v = Object.assign({ key: '', hops: '1', freqs: [], freqOptions: [], txPower: '16', sf: 'SF7', bw: '125 kHz', cr: '4/5', ignoreDirect: false, heartbeat: '300' }, ctx.values || {});
+        const er = ctx.errors || {};
+        const isRelay = ctx.role === 'mesh-relay';
+        const freqOptions = v.freqOptions.length ? v.freqOptions : ['868.1', '868.3', '868.5', '868.7', '868.9', '869.1', '869.3', '869.5'];
+        const chip = f => {
+          const on = v.freqs.indexOf(f) >= 0;
+          return `<label class="bc-eg71-mesh-config-freq${on ? ' is-on' : ''}"><input type="checkbox" data-mesh-freq="${esc(f)}"${on ? ' checked' : ''}><span class="ms-checkbox-box"></span><span>${esc(f)} MHz</span></label>`;
+        };
+        const sel = (name, value, opts, err) => `<span class="ms-select bc-eg71-form-item-select${err ? ' ms-select--error' : ''}"><select data-mesh-field="${name}">${opts.map(o => `<option${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>`;
+        const fi = (label, inner, msgHtml) => `<div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">${label}</label></div>
+            ${inner}${msgHtml || ''}
+          </div>`;
+        const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
+        return `<div class="ms-card bc-eg71-mesh-config">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('lorawan', 20)}Mesh Configuration</div></div>
+          <div class="ms-card-body bc-eg71-mesh-config-body">
+            <div class="ms-form-item">
+              <div class="bc-eg71-form-item-labelrow">
+                <label class="ms-form-label ms-form-label--required">Signing Key</label>
+                <button type="button" class="ms-btn ms-btn--link" data-mesh-key-eye>Show</button>
+              </div>
+              <label class="ms-input ms-input--lg${er.key ? ' ms-input--error' : ''}"><input type="password" data-mesh-field="key" value="${esc(v.key)}" placeholder="32-character hex string"></label>
+              ${errMsg('key') || '<div class="bc-eg71-form-item-msg">Auto-generated from the two gateway EUIs on Master; copy it directly to Relay gateways.</div>'}
+            </div>
+            ${fi('Max Relay Hops',
+              `<label class="ms-input ms-input--lg${er.hops ? ' ms-input--error' : ''}"><input data-mesh-field="hops" value="${esc(v.hops)}" inputmode="numeric"></label>`,
+              errMsg('hops') || '<div class="bc-eg71-form-item-msg">How many gateways a packet may pass through from Relay to Master. More hops extend coverage but increase latency, failure rate and loss risk (gateway is half-duplex). Start from 1 hop.</div>')}
+            <div class="bc-eg71-mesh-config-risk" data-mesh-risk${ctx.risk ? '' : ' hidden'}>${esc(ctx.risk || '')}</div>
+            <div class="ms-form-item">
+              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Mesh Frequencies</label></div>
+              <div class="bc-eg71-mesh-config-freqs">${freqOptions.map(chip).join('')}</div>
+              <div class="bc-eg71-form-item-msg">Available frequencies are synced from Multi-Channel Settings under Radio.</div>
+            </div>
+            ${ctx.freqWarning ? `<button type="button" class="ms-alert ms-alert--error bc-eg71-mesh-config-warn" data-mesh-freq-warning>${ico('warn', 16)}<div class="ms-alert-body"><div class="ms-alert-desc">Some selected frequencies are disabled in Multi-Channel Settings, which affects LoRa transmission. Go to Multi-Channel Settings to adjust.</div></div></button>` : ''}
+            <button type="button" class="bc-eg71-mesh-config-toggle${ctx.advOpen ? ' is-open' : ''}" data-mesh-adv-toggle aria-expanded="${ctx.advOpen ? 'true' : 'false'}">Advanced Setting ${ico('chevronDown', 16)}</button>
+            <div class="bc-eg71-mesh-config-adv" data-mesh-adv${ctx.advOpen ? '' : ' hidden'}>
+              <div class="bc-eg71-mesh-config-grid">
+                ${fi('TX Power <span class="bc-eg71-form-item-unit">(dBm)</span>',
+                  `<label class="ms-input ms-input--lg${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
+                  errMsg('txPower'))}
+                ${fi('Spreading Factor', sel('sf', v.sf, ['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'], er.sf), '')}
+                ${fi('Bandwidth', sel('bw', v.bw, ['125 kHz', '250 kHz', '500 kHz'], er.bw), '')}
+                ${fi('Code Rate', sel('cr', v.cr, ['4/5', '4/6', '4/7', '4/8'], er.cr), '')}
+                ${isRelay ? fi('Heartbeat Interval <span class="bc-eg71-form-item-unit">(s)</span>',
+                  `<label class="ms-input ms-input--lg${er.heartbeat ? ' ms-input--error' : ''}"><input data-mesh-field="heartbeat" value="${esc(v.heartbeat)}" inputmode="numeric"></label>`,
+                  errMsg('heartbeat')) : ''}
+              </div>
+              ${!isRelay ? `<label class="ms-checkbox"><input type="checkbox" data-mesh-field="ignoreDirect"${v.ignoreDirect ? ' checked' : ''}><span class="ms-checkbox-box"></span>Ignore Direct Uplink</label>
+              <div class="bc-eg71-form-item-msg">When enabled, uplinks received directly by this gateway are dropped; only mesh-relayed uplinks are processed.</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-config');
+        if (!wrap) return;
+        const eye = wrap.querySelector('[data-mesh-key-eye]');
+        if (eye) eye.addEventListener('click', () => {
+          const inp = wrap.querySelector('[data-mesh-field="key"]');
+          if (!inp) return;
+          const show = inp.type === 'password';
+          inp.type = show ? 'text' : 'password';
+          eye.textContent = show ? 'Hide' : 'Show';
+        });
+        const hops = wrap.querySelector('[data-mesh-field="hops"]');
+        if (hops) hops.addEventListener('input', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-hops-change', { bubbles: true, detail: { value: hops.value } })));
+        wrap.querySelectorAll('[data-mesh-freq]').forEach(c => c.addEventListener('change', () => {
+          const chipEl = c.closest('.bc-eg71-mesh-config-freq');
+          if (chipEl) chipEl.classList.toggle('is-on', c.checked);
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-freq-change', { bubbles: true, detail: { selected: Array.prototype.map.call(wrap.querySelectorAll('[data-mesh-freq]:checked'), x => x.getAttribute('data-mesh-freq')) } }));
+        }));
+        const warn = wrap.querySelector('[data-mesh-freq-warning]');
+        if (warn) warn.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-mesh-freq-warning', { bubbles: true })));
+        const adv = wrap.querySelector('[data-mesh-adv-toggle]');
+        if (adv) adv.addEventListener('click', () => {
+          const body = wrap.querySelector('[data-mesh-adv]');
+          const open = adv.classList.toggle('is-open');
+          adv.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (body) body.hidden = !open;
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-forward', cn: 'Mesh 转发目的卡', cat: 'LoRa 设置',
+      desc: 'LoRa General 的 Forwarding Destination 卡：Type 单选（ChirpStack MQTT / Embedded Network Server / Semtech UDP）+ 连接状态 tag + 三组条件表单；IP & Mesh 模式锁定 Embedded NS。',
+      atoms: ['form', 'input', 'select', 'checkbox', 'upload', 'card', 'tag', 'icon'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '转发', 'NS', 'ChirpStack', 'MQTT', 'Semtech UDP', '内置NS', 'TLS', '证书', '设置', 'EG71'],
+      render(ctx) {
+        const type = ctx.locked ? (ctx.type || 'embedded') : (ctx.type || 'embedded');
+        const v = Object.assign({ topic: '/gateway/{gateway_id}/event/up', server: '', port: '', useCreds: false, user: '', pass: '', useTls: false, certType: 'CA Signed Server Certificate', caFile: '', certFile: '', keyFile: '', upPort: '1700', downPort: '1700' }, ctx.values || {});
+        const er = ctx.errors || {};
+        const selfSigned = /self/i.test(v.certType);
+        const ti = (name, val, ph, err, pwd) => `<label class="ms-input ms-input--lg${err ? ' ms-input--error' : ''}"><input${pwd ? ' type="password"' : ''} data-mesh-fwd="${name}" value="${esc(val == null ? '' : val)}" placeholder="${esc(ph || '')}"></label>`;
+        const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
+        const fi = (label, inner, msgHtml) => `<div class="ms-form-item">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${label ? ' ms-form-label--required' : ''}">${label || '&nbsp;'}</label></div>
+            ${inner}${msgHtml || ''}
+          </div>`;
+        const upload = (name, file) => `<div class="bc-eg71-mesh-forward-upload">
+            <button type="button" class="ms-btn ms-btn--lg" data-mesh-fwd-upload="${name}">${ico('upload', 16)}Import</button>
+            <span class="bc-eg71-mesh-forward-file${er[name] ? ' bc-eg71-mesh-forward-file--error' : ''}">${er[name] ? esc(er[name]) : (file ? esc(file) : 'No file selected')}</span>
+          </div>`;
+        return `<div class="ms-card bc-eg71-mesh-forward">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Forwarding Destination</div>${ctx.locked ? '<span class="ms-tag ms-tag--warm">IP &amp; Mesh: Embedded NS only</span>' : ''}</div>
+          <div class="ms-card-body bc-eg71-mesh-forward-body">
+            <div class="ms-form-item">
+              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Type</label></div>
+              <span class="ms-select bc-eg71-form-item-select">
+                <select data-mesh-fwd-type aria-label="Forwarding destination type"${ctx.locked ? ' disabled' : ''}>
+                  <option value="chirpstack"${type === 'chirpstack' ? ' selected' : ''}>ChirpStack MQTT</option>
+                  <option value="embedded"${type === 'embedded' ? ' selected' : ''}>Embedded Network Server</option>
+                  <option value="semtech"${type === 'semtech' ? ' selected' : ''}>Semtech UDP</option>
+                </select>
+              </span>
+            </div>
+            <div class="bc-eg71-mesh-forward-conn" data-mesh-fwd-conn${type === 'embedded' ? ' hidden' : ''}>
+              <span class="bc-eg71-mesh-forward-conn-label">Connection Status</span>
+              ${ctx.conn === 'connected' ? '<span class="ms-tag ms-tag--success"><i class="ms-tag-dot"></i>Connected</span>' : '<span class="ms-tag ms-tag--error"><i class="ms-tag-dot"></i>Disconnected</span>'}
+            </div>
+            <div class="bc-eg71-mesh-forward-group" data-mesh-fwd-group="chirpstack"${type === 'chirpstack' ? '' : ' hidden'}>
+              <div class="bc-eg71-mesh-forward-grid">
+                ${fi('Topic', ti('topic', v.topic, '/gateway/{gateway_id}/event/up', er.topic), errMsg('topic'))}
+                ${fi('Broker Address', ti('server', v.server, 'IPv4 or domain name', er.server), errMsg('server'))}
+                ${fi('MQTT Port', ti('port', v.port, '1 - 65535', er.port), errMsg('port'))}
+                ${fi('', `<label class="ms-checkbox"><input type="checkbox" data-mesh-fwd="useCreds"${v.useCreds ? ' checked' : ''}><span class="ms-checkbox-box"></span>User Credentials</label>`, '')}
+              </div>
+              <div class="bc-eg71-mesh-forward-grid" data-mesh-fwd-creds${v.useCreds ? '' : ' hidden'}>
+                ${fi('Username', ti('user', v.user, 'User name', er.user), errMsg('user'))}
+                ${fi('Password', ti('pass', v.pass, 'Password', er.pass, true), errMsg('pass'))}
+              </div>
+              <label class="ms-checkbox"><input type="checkbox" data-mesh-fwd="useTls"${v.useTls ? ' checked' : ''}><span class="ms-checkbox-box"></span>TLS Connection</label>
+              <div class="bc-eg71-mesh-forward-grid" data-mesh-fwd-tls${v.useTls ? '' : ' hidden'}>
+                ${fi('Certificate Type', `<span class="ms-select bc-eg71-form-item-select"><select data-mesh-fwd="certType"><option${selfSigned ? '' : ' selected'}>CA Signed Server Certificate</option><option${selfSigned ? ' selected' : ''}>Self-Signed Certificate</option></select></span>`, '')}
+                ${fi('Root Certificate', upload('caFile', v.caFile), '')}
+                ${fi('Client Certificate', upload('certFile', v.certFile), '')}
+                ${fi('Client Key', upload('keyFile', v.keyFile), '')}
+              </div>
+            </div>
+            <div class="bc-eg71-mesh-forward-group" data-mesh-fwd-group="embedded"${type === 'embedded' ? '' : ' hidden'}>
+              <div class="bc-eg71-mesh-forward-plain">Mesh frames are handled by the embedded network server of this gateway. Downlinks are supported for Class A/B/C devices, and duplicate packets received by multiple gateways are deduplicated automatically.</div>
+            </div>
+            <div class="bc-eg71-mesh-forward-group" data-mesh-fwd-group="semtech"${type === 'semtech' ? '' : ' hidden'}>
+              <div class="bc-eg71-mesh-forward-grid">
+                ${fi('Server Address', ti('server', v.server, 'IPv4 or domain name', er.server), errMsg('server'))}
+                ${fi('Uplink Port', ti('upPort', v.upPort, '1 - 65535', er.upPort), errMsg('upPort'))}
+                ${fi('Downlink Port', ti('downPort', v.downPort, '1 - 65535', er.downPort), errMsg('downPort'))}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-forward');
+        if (!wrap) return;
+        const syncType = t => {
+          wrap.querySelectorAll('[data-mesh-fwd-group]').forEach(g => { g.hidden = g.getAttribute('data-mesh-fwd-group') !== t; });
+          const conn = wrap.querySelector('[data-mesh-fwd-conn]');
+          if (conn) conn.hidden = t === 'embedded';
+        };
+        const sel = wrap.querySelector('[data-mesh-fwd-type]');
+        if (sel) sel.addEventListener('change', () => {
+          syncType(sel.value);
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-forward-type', { bubbles: true, detail: { type: sel.value } }));
+        });
+        const creds = wrap.querySelector('[data-mesh-fwd="useCreds"]');
+        if (creds) creds.addEventListener('change', () => {
+          const rows = wrap.querySelector('[data-mesh-fwd-creds]');
+          if (rows) rows.hidden = !creds.checked;
+        });
+        const tls = wrap.querySelector('[data-mesh-fwd="useTls"]');
+        if (tls) tls.addEventListener('change', () => {
+          const rows = wrap.querySelector('[data-mesh-fwd-tls]');
+          if (rows) rows.hidden = !tls.checked;
+        });
+        wrap.querySelectorAll('[data-mesh-fwd-upload]').forEach(b => b.addEventListener('click', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-fwd-upload', { bubbles: true, detail: { name: b.getAttribute('data-mesh-fwd-upload') } }))));
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-flow', cn: 'Mesh 工作模式图', cat: '概览',
+      desc: 'Dashboard 的 LoRa 工作模式数据流示意图（Mesh-Master 外部 NS / Mesh-Master 内置 NS / Relay / IP&Mesh-Master 四变体）与 Gateway Status 的级联网关摘要卡（cascade 模式），连线与状态全部走令牌。',
+      atoms: ['card', 'icon', 'tag', 'button'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '工作模式', '数据流', '示意图', '级联网关', '概览', 'Dashboard', 'EG71'],
+      render(ctx) {
+        const node = (icon, name, subHtml) => `<div class="bc-eg71-mesh-flow-node">${ico(icon, 20)}<div class="bc-eg71-mesh-flow-node-sub"><span class="bc-eg71-mesh-flow-node-name">${esc(name)}</span>${subHtml || ''}</div></div>`;
+        const stage = t => `<span class="bc-eg71-mesh-flow-stage">${esc(t)}</span>`;
+        const link = label => `<div class="bc-eg71-mesh-flow-link"><span class="bc-eg71-mesh-flow-label">${esc(label)}</span><span class="bc-eg71-mesh-flow-line"></span></div>`;
+        const nsTag = on => `<span class="ms-tag ${on ? 'ms-tag--success' : 'ms-tag--error'}"><i class="ms-tag-dot"></i>${on ? 'Connected' : 'Disconnected'}</span>`;
+        if (ctx.mode === 'cascade') {
+          const rows = (ctx.cascade || []).map(r => `<div class="bc-eg71-mesh-cascade-row">
+              <span class="bc-eg71-mesh-cascade-name">${ico(r.icon || 'gateway', 20)}<span class="ms-ellipsis">${esc(r.name)}</span></span>
+              <span class="bc-eg71-mesh-cascade-count">${esc(r.count)}</span>
+              ${r.tone ? U.statusTag({ cn: r.toneCn || '', tone: r.tone }) : ''}
+              <button type="button" class="ms-btn ms-btn--link" data-mesh-cascade-view="${esc(r.key || '')}">View</button>
+            </div>`).join('');
+          return `<div class="ms-card bc-eg71-mesh-flow bc-eg71-mesh-cascade">
+            <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Cascaded Gateways</div>
+              <div class="ms-space ms-space--12">${ctx.configRoute ? `<button type="button" class="ms-btn ms-btn--sm" data-mesh-cascade-config aria-label="Go to gateway fleet configuration">Configuration</button>` : ''}</div></div>
+            <div class="ms-card-body bc-eg71-mesh-cascade-rows">${rows || '<div class="ms-empty"><div class="ms-empty-illu">' + ico('gateway', 32) + '</div><div class="ms-empty-text">No cascaded gateways</div></div>'}</div>
+          </div>`;
+        }
+        const V = {
+          'mesh-master-external': {
+            title: 'Fleet Gateway (Master)',
+            desc: 'This gateway has network access and receives data from other gateways in the Mesh network, then uploads it to the network server in a unified way.',
+            lane: [node('sensor', 'End Devices'), link('LoRa'), node('gateway', 'Relay Gateway'), link('LoRa Mesh'), node('gateway', 'Master Gateway', stage('LoRa Forwarder')), link('IP'), node('data', ctx.nsLabel || 'ChirpStack MQTT', nsTag(ctx.nsConnected !== false))]
+          },
+          'mesh-master-embedded': {
+            title: 'Fleet Gateway (Master)',
+            desc: 'This gateway has network access and receives data from other gateways in the Mesh network, then uploads it to the network server in a unified way.',
+            lane: [node('sensor', 'End Devices'), link('LoRa'), node('gateway', 'Relay Gateway'), link('LoRa Mesh'), node('gateway', 'Master Gateway', stage('LoRa Forwarder') + stage('Embedded Network Server') + `<span class="ms-tag ms-tag--primary">${esc(ctx.online != null ? ctx.online : 100)} devices online</span>`), link('Data'), node('io', 'MQTT / HTTP / BACnet / Modbus')]
+          },
+          'relay': {
+            title: 'Fleet Gateway (Relay)',
+            desc: 'This gateway has no network access or does not use it. It collects device data and sends its own data together with data relayed by other Relays to the next Relay or the Master via LoRa.',
+            lane: [node('sensor', 'End Devices'), link('LoRa'), node('gateway', 'Relay Gateway (This Device)', stage('LoRa Forwarder')), link('LoRa Mesh'), node('gateway', 'Master / Relay Gateway')]
+          },
+          'ipmesh-master': {
+            title: 'Fleet Gateway (Master - IP & Mesh)',
+            desc: 'This gateway has a built-in network server and receives data reported by both agent gateways and relay gateways, completing network-server-side parsing and processing.',
+            lane: [`<div class="bc-eg71-mesh-flow-col"><div class="bc-eg71-mesh-flow-lane">${node('gateway', 'Agent Gateway')}</div><div class="bc-eg71-mesh-flow-lane">${node('gateway', 'Relay Gateway')}</div></div>`,
+              `<div class="bc-eg71-mesh-flow-col"><div class="bc-eg71-mesh-flow-lane">${link('IP Connection')}</div><div class="bc-eg71-mesh-flow-lane">${link('LoRa Mesh')}</div></div>`,
+              node('gateway', 'Master Gateway', stage('LoRa Forwarder') + stage('Embedded Network Server') + `<span class="ms-tag ms-tag--primary">${esc(ctx.online != null ? ctx.online : 100)} devices online</span>`),
+              link('Data'), node('io', 'MQTT / HTTP / BACnet / Modbus')]
+          }
+        };
+        const cur = V[ctx.variant] || V['mesh-master-external'];
+        return `<div class="ms-card bc-eg71-mesh-flow">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('lorawan', 20)}${esc(cur.title)}<span class="bc-eg71-mesh-flow-badge ms-tag ms-tag--primary">${esc(ctx.badge || 'Working Mode')}</span></div></div>
+          <div class="ms-card-body">
+            <div class="bc-eg71-mesh-flow-lane">${cur.lane.join('')}</div>
+            <div class="bc-eg71-mesh-flow-desc">${esc(cur.desc)}</div>
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-flow');
+        if (!wrap) return;
+        wrap.querySelectorAll('[data-mesh-cascade-view]').forEach(b => b.addEventListener('click', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-cascade-view', { bubbles: true, detail: { key: b.getAttribute('data-mesh-cascade-view') } }))));
+        const cfg = wrap.querySelector('[data-mesh-cascade-config]');
+        if (cfg) cfg.addEventListener('click', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-cascade-config', { bubbles: true })));
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-fleet', cn: 'Mesh 成员/邻居表', cat: 'LoRa 设置',
+      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（Identifier/Name/Status/Last Updated/操作，仅离线行可删）与 neighbors 视角（ID/Name/Last Updated，无状态无操作）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
+      atoms: ['table', 'tag', 'button', 'icon', 'empty', 'checkbox'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '成员', '邻居', 'Fleet', '网关', '列表', 'Relay', 'Agent', 'EG71'],
+      render(ctx) {
+        const view = ctx.view === 'neighbors' ? 'neighbors' : 'members';
+        const rows = ctx.rows || [];
+        const STATUS = { Online: { cn: 'Online', tone: 'success' }, Offline: { cn: 'Offline', tone: 'warm' } };
+        const OPS = [['edit', 'edit', 'Edit'], ['detail', 'chevronRight', 'Detail'], ['delete', 'trash', 'Delete']];
+        const opsHtml = (r, i) => `<span class="ms-space ms-space--12">${OPS.map(o => {
+          const disabled = o[0] === 'delete' && r.status !== 'Offline';
+          return `<button type="button" class="ms-btn ms-btn--sm${o[0] === 'delete' ? ' ms-btn--danger' : ''}" data-mesh-fleet-op="${o[0]}" data-mesh-fleet-idx="${i}"${disabled ? ' disabled title="Only offline members can be deleted"' : ` aria-label="${o[2]}" title="${o[2]}"`}>${ico(o[1], 16)}</button>`;
+        }).join('')}</span>`;
+        const head = view === 'neighbors'
+          ? ['ID', 'Name', 'Last Updated']
+          : ['Identifier', 'Name', 'Status', 'Last Updated'];
+        const body = rows.length ? rows.map((r, i) => `<tr>
+            <td><span class="ms-text bc-num">${esc(r.id)}</span>${r.kind ? `<span class="ms-text ms-text--auxiliary"> (${esc(r.kind)})</span>` : ''}</td>
+            <td><span class="ms-text">${esc(r.name)}</span></td>
+            ${view === 'neighbors' ? '' : `<td>${r.status && STATUS[r.status] ? `<span class="ms-tag ms-tag--${STATUS[r.status].tone}"><i class="ms-tag-dot"></i>${esc(r.status)}</span>` : '<span class="ms-text">—</span>'}</td>`}
+            <td><span class="ms-text bc-num">${esc(r.updated || '—')}</span></td>
+            ${view === 'neighbors' ? '' : `<td class="bc-eg71-table-ops">${opsHtml(r, i)}</td>`}
+          </tr>`).join('')
+          : `<tr><td colspan="${view === 'neighbors' ? head.length : head.length + 1}"><div class="ms-empty"><span class="ms-empty-illu">${ico('gateway', 32)}</span><div class="ms-empty-text">No ${view === 'neighbors' ? 'neighbor relays detected in the last 24 hours' : 'member gateways yet'}</div></div></td></tr>`;
+        const editDrawerHtml = ed => `<div class="bc-eg71-mesh-fleet-edit"${ed.open ? '' : ' hidden'}>
+          <div class="ms-mask ms-mask--drawer">
+            <div class="ms-drawer bc-eg71-mesh-fleet-edit-panel" role="dialog" aria-modal="true" aria-label="Edit">
+              <div class="ms-drawer-head"><span class="ms-h4">Edit</span><span class="ms-modal-close" data-mesh-fleet-edit-close aria-label="Close">${ico('close', 20)}</span></div>
+              <div class="ms-drawer-body">
+                <div class="ms-form">
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Identifier</label></div>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(ed.id || '')}" readonly></label>
+                  </div>
+                  <div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Name</label><span class="bc-eg71-form-item-unit">(letters, digits, - or _; starts with a letter; up to 20 characters)</span></div>
+                    <label class="ms-input${ed.nameError ? ' ms-input--error' : ''}"><input data-mesh-fleet-edit-name value="${esc(ed.name || '')}" maxlength="20"></label>
+                    ${ed.nameError ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(ed.nameError)}</div>` : ''}
+                  </div>
+                  ${(ed.info || []).map(f => `<div class="ms-form-item">
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">${esc(f.label)}</label></div>
+                    <label class="ms-input ms-input--disabled"><input value="${esc(f.value || '')}" readonly></label>
+                  </div>`).join('')}
+                </div>
+              </div>
+              <div class="ms-drawer-foot ms-space ms-space--12">
+                <button type="button" class="ms-btn" data-mesh-fleet-edit-cancel>Cancel</button>
+                <button type="button" class="ms-btn ms-btn--filled" data-mesh-fleet-edit-save>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        return `<div class="ms-card bc-eg71-mesh-fleet">
+          <div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
+            <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>
+          <div class="ms-card-body bc-eg71-mesh-fleet-body">
+            <table class="ms-table">
+              <thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}${view === 'neighbors' ? '' : '<th class="bc-eg71-table-ops">Operations</th>'}</tr></thead>
+              <tbody>${body}</tbody>
+            </table>
+            ${ctx.tip ? `<div class="bc-eg71-form-item-msg">${esc(ctx.tip)}</div>` : ''}
+          </div>
+          ${ctx.editDrawer ? editDrawerHtml(ctx.editDrawer) : ''}
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-fleet');
+        if (!wrap) return;
+        wrap.querySelectorAll('[data-mesh-fleet-op]').forEach(b => b.addEventListener('click', () => {
+          if (b.disabled) return;
+          const idx = Number(b.getAttribute('data-mesh-fleet-idx'));
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-op', { bubbles: true, detail: { op: b.getAttribute('data-mesh-fleet-op'), index: idx } }));
+        }));
+        const edit = wrap.querySelector('.bc-eg71-mesh-fleet-edit');
+        if (edit) {
+          const closeEdit = () => { edit.hidden = true; };
+          edit.querySelectorAll('[data-mesh-fleet-edit-close],[data-mesh-fleet-edit-cancel]').forEach(b => b.addEventListener('click', closeEdit));
+          const maskEl = edit.querySelector('.ms-mask');
+          if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeEdit(); });
+          const panelEl = edit.querySelector('.ms-drawer');
+          if (panelEl) panelEl.addEventListener('click', e => e.stopPropagation());
+          const saveBtn = edit.querySelector('[data-mesh-fleet-edit-save]');
+          if (saveBtn) saveBtn.addEventListener('click', () => {
+            const input = edit.querySelector('[data-mesh-fleet-edit-name]');
+            wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-save', { bubbles: true, detail: { name: input ? input.value : '' } }));
+          });
+        }
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-frames', cn: 'Mesh 帧列表', cat: '数据服务',
+      desc: '数据流-数据列表的 Mesh 帧单卡列表：ns 视角（内置 NS：Time/Device/Direction/Fcnt/Payload Size）与 raw 视角（ChirpStack/Relay：Time/Direction/Frequency/DataRate/RSSI-SNR/Frame Size）；心跳帧带 Heartbeat 标注；EG71 左对齐契约。',
+      atoms: ['table', 'tag', 'button', 'icon', 'empty', 'select'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '数据流', '帧', 'Data Stream', 'NS 视图', '心跳', 'Heartbeat', '列表', 'EG71'],
+      render(ctx) {
+        const view = ctx.view === 'raw' ? 'raw' : 'ns';
+        const rows = ctx.rows || [];
+        const DIR = { Up: 'primary', Dn: 'warm' };
+        const head = view === 'ns'
+          ? ['Time', 'Device', 'Direction', 'FCnt', 'Payload Size (Bytes)']
+          : ['Time', 'Direction', 'Frequency (MHz)', 'Data Rate', 'RSSI / SNR (dBm / dB)', 'Frame Size (Bytes)'];
+        const body = rows.length ? rows.map((r, i) => `<tr>
+            <td><span class="ms-text bc-num">${esc(r.time)}</span></td>
+            ${view === 'ns' ? `<td><span class="ms-text bc-num">${esc(r.device)}</span></td>` : ''}
+            <td><span class="ms-space ms-space--8"><span class="ms-tag ms-tag--${DIR[r.dir] || 'primary'}"><i class="ms-tag-dot"></i>${esc(r.dir)}</span>${r.heartbeat ? '<span class="ms-tag ms-tag--remind">Heartbeat</span>' : ''}</span></td>
+            ${view === 'raw' ? `<td><span class="ms-text bc-num">${esc(r.freq)}</span></td><td><span class="ms-text">${esc(r.dr)}</span></td><td><span class="ms-text bc-num">${esc(r.rssi)}</span></td>` : `<td><span class="ms-text bc-num">${esc(r.fcnt)}</span></td><td><span class="ms-text bc-num">${esc(r.size)}</span></td>`}
+            ${view === 'raw' ? `<td><span class="ms-text bc-num">${esc(r.size)}</span></td>` : ''}
+            <td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-mesh-frame-detail="${i}" aria-label="View detail" title="View detail">${ico('search', 16)}</button></td>
+          </tr>`).join('')
+          : `<tr><td colspan="${head.length + 1}"><div class="ms-empty"><span class="ms-empty-illu">${ico('log', 32)}</span><div class="ms-empty-text">No mesh frames in the selected period</div></div></td></tr>`;
+        return `<div class="ms-card bc-eg71-mesh-frames">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('log', 20)}Mesh Frames</div>
+            <div class="ms-space ms-space--12">
+              <span class="ms-select bc-eg71-form-item-select"><select data-mesh-frame-filter aria-label="Filter by direction"><option>All Directions</option><option>Up</option><option>Dn</option></select></span>
+              <button type="button" class="ms-btn ms-btn--sm" data-mesh-frame-refresh aria-label="Refresh" title="Refresh">${ico('refresh', 16)}</button>
+            </div></div>
+          <div class="ms-card-body bc-eg71-mesh-frames-body">
+            <table class="ms-table">
+              <thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}<th class="bc-eg71-table-ops">Operations</th></tr></thead>
+              <tbody>${body}</tbody>
+            </table>
+            ${ctx.tip ? `<div class="bc-eg71-form-item-msg">${esc(ctx.tip)}</div>` : ''}
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-frames');
+        if (!wrap) return;
+        wrap.querySelectorAll('[data-mesh-frame-detail]').forEach(b => b.addEventListener('click', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-frame-detail', { bubbles: true, detail: { index: Number(b.getAttribute('data-mesh-frame-detail')) } }))));
+        const filter = wrap.querySelector('[data-mesh-frame-filter]');
+        if (filter) filter.addEventListener('change', () =>
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-frame-filter', { bubbles: true, detail: { dir: filter.value } })));
+        const refresh = wrap.querySelector('[data-mesh-frame-refresh]');
+        if (refresh) refresh.addEventListener('click', () => wrap.dispatchEvent(new CustomEvent('eg71-mesh-frame-refresh', { bubbles: true })));
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-radio', cn: 'Mesh 多信道设置卡', cat: 'LoRa 设置',
+      desc: 'LoRa → Radio 的多信道设置卡：频段开关行（F1… + 频率值 + ms-switch），Mesh 频段可选项同步自此页；关闭频段会触发 General 页 Mesh 频段告警。',
+      atoms: ['card', 'switch', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', 'Radio', '多信道', '频段', '开关', '设置', 'EG71'],
+      render(ctx) {
+        const freqs = ctx.freqs || [];
+        return `<div class="ms-card bc-eg71-mesh-radio">
+          <div class="ms-card-head"><div class="ms-card-title">${ico('lorawan', 20)}${esc(ctx.title || 'Multi-Channel Settings')}</div>${ctx.actionsHtml || ''}</div>
+          <div class="ms-card-body bc-eg71-mesh-radio-body">
+            ${freqs.map(f => `<div class="bc-eg71-mesh-radio-row">
+              <span class="bc-eg71-mesh-radio-id">${esc(f.id)}</span>
+              <span class="bc-num bc-eg71-mesh-radio-mhz">${esc(f.mhz)} MHz</span>
+              <label class="ms-switch"><input type="checkbox" data-mesh-radio-toggle="${esc(f.id)}"${f.on ? ' checked' : ''} aria-label="${esc(f.id)} ${esc(f.mhz)} MHz"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+            </div>`).join('')}
+            ${ctx.tip ? `<div class="bc-eg71-form-item-msg">${esc(ctx.tip)}</div>` : ''}
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-radio');
+        if (!wrap) return;
+        wrap.addEventListener('change', e => {
+          const t = e.target.closest('[data-mesh-radio-toggle]');
+          if (!t) return;
+          wrap.dispatchEvent(new CustomEvent('eg71-mesh-radio-toggle', { bubbles: true, detail: { id: t.getAttribute('data-mesh-radio-toggle'), on: t.checked } }));
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-mesh-module', cn: 'Mesh 通用设置模块卡', cat: 'LoRa 设置',
+      desc: 'LoRa General 的通用被动设置模块卡：Frequency Plan / Packet Filter / Data Retransmission / Network Server Parameters 等按角色显隐的参数区块，行级字段（input/select/switch/text）由宿主注入，字段变更统一 eg71-mesh-module-field 冒泡。',
+      atoms: ['form', 'input', 'select', 'switch', 'card', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['LoRa', 'Mesh', '设置', 'Frequency Plan', 'Packet Filter', 'Data Retransmission', 'Network Server', '模块', 'EG71'],
+      render(ctx) {
+        const rows = ctx.rows || [];
+        const hs = ctx.headSwitch || null;
+        const errs = ctx.errors || {};
+        const stats = rows.filter(r => r.type === 'stat');
+        const normal = rows.filter(r => r.type !== 'stat');
+        const rowHtml = r => {
+          const msg = errs[r.key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(errs[r.key])}</div>`
+            : (r.msg ? `<div class="bc-eg71-form-item-msg">${r.msg}</div>` : '');
+          if (r.type === 'button') return `<div class="bc-eg71-mesh-module-actions">
+            <button type="button" class="ms-btn${r.kind === 'filled' ? ' ms-btn--filled' : r.kind === 'danger' ? ' ms-btn--danger' : ''}" data-mesh-module-btn="${esc(r.key)}" aria-label="${esc(r.label)}">${r.icon ? ico(r.icon, 16) : ''}${esc(r.label)}</button>
+          </div>`;
+          if (r.type === 'text') return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}</label></div>
+            <div class="bc-eg71-mesh-module-text">${esc(r.value || '')}</div>${msg}
+          </div>`;
+          if (r.type === 'switch') return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">${r.label}</label>
+              <label class="ms-switch"><input type="checkbox" data-mesh-module-switch="${esc(r.key)}"${r.on ? ' checked' : ''} aria-label="${esc(r.label)}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
+            </div>${msg}
+          </div>`;
+          if (r.type === 'select') return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
+            <span class="ms-select ms-select--lg${errs[r.key] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.key)}">${(r.options || []).map(o => `<option${o === r.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>${msg}
+          </div>`;
+          return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
+            <label class="ms-input ms-input--lg${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}${r.readonly ? ' readonly' : ''}></label>${msg}
+          </div>`;
+        };
+        const statsHtml = stats.length ? `<div class="bc-eg71-mesh-module-stats">${stats.map(s => `<div class="bc-eg71-mesh-module-stat">
+            <div class="ms-stat-title">${esc(s.label)}</div>
+            <div class="ms-stat-value">${esc(s.value)}${s.suffix ? `<span class="ms-stat-suffix">${esc(s.suffix)}</span>` : ''}</div>
+            ${s.sub ? `<div class="bc-eg71-mesh-module-stat-sub">${esc(s.sub)}</div>` : ''}
+          </div>`).join('')}</div>` : '';
+        return `<div class="ms-card bc-eg71-mesh-module">
+          <div class="ms-card-head"><div class="ms-card-title">${ico(ctx.icon || 'settings', 20)}${esc(ctx.title || '')}</div>
+            ${hs ? `<label class="ms-switch"><input type="checkbox" data-mesh-module-head"${hs.on ? ' checked' : ''} aria-label="${esc(hs.label || '')}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>` : ''}
+          </div>
+          <div class="ms-card-body bc-eg71-mesh-module-body">
+            ${ctx.desc ? `<div class="bc-section-desc">${esc(ctx.desc)}</div>` : ''}
+            ${statsHtml}
+            ${normal.map(rowHtml).join('')}
+            ${ctx.tip ? `<div class="bc-eg71-form-item-msg">${esc(ctx.tip)}</div>` : ''}
+          </div>
+        </div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-mesh-module');
+        if (!wrap) return;
+        wrap.addEventListener('click', e => {
+          const btn = e.target.closest('[data-mesh-module-btn]');
+          if (btn) wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: btn.getAttribute('data-mesh-module-btn'), value: 'click' } }));
+        });
+        wrap.addEventListener('change', e => {
+          const sw = e.target.closest('[data-mesh-module-switch]');
+          if (sw) { wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: sw.getAttribute('data-mesh-module-switch'), value: sw.checked } })); return; }
+          const head = e.target.closest('[data-mesh-module-head]');
+          if (head) { wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-head', { bubbles: true, detail: { on: head.checked } })); return; }
+          const f = e.target.closest('[data-mesh-module-field]');
+          if (f) wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: f.getAttribute('data-mesh-module-field'), value: f.value } }));
+        });
       }
     }
   ];

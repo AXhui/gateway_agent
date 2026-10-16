@@ -954,6 +954,62 @@
       "dir": ".claude/skills/business/eg71/B_Eg71BatchImport",
       "src": "assets/js/registry-business.js#bc-eg71-batch-import",
       "status": "已固化"
+    },
+    "B_Eg71MeshRoleCard": {
+      "id": "bc-eg71-mesh-role",
+      "cn": "Mesh 角色级联卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshRoleCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-role",
+      "status": "已固化"
+    },
+    "B_Eg71MeshConfigCard": {
+      "id": "bc-eg71-mesh-config",
+      "cn": "Mesh 配置卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshConfigCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-config",
+      "status": "已固化"
+    },
+    "B_Eg71MeshForwardCard": {
+      "id": "bc-eg71-mesh-forward",
+      "cn": "Mesh 转发目的卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshForwardCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-forward",
+      "status": "已固化"
+    },
+    "B_Eg71MeshFlowDiagram": {
+      "id": "bc-eg71-mesh-flow",
+      "cn": "Mesh 工作模式图",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshFlowDiagram",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-flow",
+      "status": "已固化"
+    },
+    "B_Eg71MeshFleetTable": {
+      "id": "bc-eg71-mesh-fleet",
+      "cn": "Mesh 成员/邻居表",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshFleetTable",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-fleet",
+      "status": "已固化"
+    },
+    "B_Eg71MeshFrameList": {
+      "id": "bc-eg71-mesh-frames",
+      "cn": "Mesh 帧列表",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshFrameList",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-frames",
+      "status": "已固化"
+    },
+    "B_Eg71MeshRadioCard": {
+      "id": "bc-eg71-mesh-radio",
+      "cn": "Mesh 多信道设置卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshRadioCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-radio",
+      "status": "已固化"
+    },
+    "B_Eg71MeshModuleCard": {
+      "id": "bc-eg71-mesh-module",
+      "cn": "Mesh 通用设置模块卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshModuleCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-module",
+      "status": "已固化"
     }
   },
   "modules": {

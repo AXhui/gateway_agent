@@ -832,3 +832,69 @@
 .bc-eg71-import-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-8); margin-top: var(--spacing-12); padding: var(--spacing-64) var(--spacing-16); background: var(--color-fill-base-normal); border: 1px dashed var(--color-border-base); border-radius: var(--radius-4); text-align: center; }
 .bc-eg71-import-drop .ms-ico { color: var(--color-icon-secondary); }
 .bc-eg71-import-hintlink { padding: 0; }
+
+/* ---- B_Eg71MeshRoleCard / B_Eg71MeshConfigCard / B_Eg71MeshForwardCard / B_Eg71MeshFlowDiagram（bc-eg71-mesh-*，REQ-014 LoRa Mesh 铸造批） ---- */
+.bc-eg71-mesh-role-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-role-hint { padding: var(--spacing-12); background: var(--color-fill-base-normal); border-radius: var(--radius-4); font-size: 12px; line-height: 20px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-role-relay { display: flex; flex-direction: column; gap: var(--spacing-4); }
+.bc-eg71-mesh-role-relay-label { font-size: 12px; color: var(--color-text-auxiliary); }
+.bc-eg71-mesh-role-relay-value { display: flex; align-items: center; gap: var(--spacing-8); }
+
+.bc-eg71-mesh-config-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-config-risk { padding: var(--spacing-12); background: var(--color-warm-bg); border-radius: var(--radius-4); font-size: 12px; line-height: 20px; color: var(--color-warm-normal); }
+.bc-eg71-mesh-config-freqs { display: flex; flex-wrap: wrap; gap: var(--spacing-8); }
+.bc-eg71-mesh-config-freq { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: var(--spacing-4) var(--spacing-12); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-full); font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
+.bc-eg71-mesh-config-freq .ms-checkbox-box { width: 14px; height: 14px; }
+.bc-eg71-mesh-config-freq.is-on { background: var(--color-primary-bg); border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
+.bc-eg71-mesh-config-warn { width: 100%; text-align: left; cursor: pointer; border: none; }
+.bc-eg71-mesh-config-toggle { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: 0; border: none; background: transparent; font-size: 14px; color: var(--color-text-link-normal); cursor: pointer; }
+.bc-eg71-mesh-config-toggle .ms-ico { transition: transform var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-config-toggle.is-open .ms-ico { transform: rotate(180deg); }
+.bc-eg71-mesh-config-adv { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-config-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) var(--spacing-24); }
+
+.bc-eg71-mesh-forward-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-forward-conn { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-forward-conn-label { font-size: 12px; color: var(--color-text-auxiliary); }
+.bc-eg71-mesh-forward-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) var(--spacing-24); }
+.bc-eg71-mesh-forward-plain { padding: var(--spacing-12); background: var(--color-fill-base-normal); border-radius: var(--radius-4); font-size: 12px; line-height: 20px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-forward-upload { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-forward-file { font-size: 12px; color: var(--color-text-auxiliary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-eg71-mesh-forward-file--error { color: var(--color-error-normal); }
+
+.bc-eg71-mesh-flow .ms-card-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-flow-lane { display: flex; align-items: center; gap: var(--spacing-12); flex-wrap: wrap; }
+.bc-eg71-mesh-flow-col { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.bc-eg71-mesh-flow-node { display: flex; align-items: center; gap: var(--spacing-8); padding: var(--spacing-12); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); min-width: 120px; /* 结构宽：保障节点标签不换行挤压 */ }
+.bc-eg71-mesh-flow-node-sub { display: flex; flex-direction: column; gap: var(--spacing-4); min-width: 0; }
+.bc-eg71-mesh-flow-node-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-mesh-flow-node .ms-tag, .bc-eg71-mesh-flow-node-sub .ms-tag { align-self: flex-start; }
+.bc-eg71-mesh-flow-stage { font-size: 12px; padding: 0 var(--spacing-8); border: 1px dashed var(--color-border-base); border-radius: var(--radius-full); color: var(--color-text-secondary); align-self: flex-start; }
+.bc-eg71-mesh-flow-link { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-4); }
+.bc-eg71-mesh-flow-label { font-size: 12px; color: var(--color-text-auxiliary); white-space: nowrap; }
+.bc-eg71-mesh-flow-line { width: var(--spacing-48); border-top: 2px solid var(--color-primary-normal); }
+.bc-eg71-mesh-flow-desc { font-size: 14px; line-height: 22px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-flow-badge { margin-left: var(--spacing-8); }
+
+.bc-eg71-mesh-cascade-rows { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.bc-eg71-mesh-cascade-row { display: flex; align-items: center; gap: var(--spacing-12); padding: var(--spacing-12); background: var(--color-fill-base-normal); border-radius: var(--radius-8); }
+.bc-eg71-mesh-cascade-name { display: flex; align-items: center; gap: var(--spacing-8); flex: 1; min-width: 0; font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-mesh-cascade-count { font-size: 12px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+/* ---- B_Eg71MeshFleetTable / B_Eg71MeshFrameList（bc-eg71-mesh-fleet / -frames，REQ-014 追加铸造） ---- */
+.bc-eg71-mesh-fleet-body .bc-eg71-form-item-msg,
+.bc-eg71-mesh-frames-body .bc-eg71-form-item-msg { margin-top: var(--spacing-12); }
+/* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 追加铸造） + bc-eg71-mesh-deploy 区块 ---- */
+.bc-eg71-mesh-radio-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-mesh-radio-row { display: flex; align-items: center; gap: var(--spacing-12); padding-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-2); }
+.bc-eg71-mesh-radio-row:last-of-type { border-bottom: none; padding-bottom: 0; }
+.bc-eg71-mesh-radio-id { font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-mesh-radio-mhz { flex: 1; font-size: 14px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-radio-body .bc-eg71-form-item-msg { margin-top: var(--spacing-4); }
+/* ---- B_Eg71MeshModuleCard（bc-eg71-mesh-module，REQ-014 追加铸造） ---- */
+.bc-eg71-mesh-module-body { display: flex; flex-direction: column; gap: var(--spacing-20); }
+.bc-eg71-mesh-module-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.6; }
+.bc-eg71-mesh-module-body .ms-select { width: 100%; }
+.bc-eg71-mesh-module-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-16); }
+.bc-eg71-mesh-module-stat { display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-primary-bg); border-radius: var(--radius-m); }
+.bc-eg71-mesh-module-stat-sub { font-size: 12px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-module-actions { display: flex; gap: var(--spacing-12); }
