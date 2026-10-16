@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Milesight IOT Web — Icon 图标 v1.1.0</title>
+<title>Milesight IOT Web — Icon 图标 v1.2.0</title>
 <style>
 :root {
   --color-primary-normal:#3491FA;
@@ -215,6 +215,12 @@ const cloudIcons = [
   ['Router', L.Router],
   ['BarChart', L.BarChart3], ['PieChart', L.PieChart], ['LineChart', L.LineChart],
 ];
+const domainIcons = [
+  ['Nfc', L.Nfc], ['Gauge', L.Gauge], ['BellRing', L.BellRing], ['Send', L.Send], ['Workflow', L.Workflow],
+  ['Volume2', L.Volume2], ['Hand', L.Hand], ['PackagePlus', L.PackagePlus], ['ToggleLeft', L.ToggleLeft], ['ToggleRight', L.ToggleRight],
+  ['Wrench', L.Wrench], ['DatabaseBackup', L.DatabaseBackup], ['TrendingUp', L.TrendingUp], ['GitCompare', L.GitCompare],
+  ['Link', L.Link], ['Unlink', L.Unlink],
+];
 
 const ToneRow = () => h('div', {
   style:{ display:'flex', gap:'var(--spacing-24)', padding:'var(--spacing-20)', background:'var(--color-bg-card)', border:'1px solid var(--color-divider-base-1)', borderRadius:'var(--radius-8)', flexWrap:'wrap' }
@@ -246,7 +252,7 @@ function App() {
   return h('div', { style:{ minHeight:'100vh' } },
     h('header', { style:{ background:'var(--color-primary-normal)', color:'var(--color-text-constant-normal)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'var(--spacing-16) var(--spacing-24)' } },
       h('h1', { style:{ margin:0, font:'600 28px/1.2 var(--font-sans)' } }, 'Icon 图标'),
-      h('span', { className:'t-body', style:{ color:'var(--color-text-auxiliary)' } }, 'Milesight IOT Web · v1.1.0 · Lucide')
+      h('span', { className:'t-body', style:{ color:'var(--color-text-auxiliary)' } }, 'Milesight IOT Web · v1.2.0 · Lucide')
     ),
     h('main', { style:{ display:'flex', flexDirection:'column', gap:'var(--spacing-30)', padding:'var(--spacing-30) var(--spacing-24) var(--spacing-64)', maxWidth:1200, margin:'0 auto' } },
       h('section', null,
@@ -270,7 +276,8 @@ function App() {
       h(Group, { title:'操作 Action' }, ...actionIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
       h(Group, { title:'对象 Object' }, ...objectIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
       h(Group, { title:'状态 Status' }, ...statusIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
-      h(Group, { title:'云资源 Cloud / Infra' }, ...cloudIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n })))
+      h(Group, { title:'云资源 Cloud / Infra' }, ...cloudIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n }))),
+      h(Group, { title:'领域 Domain（v1.2.0 新增，对应 MS_ICONS）' }, ...domainIcons.map(([n, I]) => h(Tile, { key:n, as:I, name:n })))
     )
   );
 }

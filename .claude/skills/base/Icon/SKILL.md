@@ -1,5 +1,6 @@
 ---
 name: Icon
+version: 1.2.0
 description: 图标（基础组件）
 ---
 
@@ -8,115 +9,88 @@ description: 图标（基础组件）
 > **分类**：基础
 > **Figma**：-
 > **组件目录**：`../../../../frontend/components/Icon/`
-> **版本**：v1.1.0（已对齐 antd 图标用法，统一 token）
+> **运行时真源**：`assets/js/registry-business.js` → `window.MS_ICONS`（唯一源，115 枚）
 
 ---
 
-## 一、产品层（何时用 / 何时不用）
+## 1. 描述
 
-### 组件定位
-**基于 Lucide 图标集的统一图标组件**，`size` 默认跟随父级字号，颜色默认继承 `currentColor`，用于增强界面语义与可读性。
+基于 Lucide 图标集（1.5 描边、24 viewBox、`currentColor`）的统一图标资产，`size` 默认跟随父级字号，颜色继承文字色。完整图标清单见 [references/icons.md](references/icons.md)。
 
-### 何时用
-- 按钮/菜单/表格操作列的**语义图标**（删除、编辑、搜索）。
-- 状态/类型标识（成功、警告、错误）。
-- 导航/菜单入口的辅助图标。
-- 需要**视觉锚点**降低阅读成本的场景。
+**不是什么**：不是插画/品牌图形容器（用 `Logo` / 图片）；不允许混入第二套图标体系（iconfont 字体、外链图标图片、emoji 充当图标——一票否决，见 `rules/spacing.md` §3）。
 
-### 何时不用（改用其他组件）
-| 场景 | 改用 |
-|------|------|
-| 纯装饰且无语义 | 直接省略 |
-| 需要文字承载语义 | 图标 + 文字并用，不要只留图标 |
-| 复杂插画/品牌图形 | `Logo` / 图片 |
+**取材来源**：真实产品 iconfont（iconfont.cn 项目 4834330，`at.alicdn.com/t/c/font_4834330_bgfadakjpfr.css`）的图标词汇经 Lucide 对齐后注册进 `MS_ICONS`。该外链 CSS **只作取材参照，禁止作为运行时依赖**（demo 单文件零外链铁律）。产品 iconfont 的实心变体（`*-f`）不注册——语义状态一律走描边形 + 语义色 token（`ms-tag--success` 等）。
 
-### 变体选择建议（Do / Don't）
-| 形态 | 用法 | 禁忌 |
-|------|------|------|
-| `name` | 指定图标名（Lucide） | 不要混用多套图标集，保持统一 |
-| `size` | 跟随父级字号或显式 px | 同一按钮组图标尺寸一致 |
-| `color` | 默认 `currentColor` 继承 | 不要硬编码色值，除非状态色 |
+## 2. Props
 
-### 无障碍
-- 纯装饰图标 `aria-hidden="true"`，语义由相邻文字承载。
-- 仅图标的按钮必须有 `aria-label`（如「删除」）。
-- 状态图标（成功/失败）配合文字或 `aria-label`，不只靠颜色。
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `name` | `string` | `-` | **antd 别名**（对应 `icon`）：图标名，取值见 [references/icons.md](references/icons.md) |
+| `size` | `number` | `16` | 图标尺寸（px），默认 1em 跟随字号 |
+| `color` | `string` | `'currentColor'` | 图标颜色 |
+| `style` / `className` | `-` | `-` | 透传 |
 
----
+运行时调用（demo 内联 `registry-business.js` 后）：`MS_BIZ_UTIL.ico(name, size)` → `<span class="ms-ico ms-ico--{size}"><svg…></span>`；未注册名回落 `info`。
 
-## 二、UED 层（视觉规格 / 统一 Token）
+## 3. 状态
 
-### 尺寸矩阵（红线，见 `rules/spacing.md` §3）
-| 属性 | 值 | 说明 |
-|------|-----|------|
-| 尺寸下限 | **16px** | 正文/控件内图标小于 16px 即违规（旧文档「12px 小」档废止） |
-| 尺寸上限 | **44px** | 大于此即违规 |
-| 合法阶梯 | **16 / 20 / 24 / 32 / 44** | 只允许阶梯值，17/18/22 等一律打回 |
-| 例外 12px | 仅装饰性微标（Badge 角标），不得承载独立交互语义 | — |
-| 可点击热区 | **≥24×24px** | 视觉 16px 的可点图标须以 padding 撑到 24px 热区 |
-| 线宽 | 2px | Lucide 默认 stroke |
-| 同组同尺寸 | 同一按钮组/操作列/状态列必须同尺寸 | — |
-
-### 状态视觉矩阵
 | 状态 | 表现 |
 |------|------|
 | 默认 | `currentColor` 继承文字色 |
 | 主色强调 | `--color-primary-normal` |
 | 次级 | `--color-text-secondary` |
 | 禁用 | `--color-text-disable` |
+| 加载 | `loaderCircle` + 旋转动画（按钮 loading 态） |
 
-### 过渡
-颜色继承 `currentColor`，随文字色变化即时切换，无需动画。
+五轴交互：无交互，五轴豁免（回指 `INTERACTION.md` 总纲）。
 
-### 使用的设计令牌
-`--color-text-primary`（默认继承）、`--color-primary-normal`（强调）、`--color-text-secondary`（次级）、`--color-text-disable`（禁用）。
+## 4. 场景
 
-> **Token 修正**：无。旧版 Skill 已符合规范，颜色一律用 `currentColor` 继承。
+**何时用**
+- 按钮/菜单/表格操作列的**语义图标**（删除、编辑、搜索）。
+- 状态/类型标识（成功、警告、错误，配语义色）。
+- 导航/菜单入口的辅助图标。
+- 需要**视觉锚点**降低阅读成本的场景。
 
----
+**何时不用（改用其他组件）**
 
-> 五轴交互：无交互，五轴豁免（回指 `INTERACTION.md` 总纲）。
+| 场景 | 改用 |
+|------|------|
+| 纯装饰且无语义 | 直接省略 |
+| 需要文字承载语义 | 图标 + 文字并用，不要只留图标 |
+| 复杂插画/品牌图形 | `Logo` / 图片 |
+| 库里没有的形态 | 走铸造：Lucide 取材 → 注册 `MS_ICONS` → bump 本组件版本；**禁止** demo 现场手写 `<svg>` |
 
-## 三、研发层（代码架构 / Props 契约）
+**无障碍**：纯装饰图标 `aria-hidden="true"`；仅图标的按钮必须有 `aria-label`；状态图标不只靠颜色。
 
-### 导入方式
-组件为独立 HTML 实现（React 18 + esm.sh），第三方开发者不直接 import 源码，而是**通过 Skill 契约 + token 变量**复刻：
+## 5. Token
 
-```html
-<script type="importmap">
-{ "imports": { "react": "https://esm.sh/react@18.3.1", "react-dom/client": "https://esm.sh/react-dom@18.3.1/client" } }
-</script>
-```
+`--color-text-primary`（默认继承）、`--color-primary-normal`（强调）、`--color-text-secondary`（次级）、`--color-text-disable`（禁用）、`--color-error-normal`（危险操作）、`--color-icon-*`（图标专用色系，唯一合法图标颜色来源，见 `rules/spacing.md` §3）。
 
-### Props 契约（含 antd 别名）
+图标本身无固定色值——`currentColor` 继承。
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `name` | `string` | `-` | **antd 别名**（对应 `icon`）：图标名称 |
-| `size` | `number` | `16` | 图标尺寸（px），默认 1em 跟随字号 |
-| `color` | `string` | `'currentColor'` | 图标颜色 |
-| `style` / `className` | `-` | `-` | 透传 |
+## 6. 依赖
 
-### 受控/非受控语义
-- 纯展示组件，无受控语义。
+- 运行时真源：`assets/js/registry-business.js`（`window.MS_ICONS` + `MS_BIZ_UTIL.ico`），A4 渲染时整文件内联进 demo。
+- 结构样式：`library/base.css`（`.ms-ico` / `.ms-ico--{14,16,20,24,32}`）。
+- 令牌：`.claude/tokens/tokens.css`。
+- 无其他运行时依赖；Lucide SVG 为构建期取材（lucide-static 1.58.0），不是运行时依赖。
 
-### 事件 / 键盘
-- 独立图标无交互；置于按钮内时继承按钮的键盘/焦点行为。
-
----
-
-## 代码示例
+## 7. 示例
 
 ```html
+<!-- React 契约用法 -->
 <Icon name="search" size={16} />
 <Icon name="trash" color="var(--color-error-normal)" />
 <Button icon={<Icon name="plus" />}>新建</Button>
+
+<!-- 运行时（demo 内联 registry 后） -->
+MS_BIZ_UTIL.ico('nfc', 16)
+MS_BIZ_UTIL.ico('loaderCircle', 16)   // loading 态
 ```
 
----
+校验页：`output/icon-set-verify.html`（全量 115 枚渲染核实）。
 
-## 文件映射
+## 8. 版本
 
-- Preview 文件：`icon-preview.html`
-- 组件目录：`../../../../frontend/components/Icon/index.html`
-- 令牌文件：`../../../tokens/tokens.css`
+见 frontmatter `version:`。
