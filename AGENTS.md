@@ -138,6 +138,23 @@ EG71 线表格一律左对齐，写死不改：
 - 空态占位（`ms-empty`）居中除外；com / router / cctv / cv 线不受此约束。
 - 存量已修正：`bc-eg71-alarm`、`bc-eg71-device-list`（2026-09-15）。
 
+## PRD 评论锚定（生成 demo 后，如用户要求发 review 到 PRD）
+
+生成 demo 后，若用户要求把 review 评论发到飞书 PRD 文档，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
+
+1. 先把 review 整理成 JSON 文件（如 `05_release/REQ-XXX/prd_comments.json`），每条包含：
+   - `quote`：评论引用的 PRD 原文片段（从 PRD 原文里摘，要能被搜索到）
+   - `comment`：具体评论内容（缺口/建议/问题）
+2. 运行脚本：
+   ```bash
+   python tools/add_prd_comments.py \
+     --doc "<PRD 飞书链接>" \
+     --comments "05_release/REQ-XXX/prd_comments.json"
+   ```
+3. 脚本自动：拉 PRD 所有段落 → 按 quote 匹配 block → 用 `--block-id` 发锚定评论；匹配不到的自动 fallback 到全文评论，不报错。
+
+**不要自己用 lark-cli 直接发评论**（那样都是全文评论，不能定位到原文）。
+
 ## 提交信息格式
 
 - 生成新 demo：`feat: 生成 REQ-XXX <页面名称> demo`
