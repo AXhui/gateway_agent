@@ -1,0 +1,38 @@
+[
+  {
+    "quote": "Master角色展示配置项",
+    "comment": "【UED 反馈 · REQ-014】功能点「Mesh 配置截图」：链路缺口——正文「Master 角色展示配置项」的配图 alt 自述为 Relay 界面，图与标题矛盾。Demo 处理：按字段表实现（Master/Relay 两块字段齐全）。建议：确认 Master 配置块截图是否放错。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "系统自动生成一个全网唯一的Relay ID",
+    "comment": "【UED 反馈 · REQ-014】功能点「Relay ID 位数」：链路缺口——正文写「8 位十六进制」，图例 24E124FFFE123456 为 16 位，两处矛盾。Demo 处理：按图例 16 位值展示。建议：明确 Relay ID 位数。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "Frequency 8 (923.2)",
+    "comment": "【UED 反馈 · REQ-014】功能点「附录A 频率表」：链路缺口——AS923-1 的 F1 与 F8 同为 923.2（AS923-2/3/4 无重复），疑笔误。Demo 处理：EU868 种子演示，未消费 AS923-1。建议：确认 F8 频率值。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "跳数调整风险提示",
+    "comment": "【UED 反馈 · REQ-014】功能点「跳数调整风险提示」：链路缺口——「预计可用容量」依赖 LoRa 分析页容量数据，未定义无数据/首次使用时的默认展示。Demo 处理：占位容量演算（1 跳 33% / 2 跳 17%）+ 调大/调小双文案提示。建议：补充无数据时的默认行为。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "在抽屉详情中点击\"配置\"后，将跳转到【级联网关】配置页面",
+    "comment": "【UED 反馈 · REQ-014】功能点「Gateway Status 级联网关」：链路缺口——PRD 写点卡片开抽屉、抽屉内「配置」入口；组件库契约为行 View 开抽屉、卡头 Configuration，两处不一致。Demo 处理：按组件库契约（卡头 Configuration → Gateway Fleet）。建议：确认入口位置以哪边为准。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "Master、Agent（默认选中）",
+    "comment": "【UED 反馈 · REQ-014】功能点「组网方式」：链路缺口——选项排序未定义（PRD 表格 IP Connection 在前）。Demo 处理：按 LoRa Mesh / IP / IP & Mesh 排序。建议：增补选项排序。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "此网关作为主网关接收并管理从网关数据，具备完整的网络服务器功能。",
+    "comment": "【UED 反馈 · REQ-014】功能点「IP Master 下载证书」：链路缺口——证书内容/格式未说明。Demo 处理：提供入口 + 下载成功提示。建议：增补证书内容与格式说明。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "Gateway Role 加「 组网方式 + 角色」级联选择及Mesh配置",
+    "comment": "【UED 反馈 · REQ-014】功能点「IP 模式页面构成」：链路缺口——IP Master/Agent 下 LoRa General 仅角色提示文案，页面构成未明示。Demo 处理：演绎为组网 + 角色 + Alert 提示（Mesh 功能不可用）。建议：明确该形态的页面构成。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  },
+  {
+    "quote": "点击跳转到添加设备页面",
+    "comment": "【UED 反馈 · REQ-014】功能点「设备概况 Add」：链路缺口——跳转目标（添加设备页）不在本需求范围。Demo 处理：toast 提示暂不可用。建议：明确跳转链路。Demo 预览：https://milesight.feishu.cn/file/GomabgwEtoDAP8xAGEPcuqSQn6N"
+  }
+]

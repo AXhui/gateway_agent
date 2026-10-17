@@ -175,7 +175,7 @@ EG71 线表格一律左对齐，写死不改：
 2. **Tag**（可选）：背景 `--color-fill-base-normal`、12px/400/行高 20、水平内边距 4px、圆角 4px、字色 `--color-text-primary`、**无边框**（轻量形态）；
 3. **备注 describe**（可选，`describeMode='inline'`）：**同行**排布，16px/400/行高 24、`--color-text-auxiliary`；下一行备注用 `describeMode='below'`；
 4. **提示图标 tip**（可选）：**18px**（图标阶梯唯一 18px 场景，见 spacing.md §3）；
-5. **开关**（可选）：28×16（`ms-switch--xs`），**紧跟标题组**、不在行尾；
+5. **开关**（可选）：28×16（`ms-switch--xs`），**跟在大标题/次标题右侧**——紧跟标题组、不在行尾（「标题」页与「.启用/禁用功能逻辑」页两源一致）；带开关时该开关即本卡片/区块启用禁用的**总闸**，载体分工（标题 switch / 字段组 checkbox / 双箭头）与联动语义（总闸优先 / 两级制约 / 状态保持）见 [.claude/rules/business-specific.md](.claude/rules/business-specific.md) §6；
 6. **按钮区**（可选）：右对齐占满剩余宽（flex-1 justify-end），**独立按钮、按钮间 gap 12px**、高 32（`ms-btn--sm`）；**禁止**把标题操作按钮拼成贴合式 `ms-btn-group`。
 
 ### 实现落点
@@ -197,9 +197,11 @@ EG71 线表格一律左对齐，写死不改：
 
 生成 demo 后，若用户要求把 review 评论发到飞书 PRD 文档，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
 
+**评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md + 台账；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
+
 1. 先把 review 整理成 JSON 文件（如 `05_release/REQ-XXX/prd_comments.json`），每条包含：
    - `quote`：评论引用的 PRD 原文片段（从 PRD 原文里摘，要能被搜索到）
-   - `comment`：具体评论内容（缺口/建议/问题）
+   - `comment`：方案评论内容（逻辑漏洞 + 方案建议）
 2. 运行脚本：
    ```bash
    python tools/add_prd_comments.py \
@@ -209,6 +211,11 @@ EG71 线表格一律左对齐，写死不改：
 3. 脚本自动：拉 PRD 所有段落 → 按 quote 匹配 block → 用 `--block-id` 发锚定评论；匹配不到的自动 fallback 到全文评论，不报错。
 
 **不要自己用 lark-cli 直接发评论**（那样都是全文评论，不能定位到原文）。
+
+## REQ 编号与多机同步（硬性）
+
+- **分配编号前必查远端**：生成新 demo 前，`git fetch origin gitlab` 后取**所有远程** `05_release/` 的最大编号 +1，禁止只看本地目录分配编号（2026-10-16 双机各自生成 REQ-014 撞号事故的根因）。
+- **同步与撞号处理按规则文件执行**：GitHub → GitLab 同步动作序列、REQ 目录 add/add 冲突决策表（远端保号 / 本地挪号 + 字样替换 + 残留验证）、rebase 工作区保护范式，见 [.claude/rules/sync-numbering.md](.claude/rules/sync-numbering.md)，必须逐项执行，不临场发挥。
 
 ## 提交信息格式
 

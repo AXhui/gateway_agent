@@ -45,8 +45,8 @@ python tools/sync_demo_to_feishu.py \
 在运行 Claude Code 的终端中设置（或写入系统环境变量）：
 
 ```bash
-export FEISHU_WEBHOOK_URL="https://milesight.feishu.cn/base/workflow/webhook/event/ShLZa9qoWwcCBihQSjccAlV5nEd"
-export FEISHU_WEBHOOK_TOKEN="Uq7RWQID5Ht8mpGjvJg5ESG7"
+export FEISHU_WEBHOOK_URL="<复现见飞书多维表格「写记录工作流」触发器设置；勿在文档/代码库明文留存>"
+export FEISHU_WEBHOOK_TOKEN="<管理员分发；勿在文档/代码库明文留存>"
 ```
 
 > Windows PowerShell：`$env:FEISHU_WEBHOOK_URL="..."`；也可在脚本调用时用 `--webhook-url` / `--webhook-token` 参数直接传入。
@@ -57,28 +57,32 @@ export FEISHU_WEBHOOK_TOKEN="Uq7RWQID5Ht8mpGjvJg5ESG7"
 - `--preview-url` 填内网可访问地址；若 demo 尚未部署到内网服务器，可留空或填本地路径说明。
 - 同一 REQ-### 多次迭代会产生多条记录，以「更新时间」区分版本。
 
-## PRD 反馈闭环（硬性，见 rules/interaction-completeness.md §3–§4）
+## PRD 反馈闭环（硬性，见 rules/interaction-completeness.md §2.5–§4）
 
-读 `validation.md` 专节「交互链缺口（A5）」，对每条 B/C/D 缺口执行两步：
+读 `validation.md` 专节「交互链缺口（A5）」执行两步，**台账全量登记、评论只发逻辑漏洞**：
+
+- **台账**：每条 B/C/D 缺口都记（含不发评论的）；
+- **评论**：只对差异归因为**「需求侧逻辑漏洞」**的条目发（判定口径 §2.5：PRD 内部矛盾 / 流程断头 / 业务规则空白）；UI 细节类（展示态补全、入口形态、排序、文案）**不发 PRD 评论**，台账状态置「不发-非逻辑漏洞」。
 
 1. **写台账**（多维表格「PRD 反馈台账」表，一行一缺口）：
 
 ```bash
 lark-cli base +record-batch-create \
   --app "<台账表 URL，取 tools/feishu_issue_table.txt>" \
-  --records '<[{"fields": {"REQ": "REQ-###", "功能点": "...", "类别": "B 链路断", "缺口描述": "...", "demo 处理": "已补全（loading 态）", "PRD 文档链接": "...", "PRD 评论状态": "未评论", "demo 版本": "<commit sha>"}}]>'
+  --records '<[{"fields": {"REQ": "REQ-###", "功能点": "...", "类别": "B 链路断", "差异归因": "需求侧逻辑漏洞 / demo 侧 UI 细节", "缺口描述": "...", "demo 处理": "已补全（loading 态）", "PRD 文档链接": "...", "PRD 评论状态": "未评论 / 不发-非逻辑漏洞", "demo 版本": "<commit sha>"}}]>'
 ```
 
-2. **评论回 PRD**（以登录用户身份发到 PRD 原始飞书文档）：
+2. **评论回 PRD**（仅逻辑漏洞条目，以登录用户身份发到 PRD 原始飞书文档，**方案评论**——必须带可采纳的方案）：
 
 ```bash
 lark-cli drive +add-comment \
   --doc "<PRD 飞书 URL，取 REQ 目录 source.txt>" \
-  --content '【UED 反馈 · REQ-###】功能点「X」：链路缺口——<缺什么>。Demo 处理：<…>。建议：<给 PRD 作者的补充建议>。Demo 预览：<链接>' \
+  --content '【UED 反馈 · REQ-###】功能点「X」：需求逻辑漏洞——<PRD 原文矛盾两侧 / 流程断头点 / 业务规则空白>。方案建议：<可直接采纳的裁决（取哪一侧）/ 补充规则 / 建议默认值>。Demo 处理：<demo 当前按哪一侧实现>。Demo 预览：<链接>' \
   --as user
 ```
 
 - 评论成功后回填台账行（`base +record-batch-update` 置「已评论」+ 评论链接）。
+- **不合格评论剔除**：正文只有提问没有方案建议、或属 UI 实现细节的评论，发送前剔除并退回 A5 重写归因。
 - **发送门禁**：每批评论发送前在会话展示清单（功能点 + 正文），确认后批量发；同 REQ 增量缺口可直接发。
 - **降级不阻断**：`tools/feishu_issue_table.txt` 未配置 → **台账与 PRD 评论回写整体跳过**，报告警告「PRD 反馈闭环降级」（2026-09-21 用户确认先不配）；REQ 目录无 `source.txt`（PRD 非飞书源）→ 单独跳过评论并标注。质量记录主流程照常。
 

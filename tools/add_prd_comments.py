@@ -100,16 +100,19 @@ def find_block_for_quote(quote: str, blocks) -> str | None:
     return best_bid if best_score >= 6 else None
 
 
-def add_comment(doc: str, block_id: str | None, comment_text: str) -> bool:
+def add_comment(doc: str, block_id: str | None, comment_text: str, mention: str | None = None) -> bool:
+    elements = [
+        {
+            "type": "text",
+            "text": comment_text
+        }
+    ]
+    if mention:
+        elements.append({"type": "mention_user", "mention_user": mention})
     cmd = [
         "lark-cli", "drive", "+add-comment",
         "--doc", doc,
-        "--content", json.dumps([
-            {
-                "type": "text",
-                "text": {"content": comment_text}
-            }
-        ], ensure_ascii=False),
+        "--content", json.dumps(elements, ensure_ascii=False),
         "--as", "user",
     ]
     if block_id:
@@ -135,6 +138,7 @@ def main():
     parser = argparse.ArgumentParser(description="把 review 评论锚定到 PRD 原文段落")
     parser.add_argument("--doc", required=True, help="飞书 PRD 文档 URL 或 token")
     parser.add_argument("--comments", required=True, help="评论 JSON 文件路径")
+    parser.add_argument("--mention", help="每条评论末尾 @ 的用户 open_id（如 ou_xxx）")
     args = parser.parse_args()
 
     with open(args.comments, "r", encoding="utf-8") as f:
@@ -159,7 +163,7 @@ def main():
             print(f"  [{i}] ⚠ 未匹配到段落，fallback 到全文评论  (引用: {quote[:30]}...)")
             fallback += 1
         # 发评论
-        ok = add_comment(args.doc, bid, f"🔍 AI Demo Review: {text}")
+        ok = add_comment(args.doc, bid, f"🔍 AI Demo Review: {text}", mention=args.mention)
         if ok:
             print(f"      评论已发送")
         else:
