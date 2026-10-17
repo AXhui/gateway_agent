@@ -14,3 +14,6 @@ output/
 
 # Claude 本地权限设置（仅本机有效，不入库）
 .claude/settings.local.json
+
+# 依赖（AGENTS.md：node_modules 不入库）
+node_modules/

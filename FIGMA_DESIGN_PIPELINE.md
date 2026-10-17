@@ -37,8 +37,8 @@
 
 | 组件 | 位置 | 说明 |
 |---|---|---|
-| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、spawn claude、回写飞书 |
-| 桥接运行副本 | `~/Desktop/figma-feedo-executor/bridge/server.js` | 实际跑的进程（`node_modules/ws` 在此），**改权威源码后需同步** |
+| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、提取 spec、spawn claude、回写飞书；`ws` 已装在 `tools/figma-bridge/node_modules`（gitignore），直接 `node server.js` 即跑 |
+| ~~桥接运行副本~~ | ~~`~/Desktop/figma-feedo-executor`~~ | 已废弃删除（2026-09），现在仓库即运行处 |
 | 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：Demo名称/版本号/产品分类/需求描述/提示词/demoUrl/Figma链接 + 按钮字段 |
 | 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息 |
 | cloudflared 隧道 | quick tunnel，域名随重启变化 | `cloudflared tunnel --url http://localhost:8080` |
@@ -64,8 +64,8 @@ claude mcp list                    # 确认显示 ✔ Connected
 ### 2. 启动桥接（本机）
 
 ```bash
-cd ~/Desktop/figma-feedo-executor && npm install ws   # 首次
-nohup node bridge/server.js >> /tmp/bridge-server.log 2>&1 &
+cd tools/figma-bridge && npm install ws   # 首次
+nohup node server.js >> /tmp/bridge-server.log 2>&1 &
 curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"claude",...}
 ```
 
@@ -110,7 +110,7 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 
 1. **headless `-p` 下 OAuth MCP 竞态**（官方 bug：[#36309](https://github.com/anthropics/claude-code/issues/36309) / [#36060](https://github.com/anthropics/claude-code/issues/36060)）：首个 API 请求抢在 MCP 握手完成前发出，第一回合工具列表里没有 figma-remote。
    **解法**：任务 prompt 已内置「先输出设计规划再动手」的前戏回合，第二回合起工具列表刷新、figma-remote 可用。**不要删掉 buildPrompt 里的这句引导。**
-2. **设计生成耗时 5–20 分钟**（实测：简单页 ~5 分钟，带背景调研的复杂页 15 分钟+——模型会读仓库 prd.md、做参考调研，再执行 10 次左右画布操作）：桥接超时设 20 分钟（`JOB_TIMEOUT_MS`），别改小；飞书工作流本身的 HTTP 超时只影响「接收请求」，桥接是先应答后干活，不受影响。**任务已排队串行执行**（并发多个 figma-remote 会话会互相拖慢导致超时）。
+2. **设计生成耗时与 token**（2026-09 大幅优化）：转录模式不再让 claude 读几百 KB 的 demo.html——桥接先用无头 Chrome(CDP) 机器提取一份紧凑 spec JSON（每个可见元素的坐标/尺寸/真实色值/文案，实测 200~350 节点、20~40KB），claude 只读 截图 + spec，并要求**单次 use_figma 调用**建完整页，禁止交互式逐节点搭建与仓库调研。模型分档：转录 haiku / 设计 sonnet，可用环境变量 `FIGMA_TRANSCRIBE_MODEL` / `FIGMA_MODEL` 覆盖（转录质量下降时设回 sonnet）。耗时预期从 5–20 分钟降到几分钟级；桥接超时 35 分钟（`JOB_TIMEOUT_MS`）保持不动作安全垫。飞书工作流本身的 HTTP 超时只影响「接收请求」，桥接是先应答后干活，不受影响。**任务已排队串行执行**（并发多个 figma-remote 会话会互相拖慢导致超时）。
 3. **spawn 必须带 `stdio: ['ignore','pipe','pipe']`**：否则 claude 卡在「等 stdin 3 秒」。
 4. **项目目录未信任警告可忽略**：headless 下忽略 settings.json 的 4 条 allow 规则，不影响 MCP 工具与 Read（`--allowedTools Read,mcp__figma-remote,mcp__figma-dev-mode` 走命令行）。
 5. **claude 必须以本仓库为 cwd 跑**（`CLAUDE_CWD`）：figma-remote 虽是全局注册，但任务 prompt 依赖仓库上下文。
@@ -130,7 +130,12 @@ demo 源三层解析（任一命中即转录）：
 | 2 | 本地归档 `05_release/REQ-###/demo.html` | 从 Demo 名称提取 REQ 号定位（REQ-001~007 在库） |
 | 3 | 反查表格「预览 URL」列再下载 | 覆盖 REQ-008+ 无本地归档的行 |
 
-命中后桥接再用无头 Chrome 截一张 1440×1024 图（`--virtual-time-budget=8000` 等 JS 渲染完）作为**视觉基准**，HTML 源码作为**结构/文案/真实色值基准**，一起写进 claude 的 prompt（`--allowedTools` 含 `Read` 供其读取）。
+命中后桥接做两件事，产出两份基准一起写进 claude 的 prompt：
+
+1. 无头 Chrome 截一张 1440×1024 图（`--virtual-time-budget=8000` 等 JS 渲染完）→ **视觉基准**（图标/渐变/整体长相参考）；
+2. CDP 在渲染后的页面里跑提取脚本，导出**结构基准** spec JSON（`/tmp/demo-<jobId>.spec.json`）：每个可见元素一个节点——`i/p` 父子索引、标签、类名、页面绝对坐标、文案、真实色值（CSS 变量已解析）、字号/字重/字体、边框/圆角/阴影。布局/文案/色值以此为准，claude **不读原始 HTML**（spec 提取失败时才回退）。
+
+> 提取脚本在 `tools/figma-bridge/server.js` 的 `EXTRACT_JS` 常量；单测方式：`node -e "require('./tools/figma-bridge/server.js').extractSpec('<demo路径>','t',p=>console.log(p))"`（需先 `npm install ws`）。节点上限 2500，超出截断并在 spec 里标 `truncated:true`。
 
 **组件复用**：两种模式都要求先在 Figma 团队空间引用两份库文件——「Milesight_IOT_Web」与「（新版本）网关/路由器 通用业务组件库 业务组件」——能复用的组件优先从库里取，铁律见 `.claude/rules/figma-asset-libs.md`。
 

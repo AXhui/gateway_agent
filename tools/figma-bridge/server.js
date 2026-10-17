@@ -11,6 +11,9 @@ const USE_CLAUDE = true
 // 项目级 MCP（figma-remote）注册在这个目录下，claude 必须在这里跑才能加载到
 const CLAUDE_CWD = '/Users/youxh/Feishu-competition'
 const JOB_TIMEOUT_MS = 35 * 60 * 1000
+// 模型分档：转录=机械照抄用 haiku，设计=sonnet；均可用环境变量覆盖（质量下降时 FIGMA_TRANSCRIBE_MODEL=sonnet）
+const TRANSCRIBE_MODEL = process.env.FIGMA_TRANSCRIBE_MODEL || 'haiku'
+const DESIGN_MODEL = process.env.FIGMA_MODEL || 'sonnet'
 
 // 任务排队：一次只跑一个 claude（并发多个 figma-remote 会话会互相拖慢/超时）
 const queue = []
@@ -126,6 +129,107 @@ function demoScreenshot(htmlPath, jobId, cb) {
   })
 }
 
+// ---- spec 提取：无头 Chrome(CDP) 在渲染后的页面里跑一段 JS，导出每个可见元素的位置/尺寸/真实色值/文案 ----
+// 产出紧凑 spec JSON 作为转录基准，替代让 claude 分段读几百 KB 原始 HTML（token 大头）
+const EXTRACT_JS = `(async () => {
+  await new Promise(res => document.readyState === 'complete' ? setTimeout(res, 1200) : addEventListener('load', () => setTimeout(res, 1200)))
+  const SKIP = new Set(['SCRIPT','STYLE','LINK','META','TITLE','HEAD','NOSCRIPT','TEMPLATE','BR'])
+  const transparent = (c) => /^rgba\\(.+, 0\\)$/.test(c)
+  const nodes = []
+  let i = 0
+  const page = { w: innerWidth, h: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight), bg: getComputedStyle(document.body).backgroundColor }
+  const walk = (el, p) => {
+    const tag = el.tagName
+    if (SKIP.has(tag)) return
+    const cs = getComputedStyle(el)
+    if (cs.display === 'none' || cs.visibility === 'hidden') return
+    const r = el.getBoundingClientRect()
+    if (r.width < 1 || r.height < 1) return
+    const idx = i++
+    const n = { i: idx, p, t: tag.toLowerCase(), x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height) }
+    const cls = (el.getAttribute('class') || '').trim()
+    if (cls) n.c = cls.split(/\\s+/).slice(0, 4).join(' ')
+    let tx = ''
+    for (const nd of el.childNodes) if (nd.nodeType === 3) tx += nd.textContent
+    tx = tx.replace(/\\s+/g, ' ').trim()
+    if (!tx && (tag === 'INPUT' || tag === 'TEXTAREA')) tx = el.value || el.placeholder || ''
+    if (tag === 'SELECT') tx = el.selectedOptions[0] ? el.selectedOptions[0].textContent : ''
+    if (tx) {
+      n.tx = tx.slice(0, 200)
+      n.fg = cs.color; n.ff = cs.fontFamily.split(',')[0].replace(/["']/g, ''); n.fs = cs.fontSize; n.fw = cs.fontWeight
+      if (cs.textAlign && cs.textAlign !== 'left' && cs.textAlign !== 'start') n.ta = cs.textAlign
+    }
+    if (tag === 'IMG') n.img = (el.currentSrc || el.src || '').startsWith('data:') ? 'inline' : (el.currentSrc || el.src || '').slice(0, 140)
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') n.bg = cs.backgroundImage.length <= 300 ? cs.backgroundImage : 'gradient'
+    else if (cs.backgroundColor && !transparent(cs.backgroundColor)) n.bg = cs.backgroundColor
+    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') n.bd = cs.borderTopWidth + ' ' + cs.borderTopStyle + ' ' + cs.borderTopColor
+    if (cs.borderRadius && cs.borderRadius !== '0px') n.br = cs.borderRadius
+    if (cs.boxShadow && cs.boxShadow !== 'none') n.sh = cs.boxShadow.length <= 200 ? cs.boxShadow : 'shadow'
+    nodes.push(n)
+    if (i <= 2500) for (const c of el.children) walk(c, idx)
+  }
+  walk(document.body, -1)
+  return JSON.stringify({ page, nodes, truncated: i > 2500 })
+})()`
+
+function extractSpec(htmlPath, jobId, cb) {
+  const specPath = `/tmp/demo-${jobId}.spec.json`
+  if (!fs.existsSync(CHROME_BIN)) return cb(null)
+  const port = 20000 + Math.floor(Math.random() * 20000)
+  const child = spawn(CHROME_BIN, [
+    '--headless=new', '--disable-gpu', `--remote-debugging-port=${port}`,
+    `--user-data-dir=/tmp/chrome-spec-${jobId}`,
+    '--window-size=1440,1024', '--hide-scrollbars', `file://${htmlPath}`,
+  ], { stdio: 'ignore' })
+  const WebSocket = require('ws')
+  const http = require('http')
+  let ws = null
+  let done = false
+  const finish = (spec) => {
+    if (done) return
+    done = true
+    clearTimeout(guard)
+    if (ws) { try { ws.close() } catch (e) { /* 已断开 */ } }
+    child.kill()
+    if (spec && spec.length > 100) {
+      try {
+        fs.writeFileSync(specPath, spec)
+        console.log(`[demo:${jobId}] spec 提取成功 ${specPath}（${(spec.length / 1024).toFixed(0)}KB / ${JSON.parse(spec).nodes.length} 节点）`)
+        return cb(specPath)
+      } catch (e) { console.log(`[demo:${jobId}] spec 写盘失败:`, e.message) }
+    }
+    console.log(`[demo:${jobId}] spec 提取失败，转录回退为读原始 HTML`)
+    cb(null)
+  }
+  const guard = setTimeout(() => finish(null), 30000)
+  const tryList = (attempt) => {
+    if (done) return
+    http.get({ host: '127.0.0.1', port, path: '/json/list', timeout: 1500 }, (res) => {
+      let body = ''
+      res.on('data', (d) => (body += d))
+      res.on('end', () => {
+        let target = null
+        try { target = JSON.parse(body).find((t) => t.type === 'page' && t.webSocketDebuggerUrl) } catch (e) { /* chrome 未就绪 */ }
+        if (!target) return attempt < 12 ? setTimeout(() => tryList(attempt + 1), 1000) : finish(null)
+        ws = new WebSocket(target.webSocketDebuggerUrl, { maxPayload: 256 * 1024 * 1024 })
+        ws.on('open', () => ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: EXTRACT_JS, returnByValue: true, awaitPromise: true } })))
+        ws.on('message', (m) => {
+          const msg = JSON.parse(m.toString())
+          if (msg.id !== 1) return
+          const r = msg.result && msg.result.result
+          if (r && typeof r.value === 'string' && r.value.length > 100) finish(r.value)
+          else {
+            console.log(`[demo:${jobId}] spec evaluate 失败:`, JSON.stringify((msg.result && (msg.result.exceptionDetails || r)) || msg.error || msg).slice(0, 300))
+            finish(null)
+          }
+        })
+        ws.on('error', () => finish(null))
+      })
+    }).on('error', () => { if (attempt < 12) setTimeout(() => tryList(attempt + 1), 1000) })
+  }
+  tryList(0)
+}
+
 function resolveDemoSource(task, jobId, cb) {
   const finish = (info) => {
     console.log(info
@@ -133,7 +237,9 @@ function resolveDemoSource(task, jobId, cb) {
       : `[demo:${jobId}] 三层取源均未命中，走自由设计模式`)
     cb(info)
   }
-  const afterHtml = (htmlPath) => demoScreenshot(htmlPath, jobId, (pngPath) => finish({ htmlPath, pngPath }))
+  const afterHtml = (htmlPath) => demoScreenshot(htmlPath, jobId, (pngPath) => {
+    extractSpec(htmlPath, jobId, (specPath) => finish({ htmlPath, pngPath, specPath }))
+  })
 
   const fromUrl = (url) => {
     if (!url) return fromLocal()
@@ -200,20 +306,28 @@ function buildPrompt(t, demo) {
   const libRule = `组件复用优先：在 Figma 团队空间找 ${FIGMA_LIBS.join(' 和 ')} 两份库文件，能复用的组件（按钮、输入框、表格、徽标、侧边导航项等）优先从库里复制/引用，库里没有的再手画。`
 
   if (demo) {
-    // 转录模式：已有 demo，100% 还原，禁止再设计
+    // 转录模式：已有 demo，1:1 照抄。基准 = 截图（视觉）+ spec JSON（结构/色值/文案，机器提取，CSS 变量已解析）
+    // spec 提取失败时才回退给原始 HTML（token 大头，最后手段）
+    const mats = []
+    if (demo.pngPath) mats.push(`- 视觉基准（整体长相/图标/渐变的参考）：${demo.pngPath}`)
+    if (demo.specPath) {
+      mats.push(`- 结构基准（权威）：${demo.specPath}——机器从渲染后的 demo 提取的元素树，每个可见元素一个节点：i/p=自身/父节点索引（直接对应 Figma frame 层级）、t=标签、c=类名、x/y/w/h=页面绝对坐标、tx=文案、bg/fg=真实色值（CSS 变量已解析）、fs/fw/ff=字号/字重/字体、bd/br/sh=边框/圆角/阴影。布局、文案、色值一律以此文件为准。`)
+    } else {
+      mats.push(`- 源码基准（结构/文案/真实色值）：${demo.htmlPath}（文件较大，分段读关键部分；颜色一律取 CSS 变量真实值）`)
+    }
     return [
       warmup,
-      `本次任务：把已有 demo 页面逐像素转写成 Figma 可编辑设计稿（是 1:1 转录，不是重新设计）。`,
-      `基准材料（用 Read 工具查看）：`,
-      demo.pngPath ? `- 视觉基准（最终长相）：${demo.pngPath}` : '',
-      `- 源码基准（结构/文案/真实色值）：${demo.htmlPath}（文件较大，分段读关键部分；颜色一律取 CSS 变量真实值）`,
+      `本次任务：把已有 demo 页面 1:1 转录成 Figma 可编辑设计稿（是照抄，不是重新设计）。`,
+      `基准材料（只允许 Read 下面这 ${mats.length} 个文件，禁止读仓库其他任何文件、禁止读 prd.md、禁止做任何调研）：`,
+      ...mats,
       `- 名称：${t.demoName || '未命名'}${t.version ? `（版本 ${t.version}）` : ''}`,
-      `硬性要求：`,
-      `1. 布局、模块、顺序、文案 100% 照抄 demo：侧边导航每一项、标题、卡片里的数字、表格每一列每一行、徽标颜色、按钮文字，全部原样落进 Figma。禁止增删模块、禁止改写文案、禁止任何"优化"。`,
-      `2. 颜色一律用 demo 的真实色值（从源码 CSS 变量取，如 #2563EB/#0F1B2D/#F5F7FA），不得主观换色；字体字号间距按 demo 实际值。`,
-      `3. 整页放进一个 1440 宽的完整 frame，高度按 demo 实际内容，不要只画首屏。`,
+      `执行方式（硬性，为省时间与上下文）：`,
+      `1. 画布写入一次性完成：把整页生成一段完整的 JavaScript，放在一个 use_figma 调用里建完，禁止交互式逐节点搭建（不做 get_metadata 逐层探索）。仅当脚本超过 5 万字符上限时，才按页面区块拆成少数几次调用。`,
+      `2. 整页放进一个 1440 宽、完整内容高度的 frame，不要只画首屏。`,
+      `3. 节点映射：spec 里带 bg/bd 的盒子→Frame 或 Rectangle；tx 文本→Text 节点（用 fs/fw/fg 实际值）；容器无样式→直接挂到父 frame 层级；图标按截图选最近似的内置图标。`,
       `4. ${libRule}`,
-      `完成后报告：写进了哪个文件（链接）、节点名，以及与 demo 的差异清单（若有，应尽量为零）。`,
+      `还原要求：布局、模块、顺序、文案 100% 照抄基准：侧边导航每一项、标题、卡片数字、表格每列每行、徽标颜色、按钮文字原样落进 Figma；颜色一律用基准里的真实色值，禁止主观换色、禁止增删模块、禁止改写文案。`,
+      `完成后报告：写进了哪个文件（链接）、节点名、与基准的差异清单（应尽量为零）。`,
     ].filter(Boolean).join('\n')
   }
 
@@ -236,7 +350,7 @@ function runClaudeJob(task, jobId, done) {
     const log = fs.createWriteStream(logFile, { flags: 'a' })
     const child = spawn(CLAUDE_BIN, [
       '-p', buildPrompt(task, demo),
-      '--model', 'sonnet',
+      '--model', demo ? TRANSCRIBE_MODEL : DESIGN_MODEL,
       '--allowedTools', 'Read,mcp__figma-remote,mcp__figma-dev-mode'
     ], { cwd: CLAUDE_CWD, stdio: ['ignore', 'pipe', 'pipe'] })
 
@@ -321,4 +435,8 @@ wss.on('connection', (ws, req) => {
   ws.on('close', () => console.log('[ws] 插件断开'))
 })
 
-server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=${useClaude ? 'claude' : 'plugin'}`))
+// 直接 require 本文件只导出工具函数用于测试，不启动服务
+module.exports = { extractSpec, buildPrompt }
+if (require.main === module) {
+  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=${useClaude ? 'claude' : 'plugin'}`))
+}
