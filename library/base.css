@@ -151,6 +151,7 @@ body {
   transform: translateY(-70%) rotate(45deg); pointer-events: none;
 }
 .ms-select--sm > select { height: 28px; font-size: 13px; }
+.ms-select--lg > select { height: 40px; font-size: 16px; }
 .ms-select--error > select { border-color: var(--color-error-normal); }
 .ms-select-native { height: 32px; padding: 0 var(--spacing-12); border: 1px solid var(--color-border-base); border-radius: var(--radius-6); background: var(--color-bg-card); color: var(--color-text-primary); font: 400 14px/1 var(--font-sans); }
 

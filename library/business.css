@@ -366,6 +366,11 @@
 .bc-com-title--center .bc-com-title-row { justify-content: center; }
 .bc-com-title--right .bc-com-title-row { justify-content: flex-end; }
 
+/* 表单双列列间距覆写（叠加在 .ms-grid-2 上，只改 column-gap）：
+   Figma 业务组件库「.启用/禁用功能逻辑」页 Form 双列真源 = 两列各 600/580px、gutter 32px，
+   .ms-grid-2 通用 gap 16 服务卡片栅格不动，表单场景由本类覆写（business-specific.md §5.2） */
+.bc-com-form-grid { column-gap: var(--spacing-3xl); }
+
 /* ---------- EG71 Dashboard 接入设备面板（Access devices） ---------- */
 /* 三段式进度条：视觉（色/圆角/高度）全由 .ms-progress-bar 系列承担，此处仅编排图例布局 */
 .bc-eg71-dashboard-devices-progress .ms-progress-line { display: flex; }
