@@ -1010,6 +1010,41 @@
       "dir": ".claude/skills/business/eg71/B_Eg71MeshModuleCard",
       "src": "assets/js/registry-business.js#bc-eg71-mesh-module",
       "status": "已固化"
+    },
+    "B_Eg71Message": {
+      "id": "bc-eg71-message",
+      "cn": "全局消息 Toast",
+      "dir": ".claude/skills/business/eg71/B_Eg71Message",
+      "src": "assets/js/registry-business.js#bc-eg71-message",
+      "status": "已固化"
+    },
+    "B_Eg71LibProgressModal": {
+      "id": "bc-eg71-lib-progress-modal",
+      "cn": "内置库更新进度弹窗",
+      "dir": ".claude/skills/business/eg71/B_Eg71LibProgressModal",
+      "src": "assets/js/registry-business.js#bc-eg71-lib-progress-modal",
+      "status": "已固化"
+    },
+    "B_Eg71LibResultModal": {
+      "id": "bc-eg71-lib-result-modal",
+      "cn": "内置库更新结果弹窗",
+      "dir": ".claude/skills/business/eg71/B_Eg71LibResultModal",
+      "src": "assets/js/registry-business.js#bc-eg71-lib-result-modal",
+      "status": "已固化"
+    },
+    "B_Eg71LibUploadModal": {
+      "id": "bc-eg71-lib-upload-modal",
+      "cn": "离线包上传弹窗",
+      "dir": ".claude/skills/business/eg71/B_Eg71LibUploadModal",
+      "src": "assets/js/registry-business.js#bc-eg71-lib-upload-modal",
+      "status": "已固化"
+    },
+    "B_Eg71DeviceLibTable": {
+      "id": "bc-eg71-device-lib-table",
+      "cn": "设备库型号表",
+      "dir": ".claude/skills/business/eg71/B_Eg71DeviceLibTable",
+      "src": "assets/js/registry-business.js#bc-eg71-device-lib-table",
+      "status": "已固化"
     }
   },
   "modules": {

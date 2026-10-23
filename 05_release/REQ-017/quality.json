@@ -1,0 +1,9 @@
+{
+  "structure": 100,
+  "component": 92,
+  "interaction": 100,
+  "visual": 96,
+  "field": 100,
+  "category": "网关",
+  "reason": "structure 100：零扣分（U1-1 唯一壳/单卡形态，U2-1 模块零缺失零多出）；component 92：脚本分，⑤设计令牌占比 69%（score_component.json，L2 内联固有 px 口径），①②③④满分；interaction 100：零扣分（T1-T5 交互链五段全通：进度链/上传链/count 下钻 toast 占位/取消解锁 busy/键盘可达）；visual 96：−4 字号越红线×1（U3-2 壳侧边栏菜单 13px 冻结壳存量，§7 清单外待 runtime 统一升级）；field 100：零扣分（T4-1 型号 17 项/版本号/统计值/重命名映射/文件名全对 PRD·Figma 真源）。"
+}

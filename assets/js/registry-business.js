@@ -4660,6 +4660,277 @@ window.MS_BIZ_UTIL = (function () {
           if (f) wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: f.getAttribute('data-mesh-module-field'), value: f.value } }));
         });
       }
+    },
+    {
+      id: 'bc-eg71-message', cn: '全局消息 Toast', cat: '反馈',
+      desc: 'EG71 全局消息提示（顶部居中 toast，L2 ms-message-stack/ms-message 的业务封装）：success/error 两语义态，error 不自动消失（EG71 Alert 持久性契约），success 默认 2.4s 自动消失，均可手动关闭。事件驱动：宿主对容器 dispatch eg71-message-show（detail={type,text,duration}），多条堆叠。被内置库在线更新（网络异常红 toast）等引用。',
+      atoms: ['message', 'icon'],
+      entityHint: 'gateway',
+      tags: ['toast', 'Message', '反馈', '网络异常', '提示', 'EG71'],
+      render(ctx) {
+        return '<div class="ms-message-stack bc-eg71-message" data-bc-message-stack' + (ctx && ctx.hidden === false ? '' : ' hidden') + '></div>';
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        if (rootEl.dataset.bcMsgBound) return;
+        rootEl.dataset.bcMsgBound = '1';
+        rootEl.addEventListener('eg71-message-show', (e) => {
+          const host = rootEl.querySelector('[data-bc-message-stack]');
+          if (!host) return;
+          const d = e.detail || {};
+          const type = d.type === 'error' ? 'error' : 'success';
+          const item = document.createElement('div');
+          item.className = 'ms-message bc-eg71-message-item bc-eg71-message-item--' + type;
+          item.setAttribute('role', 'status');
+          item.innerHTML = ico(type === 'error' ? 'warn' : 'check', 16)
+            + '<span class="bc-eg71-message-text">' + esc(d.text || '') + '</span>'
+            + '<button type="button" class="bc-eg71-message-close" data-bc-message-close aria-label="Close">' + ico('close', 16) + '</button>';
+          host.appendChild(item);
+          host.hidden = false;
+          const dur = typeof d.duration === 'number' ? d.duration : (type === 'error' ? 0 : 2400);
+          if (dur > 0) setTimeout(() => { item.remove(); if (!host.children.length) host.hidden = true; }, dur);
+        });
+        rootEl.addEventListener('click', (e) => {
+          const t = e.target.closest('[data-bc-message-close]');
+          if (!t) return;
+          const item = t.closest('.ms-message');
+          const host = t.closest('.ms-message-stack');
+          item.remove();
+          if (host && !host.children.length) host.hidden = true;
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-lib-progress-modal', cn: '内置库更新进度弹窗', cat: '数据服务',
+      desc: '内置库在线更新/离线包导入共用进度弹窗（Figma 71.0.0.4「解析中」帧）：深遮罩 + 居中小卡（ms-modal--sm）= spinner 标题行 + 提示文案 + 进度条（percent 为空时仅 spinner 不渲染进度条）+ Cancel。phase 三态文案：fetch=Fetching the latest built-in libraries... / parse=Parsing… Please wait. / write=Writing to the built-in library...。事件：eg71-lib-progress-cancel。',
+      atoms: ['modal', 'progress', 'button', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['内置库', '在线更新', '离线包', '进度', 'Loading', '解析', '写入', 'EG71'],
+      render(ctx) {
+        const phase = ctx.phase || 'fetch';
+        const HINTS = {
+          fetch: 'Fetching the latest built-in libraries...',
+          parse: 'Parsing… Please wait.',
+          write: 'Writing to the built-in library...'
+        };
+        const title = ctx.title || (phase === 'fetch' ? 'Online Update' : 'Importing');
+        const pct = typeof ctx.percent === 'number' ? ctx.percent : null;
+        return '<div class="ms-mask bc-eg71-lib-progress' + (ctx.open === false ? '" hidden' : '"') + '>'
+          + '<div class="ms-modal ms-modal--sm bc-eg71-lib-progress-modal" role="dialog" aria-label="' + esc(title) + '">'
+          + '<div class="bc-eg71-lib-progress-head">'
+          + '<span class="ms-spin">' + ico('loaderCircle', 24) + '</span>'
+          + '<span class="bc-eg71-lib-progress-title">' + esc(title) + '</span>'
+          + (pct !== null ? '<span class="ms-progress-text bc-eg71-lib-progress-pct">' + pct + '%</span>' : '')
+          + '</div>'
+          + '<div class="bc-eg71-lib-progress-hint">' + esc(ctx.hint || HINTS[phase]) + '</div>'
+          + (pct !== null
+            ? '<div class="ms-progress bc-eg71-lib-progress-bar"><div class="ms-progress-line"><div class="ms-progress-bar" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></div></div></div>'
+            : '')
+          + '<div class="bc-eg71-lib-progress-foot">'
+          + '<button type="button" class="ms-btn" data-lib-progress-cancel>' + esc(ctx.cancelText || 'Cancel') + '</button>'
+          + '</div>'
+          + '</div></div>';
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-lib-progress');
+        if (!wrap || wrap.dataset.bound) return;
+        wrap.dataset.bound = '1';
+        const cancel = () => {
+          wrap.hidden = true;
+          wrap.dispatchEvent(new CustomEvent('eg71-lib-progress-cancel', { bubbles: true }));
+        };
+        wrap.addEventListener('click', (e) => {
+          if (e.target.closest('[data-lib-progress-cancel]')) { cancel(); return; }
+          if (e.target === wrap) cancel();
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && document.contains(wrap) && !wrap.hidden) cancel();
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-lib-result-modal', cn: '内置库更新结果弹窗', cat: '数据服务',
+      desc: '内置库更新/离线包导入完成摘要弹窗（Figma 71.0.0.4「更新完成/自定义库冲突」帧）：绿色对勾 + Import Completed 标题 + Inbuilt library rebuilt 统计行（stats.added/updated/removed，值为 0 的项省略不渲染）+ 可选详情段 sections（renamed 重命名映射 AM02 → AM02-1 / inuse 被引用备份 / kept 无法删除保留，各段带 copy 复制钮）+ Back to Device Library 主钮。事件：eg71-lib-result-ok / eg71-lib-result-copy（detail.section）。',
+      atoms: ['modal', 'result', 'button', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['内置库', '更新完成', '导入完成', '摘要', '重命名', '备份', 'EG71'],
+      render(ctx) {
+        const stats = ctx.stats || {};
+        const STAT_ROWS = [
+          { key: 'added', label: 'Added' },
+          { key: 'updated', label: 'Updated' },
+          { key: 'removed', label: 'Removed' }
+        ].filter(r => stats[r.key]);
+        const SECTION_TITLES = {
+          renamed: 'Renamed Device Models (conflicts with custom library)',
+          inuse: 'Device Models in Use (original versions backed up)',
+          kept: 'Device Models in Use (kept, cannot be removed)'
+        };
+        const sections = (ctx.sections || []).map((s, i) => {
+          const items = (s.items || []).map(it => {
+            const html = it && it.from !== undefined
+              ? '<span class="bc-eg71-lib-result-item-from">' + esc(it.from) + '</span>' + ico('arrowRight', 16) + '<span class="bc-eg71-lib-result-item-to">' + esc(it.to) + '</span>'
+              : '<span>' + esc(typeof it === 'string' ? it : (it && it.name) || '') + '</span>';
+            return '<li class="bc-eg71-lib-result-item">' + html + '</li>';
+          }).join('');
+          return '<div class="bc-eg71-lib-result-section">'
+            + '<div class="bc-eg71-lib-result-section-head">'
+            + '<span class="bc-eg71-lib-result-section-title">' + esc(s.title || SECTION_TITLES[s.type] || '') + '</span>'
+            + '<button type="button" class="bc-eg71-lib-result-copy" data-lib-result-copy="' + i + '" aria-label="Copy">' + ico('copy', 16) + '</button>'
+            + '</div>'
+            + (s.note ? '<div class="bc-eg71-lib-result-section-note">' + esc(s.note) + '</div>' : '')
+            + '<ul class="bc-eg71-lib-result-items">' + items + '</ul>'
+            + '</div>';
+        }).join('');
+        return '<div class="ms-mask bc-eg71-lib-result' + (ctx.open === false ? '" hidden' : '"') + '>'
+          + '<div class="ms-modal ms-modal--sm bc-eg71-lib-result-modal" role="dialog" aria-label="' + esc(ctx.title || 'Import Completed') + '">'
+          + '<div class="bc-eg71-lib-result-head">'
+          + '<span class="bc-eg71-lib-result-icon">' + ico('check', 16) + '</span>'
+          + '<span class="bc-eg71-lib-result-title">' + esc(ctx.title || 'Import Completed') + '</span>'
+          + '</div>'
+          + '<div class="bc-eg71-lib-result-stats-title">' + esc(ctx.statsTitle || 'Inbuilt library rebuilt:') + '</div>'
+          + '<div class="bc-eg71-lib-result-stats">'
+          + STAT_ROWS.map(r => '<div class="bc-eg71-lib-result-stat"><span class="bc-eg71-lib-result-stat-label">' + r.label + '</span><span class="bc-num bc-eg71-lib-result-stat-num">' + stats[r.key] + '</span><span>Device Models</span></div>').join('')
+          + '</div>'
+          + sections
+          + '<div class="bc-eg71-lib-result-foot">'
+          + '<button type="button" class="ms-btn ms-btn--filled" data-lib-result-ok>' + esc(ctx.okText || 'Back to Device Library') + '</button>'
+          + '</div>'
+          + '</div></div>';
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-lib-result');
+        if (!wrap || wrap.dataset.bound) return;
+        wrap.dataset.bound = '1';
+        wrap.addEventListener('click', (e) => {
+          const copy = e.target.closest('[data-lib-result-copy]');
+          if (copy) {
+            wrap.dispatchEvent(new CustomEvent('eg71-lib-result-copy', { bubbles: true, detail: { section: copy.getAttribute('data-lib-result-copy') } }));
+            return;
+          }
+          if (e.target.closest('[data-lib-result-ok]')) {
+            wrap.hidden = true;
+            wrap.dispatchEvent(new CustomEvent('eg71-lib-result-ok', { bubbles: true }));
+          }
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && document.contains(wrap) && !wrap.hidden) {
+            wrap.hidden = true;
+            wrap.dispatchEvent(new CustomEvent('eg71-lib-result-ok', { bubbles: true }));
+          }
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-lib-upload-modal', cn: '离线包上传弹窗', cat: '数据服务',
+      desc: '内置库离线包导入弹窗（Figma 71.0.0.4「导入离线包」帧）：标准弹窗 = 说明 Alert（醒目提示官方包来源）+ Official Download 蓝链接（后台直接下载）+ Upload-Drag 拖拽区（ms-upload，文案提示 Milesight 官方标准离线包）+ 文件态（ok=文件行 ms-upload-file / error=红色校验错误文案，文件类型/大小错误）+ Cancel/Upload 底钮（Upload 随文件就绪启停）。事件：eg71-lib-upload-file / -remove / -download / -cancel / -confirm。',
+      atoms: ['modal', 'upload', 'alert', 'button', 'icon', 'text'],
+      entityHint: 'gateway',
+      tags: ['内置库', '离线包', '上传', 'Upload', '导入', 'ZIP', 'EG71'],
+      render(ctx) {
+        const fileState = ctx.fileState || 'empty';
+        const ok = fileState === 'ok';
+        return '<div class="ms-mask bc-eg71-lib-upload' + (ctx.open === false ? '" hidden' : '"') + '>'
+          + '<div class="ms-modal bc-eg71-lib-upload-modal" role="dialog" aria-label="' + esc(ctx.title || 'Import Offline Package') + '">'
+          + '<div class="ms-modal-head"><span class="ms-modal-title">' + esc(ctx.title || 'Import Offline Package') + '</span>'
+          + '<button type="button" class="ms-modal-close" data-lib-upload-cancel aria-label="Close">' + ico('close', 16) + '</button></div>'
+          + '<div class="ms-modal-body bc-eg71-lib-upload-body">'
+          + '<div class="ms-alert ms-alert--info"><span class="ms-alert-icon">' + ico('info', 16) + '</span>'
+          + '<div class="ms-alert-body"><span>' + esc(ctx.note || 'Please make sure the offline package is a standard package officially released by Milesight.') + '</span>'
+          + ' <a class="ms-link" href="javascript:void(0)" data-lib-upload-download>' + esc(ctx.linkText || 'Official Download') + '</a></div></div>'
+          + '<div class="bc-eg71-lib-upload-drop">'
+          + '<div class="ms-upload" data-lib-upload-file tabindex="0" role="button" aria-label="Select offline package">'
+          + ico('upload', 32)
+          + '<span class="bc-eg71-lib-upload-hint">' + esc(ctx.dropHint || 'Drag and drop the offline package here, or click to select') + '</span>'
+          + '<span class="bc-eg71-lib-upload-sub">' + esc(ctx.dropSub || 'Only standard .zip packages released by Milesight are supported') + '</span>'
+          + '</div>'
+          + (ok ? '<div class="ms-upload-file">' + ico('fileArchive', 16) + '<span class="bc-eg71-lib-upload-filename">' + esc(ctx.fileName || '') + '</span><span class="bc-eg71-lib-upload-filesize">' + esc(ctx.fileSize || '') + '</span>'
+            + '<button type="button" class="bc-eg71-lib-upload-remove" data-lib-upload-remove aria-label="Remove file">' + ico('close', 16) + '</button></div>' : '')
+          + (fileState === 'error' ? '<div class="bc-eg71-lib-upload-error"><span class="ms-alert-icon">' + ico('warn', 16) + '</span><span>' + esc(ctx.errorText || 'File type or size is invalid. Please upload a standard Milesight offline package (.zip).') + '</span></div>' : '')
+          + '</div>'
+          + '</div>'
+          + '<div class="ms-modal-foot">'
+          + '<button type="button" class="ms-btn" data-lib-upload-cancel>' + esc(ctx.cancelText || 'Cancel') + '</button>'
+          + '<button type="button" class="ms-btn ms-btn--filled" data-lib-upload-confirm' + (ok ? '' : ' disabled') + '>' + esc(ctx.confirmText || 'Upload') + '</button>'
+          + '</div>'
+          + '</div></div>';
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-lib-upload');
+        if (!wrap || wrap.dataset.bound) return;
+        wrap.dataset.bound = '1';
+        const close = () => {
+          wrap.hidden = true;
+          wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-cancel', { bubbles: true }));
+        };
+        wrap.addEventListener('click', (e) => {
+          if (e.target.closest('[data-lib-upload-cancel]')) { close(); return; }
+          if (e.target.closest('[data-lib-upload-file]')) { wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-file', { bubbles: true })); return; }
+          if (e.target.closest('[data-lib-upload-remove]')) { wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-remove', { bubbles: true })); return; }
+          if (e.target.closest('[data-lib-upload-download]')) { wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-download', { bubbles: true })); return; }
+          if (e.target.closest('[data-lib-upload-confirm]')) { wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-confirm', { bubbles: true })); return; }
+          if (e.target === wrap) close();
+        });
+        wrap.addEventListener('keydown', (e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-lib-upload-file]')) {
+            e.preventDefault();
+            wrap.dispatchEvent(new CustomEvent('eg71-lib-upload-file', { bubbles: true }));
+          }
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && document.contains(wrap) && !wrap.hidden) close();
+        });
+      }
+    },
+    {
+      id: 'bc-eg71-device-lib-table', cn: '设备库型号表', cat: '数据服务',
+      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库帧 · EG71 表格左对齐契约硬性落地）：Device Model / Service Reference Count（bc-num 计数下钻链接）/ Operation（eye 图标钮，bc-eg71-table-ops 仅 nowrap）三列全左对齐，表尾 Total N + 单页分页；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count（计数下钻）/ eg71-devicelib-view（型号查看，detail.model）。',
+      atoms: ['table', 'button', 'icon', 'pagination', 'empty'],
+      entityHint: 'gateway',
+      tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', 'EG71'],
+      render(ctx) {
+        const rows = ctx.rows || [];
+        const total = typeof ctx.total === 'number' ? ctx.total : rows.length;
+        if (!rows.length) {
+          return '<div class="bc-eg71-device-lib-table"><div class="ms-empty">'
+            + ico('fileText', 32)
+            + '<div class="ms-empty-text">' + esc(ctx.emptyText || 'No device models') + '</div>'
+            + '</div></div>';
+        }
+        return '<div class="bc-eg71-device-lib-table">'
+          + '<table class="ms-table">'
+          + '<thead><tr>'
+          + '<th>' + esc(ctx.modelTitle || 'Device Model') + '</th>'
+          + '<th>' + esc(ctx.countTitle || 'Service Reference Count') + '</th>'
+          + '<th>' + esc(ctx.opsTitle || 'Operation') + '</th>'
+          + '</tr></thead>'
+          + '<tbody>' + rows.map(r => '<tr>'
+            + '<td><span class="bc-eg71-device-lib-name">' + esc(r.model) + '</span></td>'
+            + '<td><a class="ms-link bc-num bc-eg71-device-lib-count" href="javascript:void(0)" data-devicelib-count="' + esc(r.model) + '" aria-label="' + esc(r.model) + ' service references">' + r.refs + '</a></td>'
+            + '<td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-devicelib-view="' + esc(r.model) + '" aria-label="View ' + esc(r.model) + '" title="View">' + ico('eye', 16) + '</button></td>'
+            + '</tr>').join('') + '</tbody>'
+          + '</table>'
+          + '<div class="bc-table-foot bc-eg71-device-lib-foot">'
+          + '<span class="ms-text ms-text--secondary ms-text--sm">Total <span class="bc-num">' + total + '</span></span>'
+          + '<span class="ms-pagination"><span class="ms-page-item" disabled>‹</span><span class="ms-page-item ms-page-item--active">1</span><span class="ms-page-item" disabled>›</span></span>'
+          + '</div>'
+          + '</div>';
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        const wrap = rootEl.querySelector('.bc-eg71-device-lib-table');
+        if (!wrap || wrap.dataset.bound) return;
+        wrap.dataset.bound = '1';
+        wrap.addEventListener('click', (e) => {
+          const cnt = e.target.closest('[data-devicelib-count]');
+          if (cnt) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-count', { bubbles: true, detail: { model: cnt.getAttribute('data-devicelib-count') } })); return; }
+          const view = e.target.closest('[data-devicelib-view]');
+          if (view) wrap.dispatchEvent(new CustomEvent('eg71-devicelib-view', { bubbles: true, detail: { model: view.getAttribute('data-devicelib-view') } }));
+        });
+      }
     }
   ];
 

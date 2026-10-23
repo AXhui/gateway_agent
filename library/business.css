@@ -908,3 +908,60 @@
 .bc-eg71-mesh-module-stat { display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-primary-bg); border-radius: var(--radius-m); }
 .bc-eg71-mesh-module-stat-sub { font-size: 12px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-module-actions { display: flex; gap: var(--spacing-12); }
+
+/* ===================== 内置库更新域（REQ-017 · Figma 71.0.0.4） ===================== */
+/* bc-eg71-message · 全局消息 Toast */
+.bc-eg71-message-item--error .ms-ico { color: var(--color-error-normal); }
+.bc-eg71-message-item--success .ms-ico { color: var(--color-success-normal); }
+.bc-eg71-message-text { font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-message-close { cursor: pointer; display: inline-flex; padding: var(--spacing-4); margin-left: var(--spacing-4); border-radius: var(--radius-s); color: var(--color-text-auxiliary); background: none; border: none; }
+.bc-eg71-message-close:hover { color: var(--color-text-secondary); }
+
+/* bc-eg71-lib-progress-modal · 进度弹窗（获取/解析/写入） */
+.bc-eg71-lib-progress-modal { padding: var(--spacing-24); }
+.bc-eg71-lib-progress-head { display: flex; align-items: center; gap: var(--spacing-12); }
+.bc-eg71-lib-progress-title { flex: 1; font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-lib-progress-pct { font-size: 14px; }
+.bc-eg71-lib-progress-hint { margin-top: var(--spacing-8); font-size: 14px; color: var(--color-text-secondary); }
+.bc-eg71-lib-progress-bar { margin-top: var(--spacing-16); }
+.bc-eg71-lib-progress-foot { display: flex; justify-content: flex-end; margin-top: var(--spacing-20); }
+
+/* bc-eg71-lib-result-modal · 更新完成摘要弹窗 */
+.bc-eg71-lib-result-modal { padding: var(--spacing-24); }
+.bc-eg71-lib-result-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-lib-result-icon { display: inline-flex; align-items: center; justify-content: center; width: var(--spacing-24); height: var(--spacing-24); border-radius: var(--radius-full); background: var(--color-success-bg); color: var(--color-success-normal); }
+.bc-eg71-lib-result-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+.bc-eg71-lib-result-stats-title { margin-top: var(--spacing-16); font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-lib-result-stats { display: flex; flex-direction: column; gap: var(--spacing-4); margin-top: var(--spacing-8); }
+.bc-eg71-lib-result-stat { display: flex; align-items: center; gap: var(--spacing-8); font-size: 14px; color: var(--color-text-secondary); }
+.bc-eg71-lib-result-stat-num { font-size: 14px; }
+.bc-eg71-lib-result-section { margin-top: var(--spacing-16); padding: var(--spacing-12) var(--spacing-16); background: var(--color-fill-base-normal); border-radius: var(--radius-m); }
+.bc-eg71-lib-result-section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-8); }
+.bc-eg71-lib-result-section-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-lib-result-section-note { margin-top: var(--spacing-4); font-size: 12px; color: var(--color-text-secondary); }
+.bc-eg71-lib-result-copy { cursor: pointer; display: inline-flex; padding: var(--spacing-4); border-radius: var(--radius-s); color: var(--color-icon-auxiliary); background: none; border: none; }
+.bc-eg71-lib-result-copy:hover { color: var(--color-text-secondary); }
+.bc-eg71-lib-result-items { list-style: none; margin: var(--spacing-8) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-4); }
+.bc-eg71-lib-result-item { display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-primary); }
+.bc-eg71-lib-result-item .ms-ico { color: var(--color-icon-auxiliary); }
+.bc-eg71-lib-result-item-to { color: var(--color-text-link-normal); }
+.bc-eg71-lib-result-foot { display: flex; justify-content: flex-end; margin-top: var(--spacing-20); }
+
+/* bc-eg71-lib-upload-modal · 离线包上传弹窗 */
+.bc-eg71-lib-upload-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-lib-upload-drop { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-lib-upload-hint { font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-lib-upload-sub { font-size: 12px; color: var(--color-text-auxiliary); }
+.bc-eg71-lib-upload-filename { font-size: 14px; color: var(--color-text-primary); }
+.bc-eg71-lib-upload-filesize { font-size: 12px; color: var(--color-text-auxiliary); }
+.bc-eg71-lib-upload-remove { cursor: pointer; display: inline-flex; padding: var(--spacing-4); border-radius: var(--radius-s); color: var(--color-text-auxiliary); background: none; border: none; margin-left: auto; }
+.bc-eg71-lib-upload-remove:hover { color: var(--color-text-secondary); }
+.bc-eg71-lib-upload-error { display: flex; align-items: flex-start; gap: var(--spacing-8); font-size: 12px; color: var(--color-error-normal); }
+
+/* bc-eg71-device-lib-table · 设备库型号表（EG71 左对齐契约） */
+.bc-eg71-device-lib-table table.ms-table { width: 100%; }
+.bc-eg71-device-lib-name { color: var(--color-text-primary); }
+.bc-eg71-device-lib-foot { display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-12) 0 0; }
+
+/* bc-eg71-device-lib-page · Data Library 页脚手架（tabs→卡片间距，B_Eg71DeviceLibTable 域） */
+.bc-eg71-device-lib-page { margin-top: var(--spacing-16); }

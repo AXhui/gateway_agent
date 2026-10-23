@@ -1,0 +1,63 @@
+{
+  "demo": "/Users/youxh/Feishu-competition/05_release/REQ-017/demo.html",
+  "component_score": 28,
+  "weights": [
+    20,
+    20,
+    25,
+    15,
+    20
+  ],
+  "checks": [
+    {
+      "rule": "① 组件库命中率",
+      "weight": 20,
+      "score": 0.0,
+      "summary": "0.0 分（权重 20%）",
+      "detail": [
+        "页面没有检测到任何 class，无法判定组件库使用情况"
+      ]
+    },
+    {
+      "rule": "② 注册表覆盖",
+      "weight": 20,
+      "score": 0.0,
+      "summary": "0.0 分（权重 20%）",
+      "detail": [
+        "页面未检测到组件库类"
+      ]
+    },
+    {
+      "rule": "③ 契约调用",
+      "weight": 25,
+      "score": 30,
+      "summary": "30 分（权重 25%）",
+      "detail": [
+        "按注册表契约调用 render 共 0 处（MS_BIZ_INDEX=0，B[]=0）",
+        "未检测到任何按注册表契约的组件调用，页面疑似直接拼装 HTML"
+      ]
+    },
+    {
+      "rule": "④ 壳契约",
+      "weight": 15,
+      "score": 55,
+      "summary": "55 分（权重 15%）",
+      "detail": [
+        "检测到统一壳 MS_EG71_SHELL 定义",
+        "未检测到 MS_EG71_SHELL.render 调用",
+        "未检测到 MS_EG71_SHELL.bind 调用（壳交互未挂载）"
+      ]
+    },
+    {
+      "rule": "⑤ 设计令牌",
+      "weight": 20,
+      "score": 62,
+      "summary": "62 分（权重 20%）",
+      "detail": [
+        "var(--*) 令牌引用 1567 处；裸值 713 处（hex 37 / rgb 0 / px 676）",
+        "令牌占比 69%",
+        "裸值偏多，建议改用 var(--*) 令牌"
+      ]
+    }
+  ]
+}
