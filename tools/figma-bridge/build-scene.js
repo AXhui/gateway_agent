@@ -119,7 +119,7 @@ if (!fs.existsSync(chrome)) { console.error('找不到 Chrome: ' + chrome + '（
 
 console.log('无头 Chrome 渲染中（' + (built.length / 1024).toFixed(0) + 'KB）…');
 const dump = cp.execFileSync(chrome,
-  ['--headless', '--disable-gpu', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
+  ['--headless', '--disable-gpu', '--window-size=1440,900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
   { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
 fs.unlinkSync(tmp);
 
