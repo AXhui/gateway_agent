@@ -149,6 +149,67 @@ try {
   iconStats = { inst, nomap, plain };
 } catch (e) { console.warn('icon-keys.json 缺失或损坏，图标全部走矢量: ' + e.message); }
 
+// 重复块自动成组件：bc-* / ms-* 块级类做结构签名（类名+几何+填充+阴影+圆角+文本全量哈希），
+// 跨屏出现 ≥2 次的块 → scene.defs 定义一份 + 原位替换为 {t:'inst'} 引用；插件侧 createComponent/createInstance
+let compStats = null;
+(function componentize(scene) {
+  const MIN_DUP = 2, MIN_AREA = 64;
+  function isBlockClass(n) { return n && n.n && /^(bc|ms)-/.test(n.n) && n.w * n.h >= MIN_AREA; }
+  function sig(n) {
+    if (n.t === 'inst') return 'i' + n.d;
+    const r10 = v => Math.round(v * 10);
+    const parts = [n.t, n.n || '', r10(n.w), r10(n.h), JSON.stringify(n.f || []),
+      JSON.stringify((n.e || []).map(e => [e.k, e.c, e.a, e.x, e.y, e.b, e.s])),
+      JSON.stringify(n.r || {}), n.clip ? 1 : 0, n.o == null ? 1 : r10(n.o * 100) / 100];
+    if (n.t === 't') parts.push(n.text, n.fs, n.fw, n.lh, n.ls, JSON.stringify(n.col), n.al, r10(n.w), r10(n.h));
+    if (n.t === 's' || n.t === 'ic') parts.push(n.k || n.svg || '');
+    (n.ch || []).forEach(c => parts.push(sig(c), r10(c.x), r10(c.y)));
+    return parts.join('|');
+  }
+  const candidates = [];
+  scene.cells.forEach(c => (function cc(n) {
+    if (n.t === 'f' && isBlockClass(n)) candidates.push(n);
+    (n.ch || []).forEach(cc);
+  })(c.root));
+  const countBySig = new Map();
+  candidates.forEach(n => { const s = sig(n); countBySig.set(s, (countBySig.get(s) || 0) + 1); });
+  const countTree = n => 1 + (n.ch || []).reduce((a, c) => a + countTree(c), 0);
+  const defById = new Map();
+  let defSeq = 0;
+  const stats = { defs: 0, insts: 0, cutNodes: 0 };
+  function process(node) {
+    if (!node.ch) return;
+    const out = [];
+    for (const c of node.ch) {
+      if (c.t === 'f' && isBlockClass(c) && (countBySig.get(sig(c)) || 0) >= MIN_DUP) {
+        const s = sig(c);
+        let def = defById.get(s);
+        if (!def) { def = { id: 'c' + (++defSeq), name: (c.n || 'block').split(/\s+/)[0].slice(0, 40), root: c }; defById.set(s, def); }
+        stats.insts++; stats.cutNodes += countTree(c) - 1;
+        out.push({ t: 'inst', d: def.id, x: c.x, y: c.y, w: c.w, h: c.h, o: c.o == null ? 1 : c.o });
+        continue;
+      }
+      process(c);
+      out.push(c);
+    }
+    node.ch = out;
+  }
+  scene.cells.forEach(cell => process(cell.root));
+  // 嵌套成组件：def 内部子块同样去重（迭代到不动点，组件内含组件实例）
+  for (let round = 0; round < 5; round++) {
+    const before = stats.insts;
+    defById.forEach(d => process(d.root));
+    if (stats.insts === before) break;
+  }
+  if (stats.insts) {
+    stats.defs = defById.size;
+    scene.defs = {};
+    defById.forEach(d => { scene.defs[d.id] = { name: d.name, root: d.root }; });
+    scene.v = 2;
+    compStats = stats;
+  }
+})(scene);
+
 fs.writeFileSync(path.join(outDir, 'scene.json'), JSON.stringify(scene));
 
 const tiled = buildExportPage(html, path.basename(demoPath, '.html'));
@@ -159,6 +220,7 @@ scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) 
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
   (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
+if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
 try {
