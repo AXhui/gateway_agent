@@ -128,6 +128,31 @@ if (!m) { console.error('未找到 scene.json 标记——渲染未完成或注�
 
 const scene = JSON.parse(m[1]);
 
+// 命名规范：demo <title>（回退文件名）→ scene.name；插件侧主画板/组件画板/变体集按此命名——
+// 画板名 = 功能名（"EG71 · Data Library · Inbuilt Update"），组件名 = 类名家族 + 文本变体，不出现无名层
+const titleM = html.match(/<title>([^<]*)<\/title>/i);
+scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
+
+// 去多余嵌套：无视觉贡献（无填充/阴影/圆角/裁切、不透明）且无 bc-/ms- 语义类的透传容器拍平，
+// 子树坐标换算进父级——图层树不留空壳帧（设计师展开图层不剥洋葱）
+let flatCut = 0;
+function flattenWrappers(node) {
+  if (!node.ch) return;
+  for (const c of node.ch) flattenWrappers(c);
+  const out = [];
+  for (const c of node.ch) {
+    const r = c.r || {};
+    if (c.t === 'f' && !c.lib && !(c.f || []).length && !(c.e || []).length
+      && !(r.tl || r.tr || r.br || r.bl) && !c.clip && (c.o == null || c.o === 1)
+      && !(c.n && /^(bc|ms)-/.test(c.n))) {
+      flatCut++;
+      (c.ch || []).forEach(k => { k.x += c.x; k.y += c.y; out.push(k); });
+    } else out.push(c);
+  }
+  node.ch = out;
+}
+scene.cells.forEach(c => flattenWrappers(c.root));
+
 // 图标实例化：页内已反查出 MS_ICONS 名（node.ic），命中 icon-keys.json 的升级为 t:'ic'（携带库组件 key）
 let iconStats = null;
 try {
@@ -280,6 +305,7 @@ scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) 
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
   (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
+if (flatCut) console.log('拍平: 透传空壳帧 ' + flatCut + ' 层（无视觉无语义类）');
 if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponentByKeyAsync 实例化');
 if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个（家族 ' + compStats.families + '，变体集 ' + compStats.variantSets + ' 个待 combineAsVariants）｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 
