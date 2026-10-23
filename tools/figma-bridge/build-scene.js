@@ -184,7 +184,10 @@ try {
 } catch (e) { console.warn('component-keys.json 缺失或损坏，库组件实例化跳过: ' + e.message); }
 
 // 重复块自动成组件：bc-* / ms-* 块级类做结构签名（类名+几何+填充+阴影+圆角+文本全量哈希），
-// 跨屏出现 ≥2 次的块 → scene.defs 定义一份 + 原位替换为 {t:'inst'} 引用；插件侧 createComponent/createInstance
+// 跨屏出现 ≥2 次的块 → scene.defs 定义一份 + 原位替换为 {t:'inst'} 引用；插件侧 createComponent/createInstance。
+// 变体分组（写明，设计师视角）：同名（同家族）的多个 def = 同一组件的不同形态，互为变体——
+// scene.defs 逐个带 vname（取块内首段文本做变体名），插件侧 figma.combineAsVariants 合成 COMPONENT_SET，
+// 不散落成 N 个孤立组件；组件定义统一收进「组件定义」画板按家族分节网格排版。
 let compStats = null;
 (function componentize(scene) {
   const MIN_DUP = 2, MIN_AREA = 64;
@@ -239,8 +242,29 @@ let compStats = null;
   }
   if (stats.insts) {
     stats.defs = defById.size;
+    // 变体分组元数据：家族内 ≥2 个 def 互为变体，vname 取块内首段文本（去重后）做变体名
+    const famCount = new Map();
+    defById.forEach(d => famCount.set(d.name, (famCount.get(d.name) || 0) + 1));
+    const famUsed = new Map();
+    defById.forEach(d => {
+      if ((famCount.get(d.name) || 0) < 2) return;
+      let label = '';
+      (function firstText(n) {
+        if (label) return;
+        if (n.t === 't' && n.text) { label = String(n.text).replace(/\s+/g, ' ').trim().slice(0, 16); return; }
+        (n.ch || []).some(firstText);
+      })(d.root);
+      let base = label || ('v' + d.id.slice(1));
+      let v = base, k = 2;
+      const used = famUsed.get(d.name) || new Set();
+      while (used.has(v)) v = base + ' ' + k++;
+      used.add(v); famUsed.set(d.name, used);
+      d.vname = v;
+    });
+    stats.families = famCount.size;
+    stats.variantSets = [...famCount.values()].filter(c => c >= 2).length;
     scene.defs = {};
-    defById.forEach(d => { scene.defs[d.id] = { name: d.name, root: d.root }; });
+    defById.forEach(d => { scene.defs[d.id] = { name: d.name, vname: d.vname, root: d.root }; });
     scene.v = 2;
     compStats = stats;
   }
@@ -257,7 +281,7 @@ console.log('完成 → ' + path.join(outDir, 'scene.json') +
   (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
 if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponentByKeyAsync 实例化');
-if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
+if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个（家族 ' + compStats.families + '，变体集 ' + compStats.variantSets + ' 个待 combineAsVariants）｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
 try {
