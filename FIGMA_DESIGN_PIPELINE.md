@@ -196,7 +196,8 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 ```
 
 - 插件侧文件在 `~/Desktop/html-to-figma-internal/`（manifest/code.js/ui.html/serve.py），细节见该目录 README。
-- 产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 8）。
+- **图标实例化（2026-10-23）**：demo 内联 `MS_ICONS` → 序列化时页内签名反查图标名 → `tools/figma-bridge/icon-keys.json` 映射（74/116 命中 Milesight_IOT_Web 团队库，重建方法见该文件头注释）→ 插件 `importComponentByKeyAsync` 实例化落图，`currentColor` 换算成描边色覆盖；无映射或导入失败自动回退矢量 SVG。图标部分产物从普通图层升级为**库组件实例**（REQ-016 实测 11/11 识别、9 实例化）。
+- 其余产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 8；图标已由上条解决）。
 - **桥接（按钮链路）当前仍走 mcp.to.design 收费通道**；切换为「build-scene.js + 深链拉起内部插件」是既定演进方向。
 
 ---

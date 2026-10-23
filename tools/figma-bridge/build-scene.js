@@ -15,6 +15,13 @@ const BOOTSTRAP = `(function(){
   function splitTop(s){var out=[],d=0,c='';for(var i=0;i<s.length;i++){var ch=s[i];if(ch==='(')d++;if(ch===')')d--;if(ch===','&&d===0){out.push(c);c=''}else c+=ch}out.push(c);return out}
   function shadows(s){var out=[];if(!s||s==='none')return out;splitTop(s).forEach(function(ps){var inset=/inset/i.test(ps);ps=ps.replace(/inset/gi,'').trim();var cm=ps.match(/rgba?\\([^)]+\\)/);if(!cm)return;var nums=ps.replace(/rgba?\\([^)]+\\)/,'').trim().split(/\\s+/).map(parseFloat);if(nums.length<4)return;var c=parseRgba(cm[0]);out.push({k:inset?'in':'out',c:c.c,a:c.a,x:nums[0],y:nums[1],b:nums[2],s:nums[3]||0})});return out}
   function radii(cs){var s=cs.borderRadius||'0';var f=s.split('/')[0].trim().split(/\\s+/).map(px);var tl=f[0]||0,tr=f.length>1?f[1]:tl,br=f.length>2?f[2]:tl,bl=f.length>3?f[3]:tr;return{tl:tl,tr:tr,br:br,bl:bl}}
+  function iconSig(s){return s.replace(/\\s+/g,'').replace(/<\\/[a-zA-Z]+>/g,'').replace(/\\/>/g,'>')}
+  var iconSigMap=null;
+  function iconName(el){
+    if(!window.MS_ICONS)return null;
+    if(!iconSigMap){iconSigMap={};for(var k in MS_ICONS){var m=MS_ICONS[k].match(/<svg[^>]*>([\\S\\s]*?)<\\/svg>/);if(m)iconSigMap[iconSig(m[1])]=k}}
+    return iconSigMap[iconSig(el.innerHTML)]||null;
+  }
   function serEl(el,origin){
     if(el.nodeType!==1)return null;
     var cs=getComputedStyle(el);
@@ -25,7 +32,9 @@ const BOOTSTRAP = `(function(){
     if(tag==='svg'){
       var cl=el.cloneNode(true);
       cl.setAttribute('width',Math.max(1,Math.round(w)));cl.setAttribute('height',Math.max(1,Math.round(h)));
-      var n=tag&&{t:'s',svg:cl.outerHTML,x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,n:(el.getAttribute('class')||'').slice(0,40)||undefined};
+      var n={t:'s',svg:cl.outerHTML,x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,n:(el.getAttribute('class')||'').slice(0,40)||undefined};
+      var icn=iconName(el);
+      if(icn){n.ic=icn;var icc=parseRgba(cs.color);if(icc)n.col=icc.c}
       return n;
     }
     if(tag==='img'||tag==='canvas'||tag==='script'||tag==='style'||tag==='link'||tag==='meta')return null;
@@ -118,6 +127,28 @@ const m = dump.match(/<script id="ms-scene-json" type="application\/json">([\s\S
 if (!m) { console.error('未找到 scene.json 标记——渲染未完成或注入脚本异常'); process.exit(3); }
 
 const scene = JSON.parse(m[1]);
+
+// 图标实例化：页内已反查出 MS_ICONS 名（node.ic），命中 icon-keys.json 的升级为 t:'ic'（携带库组件 key）
+let iconStats = null;
+try {
+  const keys = JSON.parse(fs.readFileSync(path.join(__dirname, 'icon-keys.json'), 'utf8')).icons;
+  let inst = 0, nomap = 0, plain = 0;
+  function walk(n) {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { n.forEach(walk); return; }
+    if (n.t === 's') {
+      if (n.ic) {
+        const e = keys[n.ic];
+        if (e) { n.t = 'ic'; n.k = e.key; n.f = e.figmaName; inst++; }
+        else { delete n.ic; delete n.col; nomap++; }
+      } else plain++;
+    }
+    (n.ch || []).forEach(walk);
+  }
+  scene.cells.forEach(c => walk(c.root));
+  iconStats = { inst, nomap, plain };
+} catch (e) { console.warn('icon-keys.json 缺失或损坏，图标全部走矢量: ' + e.message); }
+
 fs.writeFileSync(path.join(outDir, 'scene.json'), JSON.stringify(scene));
 
 const tiled = buildExportPage(html, path.basename(demoPath, '.html'));
@@ -127,6 +158,7 @@ const count = n => 1 + (n.ch || []).reduce((a, c) => a + count(c), 0);
 scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) + ' 节点｜' + c.w + '×' + Math.round(c.h)));
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
   (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
+if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
 try {
