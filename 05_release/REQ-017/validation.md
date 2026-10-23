@@ -16,7 +16,7 @@
 | [U3-1] | 内容区可见 UI 13px 清零（探针 n13(content)=0）；runtime 存量 13px（.ms-table td 13→14、.ms-btn--sm 13→14、.ms-pagination 13→12）已按 spacing §7 精神 demo 内就地修正、不回写源头。零扣分 |
 | [U3-2] | 壳侧边栏菜单标签 51 个仍为 13px（base.css/.bc-eg71-sidenav 存量）：冻结壳资产 + §7 清单未列，REQ-013/016 均保留，待 runtime 统一升级清除。建议扣分 −4 |
 | [U3-3] | Figma 对照（6 帧）：主标题 16/500、轻量 Tag 无边框、表三列左对齐、计数链接色、eye 16、空态 fileText 32、对勾圆底 48、重命名箭头 to 侧链接色——目检（default.png + states.png 10 帧）一致。零扣分 |
-| [U4-1] | 三契约：标题行按钮高 32（覆写 `.bc-com-title-extra .ms-btn--sm`）+ gap 12（runtime 已落）✓；Tab 栏 gap 32（覆写）+ 高 48（`flex-shrink:0` 修复纵向 flex 压缩，探针 tabH=48/gap=32px）+ active `--color-text-primary`/500 ✓；Alert 位置：上传弹窗 info Alert 在 body 顶部（④ 表单级精神）✓。零扣分 |
+| [U4-1] | 三契约：标题行按钮高 32（覆写 `.bc-com-title-extra .ms-btn--sm`）+ gap 12（runtime 已落）✓；Tab 栏契约五值全过（B_Eg71PageTabs v1.1.0 组件级落实：紧贴导航栏正下方 top-gap=0、通栏到列边 L=R=0、高 48 flex-shrink:0、gap 32、左起 20，探针见「增补 · v2」；初版 U4 只验了 gap/高未验位置，位置缺陷由用户 UED 复核捕获，已在 v2 修复）✓；Alert 位置：上传弹窗 info Alert 在 body 顶部（④ 表单级精神）✓。零扣分 |
 | [U5-1] | 纯净性：可见 UI 无 PRD 注记/交互指引/装配痕迹/校验徽标（10 状态截图目检）。零扣分 |
 
 **UED 结论：visual = 100 − 4 = 96；structure 零扣分 = 100**
@@ -75,3 +75,4 @@ structure 100 = 100 − 0（U1/U2/U4 零扣分行）✓；component 92 = 脚本�
 - demo 重组：4 独立 `<script>` 块（base/entities/business/page）——score_component 按「资产块 vs 页面块」分类依赖块边界，整块拼接会把页面代码误判为资产内联（曾致 component 误报 28）。
 - build-scene 补 `--window-size=1440,900`：默认 800×600 视口触发 ≤760px 断点隐藏侧边栏，scene.json 全状态丢壳侧边栏（图标库实例 48→168）。独立 commit。
 - Tab 栏高 48 失效根因：`.ms-content` 纵向 flex 收缩（内容超高时 48px 被 shrink 到 29.3），demo 覆写 `flex-shrink:0` 修复。
+- **增补 · v2（Tab 契约组件级落实，2026-10-23）**：用户 UED 复核（Figma 截图对照）捕获页签条未紧贴顶部导航栏——初版 Tab 栏落在 `.ms-content--wide` 20px 内边距之内，与「紧贴导航栏正下方、通栏到列边」契约不符；初版 U4-1 只验了 gap/高未验位置（验收缺口）。根因是契约从未在业务组件层实现（bc-eg71-maint-bar 同款潜伏缺陷，REQ-016，另行处理）。修复落在组件源头 `B_Eg71PageTabs 1.0.0 → 1.1.0`（Props 契约变更，minor）：① business.css 新增 `.bc-eg71-page-tabs--flush` 修饰符（负 margin 拉出父容器 20px 内边距，Alert 契约「demo 内用负 margin 结构类拉通」同款机制上沉为组件能力）+ 基类补 `flex-shrink:0` + gap 24→32（`--spacing-3xl`）；② registry render 支持 `ctx.flush`；③ demo 侧 demo-local 覆写整段删除（契约回归组件，页面零覆写）。探针五值：top-gap=0 / h=48 / L=0 / R=0 / gap=32 / tabLeft=20。分数不变（U4-1 修订后仍零扣分，visual 96 维持 −4 壳侧边栏 13px），component 脚本重跑 92。

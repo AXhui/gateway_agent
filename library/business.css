@@ -807,7 +807,9 @@
    ========================================================================== */
 
 /* ---- B_Eg71PageTabs 页级页签壳（站点 16 页 ant-tabs-top 同构；视觉同 bc-eg71-app-bar 范式） ---- */
-.bc-eg71-page-tabs { display: flex; align-items: center; gap: var(--spacing-24); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); overflow-x: auto; }
+.bc-eg71-page-tabs { display: flex; align-items: center; flex-shrink: 0; gap: var(--spacing-3xl); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); overflow-x: auto; }
+/* Tab 契约（AGENTS.md）：紧贴导航栏正下方、通栏到列边——负 margin 拉出父容器（.ms-content--wide 20px 内边距）；底边不外扩，下方卡片自带间距 */
+.bc-eg71-page-tabs--flush { margin: calc(var(--spacing-20) * -1) calc(var(--spacing-20) * -1) 0; }
 .bc-eg71-page-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); white-space: nowrap; }
 .bc-eg71-page-tab:hover { color: var(--color-text-primary); }
 .bc-eg71-page-tab--active { color: var(--color-text-primary); font-weight: 500; }

@@ -3851,7 +3851,7 @@ window.MS_BIZ_UTIL = (function () {
     /* ===================== 站点转录批（source: output/eg71-site-distill，36 页真实产品站对照铸造，见 diff-matrix.md） ===================== */
     {
       id: 'bc-eg71-page-tabs', cn: 'EG71 页级页签壳', cat: '数据服务',
-      desc: 'Milesight 网关页级页签条（48px 白底 + 2px 墨条下划线）：顶栏面包屑之下的第一层内容区导航。站点 16 页共用形态（Equipment Data：Device/IO Device/Device Access Network/LoRaWAN；Network VPN 八页签；System User 三页签…）。ctx.tabs 泛化任意页签组，是 EG71 页签壳的泛化唯一源；app/event/maintenance/snmp 等专用壳可按 release.md 宽限期逐步收编到本组件。',
+      desc: 'Milesight 网关页级页签条（48px 白底 + 2px 墨条下划线）：顶栏面包屑之下的第一层内容区导航。站点 16 页共用形态（Equipment Data：Device/IO Device/Device Access Network/LoRaWAN；Network VPN 八页签；System User 三页签…）。ctx.tabs 泛化任意页签组，是 EG71 页签壳的泛化唯一源；app/event/maintenance/snmp 等专用壳可按 release.md 宽限期逐步收编到本组件。 ctx.flush=true 时紧贴导航栏正下方、通栏到列边（EG71 Tab 栏契约位置，拉出父容器 20px 内边距）。',
       atoms: ['tab', 'icon'],
       entityHint: 'gateway',
       tags: ['页签', 'Tabs', '页级', '导航', '泛化', '壳', 'EG71'],
@@ -3864,7 +3864,8 @@ window.MS_BIZ_UTIL = (function () {
           { key: 'lorawan', label: 'LoRaWAN' }
         ];
         const cur = ctx.tab || tabs[0].key;
-        return `<div class="bc-eg71-page-tabs" role="tablist" aria-label="${esc(ctx.ariaLabel || 'Page navigation')}">${tabs.map(t => {
+        const flush = ctx.flush ? ' bc-eg71-page-tabs--flush' : '';
+        return `<div class="bc-eg71-page-tabs${flush}" role="tablist" aria-label="${esc(ctx.ariaLabel || 'Page navigation')}">${tabs.map(t => {
           const active = t.key === cur;
           return `<button type="button" role="tab" aria-selected="${active}" class="bc-eg71-page-tab${active ? ' bc-eg71-page-tab--active' : ''}" data-page-tab="${esc(t.key)}" tabindex="${active ? '0' : '-1'}">${esc(t.label)}</button>`;
         }).join('')}</div>`;

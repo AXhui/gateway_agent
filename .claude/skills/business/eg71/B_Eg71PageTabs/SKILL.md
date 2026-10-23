@@ -1,7 +1,7 @@
 ---
 name: B_Eg71PageTabs
-version: 1.0.0
-description: EG71 页级页签壳（业务组件）：48px 白底 + 2px 墨条下划线的第一层内容区导航，ctx.tabs 泛化任意页签组
+version: 1.1.0
+description: EG71 页级页签壳（业务组件）：48px 白底 + 2px 墨条下划线的第一层内容区导航，ctx.tabs 泛化任意页签组；ctx.flush 紧贴导航栏正下方通栏（Tab 栏契约位置）
 ---
 
 # EG71 页级页签壳 · B_Eg71PageTabs
@@ -36,6 +36,7 @@ description: EG71 页级页签壳（业务组件）：48px 白底 + 2px 墨条�
 | `ctx.tabs` | `{key, label}[]` | Device / IO Device / Device Access Network / LoRaWAN 四签 | 页签组（站点 equipment-data 形态） |
 | `ctx.tab` | string | 首签 key | 当前选中页签 |
 | `ctx.ariaLabel` | string | `'Page navigation'` | tablist 无障碍名 |
+| `ctx.flush` | boolean | `false` | 紧贴导航栏正下方、通栏到列边（Tab 栏契约位置）：挂 `--flush` 修饰符，负 margin 拉出父容器（`.ms-content--wide` 20px 内边距）；页签条本体所在内容区第一行时必传 |
 
 ### 事件出（CustomEvent，bubbles: true）
 | 事件 | detail | 触发 |
@@ -67,7 +68,7 @@ description: EG71 页级页签壳（业务组件）：48px 白底 + 2px 墨条�
 - 底/边框：`--color-bg-card` / `--color-border-base`
 - 文字：`--color-text-secondary`（默认）/ `--color-text-primary`（hover·active）
 - 墨条：`--color-divider-primary`（2px = `--spacing-2`）
-- 间距：`--spacing-48`（条高）/ `--spacing-20`（左右内距）/ `--spacing-24`（页签间距）
+- 间距：`--spacing-48`（条高，不随父容器 flex 收缩）/ `--spacing-20`（左右内距；flush 负 margin 拉出量同值）/ `--spacing-3xl`（页签间距 32px，EG71 Tab 栏契约）
 
 ## 6. 依赖（Dependencies）
 
@@ -80,7 +81,8 @@ const B = window.MS_BIZ_INDEX;
 el.innerHTML = B['bc-eg71-page-tabs'].render({
   tabs: [{ key: 'eth', label: 'Ethernet' }, { key: 'cellular', label: 'Cellular' },
          { key: 'wlan', label: 'WLAN' }, { key: 'lo', label: 'Loopback' }],
-  tab: 'eth'
+  tab: 'eth',
+  flush: true
 });
 B['bc-eg71-page-tabs'].bind(el);
 el.addEventListener('eg71-page-tab', e => renderPanel(e.detail.tab));

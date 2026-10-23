@@ -1927,7 +1927,8 @@ body {
    ========================================================================== */
 
 /* ---- B_Eg71PageTabs 页级页签壳（站点 16 页 ant-tabs-top 同构；视觉同 bc-eg71-app-bar 范式） ---- */
-.bc-eg71-page-tabs { display: flex; align-items: center; gap: var(--spacing-24); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); overflow-x: auto; }
+.bc-eg71-page-tabs { display: flex; align-items: center; flex-shrink: 0; gap: var(--spacing-3xl); height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); overflow-x: auto; }
+.bc-eg71-page-tabs--flush { margin: calc(var(--spacing-20) * -1) calc(var(--spacing-20) * -1) 0; }
 .bc-eg71-page-tab { position: relative; display: inline-flex; align-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 22px; color: var(--color-text-secondary); white-space: nowrap; }
 .bc-eg71-page-tab:hover { color: var(--color-text-primary); }
 .bc-eg71-page-tab--active { color: var(--color-text-primary); font-weight: 500; }
@@ -2088,8 +2089,6 @@ body {
 
 
 /* ---- demo 覆写（仅本文件，不回写 assets 源头）---- */
-/* Tab 契约 runtime 偏差：gap 24 → 32；内容区纵向 flex 收缩 → 定高不缩（高 48） */
-.bc-eg71-page-tabs { gap: calc(var(--spacing-16) * 2); flex-shrink: 0; }
 /* spacing §4 红线（13px 全场景禁用）：runtime 存量就地修正，不回写 assets 源头 */
 .bc-eg71-device-lib-table .ms-table td { font-size: 14px; }
 .ms-btn--sm { font-size: 14px; }
@@ -8968,7 +8967,8 @@ window.MS_BIZ_UTIL = (function () {
           { key: 'lorawan', label: 'LoRaWAN' }
         ];
         const cur = ctx.tab || tabs[0].key;
-        return `<div class="bc-eg71-page-tabs" role="tablist" aria-label="${esc(ctx.ariaLabel || 'Page navigation')}">${tabs.map(t => {
+        const flush = ctx.flush ? ' bc-eg71-page-tabs--flush' : '';
+        return `<div class="bc-eg71-page-tabs${flush}" role="tablist" aria-label="${esc(ctx.ariaLabel || 'Page navigation')}">${tabs.map(t => {
           const active = t.key === cur;
           return `<button type="button" role="tab" aria-selected="${active}" class="bc-eg71-page-tab${active ? ' bc-eg71-page-tab--active' : ''}" data-page-tab="${esc(t.key)}" tabindex="${active ? '0' : '-1'}">${esc(t.label)}</button>`;
         }).join('')}</div>`;
@@ -10359,7 +10359,8 @@ window.MS_BIZ_UTIL = (function () {
           { key: 'inbuilt', label: 'Inbuilt Data Parsing Library' },
           { key: 'custom', label: 'Custom Data Parsing' }
         ],
-        tab: tab === 'custom' ? 'custom' : 'inbuilt'
+        tab: tab === 'custom' ? 'custom' : 'inbuilt',
+        flush: true
       })
       + '<section class="ms-card bc-eg71-device-lib-page"><div class="ms-card-body ms-stack">' + body + '</div></section>';
   }
