@@ -1,13 +1,13 @@
-# 飞书按钮 → Claude → Figma 设计稿 — 全链路说明
+# 飞书按钮 → html.to.design → Figma 设计稿 — 全链路说明
 
 ## 功能
 
 在飞书多维表格（UI demo 表）里点一个按钮，几分钟后：
 
-1. 本机 Claude（headless）通过**官方 figma-remote MCP** 在 Figma 团队空间生成一份可编辑的页面级设计稿
+1. 桥接把 demo HTML 经 **html.to.design 官方 MCP**（`mcp.to.design`）直连导入 Figma 当前画布
 2. 生成的 Figma 链接**自动回写**到点按钮那一行的「Figma链接」列
 
-全程无人值守，无需打开 Figma 客户端（设计稿直接写进云端文件）。
+**零 LLM token**（v2 的 claude+spec 转录路径已于 2026-10 移除）；耗时取决于插件导入速度，通常分钟级。
 
 ```
 飞书多维表格 ──点按钮──▶ 自动化工作流「UED确认转Figma通知设计师」
@@ -17,19 +17,26 @@
                               │
                               ▼
               本机桥接 server.js :8080（POST /task）
-                              │ spawn claude -p（cwd=本仓库）
+                              │ 三层取源拿 demo.html（demoUrl / 本地归档 / 表格反查）
                               ▼
-              claude headless + figma-remote MCP（OAuth）
-                              │ 写画布
+              mcp.to.design（OAuth，桥接自有凭据）
+                              │ tools/call import-html（demo 全文；命中导出契约时为全状态铺开页）
                               ▼
-              Figma 团队空间文件（完整可编辑 frame）
+              Figma 里打开的 html.to.design 插件（MCP 标签页，同账号在线）
+                              │ 渲染落画布
+                              ▼
+              Figma 当前文件里的可编辑设计稿
                               │ 任务结束
                               ▼
-              桥接提取日志里的 Figma 链接
+              桥接从导入结果提取 Figma 链接
                               │ lark-cli 回写
                               ▼
               多维表格该行「Figma链接」列 = 设计稿地址
 ```
+
+> 插件离线时桥接**自动拉起**：`open -a Figma` 启动/聚焦 Figma → `figma://plugin/<id>` 深链启动 html.to.design 插件 → 重试导入（最多 3 轮），点击按钮不依赖人事先开好插件。
+>
+> 无 demo 源（三层取源全落空）时退回 claude 自由设计模式（figma-remote），走 LLM，极少触发。
 
 ---
 
@@ -37,46 +44,54 @@
 
 | 组件 | 位置 | 说明 |
 |---|---|---|
-| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、提取 spec、spawn claude、回写飞书；`ws` 已装在 `tools/figma-bridge/node_modules`（gitignore），直接 `node server.js` 即跑 |
-| ~~桥接运行副本~~ | ~~`~/Desktop/figma-feedo-executor`~~ | 已废弃删除（2026-09），现在仓库即运行处 |
-| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：Demo名称/版本号/产品分类/需求描述/提示词/demoUrl/Figma链接 + 按钮字段 |
+| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、取源、调 mcp.to.design、回写飞书；Node 25 自带 fetch，`ws` 已装但 v3 不再使用 |
+| 桥接凭据 | `tools/figma-bridge/auth.json`（gitignore） | service account / refresh token，仅本机 |
+| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：Demo名称/产品分类/需求描述/提示词/demoUrl/Figma链接 + 按钮字段 |
 | 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息 |
-| cloudflared 隧道 | quick tunnel，域名随重启变化 | `cloudflared tunnel --url http://localhost:8080` |
-| claude CLI | `/usr/local/bin/claude`（v2.1.x） | headless `-p` 模式 |
-| figma-remote MCP | 全局注册 `https://mcp.figma.com/mcp` | OAuth 认证，**唯一能写画布的官方通道** |
+| cloudflared 隧道 | quick tunnel，域名随重启变化 | 本机二进制 `~/.local/bin/cloudflared`（brew 4.x 有兼容问题，直装官方 release）；`~/.local/bin/cloudflared tunnel --url http://localhost:8080`，日志 `/tmp/bridge-tunnel.log` |
+| html.to.design MCP | `https://mcp.to.design`（云端） | OAuth 认证；中继到 Figma 插件 |
+| html.to.design 插件 | Figma 内运行，**MCP 标签页** | 必须与 `--login` 授权同一账号；离线时桥接自动拉起（插件 ID `1159123024924461424`），导入落到插件所在文件的当前画布 |
 | lark-cli | `/usr/local/bin/lark-cli` | 回写多维表格，用户身份登录 |
 
 ---
 
 ## 一次性配置（新人视角）
 
-### 1. figma-remote MCP 认证（写画布的前提）
+### 1. Figma 端：插件一次就位（之后桥接自动拉起）
+
+Figma 里打开 **html.to.design** 插件 → 登录账号（与第 2 步 `--login` 用同一账号）→ 切到 **MCP 标签页** → 状态点绿色 Ready。首次手动到位后，日常点击按钮桥接会自动拉起 Figma + 插件（3 轮重试）；插件通常停留在上次使用的标签页，若被切走，按报错提示手动回到 MCP 标签页即可。
+插件开着时，导入落在**当前打开的文件**里；换文件 = 在目标文件里重开插件。
+
+### 2. 桥接授权（一次性，浏览器点一次）
 
 ```bash
-claude mcp add --transport http figma-remote https://mcp.figma.com/mcp --scope user
-claude mcp login figma-remote      # 交互式终端里跑；浏览器点 Approve 后自动回调完成
-claude mcp list                    # 确认显示 ✔ Connected
+cd tools/figma-bridge
+node server.js --login
+# 浏览器弹出 html.to.design 登录页（用插件同一账号）→ 授权
+# 自动完成：动态注册 MCP 客户端 → PKCE 授权码 → 保存 refresh token（14 天）→ 铸 service account（长期）
 ```
 
-> Figma PAT（`figd_` 个人令牌）**不能**用于 mcp.figma.com（官方仅支持 OAuth；PAT 只能驱动只读的 figma-api）。
-> PAT 只许存本机用户级文件，绝不入库。
+- service account 铸成功后**永久免续期**；未铸成功则靠 refresh token，**14 天后重跑 `--login`**。
+- 凭据存 `tools/figma-bridge/auth.json`（已 gitignore），**绝不入库**。
 
-### 2. 启动桥接（本机）
+### 3. 启动桥接（本机）
 
 ```bash
 cd tools/figma-bridge && npm install ws   # 首次
 nohup node server.js >> /tmp/bridge-server.log 2>&1 &
-curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"claude",...}
+curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"h2d","auth":"service-account",...}
 ```
 
-### 3. 启动隧道（每次重启域名会变）
+### 4. 启动隧道（每次重启域名会变）
 
 ```bash
-cloudflared tunnel --url http://localhost:8080
+~/.local/bin/cloudflared tunnel --url http://localhost:8080 >> /tmp/bridge-tunnel.log 2>&1 &
 # 记下输出的 https://xxx.trycloudflare.com
 ```
 
-### 4. 飞书工作流配置（HTTP 请求节点）
+可选：`export H2D_PUBLIC_BASE=https://xxx.trycloudflare.com` 再启动桥接——import-html 失败（如 demo 过大）时自动改走 import-url 经公网取页。
+
+### 5. 飞书工作流配置（HTTP 请求节点）
 
 | 项 | 值 |
 |---|---|
@@ -88,17 +103,16 @@ cloudflared tunnel --url http://localhost:8080
 ```json
 {
   "demoName":    "<引用：Demo名称>",
-  "version":     "<引用：版本号>",
   "category":    "<引用：产品分类>",
   "requirement": "<引用：需求描述>",
   "prompt":      "<引用：提示词>"
 }
 ```
 
-> `record_id` 可加可不加。加了 → 桥接直接写那一行；不加 → 桥接按 **Demo 名称 + 版本号** 自动反查记录再回写（飞书按钮触发的工作流变量面板里往往没有「记录 ID」可引用，这就是兜底存在的原因；同名多版本行靠版本号区分）。
-> `demoUrl` 可选。带了 → 直接作为转录模式的 demo 源；不带也会走「本地归档 / 表格反查预览 URL」兜底（见下节）。
+> `record_id` 可加可不加。加了 → 桥接直接写那一行；不加 → 桥接按 **Demo 名称** 自动反查记录再回写。
+> `demoUrl` 可选。带了 → 直接作为导入源；不带也会走「本地归档 / 表格反查预览 URL」兜底（见下节）。
 
-### 5. lark-cli 登录（回写的前提）
+### 6. lark-cli 登录（回写的前提）
 
 ```bash
 lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:field:read
@@ -108,57 +122,83 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 
 ## 已踩过的坑（关键，改动前必读）
 
-1. **headless `-p` 下 OAuth MCP 竞态**（官方 bug：[#36309](https://github.com/anthropics/claude-code/issues/36309) / [#36060](https://github.com/anthropics/claude-code/issues/36060)）：首个 API 请求抢在 MCP 握手完成前发出，第一回合工具列表里没有 figma-remote。
-   **解法**：任务 prompt 已内置「先输出设计规划再动手」的前戏回合，第二回合起工具列表刷新、figma-remote 可用。**不要删掉 buildPrompt 里的这句引导。**
-2. **设计生成耗时与 token**（2026-09 大幅优化）：转录模式不再让 claude 读几百 KB 的 demo.html——桥接先用无头 Chrome(CDP) 机器提取一份紧凑 spec JSON（每个可见元素的坐标/尺寸/真实色值/文案，实测 200~350 节点、20~40KB），claude 只读 截图 + spec，并要求**单次 use_figma 调用**建完整页，禁止交互式逐节点搭建与仓库调研。模型分档：转录 haiku / 设计 sonnet，可用环境变量 `FIGMA_TRANSCRIBE_MODEL` / `FIGMA_MODEL` 覆盖（转录质量下降时设回 sonnet）。耗时预期从 5–20 分钟降到几分钟级；桥接超时 35 分钟（`JOB_TIMEOUT_MS`）保持不动作安全垫。飞书工作流本身的 HTTP 超时只影响「接收请求」，桥接是先应答后干活，不受影响。**任务已排队串行执行**（并发多个 figma-remote 会话会互相拖慢导致超时）。
-3. **spawn 必须带 `stdio: ['ignore','pipe','pipe']`**：否则 claude 卡在「等 stdin 3 秒」。
-4. **项目目录未信任警告可忽略**：headless 下忽略 settings.json 的 4 条 allow 规则，不影响 MCP 工具与 Read（`--allowedTools Read,mcp__figma-remote,mcp__figma-dev-mode` 走命令行）。
-5. **claude 必须以本仓库为 cwd 跑**（`CLAUDE_CWD`）：figma-remote 虽是全局注册，但任务 prompt 依赖仓库上下文。
+1. **插件不在线时自动拉起**：mcp.to.design 是中继，所有导入都经 Figma 里登录同账号、停在 MCP 标签页的插件。插件离线时桥接自动 `open -a Figma` + 深链启动插件并重试（3 轮，冷启动约 1 分钟）。仍失败的排查顺序：插件登录账号与 `--login` 是否一致 → 是否停在 MCP 标签页 → Figma 桌面端是否正常。
+2. **导入落点是插件的当前画布**：html.to.design 不会自己新建文件，落在插件所在文件；想导到哪个文件就在哪个文件里开插件。
+3. **凭据有效期**：service account 长期有效；只有 refresh token 时 14 天过期，桥接日志出现 401/token 端点报错 → 重跑 `node server.js --login`。
+4. **demo 过大**：单文件 demo（内联 CSS/JS）几百 KB 起步。桥接已剥离 HTML 注释；import-html 仍失败时，配置 `H2D_PUBLIC_BASE`（隧道域名）后自动改走 import-url 公网取页兜底。
+5. **JS 渲染的 demo 依赖真实浏览器执行**：html.to.design 在浏览器环境渲染导入的 HTML，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
 6. **隧道域名易变**：cloudflared quick tunnel 每次重启换域名，工作流 URL 要同步改；固定方案待做（named tunnel + 自己的域名）。
+7. **自由设计模式仍走 claude**（无 demo 源时）：headless `-p` 下 OAuth MCP 竞态的解法（先输出规划再动手）保留在 buildPrompt 里，勿删；spawn 必须 `stdio: ['ignore','pipe','pipe']`；claude 必须以本仓库为 cwd。
+8. **组件库引用规则只约束 claude 路径**：html.to.design 导入是机械转录（产出普通图层，非库组件）；组件回填由设计师在 Figma 内做，库规则见 `.claude/rules/figma-asset-libs.md`。
 
 ---
 
-## demo 还原模式（转录，默认行为）
+## demo 还原模式（默认行为）
 
-表格里的 demo 是**唯一还原基准**：任务命中 demo 源后走**转录模式**——100% 照抄布局/文案/色值/组件结构进 Figma，禁止再设计、增删模块、改写文案、换色。只有三层取源全部落空才退回自由设计模式。
+表格里的 demo 是唯一基准：命中 demo 源即 1:1 导入（布局/文案/色值由插件按浏览器渲染结果转录），桥接不再做截图/spec 提取，也不经 LLM。
 
-demo 源三层解析（任一命中即转录）：
+demo 源三层解析（行内产物是权威基准，本地归档可能落后于云端，故后置）：
 
 | 层 | 来源 | 说明 |
 |---|---|---|
-| 1 | Body 里 `demoUrl` | 飞书云盘附件链接（markdown 包装也行），自动 `lark-cli drive +download` |
-| 2 | 本地归档 `05_release/REQ-###/demo.html` | 从 Demo 名称提取 REQ 号定位（REQ-001~007 在库） |
-| 3 | 反查表格「预览 URL」列再下载 | 覆盖 REQ-008+ 无本地归档的行 |
+| 1 | Body 里 `demoUrl` | 工作流显式带的飞书云盘附件链接（markdown 包装也行），自动 `lark-cli drive +download` |
+| 2 | 反查表格「预览 URL」列再下载 | **触发行自己的云端产物**（权威基准；覆盖多机提交、本地旧版的场景） |
+| 3 | 本地归档 `05_release/REQ-###/demo.html` | 预览列为 UNC 占位或无链接时兜底 |
 
-命中后桥接做两件事，产出两份基准一起写进 claude 的 prompt：
+---
 
-1. 无头 Chrome 截一张 1440×1024 图（`--virtual-time-budget=8000` 等 JS 渲染完）→ **视觉基准**（图标/渐变/整体长相参考）；
-2. CDP 在渲染后的页面里跑提取脚本，导出**结构基准** spec JSON（`/tmp/demo-<jobId>.spec.json`）：每个可见元素一个节点——`i/p` 父子索引、标签、类名、页面绝对坐标、文案、真实色值（CSS 变量已解析）、字号/字重/字体、边框/圆角/阴影。布局/文案/色值以此为准，claude **不读原始 HTML**（spec 提取失败时才回退）。
+## 全状态导出契约 `MS_FIGMA_EXPORT`（demo 侧内嵌，桥接自动消费）
 
-> 提取脚本在 `tools/figma-bridge/server.js` 的 `EXTRACT_JS` 常量；单测方式：`node -e "require('./tools/figma-bridge/server.js').extractSpec('<demo路径>','t',p=>console.log(p))"`（需先 `npm install ws`）。节点上限 2500，超出截断并在 spec 里标 `truncated:true`。
+html.to.design 抓的是**渲染后的 DOM 快照**，导出页可以自带 JS：加载时逐态渲染、克隆、网格平铺，插件一次抓到全状态成品（不用逐个状态手动导）。桥接 import 前检测 demo 里的 `window.MS_FIGMA_EXPORT`，命中则经 `tools/figma-bridge/export-page.js` 注入铺开脚本；**无契约按单页原样导入（现状不变）**。
 
-**组件复用**：两种模式都要求先在 Figma 团队空间引用两份库文件——「Milesight_IOT_Web」与「（新版本）网关/路由器 通用业务组件库 业务组件」——能复用的组件优先从库里取，铁律见 `.claude/rules/figma-asset-libs.md`。
+demo（A4 渲染产物）在 `</body>` 前内嵌：
+
+```html
+<script>
+window.MS_FIGMA_EXPORT = {
+  rootSelector: '#app',             // 要克隆铺开的根容器
+  columns: 1,                       // 网格列数（整页 demo 建议 1）
+  frameWidth: 1440,                 // 每帧固定宽
+  hideSelectors: ['.demo-menu'],    // 导出时隐藏的演示辅助 UI
+  settleMs: 200,                    // 每态渲染后的等待 ms
+  reset() {},                       // 可选：每个 setup 前回到初始态；无则要求 setup 自洽
+  ready() {},                       // 可选：返回 Promise，等异步初始化完成
+  states: [
+    { name: '设备列表 · 默认',    setup() {} },
+    { name: '设备列表 · 删除确认弹窗', setup() { document.querySelector('[data-modal="delete"]').classList.add('is-open') } },
+    { name: 'SNMP · 禁用态',      setup() { document.querySelector('.bc-eg71-snmp-fields').classList.add('bc-eg71-snmp-fields--disabled') } }
+  ]
+}
+</script>
+```
+
+- **状态枚举口径**：覆盖该页关键交互态——页面内 Tab 各态、危险操作确认弹窗、启用/禁用总闸两态、列表空态，与 `interaction-completeness.md` §1 必备状态集对齐。
+- **桥接注入行为**：每态 `reset → setup → settle` → 克隆 root（fixed 元素转 absolute）→ 帧高取当时 scrollHeight → 铺入网格后清空 body；某态 setup 抛错不中断整体，该帧标注「导出失败，按前态快照」。导入名带「· 全状态」后缀。
+- **转写友好写法（生成侧要求，AGENTS.md 生成规范第 7 条）**：关键容器不依赖 `aspect-ratio`（写死高度）、间距直白表达不靠叠层技巧、`@media` 缩放仅作演示辅助（铺开层已覆盖 html/body 滚动锁）。
 
 ---
 
 ## 日常使用
 
-1. 在多维表格某行填好需求字段，点按钮
-2. 工作流第 3 步立刻发一条飞书消息（固定文案，**不代表完成**）
-3. 等 5–20 分钟，刷新表格——「Figma链接」列出现地址即完成
-4. 打开链接直接进 Figma 可编辑设计稿
+1. 多维表格某行点按钮（Figma/插件没开也没关系，桥接自动拉起）
+2. 工作流立刻发一条飞书消息（固定文案，不代表完成）
+3. 等分钟级，刷新表格——「Figma链接」列出现地址即完成
+4. 打开链接进 Figma 可编辑设计稿（落在插件当前文件）
 
 ## 排障
 
 | 症状 | 查哪 |
 |---|---|
 | 按钮点了没反应 | `/tmp/bridge-server.log` 有没有新 `[task]`；没有 → 工作流 URL 是否过期（隧道换域名） |
-| 任务收到但没产物 | 对应 `/tmp/claude-job-<jobId>.log`，看 claude 报了什么 |
-| 画布写成功但表格没回写 | 桥接日志找 `[writeback:...]`：`反查失败/没找到记录` → Body 里 demoName/version 与表格列值不完全一致（注意空格）；lark-cli 退出码非 0 → token 过期，重跑 `lark-cli auth login` |
-| figma-remote 不见了 | `claude mcp list` 检查；OAuth 失效重跑 `claude mcp login figma-remote` |
+| 插件自动拉起 3 轮仍失败 | 插件登录账号与 `--login` 不一致 / 没停在 MCP 标签页（坑 1） |
+| 401 / token 端点报错 | 凭据过期，重跑 `node server.js --login`（坑 3） |
+| import-html 失败 | 桥接日志 `[h2d:...]`；过大 → 配 `H2D_PUBLIC_BASE` 走 import-url 兜底（坑 4） |
+| 导入成功但表格没回写 | 桥接日志找 `[writeback:...]`：`反查失败/没找到记录` → Body 里 demoName 与表格列值不完全一致（注意空格）；lark-cli 退出码非 0 → token 过期，重跑 `lark-cli auth login` |
+| 导入了但链接列没 URL | mcp.to.design 返回体里没带 figma.com 链接——把 `[h2d:...] 导入完成` 后的日志贴出来排查 |
+| 导入结果只有默认单页态 | demo 未内嵌 `MS_FIGMA_EXPORT` 契约（grep demo 源）；契约在但某态缺失 → 该态 setup 抛错，帧标签带「导出失败」 |
 
 ## 安全红线
 
-- Figma PAT / OAuth 凭据只存本机用户级文件（`~/.claude.json` 等），**绝不入库**
-- 隧道只暴露 `/task` 和 `/health` 两个端点；扩展暴露面需先获使用者明确同意
+- 桥接 OAuth 凭据（auth.json）、Figma PAT 等**只存本机文件，绝不入库**（auth.json 已 gitignore）
+- 隧道只暴露 `/task`、`/health`、`/demo/:id` 端点；扩展暴露面需先获使用者明确同意
 - 多维表格 base token 写在本文档中属于团队资源坐标，非密钥

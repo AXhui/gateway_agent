@@ -17,7 +17,7 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 本项目的飞书同步**不依赖 git 钩子**：`tools/sync_demo_to_feishu.py` 已内置团队 Webhook 配置，任何机器 clone 下来直接运行即可同步（只需 Python 3，无需环境变量、无需 lark-cli）。
 
 - 已配置钩子的电脑（`git config core.hooksPath` 输出 `.githooks`）：commit 后 post-commit 钩子会自动同步（含 NAS 备份 + 飞书云空间上传）。
-- 未配置钩子的电脑（新人默认情况）：按下面「核心规则」第 3 步，直接用同步脚本同步表格记录，然后照常提交即可。
+- 未配置钩子的电脑（新人默认情况）：按下面「核心规则」第 5 步，直接用同步脚本同步表格记录，然后照常提交即可。
 - **不要运行 setup 脚本的交互模式**（它包含 Read-Host 提问，会阻塞等待输入）；本方案已不需要它。
 
 ## 核心规则：生成 demo 后必须自动提交
@@ -27,8 +27,12 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
 1. **保存原始提示词（硬性要求，缺失则无法提交）**：把用户本次的需求原话，原样写入该 demo 同目录的 `prompt.md`
    （路径如 `05_release/REQ-001/prompt.md`）；只保留本次这一条，用用户原话、不要概括或改写。
    必须把它和 demo.html 一起 `git add`——pre-commit 钩子会检查，缺 prompt.md 会中止提交。
-2. **质量自评 + 产品分类**：对照需求/基准，按 5 个维度各打一个 0-100 的整数分，并判断产品分类，写入该 demo 同目录的 `quality.json`
-   （和 demo.html 一起 `git add`）。格式严格如下：
+2. **三角色验收（硬性，评分前置门）**：以 **DEV / UED / TEST** 三个角色视角依次走查一遍 demo——各角色清单、证据格式与落分规则见 [.claude/rules/scoring.md](.claude/rules/scoring.md) §0。要点：
+   - UED 查信息架构 / 视觉基准 / 红线令牌（structure、visual 证据）；DEV 跑 `python tools/score_component.py --demo <demo> --report` 并核对组件映射清单（component 证据）；TEST 走交互链五段 + 字段逐项（interaction、field 证据）。
+   - 扣分证据逐行落同目录 `validation.md`「三角色验收」节（格式：`[角色-序号] 位置｜条款｜现象｜建议扣分`）。
+   - **无证据不得扣分，有证据不得漏扣**；跳过本步直接写 quality.json = 评分无效。
+3. **按评分机制落分 + 产品分类**：五维分数按 scoring.md §4 扣分表由验收证据反推得出，写入该 demo 同目录的 `quality.json`
+   （和 demo.html 一起 `git add`）。落分后必须过**真实性校验**（scoring.md §0.4）：分数能由 validation.md 证据行反推得出，对不上即退回重评。格式严格如下：
 
 ```json
 {
@@ -38,26 +42,26 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
   "visual": 88,
   "field": 92,
   "category": "网关",
-  "reason": "结构还原度 90：路由与页面骨架完整，但确认弹窗缺一层引导；组件还原度 85：2 处页面私有类未走组件库；交互还原度 80：表格行内编辑缺少防抖；视觉还原度 88：主色与间距接近基准，表格行距略有偏差；字段还原度 92：表单字段与 PRD 一致，仅缺校验提示文案。"
+  "reason": "structure 90：−5 模块编排顺序×1（U2-2）−5 栅格层级错乱×1（U2-3）；component 85：脚本分，①自造类 2 个（score_component.json）；interaction 80：−10 空态缺失×1（T2-3）−5 库空态组件未用×1（T2-4）−5 键盘 Esc 缺失×1（T5-2）；visual 88：−4 字号越红线×2（U3-1/U3-4）−4 runtime 偏差未修正×1（U4-1）；field 92：−4 默认值不符×1（T4-5）−4 枚举文案×1（T4-8）。"
 }
 ```
 
    - structure=结构还原度、component=组件类型还原度、interaction=交互逻辑还原度、visual=视觉还原度、field=字段还原度
    - category=产品分类，必须是以下六个之一：**云平台 / CCTV / CV / 网关 / 路由器 / uink**
-   - reason=AI 对该 demo 的**简单自评文字**（必填）：用 2~5 句话说明每个维度为什么是这个分数（扣分点/亮点），供 UED 复核时快速理解打分依据；按实际表现客观写，不要只写"良好/优秀"这类空话
+   - reason=**逐维扣分摘要**（必填，硬模板见 scoring.md §5）：每维一行「维度 分数：扣分点 = 条款 × 处数（证据行号）」，供 UED 复核对账；无证据的空话（"良好/优秀"）不合格，缺 reason 不得同步
    - 根据需求内容和产品名称判断：提到"云平台"、"Cloud"、"平台管理"选「云平台」；提到"CCTV"、"监控"、"摄像头"选「CCTV」；提到"CV"、"计算机视觉"、"AI识别"选「CV」；提到"网关"、"Gateway"、"楼宇网关"选「网关」；提到"路由器"、"Router"选「路由器」；提到"uink"、"Ulink"选「uink」
    - 按实际表现客观打分，不要一律给高分；这是给 UED 复核的初评分，UED 会修正。
-3. **组件分自动校准（硬性，--write 覆盖自评分）**：自评写入 quality.json 后，必须运行组件打分脚本校准 `component` 分：
+4. **组件分自动校准（硬性，--write 覆盖自评分）**：落分写入 quality.json 后，必须运行组件打分脚本校准 `component` 分：
    ```bash
    python tools/score_component.py --demo 05_release/REQ-XXX/demo.html --write
    ```
    脚本按 5 条规则自动算分（①组件库命中率 20% ②注册表覆盖 20% ③契约调用 25% ④壳契约 15% ⑤设计令牌 20%），并把 `component` 覆盖为脚本分（其余 4 维仍为自评）。若与自评分差异大，说明组件实现与规则不符，先修复 demo 再同步；不要跳过本步直接同步。
-3b. **结构/字段分自动校准（硬性，--write 覆盖自评分）**：继续运行结构/字段打分脚本校准 `structure` 与 `field` 分：
+4b. **结构/字段分自动校准（硬性，--write 覆盖自评分）**：继续运行结构/字段打分脚本校准 `structure` 与 `field` 分：
    ```bash
    python tools/score_fidelity.py --demo 05_release/REQ-XXX/demo.html --write
    ```
    脚本按 6 条子规则自动算分（字段：①实体定义完整 40% ②装配活跃度 35% ③静态字段校验 25%；结构：①统一壳 35% ②骨架完整 35% ③装配健康 30%），并把 `structure`、`field` 覆盖为脚本分（`component`/`interaction`/`visual` 不动）。若与自评分差异大，说明结构/字段实现与规则不符，先修复 demo 再同步；不要跳过本步直接同步。
-3. **同步到飞书（二选一，禁止重复同步）**：
+5. **同步到飞书（二选一，禁止重复同步）**：
 
    - **质量门槛（硬性）**：综合还原度（按结构0.2+组件0.2+交互0.25+视觉0.2+字段0.15 加权）**低于 80 分不得同步到飞书多维表格**，脚本会自动拦截并提示修复；先修复 demo 使综合分 ≥80 再重新同步。5 维分数不齐全时跳过门槛检查（等 UED 打分）。
    - **方式一：未配置钩子（新人默认，推荐）**。若 `git config core.hooksPath` 输出**不是** `.githooks`，用下面命令直接同步（脚本已内置 Webhook，零配置）：
@@ -68,8 +72,6 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
      --description "<commit 描述>" \
      --preview-url "\\192.168.5.50\公共临时文件夹（每季度定期清空）\chenwk\UI_demo\05_release\REQ-XXX\demo.html" \
      --generator "$(git config user.name)" \
-     --version "01" \
-     --source "Agent 生成" \
      --action-type "新建" \
      --prompt "$(cat 05_release/REQ-XXX/prompt.md)" \
      --quality-file "05_release/REQ-XXX/quality.json" \
@@ -78,19 +80,19 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
      --status "已生成"
    ```
 
-   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 4 步提交即可，post-commit 钩子会自动同步（**不要再手动调脚本**，避免重复记录）。
-   - 参数填写规则：`--version` = 该需求第几次生成就是第几版，两位数补零（01、02…）；首次生成 `--action-type 新建`，再次修改 `--action-type 更新`；`--duration` 可选（生成耗时分钟数）；`--generator` 从 `git config user.name` 读取（显示为飞书「生成人」）。
+   - **方式二：已配置钩子**。若 `git config core.hooksPath` 输出是 `.githooks`，直接执行第 6 步提交即可，post-commit 钩子会自动同步（**不要再手动调脚本**，避免重复记录）。
+   - 参数填写规则：首次生成 `--action-type 新建`，再次修改 `--action-type 更新`；`--generator` 从 `git config user.name` 读取（显示为飞书「生成人」）。
    - 预览 URL：未配置钩子时 demo 不会自动上传飞书云空间，上面的 UNC 路径仅作记录占位；若本机装有 lark-cli 且已登录，可自行上传后填入真实云空间链接。
    - 同步成功标志：脚本输出 `[同步成功] HTTP 200`。若输出 `[同步失败]`，把错误信息告知用户，**不要跳过同步**。
 
-4. **提交**：
+6. **提交**：
 
 ```bash
 git add .
 git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 ```
 
-直接执行。已配置钩子时，提交后钩子会自动把 demo 复制到 NAS 并同步飞书；未配置钩子时，同步已在第 3 步完成，提交仅用于保存代码。
+直接执行。已配置钩子时，提交后钩子会自动把 demo 复制到 NAS 并同步飞书；未配置钩子时，同步已在第 5 步完成，提交仅用于保存代码。
 
 ## Demo 生成规范
 
@@ -102,7 +104,8 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
    - pre-commit 钩子会检查 demo.html 是否包含组件库标识（`bc-` 前缀 class 或 `base.css`/`business.css` 引用），未使用组件库会中止提交
 4. 组件运行时真源：`library/*.css` + `assets/js/registry-*.js`，A4 渲染时内联进 demo.html（工作台与 engine-* 已移除，不做本地预览，`tools/build-css-bundle.py` 已随工作台删除）
 5. 每次生成/修改 demo，都必须把用户的原始提示词写入同目录 `prompt.md`（供飞书记录收集）
-6. 每次生成/修改 demo，都必须按 5 维度自评并写入同目录 `quality.json`（含 `reason` 自评文字；供飞书质检，UED 复核）
+6. 每次生成/修改 demo，都必须先过三角色验收（DEV/UED/TEST），再按 [.claude/rules/scoring.md](.claude/rules/scoring.md) 扣分表落五维分数写入同目录 `quality.json`（`reason` 为逐维扣分摘要，可由 validation.md 证据反推；供飞书质检，UED 复核）
+7. **必须内嵌全状态导出契约 `MS_FIGMA_EXPORT`**（转 Figma 链路自动铺开全状态用）：在 `</body>` 前声明 `window.MS_FIGMA_EXPORT = { rootSelector, states: [{name, setup}] ... }`，状态枚举覆盖关键交互态（Tab 各态 / 危险确认弹窗 / 启用禁用两态 / 空态）；关键容器避免 `aspect-ratio` 等 html.to.design 易走样的现代 CSS（写死高度），复杂自适应仅作演示辅助。完整字段见 `FIGMA_DESIGN_PIPELINE.md`「全状态导出契约」
 
 ## Demo 生成前置：组件映射清单（硬性，含一把梭场景）
 

@@ -1,28 +1,32 @@
-// 桥接服务 v2：飞书触发端(POST /task) → 本机 claude -p（figma-remote MCP 写画布）
-// 旧路径保留：USE_CLAUDE=false 时恢复为「广播给 Figma 插件画文本画板」
-// 用法：node bridge/server.js   （先 npm install ws）
+// 桥接服务 v3：飞书触发端(POST /task) → html.to.design MCP（Figma 插件中转落画布，零 LLM token）
+// 有 demo 源 → import-html 直连导入；无 demo 源 → 退回 claude 自由设计（figma-remote）
+// 用法：
+//   node server.js            启动桥接（:8080）
+//   node server.js --login    首次 OAuth 授权：浏览器点一次，自动铸 service account 长期凭据
+// 环境变量：H2D_PUBLIC_BASE=https://xxx.trycloudflare.com 时，import-html 失败自动改走 import-url（经公网隧道取页）
 const http = require('http')
-const { spawnSync, spawn } = require('child_process')
+const crypto = require('crypto')
 const fs = require('fs')
-const { WebSocketServer } = require('ws')
+const path = require('path')
+const { spawnSync, spawn } = require('child_process')
+const { buildExportPage } = require('./export-page')
 
 const PORT = 8080
-const USE_CLAUDE = true
-// 项目级 MCP（figma-remote）注册在这个目录下，claude 必须在这里跑才能加载到
 const CLAUDE_CWD = '/Users/youxh/Feishu-competition'
-const JOB_TIMEOUT_MS = 35 * 60 * 1000
-// 模型分档：转录=机械照抄用 haiku，设计=sonnet；均可用环境变量覆盖（质量下降时 FIGMA_TRANSCRIBE_MODEL=sonnet）
-const TRANSCRIBE_MODEL = process.env.FIGMA_TRANSCRIBE_MODEL || 'haiku'
+const AUTH_FILE = path.join(__dirname, 'auth.json')          // 本机凭据，已 gitignore，绝不入库
+const MCP_BASE = 'https://mcp.to.design'
+const IMPORT_TIMEOUT_MS = 10 * 60 * 1000                      // 插件导入整页 demo 的安全垫
+const JOB_TIMEOUT_MS = 35 * 60 * 1000                         // claude 自由设计模式超时
 const DESIGN_MODEL = process.env.FIGMA_MODEL || 'sonnet'
 
-// 任务排队：一次只跑一个 claude（并发多个 figma-remote 会话会互相拖慢/超时）
+// 任务排队：一次只跑一个（Figma 插件同一时刻只接一个导入）
 const queue = []
 let running = false
 function pumpQueue() {
   if (running || !queue.length) return
   running = true
   const { task, jobId } = queue.shift()
-  runClaudeJob(task, jobId, () => { running = false; pumpQueue() })
+  runTask(task, jobId, () => { running = false; pumpQueue() })
 }
 
 // 飞书多维表格回写目标（UI demo 表）：任务结束后把生成的 Figma 链接写回触发按钮的那一行
@@ -35,7 +39,7 @@ const FEISHU = {
 }
 
 function extractFigmaUrl(text) {
-  const urls = text.match(/https:\/\/(?:www\.)?figma\.com\/(?:design|file)\/[A-Za-z0-9]+[^\s，。；）)、」』\]]*/g)
+  const urls = String(text).match(/https:\/\/(?:www\.)?figma\.com\/(?:design|file)\/[A-Za-z0-9]+[^\s"'，。；）)、」』\]]*/g)
   return urls ? urls[urls.length - 1] : null   // 取最后一个：最终报告里的才是本次产物
 }
 
@@ -83,11 +87,10 @@ function writeBackToFeishu(task, jobId, url) {
     return
   }
   const conditions = [["Demo 名称", "Is", task.demoName]]
-  if (task.version) conditions.push(["版本号", "Is", task.version])
   const body = {
     keyword: task.demoName,
     search_fields: ["Demo 名称"],
-    select_fields: ["Demo 名称", "版本号"],
+    select_fields: ["Demo 名称"],
     filter: { logic: "and", conditions },
     limit: 20,
   }
@@ -105,171 +108,247 @@ function writeBackToFeishu(task, jobId, url) {
       const data = JSON.parse(out).data
       ids = (data.record_id_list || []).filter((_, i) => {
         const row = data.data[i] || []
-        return row[0] === task.demoName && (!task.version || row[1] === task.version)
+        return row[0] === task.demoName
       })
     } catch (e) {
       return console.log(`[writeback:${jobId}] 反查结果解析失败:`, e.message)
     }
     if (!ids.length) {
-      return console.log(`[writeback:${jobId}] 表里没找到 Demo 名称=${task.demoName} 版本=${task.version || '(任意)'} 的记录，跳过回写`)
+      return console.log(`[writeback:${jobId}] 表里没找到 Demo 名称=${task.demoName} 的记录，跳过回写`)
     }
     console.log(`[writeback:${jobId}] 按 Demo 名称反查命中 ${ids.length} 条：${ids.join(', ')}`)
     ids.forEach((id) => apply(id))
   })
 }
 
-// 启动时解析 claude 可执行文件，找不到就自动退回旧路径
-const CLAUDE_BIN = spawnSync('which', ['claude'], { encoding: 'utf8' }).stdout.trim()
-const useClaude = USE_CLAUDE && CLAUDE_BIN
-if (USE_CLAUDE && !CLAUDE_BIN) console.log('[warn] 找不到 claude 可执行文件，退回插件广播模式')
+// ---- html.to.design 认证（自有凭据，独立于 claude 的存储）----
+// auth.json 结构：{ client:{client_id,client_secret}, refresh_token?, svc?:{client_id,client_secret} }
+// 运行时优先 svc（client_credentials 长期有效），否则 refresh_token（14 天，过期重跑 --login）
 
-// ---- demo 源解析：转 Figma 的还原基准（三层兜底）----
-// 1. task.demoUrl（飞书云盘附件链接）→ 下载到 /tmp
-// 2. 本地归档 05_release/REQ-###/demo.html
-// 3. 反查多维表格读「预览 URL」列再下载（覆盖 REQ-008+ 等无本地归档的行）
-const CHROME_BIN = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+function loadAuth() {
+  try { return JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')) } catch { return null }
+}
+function saveAuth(auth) {
+  fs.writeFileSync(AUTH_FILE, JSON.stringify(auth, null, 2))
+  fs.chmodSync(AUTH_FILE, 0o600)
+}
+
+const b64url = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+let tokenCache = null // { token, exp }
+
+async function tokenRequest(form, basic) {
+  const headers = { 'Content-Type': 'application/x-www-form-urlencoded' }
+  if (basic) headers.Authorization = 'Basic ' + Buffer.from(`${basic[0]}:${basic[1]}`).toString('base64')
+  const res = await fetch(`${MCP_BASE}/token`, { method: 'POST', headers, body: new URLSearchParams(form).toString() })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(`token 端点 ${res.status}: ${JSON.stringify(data).slice(0, 300)}`)
+  return data
+}
+
+async function getAccessToken() {
+  if (tokenCache && Date.now() < tokenCache.exp - 5 * 60e3) return tokenCache.token
+  const auth = loadAuth()
+  if (!auth) throw new Error('未授权：先跑 node server.js --login')
+  let data
+  if (auth.svc) {
+    data = await tokenRequest(
+      { grant_type: 'client_credentials', resource: MCP_BASE, scope: 'mcp' },
+      [auth.svc.client_id, auth.svc.client_secret],
+    )
+  } else if (auth.refresh_token) {
+    data = await tokenRequest(
+      { grant_type: 'refresh_token', refresh_token: auth.refresh_token, resource: MCP_BASE },
+      [auth.client.client_id, auth.client.client_secret],
+    )
+    if (data.refresh_token && data.refresh_token !== auth.refresh_token) {
+      saveAuth({ ...auth, refresh_token: data.refresh_token })
+    }
+  } else {
+    throw new Error('auth.json 里既无 service account 也无 refresh token，重跑 node server.js --login')
+  }
+  tokenCache = { token: data.access_token, exp: Date.now() + (data.expires_in || 3600) * 1000 }
+  return tokenCache.token
+}
+
+// ---- MCP 客户端（streamable HTTP + Bearer）----
+
+async function parseMcpResponse(res, wantId) {
+  const ct = res.headers.get('content-type') || ''
+  if (!ct.includes('text/event-stream')) return res.json()
+  const reader = res.body.getReader()
+  const dec = new TextDecoder()
+  let buf = ''
+  for (;;) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buf += dec.decode(value, { stream: true })
+    const lines = buf.split('\n')
+    buf = lines.pop()
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue
+      try {
+        const msg = JSON.parse(line.slice(5).trim())
+        if (msg.id === wantId) return msg
+      } catch { /* 心跳/分片行，跳过 */ }
+    }
+  }
+  throw new Error(`MCP SSE 流结束但未收到响应 id=${wantId}`)
+}
+
+async function mcpCall(tool, args, timeoutMs = IMPORT_TIMEOUT_MS) {
+  const token = await getAccessToken()
+  const base = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json, text/event-stream',
+    Authorization: `Bearer ${token}`,
+  }
+  const post = (body, extra = {}) => fetch(`${MCP_BASE}/`, {
+    method: 'POST',
+    headers: { ...base, ...extra },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  })
+
+  const initRes = await post({
+    jsonrpc: '2.0', id: 1, method: 'initialize',
+    params: {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'feishu-figma-bridge', version: '3.0' },
+    },
+  })
+  if (initRes.status === 401) throw new Error('MCP 401：凭据失效，重跑 node server.js --login')
+  if (!initRes.ok) throw new Error(`MCP initialize ${initRes.status}`)
+  const init = await parseMcpResponse(initRes, 1)
+  const session = initRes.headers.get('mcp-session-id')
+
+  const headers = session ? { 'mcp-session-id': session } : {}
+  await post({ jsonrpc: '2.0', method: 'notifications/initialized' }, headers).catch(() => {})
+  const callRes = await post({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args } }, headers)
+  if (!callRes.ok) throw new Error(`MCP tools/call ${callRes.status}: ${(await callRes.text()).slice(0, 300)}`)
+  const msg = await parseMcpResponse(callRes, 2)
+  if (msg.error) throw new Error(`MCP error: ${JSON.stringify(msg.error).slice(0, 300)}`)
+  const r = msg.result
+  if (r && r.isError) {
+    const text = (r.content || []).map((c) => c.text || '').join(' ')
+    throw new Error(`工具执行失败: ${text.slice(0, 300)}`)
+  }
+  return r
+}
+
+// ---- --login：动态注册 + PKCE 授权码 + 自动铸 service account ----
+
+async function cmdLogin() {
+  const cbPort = 4300 + Math.floor(Math.random() * 200)
+  const redirectUri = `http://127.0.0.1:${cbPort}/callback`
+  let auth = loadAuth()
+  if (!auth || !auth.client) {
+    console.log('注册 MCP 客户端…')
+    const res = await fetch(`${MCP_BASE}/reg`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_name: 'feishu-figma-bridge',
+        redirect_uris: [redirectUri],
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        scope: 'openid offline_access mcp',
+      }),
+    })
+    if (!res.ok) throw new Error(`动态注册失败 ${res.status}: ${(await res.text()).slice(0, 200)}`)
+    const reg = await res.json()
+    auth = { client: { client_id: reg.client_id, client_secret: reg.client_secret } }
+  }
+
+  const verifier = b64url(crypto.randomBytes(48))
+  const challenge = b64url(crypto.createHash('sha256').update(verifier).digest())
+  const state = b64url(crypto.randomBytes(12))
+  const authUrl = `${MCP_BASE}/auth?` + new URLSearchParams({
+    client_id: auth.client.client_id,
+    response_type: 'code',
+    scope: 'openid offline_access mcp',
+    resource: MCP_BASE,
+    redirect_uri: redirectUri,
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+  })
+
+  const code = await new Promise((resolve, reject) => {
+    const srv = http.createServer((req, res) => {
+      const u = new URL(req.url, `http://127.0.0.1:${cbPort}`)
+      if (u.pathname !== '/callback') { res.writeHead(404); return res.end() }
+      if (u.searchParams.get('state') !== state) { res.writeHead(400); return res.end('state 不匹配') }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      res.end('<h3>授权成功，可以关掉这个页面回到终端</h3>')
+      srv.close(() => resolve(u.searchParams.get('code') || u.searchParams.get('error')))
+    })
+    srv.on('error', reject)
+    srv.listen(cbPort, '127.0.0.1', () => {
+      console.log(`\n即将打开浏览器完成 html.to.design 授权（用 Figma 插件同一账号登录）…\n${authUrl}\n`)
+      if (!process.env.H2D_NO_BROWSER) spawn('open', [authUrl], { stdio: 'ignore' })
+    })
+    setTimeout(() => reject(new Error('等待浏览器授权超时（5 分钟）')), 5 * 60 * 1000)
+  })
+  if (!code || code === 'access_denied') throw new Error(`授权失败: ${code}`)
+
+  console.log('用授权码换 token…')
+  const data = await tokenRequest(
+    { grant_type: 'authorization_code', code, redirect_uri: redirectUri, code_verifier: verifier, resource: MCP_BASE },
+    [auth.client.client_id, auth.client.client_secret],
+  )
+  auth.refresh_token = data.refresh_token
+  saveAuth(auth)
+  console.log('refresh token 已保存（14 天有效）')
+
+  // 铸 service account：长期凭据，免 14 天续期
+  try {
+    const res = await fetch(`${MCP_BASE}/service-accounts`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${data.access_token}` },
+    })
+    if (res.ok) {
+      const svc = await res.json()
+      saveAuth({ ...auth, svc: { client_id: svc.client_id, client_secret: svc.client_secret } })
+      console.log('service account 已铸好并保存（长期有效，无需续期）')
+    } else {
+      console.log(`service account 创建未成功（${res.status}），先用 refresh token 跑，14 天后重跑 --login`)
+    }
+  } catch (e) {
+    console.log('service account 创建异常，先用 refresh token 跑：', e.message)
+  }
+  console.log('完成。可先在 Figma 打开 html.to.design 插件切到 MCP 标签页，然后启动 node server.js')
+}
+
+// ---- demo 源解析：三层兜底，只需拿到 html 文件路径 ----
+// 优先级（行内产物是权威基准，本地归档可能落后于云端）：
+// 1. task.demoUrl（工作流显式带的飞书云盘附件链接）
+// 2. 反查多维表格「预览 URL」列（触发行自己的产物）再下载
+// 3. 本地归档 05_release/REQ-###/demo.html（预览列为 UNC 占位或无链接时兜底）
 
 function extractUrl(text) {
   const m = String(text || '').match(/https?:\/\/[^\s\)\]]+/)
   return m ? m[0] : null
 }
 
-function demoScreenshot(htmlPath, jobId, cb) {
-  const pngPath = `/tmp/demo-${jobId}.png`
-  if (!fs.existsSync(CHROME_BIN)) return cb(null)
-  const child = spawn(CHROME_BIN, [
-    '--headless=new', '--disable-gpu', `--screenshot=${pngPath}`,
-    '--window-size=1440,1024', '--hide-scrollbars', '--virtual-time-budget=8000',
-    `file://${htmlPath}`,
-  ], { stdio: 'ignore' })
-  const t = setTimeout(() => { child.kill(); cb(null) }, 30000)
-  child.on('close', () => {
-    clearTimeout(t)
-    cb(fs.existsSync(pngPath) && fs.statSync(pngPath).size > 20000 ? pngPath : null)
-  })
-}
-
-// ---- spec 提取：无头 Chrome(CDP) 在渲染后的页面里跑一段 JS，导出每个可见元素的位置/尺寸/真实色值/文案 ----
-// 产出紧凑 spec JSON 作为转录基准，替代让 claude 分段读几百 KB 原始 HTML（token 大头）
-const EXTRACT_JS = `(async () => {
-  await new Promise(res => document.readyState === 'complete' ? setTimeout(res, 1200) : addEventListener('load', () => setTimeout(res, 1200)))
-  const SKIP = new Set(['SCRIPT','STYLE','LINK','META','TITLE','HEAD','NOSCRIPT','TEMPLATE','BR'])
-  const transparent = (c) => /^rgba\\(.+, 0\\)$/.test(c)
-  const nodes = []
-  let i = 0
-  const page = { w: innerWidth, h: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight), bg: getComputedStyle(document.body).backgroundColor }
-  const walk = (el, p) => {
-    const tag = el.tagName
-    if (SKIP.has(tag)) return
-    const cs = getComputedStyle(el)
-    if (cs.display === 'none' || cs.visibility === 'hidden') return
-    const r = el.getBoundingClientRect()
-    if (r.width < 1 || r.height < 1) return
-    const idx = i++
-    const n = { i: idx, p, t: tag.toLowerCase(), x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height) }
-    const cls = (el.getAttribute('class') || '').trim()
-    if (cls) n.c = cls.split(/\\s+/).slice(0, 4).join(' ')
-    let tx = ''
-    for (const nd of el.childNodes) if (nd.nodeType === 3) tx += nd.textContent
-    tx = tx.replace(/\\s+/g, ' ').trim()
-    if (!tx && (tag === 'INPUT' || tag === 'TEXTAREA')) tx = el.value || el.placeholder || ''
-    if (tag === 'SELECT') tx = el.selectedOptions[0] ? el.selectedOptions[0].textContent : ''
-    if (tx) {
-      n.tx = tx.slice(0, 200)
-      n.fg = cs.color; n.ff = cs.fontFamily.split(',')[0].replace(/["']/g, ''); n.fs = cs.fontSize; n.fw = cs.fontWeight
-      if (cs.textAlign && cs.textAlign !== 'left' && cs.textAlign !== 'start') n.ta = cs.textAlign
-    }
-    if (tag === 'IMG') n.img = (el.currentSrc || el.src || '').startsWith('data:') ? 'inline' : (el.currentSrc || el.src || '').slice(0, 140)
-    if (cs.backgroundImage && cs.backgroundImage !== 'none') n.bg = cs.backgroundImage.length <= 300 ? cs.backgroundImage : 'gradient'
-    else if (cs.backgroundColor && !transparent(cs.backgroundColor)) n.bg = cs.backgroundColor
-    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') n.bd = cs.borderTopWidth + ' ' + cs.borderTopStyle + ' ' + cs.borderTopColor
-    if (cs.borderRadius && cs.borderRadius !== '0px') n.br = cs.borderRadius
-    if (cs.boxShadow && cs.boxShadow !== 'none') n.sh = cs.boxShadow.length <= 200 ? cs.boxShadow : 'shadow'
-    nodes.push(n)
-    if (i <= 2500) for (const c of el.children) walk(c, idx)
-  }
-  walk(document.body, -1)
-  return JSON.stringify({ page, nodes, truncated: i > 2500 })
-})()`
-
-function extractSpec(htmlPath, jobId, cb) {
-  const specPath = `/tmp/demo-${jobId}.spec.json`
-  if (!fs.existsSync(CHROME_BIN)) return cb(null)
-  const port = 20000 + Math.floor(Math.random() * 20000)
-  const child = spawn(CHROME_BIN, [
-    '--headless=new', '--disable-gpu', `--remote-debugging-port=${port}`,
-    `--user-data-dir=/tmp/chrome-spec-${jobId}`,
-    '--window-size=1440,1024', '--hide-scrollbars', `file://${htmlPath}`,
-  ], { stdio: 'ignore' })
-  const WebSocket = require('ws')
-  const http = require('http')
-  let ws = null
-  let done = false
-  const finish = (spec) => {
-    if (done) return
-    done = true
-    clearTimeout(guard)
-    if (ws) { try { ws.close() } catch (e) { /* 已断开 */ } }
-    child.kill()
-    if (spec && spec.length > 100) {
-      try {
-        fs.writeFileSync(specPath, spec)
-        console.log(`[demo:${jobId}] spec 提取成功 ${specPath}（${(spec.length / 1024).toFixed(0)}KB / ${JSON.parse(spec).nodes.length} 节点）`)
-        return cb(specPath)
-      } catch (e) { console.log(`[demo:${jobId}] spec 写盘失败:`, e.message) }
-    }
-    console.log(`[demo:${jobId}] spec 提取失败，转录回退为读原始 HTML`)
-    cb(null)
-  }
-  const guard = setTimeout(() => finish(null), 30000)
-  const tryList = (attempt) => {
-    if (done) return
-    http.get({ host: '127.0.0.1', port, path: '/json/list', timeout: 1500 }, (res) => {
-      let body = ''
-      res.on('data', (d) => (body += d))
-      res.on('end', () => {
-        let target = null
-        try { target = JSON.parse(body).find((t) => t.type === 'page' && t.webSocketDebuggerUrl) } catch (e) { /* chrome 未就绪 */ }
-        if (!target) return attempt < 12 ? setTimeout(() => tryList(attempt + 1), 1000) : finish(null)
-        ws = new WebSocket(target.webSocketDebuggerUrl, { maxPayload: 256 * 1024 * 1024 })
-        ws.on('open', () => ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: EXTRACT_JS, returnByValue: true, awaitPromise: true } })))
-        ws.on('message', (m) => {
-          const msg = JSON.parse(m.toString())
-          if (msg.id !== 1) return
-          const r = msg.result && msg.result.result
-          if (r && typeof r.value === 'string' && r.value.length > 100) finish(r.value)
-          else {
-            console.log(`[demo:${jobId}] spec evaluate 失败:`, JSON.stringify((msg.result && (msg.result.exceptionDetails || r)) || msg.error || msg).slice(0, 300))
-            finish(null)
-          }
-        })
-        ws.on('error', () => finish(null))
-      })
-    }).on('error', () => { if (attempt < 12) setTimeout(() => tryList(attempt + 1), 1000) })
-  }
-  tryList(0)
-}
-
 function resolveDemoSource(task, jobId, cb) {
-  const finish = (info) => {
+  const finish = (info, src) => {
     console.log(info
-      ? `[demo:${jobId}] demo 源就绪（转录模式）: html=${info.htmlPath} png=${info.pngPath || '无'}`
+      ? `[demo:${jobId}] demo 源就绪（${src}）: html=${info.htmlPath}`
       : `[demo:${jobId}] 三层取源均未命中，走自由设计模式`)
     cb(info)
   }
-  const afterHtml = (htmlPath) => demoScreenshot(htmlPath, jobId, (pngPath) => {
-    extractSpec(htmlPath, jobId, (specPath) => finish({ htmlPath, pngPath, specPath }))
-  })
 
-  const fromUrl = (url) => {
-    if (!url) return fromLocal()
+  const fromUrl = (url, src, next) => {
+    if (!url) return next()
     const htmlPath = `/tmp/demo-${jobId}.html`
     larkCli(['drive', '+download', '--url', url, '--output', htmlPath, '--overwrite', '--as', 'user'], (code, out) => {
       if (code !== 0 || !fs.existsSync(htmlPath) || fs.statSync(htmlPath).size < 500) {
-        console.log(`[demo:${jobId}] demoUrl 下载失败: ${String(out).slice(0, 150)}`)
-        return fromLocal()
+        console.log(`[demo:${jobId}] ${src} 下载失败: ${String(out).slice(0, 150)}`)
+        return next()
       }
-      afterHtml(htmlPath)
+      finish({ htmlPath }, src)
     })
   }
   const fromLocal = () => {
@@ -278,15 +357,14 @@ function resolveDemoSource(task, jobId, cb) {
       const p = `${CLAUDE_CWD}/05_release/REQ-${m[1]}/demo.html`
       if (fs.existsSync(p)) {
         console.log(`[demo:${jobId}] 用本地归档 ${p}`)
-        return afterHtml(p)
+        return finish({ htmlPath: p }, '本地归档')
       }
     }
-    fromRecord()
+    finish(null)
   }
   const fromRecord = () => {
-    if (!task.demoName) return finish(null)
+    if (!task.demoName) return fromLocal()
     const conditions = [["Demo 名称", "Is", task.demoName]]
-    if (task.version) conditions.push(["版本号", "Is", task.version])
     const body = {
       keyword: task.demoName, search_fields: ["Demo 名称"],
       select_fields: ["Demo 名称", "预览 URL"],
@@ -296,67 +374,113 @@ function resolveDemoSource(task, jobId, cb) {
       'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
       '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
     ], (code, out) => {
-      let cell = null
+      let url = null
       try {
         const data = JSON.parse(out).data
-        const idx = (data.record_id_list || []).findIndex((_, i) => {
-          const row = data.data[i] || []
-          return row[0] === task.demoName
-        })
-        if (idx >= 0) cell = (data.data[idx] || [])[1]
-      } catch (e) { /* 落到 finish(null) */ }
-      const url = cell ? extractUrl(cell) : null
-      if (!url) return finish(null)
-      console.log(`[demo:${jobId}] 从表格「预览 URL」反查到附件，下载中`)
-      fromUrl(url)
+        // 同名行可能有多条（历史同步重复），遍历取第一条带可用链接的，空链接行跳过
+        for (const row of data.data || []) {
+          if ((row[0] || '').trim() !== String(task.demoName).trim()) continue
+          const u = extractUrl(row[1])
+          if (u) { url = u; break }
+        }
+      } catch (e) { /* 落到本地归档兜底 */ }
+      if (!url) {
+        console.log(`[demo:${jobId}] 表格「预览 URL」列无可用链接（未上传或 UNC 占位），走本地归档兜底`)
+        return fromLocal()
+      }
+      console.log(`[demo:${jobId}] 从表格「预览 URL」取到云端附件，下载中`)
+      fromUrl(url, '表格预览URL', fromLocal)
     })
   }
-  fromUrl(extractUrl(task.demoUrl))
+  fromUrl(extractUrl(task.demoUrl), 'demoUrl', fromRecord)
 }
 
-// 组件库引用：搭 Figma 稿前先在团队空间找这两份库文件，能复用的组件优先从库里取
+// import-url 兜底时把 demo 挂在本服务上，让 mcp.to.design 走公网取页
+const servedDemos = new Map() // jobId -> { html }
+function serveDemo(jobId, html) {
+  servedDemos.set(jobId, { html })
+  if (servedDemos.size > 20) servedDemos.delete(servedDemos.keys().next().value)
+}
+
+function stripHtmlComments(html) {
+  return html.replace(/<!--[\s\S]*?-->/g, '')
+}
+
+// ---- Figma 自动拉起：插件离线时点击仍能自动恢复（不依赖人事先开好插件）----
+const H2D_PLUGIN_ID = '1159123024924461424'
+const openFigmaApp = () => { try { spawn('open', ['-a', 'Figma'], { stdio: 'ignore' }) } catch { /* open 不存在则靠报错信息人工兜底 */ } }
+const openH2dPlugin = () => { try { spawn('open', [`figma://plugin/${H2D_PLUGIN_ID}`], { stdio: 'ignore' }) } catch { /* 同上 */ } }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const pluginOffline = (msg) => /isn.t connected|not connected/i.test(msg)
+
+async function importWithAutoRecovery(kind, args, jobId) {
+  let lastErr
+  for (let round = 0; round < 3; round++) {
+    if (round > 0) await sleep(5000)
+    try {
+      return await mcpCall(kind === 'url' ? 'import-url' : 'import-html', args)
+    } catch (e) {
+      lastErr = e
+      if (!pluginOffline(e.message)) throw e
+      console.log(`[h2d:${jobId}] 插件不在线（第 ${round + 1}/3 轮），自动拉起 Figma + html.to.design 插件后重试`)
+      openFigmaApp()                       // 应用没开则启动，开着则仅聚焦
+      await sleep(round === 0 ? 10000 : 5000)  // 冷启动留足应用加载时间
+      openH2dPlugin()                      // 深链在当前文件里启动插件
+      await sleep(15000)                   // 等插件加载并连上 MCP
+    }
+  }
+  throw new Error(`${lastErr.message}（已自动拉起 3 轮仍不在线：确认插件内登录账号与 --login 授权一致、并停在 MCP 标签页后重新点按钮）`)
+}
+
+// ---- 主任务：demo → import-html 直连导入（零 LLM token）----
+
+function runImportJob(task, jobId, demo, done) {
+  const name = task.demoName || `demo-${jobId}`
+  fs.readFile(demo.htmlPath, 'utf8', async (err, raw) => {
+    if (err) { console.log(`[h2d:${jobId}] 读 demo 失败:`, err.message); return done() }
+    const html = stripHtmlComments(raw)
+    // 命中 demo 内嵌的 MS_FIGMA_EXPORT 契约 → 生成全状态铺开页（逐态渲染+网格平铺）再导入
+    const built = buildExportPage(html, name)
+    console.log(`[h2d:${jobId}] import-html 开始（${(built.html.length / 1024).toFixed(0)}KB，name=${built.name}${built.states ? '，全状态铺开' : ''}）`)
+    try {
+      let result
+      try {
+        result = await importWithAutoRecovery('html', { name: built.name, html: built.html }, jobId)
+      } catch (e) {
+        const base = process.env.H2D_PUBLIC_BASE
+        // 插件离线重试 import-url 也没意义；仅在配置了公网地址时对其他失败（如体积超限）换通道
+        if (!base || pluginOffline(e.message)) throw e
+        console.log(`[h2d:${jobId}] import-html 失败（${e.message}），改走 import-url 公网取页: ${base}/demo/${jobId}`)
+        serveDemo(jobId, built.html)
+        result = await importWithAutoRecovery('url', { url: `${base}/demo/${jobId}`, viewport: 1440 }, jobId)
+      }
+      const url = extractFigmaUrl(result ? JSON.stringify(result) : '')
+      console.log(`[h2d:${jobId}] 导入完成${url ? ` → ${url}` : ''}`)
+      writeBackToFeishu(task, jobId, url)
+    } catch (e) {
+      console.log(`[h2d:${jobId}] 导入失败: ${e.message}`)
+    }
+    done()
+  })
+}
+
+// ---- 无 demo 源时的自由设计模式：spawn claude + figma-remote（保持原行为）----
+
+const CLAUDE_BIN = spawnSync('which', ['claude'], { encoding: 'utf8' }).stdout.trim()
+
 const FIGMA_LIBS = [
   '「Milesight_IOT_Web」',
   '「（新版本）网关/路由器 通用业务组件库 业务组件」',
 ]
 
-function buildPrompt(t, demo) {
+function buildPrompt(t) {
   // 第一行的「先输出规划再动手」是 headless 下 OAuth MCP 握手竞态的解法，勿删
   const warmup = '你是设计执行器。先花一个回合输出简短的执行规划（两三行即可），然后再动手——figma-remote MCP 握手需要几秒，第一回合看不到它的工具属正常，规划完它就绪了。'
   const libRule = `组件复用优先：在 Figma 团队空间找 ${FIGMA_LIBS.join(' 和 ')} 两份库文件，能复用的组件（按钮、输入框、表格、徽标、侧边导航项等）优先从库里复制/引用，库里没有的再手画。`
-
-  if (demo) {
-    // 转录模式：已有 demo，1:1 照抄。基准 = 截图（视觉）+ spec JSON（结构/色值/文案，机器提取，CSS 变量已解析）
-    // spec 提取失败时才回退给原始 HTML（token 大头，最后手段）
-    const mats = []
-    if (demo.pngPath) mats.push(`- 视觉基准（整体长相/图标/渐变的参考）：${demo.pngPath}`)
-    if (demo.specPath) {
-      mats.push(`- 结构基准（权威）：${demo.specPath}——机器从渲染后的 demo 提取的元素树，每个可见元素一个节点：i/p=自身/父节点索引（直接对应 Figma frame 层级）、t=标签、c=类名、x/y/w/h=页面绝对坐标、tx=文案、bg/fg=真实色值（CSS 变量已解析）、fs/fw/ff=字号/字重/字体、bd/br/sh=边框/圆角/阴影。布局、文案、色值一律以此文件为准。`)
-    } else {
-      mats.push(`- 源码基准（结构/文案/真实色值）：${demo.htmlPath}（文件较大，分段读关键部分；颜色一律取 CSS 变量真实值）`)
-    }
-    return [
-      warmup,
-      `本次任务：把已有 demo 页面 1:1 转录成 Figma 可编辑设计稿（是照抄，不是重新设计）。`,
-      `基准材料（只允许 Read 下面这 ${mats.length} 个文件，禁止读仓库其他任何文件、禁止读 prd.md、禁止做任何调研）：`,
-      ...mats,
-      `- 名称：${t.demoName || '未命名'}${t.version ? `（版本 ${t.version}）` : ''}`,
-      `执行方式（硬性，为省时间与上下文）：`,
-      `1. 画布写入一次性完成：把整页生成一段完整的 JavaScript，放在一个 use_figma 调用里建完，禁止交互式逐节点搭建（不做 get_metadata 逐层探索）。仅当脚本超过 5 万字符上限时，才按页面区块拆成少数几次调用。`,
-      `2. 整页放进一个 1440 宽、完整内容高度的 frame，不要只画首屏。`,
-      `3. 节点映射：spec 里带 bg/bd 的盒子→Frame 或 Rectangle；tx 文本→Text 节点（用 fs/fw/fg 实际值）；容器无样式→直接挂到父 frame 层级；图标按截图选最近似的内置图标。`,
-      `4. ${libRule}`,
-      `还原要求：布局、模块、顺序、文案 100% 照抄基准：侧边导航每一项、标题、卡片数字、表格每列每行、徽标颜色、按钮文字原样落进 Figma；颜色一律用基准里的真实色值，禁止主观换色、禁止增删模块、禁止改写文案。`,
-      `完成后报告：写进了哪个文件（链接）、节点名、与基准的差异清单（应尽量为零）。`,
-    ].filter(Boolean).join('\n')
-  }
-
-  // 设计模式：无 demo 源时保持原有行为
   const req = t.requirement || t.prompt || ''
   return [
     warmup + '随后使用 figma-remote MCP 的画布写入工具，把下面的需求落成 Figma 里一个可编辑的页面级设计稿（完整 frame，不要只输出文字说明）：',
     `- 名称：${t.demoName || t.title || '未命名'}`,
-    t.version ? `- 版本：${t.version}` : '',
     t.category ? `- 分类：${t.category}` : '',
     `- 需求：${req || t.demoName || '（无描述，按名称做一个物联网设备后台界面）'}`,
     `- ${libRule}`,
@@ -365,14 +489,17 @@ function buildPrompt(t, demo) {
 }
 
 function runClaudeJob(task, jobId, done) {
-  resolveDemoSource(task, jobId, (demo) => {
-    const logFile = `/tmp/claude-job-${jobId}.log`
-    const log = fs.createWriteStream(logFile, { flags: 'a' })
-    const child = spawn(CLAUDE_BIN, [
-      '-p', buildPrompt(task, demo),
-      '--model', demo ? TRANSCRIBE_MODEL : DESIGN_MODEL,
-      '--allowedTools', 'Read,mcp__figma-remote,mcp__figma-dev-mode'
-    ], { cwd: CLAUDE_CWD, stdio: ['ignore', 'pipe', 'pipe'] })
+  if (!CLAUDE_BIN) {
+    console.log(`[claude:${jobId}] 找不到 claude 可执行文件，任务放弃`)
+    return done()
+  }
+  const logFile = `/tmp/claude-job-${jobId}.log`
+  const log = fs.createWriteStream(logFile, { flags: 'a' })
+  const child = spawn(CLAUDE_BIN, [
+    '-p', buildPrompt(task),
+    '--model', DESIGN_MODEL,
+    '--allowedTools', 'Read,mcp__figma-remote,mcp__figma-dev-mode'
+  ], { cwd: CLAUDE_CWD, stdio: ['ignore', 'pipe', 'pipe'] })
 
   const timer = setTimeout(() => {
     console.log(`[claude:${jobId}] 超时(${JOB_TIMEOUT_MS / 60000}min)，强杀`)
@@ -389,26 +516,30 @@ function runClaudeJob(task, jobId, done) {
   child.on('close', (code) => {
     clearTimeout(timer)
     console.log(`[claude:${jobId}] 结束 code=${code}`)
-    // 任务产物回写：从最终报告里提取 Figma 链接 → 写回多维表格该行
     try {
       const finalText = fs.readFileSync(logFile, 'utf8')
       writeBackToFeishu(task, jobId, extractFigmaUrl(finalText))
     } catch (e) {
       console.log(`[writeback:${jobId}] 读取日志失败:`, e.message)
     }
-    wss.clients.forEach((c) => {
-      if (c.readyState === 1) c.send(JSON.stringify({ event: 'claude-done', jobId, code }))
-    })
-    if (done) setImmediate(done)
-  })
+    done()
   })
 }
+
+function runTask(task, jobId, done) {
+  resolveDemoSource(task, jobId, (demo) => {
+    if (demo) return runImportJob(task, jobId, demo, done)
+    runClaudeJob(task, jobId, done)
+  })
+}
+
+// ---- HTTP 服务 ----
 
 const server = http.createServer((req, res) => {
   // CORS：允许任意页面（多维表格内嵌 HTML / 本地按钮页）直接 POST
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Headers', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end() }
 
   if (req.method === 'POST' && req.url === '/task') {
@@ -418,45 +549,42 @@ const server = http.createServer((req, res) => {
       let task
       try { task = JSON.parse(body) } catch { task = { raw: body } }
       console.log('[task]', JSON.stringify(task))
-
-      if (useClaude) {
-        const jobId = Date.now()
-        queue.push({ task, jobId })
-        pumpQueue()
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'claude', jobId, queued: queue.length }))
-      }
-
-      // 旧路径：广播给所有已连接的 Figma 插件
-      wss.clients.forEach((c) => { if (c.readyState === 1) c.send(JSON.stringify(task)) })
+      const jobId = Date.now()
+      queue.push({ task, jobId })
+      pumpQueue()
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, delivered: wss.clients.size }))
+      return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'h2d', jobId, queued: queue.length }))
     })
     return
   }
 
+  // import-url 兜底取页端点（html.to.design 云端经公网隧道访问）
+  const demoMatch = req.method === 'GET' && req.url.match(/^\/demo\/(\d+)$/)
+  if (demoMatch) {
+    const entry = servedDemos.get(demoMatch[1])
+    if (!entry) { res.writeHead(404); return res.end() }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+    return res.end(entry.html)
+  }
+
   if (req.method === 'GET' && req.url === '/health') {
+    const auth = loadAuth()
     res.writeHead(200, { 'Content-Type': 'application/json' })
-    return res.end(JSON.stringify({ ok: true, mode: useClaude ? 'claude' : 'plugin', plugins: wss.clients.size }))
+    return res.end(JSON.stringify({
+      ok: true,
+      mode: 'h2d',
+      auth: auth ? (auth.svc ? 'service-account' : 'refresh-token') : 'none',
+      claudeFallback: Boolean(CLAUDE_BIN),
+      queued: queue.length,
+      running,
+    }))
   }
   res.writeHead(404); res.end()
 })
 
-const wss = new WebSocketServer({ server })
-wss.on('connection', (ws, req) => {
-  console.log('[ws] 插件已连接', req.socket.remoteAddress)
-  ws.on('message', (data) => {
-    const msg = JSON.parse(data.toString())
-    if (msg.event === 'done') {
-      console.log('[done] record_id =', msg.record_id)
-      // TODO 正式版：在这里回写飞书（多维表格更新记录状态），或转发到飞书 webhook
-    }
-  })
-  ws.on('close', () => console.log('[ws] 插件断开'))
-})
-
-// 直接 require 本文件只导出工具函数用于测试，不启动服务
-module.exports = { extractSpec, buildPrompt }
-if (require.main === module) {
-  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=${useClaude ? 'claude' : 'plugin'}`))
+if (process.argv.includes('--login')) {
+  cmdLogin().catch((e) => { console.error('[login] 失败:', e.message); process.exit(1) })
+} else if (require.main === module) {
+  if (!loadAuth()) console.log('[warn] 尚未授权：先跑 node server.js --login')
+  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=html.to.design 直连`))
 }

@@ -8,8 +8,6 @@
         --description "用户中心登录页改版 v2" \
         --preview-url "http://intranet/demo/REQ-001/demo.html" \
         --generator "axhui" \
-        --version "v1.0.0" \
-        --source "Agent 生成" \
         --action-type "新建" \
         --status "已生成" \
         --structure 90 --component 85 --interaction 80 --visual 88 --field-score 92
@@ -70,13 +68,6 @@ def main():
     parser.add_argument("--description", default="", help="需求描述")
     parser.add_argument("--preview-url", default="", help="预览 URL（内网地址）")
     parser.add_argument("--generator", default="", help="生成人")
-    parser.add_argument("--version", default="", help="版本号")
-    parser.add_argument(
-        "--source",
-        default="Agent 生成",
-        choices=["Agent 生成", "GitHub 更新", "手动录入"],
-        help="来源（默认：Agent 生成）",
-    )
     parser.add_argument(
         "--status",
         default="已生成",
@@ -90,7 +81,6 @@ def main():
         help="记录类型：新建=首次生成（会通知）；更新=修改已有 demo（不通知，仅留记录）",
     )
     parser.add_argument("--prompt", default="", help="用户本次的原始提示词/需求原话")
-    parser.add_argument("--duration", type=float, default=None, help="生成耗时（分钟），由 post-commit 自动计算")
     parser.add_argument("--req-id", default="", help="需求编号（如 REQ-004），供工作流按需求查找/更新旧记录")
     parser.add_argument("--category", default="", help="产品分类：云平台/CCTV/CV/网关/路由器/uink（AI 自动判断）")
     # AI 自评的 5 维度分数（0-100，整数）；不填则为空，等待 UED 复核
@@ -193,12 +183,9 @@ def main():
         "需求描述": args.description,
         "预览 URL": args.preview_url,
         "生成人": args.generator,
-        "版本号": args.version,
-        "来源": args.source,
         "状态": args.status,
         "记录类型": args.action_type,
         "提示词": args.prompt,
-        "生成耗时(分钟)": args.duration,
         "需求编号": args.req_id,
         "结构还原度": structure,
         "组件类型还原度": component,

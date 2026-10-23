@@ -17,3 +17,6 @@ output/
 
 # 依赖（AGENTS.md：node_modules 不入库）
 node_modules/
+
+# figma-bridge 本机 OAuth 凭据（html.to.design service account / refresh token，勿提交）
+tools/figma-bridge/auth.json

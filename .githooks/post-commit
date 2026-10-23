@@ -57,16 +57,6 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     QUALITY_FILE="$DEMO_DIR/quality.json"
   fi
 
-  # 生成耗时：commit 时间 - prompt.md 创建时间（分钟，保留1位小数）；prompt.md 不存在则留空
-  DURATION=""
-  if [ -f "$DEMO_DIR/prompt.md" ]; then
-    COMMIT_TS=$(git log -1 --pretty=%ct)
-    PROMPT_TS=$(stat -c %Y "$DEMO_DIR/prompt.md" 2>/dev/null || date -r "$DEMO_DIR/prompt.md" +%s 2>/dev/null || echo "")
-    if [ -n "$PROMPT_TS" ] && [ -n "$COMMIT_TS" ]; then
-      DURATION=$(awk "BEGIN{printf \"%.1f\", ($COMMIT_TS - $PROMPT_TS)/60}")
-    fi
-  fi
-
   # 判断该 demo 是首次提交还是再次提交：
   # post-commit 时 HEAD 已包含本次提交，该路径历史提交数 <=1 即首次（新建），否则为更新。
   PREV_COUNT=$(git rev-list --count HEAD -- "$DEMO_PATH" 2>/dev/null || echo 0)
@@ -76,6 +66,7 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
     ACTION_TYPE="更新"
   fi
   # 版本号：该 demo 第几次提交就是第几版，两位数补零（01、02、03...）
+  # 仅用于 NAS 快照与飞书云空间上传的文件名（demo_v01.html），不同步到表格字段
   VERSION_NO=$(printf "%02d" "$PREV_COUNT")
 
   PREVIEW_URL=""
@@ -218,12 +209,9 @@ except Exception:
     --description "$COMMIT_MSG" \
     --preview-url "$PREVIEW_URL" \
     --generator "$COMMIT_AUTHOR" \
-    --version "$VERSION_NO" \
-    --source "Agent 生成" \
     --action-type "$ACTION_TYPE" \
     --prompt "$USER_PROMPT" \
     --quality-file "$QUALITY_FILE" \
-    --duration "$DURATION" \
     --req-id "$REQ_ID" \
     "${CATEGORY_ARG[@]}" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
