@@ -1,0 +1,187 @@
+{
+  "$comment": "demo 类名 → Figma 发布库组件 key 映射（转 Figma 库实例化二期）。build-scene.js lib-pass 给命中节点打 n.lib 标记（子树原样保留作导入失败回退），插件 code.js importComponentByKeyAsync → component_set 按修饰类择变体 → createInstance → 覆写首个文本层。原子控件 enabled:true；复合块（标题/弹窗/Tab栏/导航栏/侧边栏等）替换会丢动态内容（tag/按钮/文本组），enabled:false 挂名备用，待变体与文本覆写验证后逐个启用。重建方法：figma-remote get_libraries 反查 libraryKey → search_design_system includeLibraryKeys 定向检索，componentSetKey/componentKey 即 importComponentByKeyAsync 入参。检索日期 2026-10-24。",
+  "libraries": {
+    "biz": { "name": "（新版本）网关/路由器 通用业务组件库", "libraryKey": "lk-1456c337361aa8e31ab587202acc4492171fc5a9f8a4366070f51f5270b4d9301a85dd833450010f9809a1c2195dca47caeddcf37554c86996913a70d5bccee0", "fileKey": "（团队库，fileKey 未知；71.0.0.4 设计稿 CVVyZcQHpcu8lipmsXRZIm 订阅了它）" },
+    "web": { "name": "Milesight_IOT_Web", "libraryKey": "lk-fd11ca356b4084d6ff11636a401c556a1f97795cf92cced550aceb1c9722d02b14fbf9b7ba8136f0b1eb24a945b1a727e64ee41590650f2d04487852c74adae8", "fileKey": "Er9jFJWKavCdkG7HXPc58v" }
+  },
+  "components": [
+    {
+      "cls": "ms-btn",
+      "lib": "web",
+      "key": "89948411acf1ba86f46f75f4cc82c3295bd85e88",
+      "figmaName": "1 Basic/2 Button",
+      "kind": "set",
+      "enabled": true,
+      "tokens": { "primary": "primary", "danger": "danger", "success": "success", "dashed": "dashed", "link": "link", "text": "text", "filled": "filled", "xs": "xs", "sm": "small", "lg": "large", "loading": "loading", "disabled": "disabled" }
+    },
+    {
+      "cls": "ms-input",
+      "lib": "web",
+      "key": "c9d4614245e9718f1e3cad7461536c00d71b5260",
+      "figmaName": "Input",
+      "kind": "set",
+      "enabled": true,
+      "exclude": ["ms-input--textarea", "ms-input-number", "ms-input-affix-wrapper"],
+      "tokens": { "sm": "small", "lg": "large", "error": "error", "disabled": "disabled" }
+    },
+    {
+      "cls": "ms-select",
+      "lib": "web",
+      "key": "f584971473e4717309afe2695d42043328f7d967",
+      "figmaName": "Select",
+      "kind": "set",
+      "enabled": true,
+      "exclude": ["ms-select-native"],
+      "tokens": { "sm": "small", "lg": "large", "error": "error", "disabled": "disabled" }
+    },
+    {
+      "cls": "ms-switch",
+      "lib": "web",
+      "key": "6267417a76a2cc4480b8f52db323d2351c326655",
+      "figmaName": "3 Data Entry/ 2 Switch",
+      "kind": "set",
+      "enabled": true,
+      "tokens": { "xs": "xs", "sm": "small" }
+    },
+    {
+      "cls": "ms-checkbox",
+      "lib": "web",
+      "key": "28c4580ca26a5011556fbeb15cbe3c921cd9df07",
+      "figmaName": "checkbox",
+      "kind": "set",
+      "enabled": true,
+      "tokens": { "disabled": "disabled" }
+    },
+    {
+      "cls": "ms-radio",
+      "lib": "web",
+      "key": "dd53b71045ccbd8bf3eb305e25718f79d2709954",
+      "figmaName": "Radio",
+      "kind": "set",
+      "enabled": true,
+      "tokens": { "disabled": "disabled" }
+    },
+    {
+      "cls": "ms-tag",
+      "lib": "web",
+      "key": "df5f4dc0f290f62ea05b37eca50e84c3d84b1c50",
+      "figmaName": "Tag 标签",
+      "kind": "set",
+      "enabled": true,
+      "tokens": { "primary": "primary", "success": "success", "error": "error", "warn": "warning", "warm": "warning", "remind": "remind", "outline": "outline", "round": "round" }
+    },
+    {
+      "cls": "ms-empty",
+      "lib": "biz",
+      "key": "062206e2ad770c17cfbed038073d56b94a8f756e",
+      "figmaName": "Empty",
+      "kind": "single",
+      "enabled": true,
+      "tokens": {}
+    },
+    {
+      "cls": "bc-com-title",
+      "lib": "biz",
+      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+      "figmaName": "标题",
+      "kind": "set",
+      "enabled": false,
+      "note": "标题行常带 tag/describe/开关/按钮组，整体替换丢动态内容；待确认库变体覆盖后启用"
+    },
+    {
+      "cls": "bc-eg71-page-tabs",
+      "lib": "web",
+      "key": "65284824528fbd8c076f80950f08c910be23f4a8",
+      "figmaName": "Tabs/Top",
+      "kind": "set",
+      "enabled": false,
+      "note": "页签文案动态；待变体验证"
+    },
+    {
+      "cls": "ms-modal",
+      "lib": "web",
+      "key": "60c778ee8c78bbc968eac2dd61c440d0b47876c6",
+      "figmaName": "Modal/Basic",
+      "kind": "set",
+      "enabled": false,
+      "note": "复合弹窗，正文动态"
+    },
+    {
+      "cls": "ms-alert",
+      "lib": "web",
+      "key": "559d1a03b62d3fc2dba41e9eb597ed650a815054",
+      "figmaName": "Alert",
+      "kind": "set",
+      "enabled": false,
+      "note": "标题+描述双文本；待覆写策略"
+    },
+    {
+      "cls": "ms-message",
+      "lib": "web",
+      "key": "14cf7d7a980abf4ce41478e26eb3a77263e8efa1",
+      "figmaName": "Message",
+      "kind": "set",
+      "enabled": false,
+      "note": "toast 动态文案"
+    },
+    {
+      "cls": "ms-breadcrumb",
+      "lib": "web",
+      "key": "9ba7ac316be155bb90479201d0b8fec2fa9a37ca",
+      "figmaName": "2 Navigation/1 Breadcrumb",
+      "kind": "set",
+      "enabled": false,
+      "note": "多级面包屑文本动态"
+    },
+    {
+      "cls": "ms-drawer",
+      "lib": "web",
+      "key": "84711588590bc4006a619e522a5af40c3fcb4063",
+      "figmaName": "Drawer",
+      "kind": "set",
+      "enabled": false,
+      "note": "复合抽屉"
+    },
+    {
+      "cls": "bc-eg71-sidenav",
+      "lib": "biz",
+      "key": "b0a2f0467524c5ed13e8a9303354f5b059690067",
+      "figmaName": "侧边栏-账户",
+      "kind": "set",
+      "enabled": false,
+      "note": "壳侧边栏整块；菜单高亮态动态"
+    },
+    {
+      "figmaName": "导航栏",
+      "lib": "biz",
+      "key": "377ff47b1ff3820b57b60e63126e79f7735059ff",
+      "kind": "set",
+      "enabled": false,
+      "note": "壳顶部导航栏（无 demo 类名锚点，记录备用）"
+    },
+    {
+      "figmaName": "弹窗",
+      "lib": "biz",
+      "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
+      "kind": "set",
+      "enabled": false,
+      "note": "业务弹窗集（无 demo 类名锚点，记录备用）"
+    },
+    {
+      "figmaName": "框架（引用后需要解绑使用）",
+      "lib": "biz",
+      "key": "adf4b89fd14fd92750a559068fd5bf042dbd26e7",
+      "kind": "set",
+      "enabled": false,
+      "note": "整页框架（无 demo 类名锚点，记录备用）"
+    },
+    {
+      "figmaName": "picker-cell",
+      "lib": "biz",
+      "key": "e06a83f00823bc4444ffd8583f0b8ae02c078dc1",
+      "kind": "set",
+      "enabled": false,
+      "note": "选择单元格（无 demo 类名锚点，记录备用）"
+    }
+  ]
+}

@@ -196,6 +196,7 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 
 - 插件侧文件在 `~/Desktop/html-to-figma-internal/`（manifest/code.js/ui.html/serve.py），细节见该目录 README。
 - **图标实例化（2026-10-23）**：demo 内联 `MS_ICONS` → 序列化时页内签名反查图标名 → `tools/figma-bridge/icon-keys.json` 映射（74/116 命中 Milesight_IOT_Web 团队库，重建方法见该文件头注释）→ 插件 `importComponentByKeyAsync` 实例化落图，`currentColor` 换算成描边色覆盖；无映射或导入失败自动回退矢量 SVG。图标部分产物从普通图层升级为**库组件实例**（REQ-016 实测 11/11 识别、9 实例化）。
+- **控件库实例化（2026-10-24）**：`tools/figma-bridge/component-keys.json` 映射 demo 类名（ms-btn/ms-input/ms-select/ms-switch/ms-checkbox/ms-radio/ms-tag/ms-empty 等）→ 两份发布库组件 key（（新版本）网关/路由器 通用业务组件库 + Milesight_IOT_Web，libraryKey/重建方法见该文件头注释）。build-scene lib-pass 给命中节点打 `n.lib` 标记（修饰类 → 变体 token、直接文本 → 覆写文案；**子树原样保留**作导入失败回退）；插件 `importComponentByKeyAsync` → component_set 按变体名计分择取 → `createInstance` → 覆写首个文本层。复合块（标题/弹窗/Tab 栏/导航栏/侧边栏）已挂 key 但 `enabled:false`——整体替换会丢动态内容，待变体验证后逐个启用。重复块去重与库实例化叠加：重复工具栏收进本地组件 def，库按钮实例嵌在 def 内部（改一处处处生效）。
 - 其余产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 7；图标已由上条解决）。
 - **桥接（按钮链路）当前仍走 mcp.to.design 收费通道**；切换为「build-scene.js + 深链拉起内部插件」是既定演进方向。
 

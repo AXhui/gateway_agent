@@ -41,7 +41,7 @@ const BOOTSTRAP = `(function(){
     var fills=[],bg=parseRgba(cs.backgroundColor);if(bg&&bg.a>0)fills.push({c:bg.c,a:bg.a});
     var eff=shadows(cs.boxShadow);
     var node={t:'f',f:fills,e:eff,r:radii(cs),clip:(cs.overflow==='hidden'||cs.overflow==='clip'),x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,n:undefined,ch:[]};
-    var cls=(typeof el.className==='string'?el.className:'').trim();if(cls)node.n=cls.slice(0,40);
+    var cls=(typeof el.className==='string'?el.className:'').trim();if(cls)node.n=cls.slice(0,80);
     var txt='';for(var i=0;i<el.childNodes.length;i++){var cn=el.childNodes[i];if(cn.nodeType===3)txt+=cn.data}
     txt=txt.replace(/\\s+/g,' ').trim();
     if(txt){
@@ -149,12 +149,46 @@ try {
   iconStats = { inst, nomap, plain };
 } catch (e) { console.warn('icon-keys.json 缺失或损坏，图标全部走矢量: ' + e.message); }
 
+// 库组件实例化二期：component-keys.json 命中的控件块打 n.lib 标记（子树原样保留——插件导入库失败时整块回退重绘）。
+// 插件侧 importComponentByKeyAsync → set 按修饰类择变体 → createInstance → 覆写文本。
+let libStats = null;
+try {
+  const libCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'component-keys.json'), 'utf8'));
+  const comps = (libCfg.components || []).filter(c => c.enabled && c.cls && c.key);
+  function walkLib(n) {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { n.forEach(walkLib); return; }
+    if (n.t === 'f' && n.n) {
+      const toks = String(n.n).trim().split(/\s+/);
+      const ent = comps.find(c => toks.includes(c.cls));
+      if (ent && !(ent.exclude || []).some(x => toks.includes(x))) {
+        const vt = [];
+        toks.forEach(t => { if (t.startsWith(ent.cls + '--')) { const m = (ent.tokens || {})[t.slice(ent.cls.length + 2)]; if (m && !vt.includes(m)) vt.push(m); } });
+        n.lib = {
+          k: ent.key, f: ent.figmaName, cls: String(n.n).slice(0, 80), tok: vt,
+          text: ((n.ch || []).filter(c => c.t === 't').map(c => c.text).join(' ').trim().slice(0, 40)) || undefined,
+          ic: (function hasVec(m) { return (m.ch || []).some(c => c.t === 'ic' || c.t === 's' || hasVec(c)); })(n)
+        };
+      }
+    }
+    (n.ch || []).forEach(walkLib);
+  }
+  scene.cells.forEach(c => walkLib(c.root));
+  const hits = new Map();
+  scene.cells.forEach(c => (function cc(n) {
+    if (n.lib) { const k = n.lib.cls.split(/\s+/)[0]; hits.set(k, (hits.get(k) || 0) + 1); }
+    else (n.ch || []).forEach(cc);
+  })(c.root));
+  const total = [...hits.values()].reduce((a, b) => a + b, 0);
+  if (total) libStats = { total, by: [...hits].map(([k, v]) => k.split(/\s+/)[0] + '×' + v).join(' ') };
+} catch (e) { console.warn('component-keys.json 缺失或损坏，库组件实例化跳过: ' + e.message); }
+
 // 重复块自动成组件：bc-* / ms-* 块级类做结构签名（类名+几何+填充+阴影+圆角+文本全量哈希），
 // 跨屏出现 ≥2 次的块 → scene.defs 定义一份 + 原位替换为 {t:'inst'} 引用；插件侧 createComponent/createInstance
 let compStats = null;
 (function componentize(scene) {
   const MIN_DUP = 2, MIN_AREA = 64;
-  function isBlockClass(n) { return n && n.n && /^(bc|ms)-/.test(n.n) && n.w * n.h >= MIN_AREA; }
+  function isBlockClass(n) { return n && !n.lib && n.n && /^(bc|ms)-/.test(n.n) && n.w * n.h >= MIN_AREA; }
   function sig(n) {
     if (n.t === 'inst') return 'i' + n.d;
     const r10 = v => Math.round(v * 10);
@@ -168,6 +202,7 @@ let compStats = null;
   }
   const candidates = [];
   scene.cells.forEach(c => (function cc(n) {
+    if (n.lib) return; // 库组件子树保留原样（回退用），不参与去重
     if (n.t === 'f' && isBlockClass(n)) candidates.push(n);
     (n.ch || []).forEach(cc);
   })(c.root));
@@ -181,6 +216,7 @@ let compStats = null;
     if (!node.ch) return;
     const out = [];
     for (const c of node.ch) {
+      if (c.lib) { out.push(c); continue; } // 不改写库组件子树内部
       if (c.t === 'f' && isBlockClass(c) && (countBySig.get(sig(c)) || 0) >= MIN_DUP) {
         const s = sig(c);
         let def = defById.get(s);
@@ -220,6 +256,7 @@ scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) 
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
   (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
+if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponentByKeyAsync 实例化');
 if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
