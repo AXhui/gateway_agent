@@ -7,7 +7,7 @@
 1. 桥接把 demo HTML 经 **html.to.design 官方 MCP**（`mcp.to.design`）直连导入 Figma 当前画布
 2. 生成的 Figma 链接**自动回写**到点按钮那一行的「Figma链接」列
 
-**零 LLM token**（v2 的 claude+spec 转录路径已于 2026-10 移除）；耗时取决于插件导入速度，通常分钟级。
+**零 LLM token**（v2 的 claude+spec 转录路径已于 2026-10 移除；「无 demo 源走 claude 自由设计」的 LLM 兜底也已于 2026-10-23 删除）；耗时取决于插件导入速度，通常分钟级。
 
 ```
 飞书多维表格 ──点按钮──▶ 自动化工作流「UED确认转Figma通知设计师」
@@ -36,7 +36,7 @@
 
 > 插件离线时桥接**自动拉起**：`open -a Figma` 启动/聚焦 Figma → `figma://plugin/<id>` 深链启动 html.to.design 插件 → 重试导入（最多 3 轮），点击按钮不依赖人事先开好插件。
 >
-> 无 demo 源（三层取源全落空）时退回 claude 自由设计模式（figma-remote），走 LLM，极少触发。
+> 无 demo 源（三层取源全落空）时任务**直接失败**（日志「三层取源均未命中，任务放弃」）。原「退回 claude 自由设计（figma-remote）」的 LLM 兜底已于 2026-10-23 删除——token 消耗不可控。
 
 ---
 
@@ -128,8 +128,7 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 4. **demo 过大**：单文件 demo（内联 CSS/JS）几百 KB 起步。桥接已剥离 HTML 注释；import-html 仍失败时，配置 `H2D_PUBLIC_BASE`（隧道域名）后自动改走 import-url 公网取页兜底。
 5. **JS 渲染的 demo 依赖真实浏览器执行**：html.to.design 在浏览器环境渲染导入的 HTML，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
 6. **隧道域名易变**：cloudflared quick tunnel 每次重启换域名，工作流 URL 要同步改；固定方案待做（named tunnel + 自己的域名）。
-7. **自由设计模式仍走 claude**（无 demo 源时）：headless `-p` 下 OAuth MCP 竞态的解法（先输出规划再动手）保留在 buildPrompt 里，勿删；spawn 必须 `stdio: ['ignore','pipe','pipe']`；claude 必须以本仓库为 cwd。
-8. **组件库引用规则只约束 claude 路径**：html.to.design 导入是机械转录（产出普通图层，非库组件）；组件回填由设计师在 Figma 内做，库规则见 `.claude/rules/figma-asset-libs.md`。
+7. **组件库引用规则**：html.to.design 导入是机械转录（产出普通图层，非库组件）；组件回填由设计师在 Figma 内做，库规则见 `.claude/rules/figma-asset-libs.md`。（原坑 7「claude 自由设计模式仍走 claude」已随该模式删除。）
 
 ---
 
@@ -197,7 +196,7 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 
 - 插件侧文件在 `~/Desktop/html-to-figma-internal/`（manifest/code.js/ui.html/serve.py），细节见该目录 README。
 - **图标实例化（2026-10-23）**：demo 内联 `MS_ICONS` → 序列化时页内签名反查图标名 → `tools/figma-bridge/icon-keys.json` 映射（74/116 命中 Milesight_IOT_Web 团队库，重建方法见该文件头注释）→ 插件 `importComponentByKeyAsync` 实例化落图，`currentColor` 换算成描边色覆盖；无映射或导入失败自动回退矢量 SVG。图标部分产物从普通图层升级为**库组件实例**（REQ-016 实测 11/11 识别、9 实例化）。
-- 其余产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 8；图标已由上条解决）。
+- 其余产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 7；图标已由上条解决）。
 - **桥接（按钮链路）当前仍走 mcp.to.design 收费通道**；切换为「build-scene.js + 深链拉起内部插件」是既定演进方向。
 
 ---

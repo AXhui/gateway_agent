@@ -1,5 +1,5 @@
 // 桥接服务 v3：飞书触发端(POST /task) → html.to.design MCP（Figma 插件中转落画布，零 LLM token）
-// 有 demo 源 → import-html 直连导入；无 demo 源 → 退回 claude 自由设计（figma-remote）
+// 有 demo 源 → import-html 直连导入；无 demo 源 → 任务失败（LLM 自由设计兜底已删，2026-10-23）
 // 用法：
 //   node server.js            启动桥接（:8080）
 //   node server.js --login    首次 OAuth 授权：浏览器点一次，自动铸 service account 长期凭据
@@ -8,16 +8,14 @@ const http = require('http')
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { spawnSync, spawn } = require('child_process')
+const { spawn } = require('child_process')
 const { buildExportPage } = require('./export-page')
 
 const PORT = 8080
-const CLAUDE_CWD = '/Users/youxh/Feishu-competition'
+const REPO_ROOT = '/Users/youxh/Feishu-competition'
 const AUTH_FILE = path.join(__dirname, 'auth.json')          // 本机凭据，已 gitignore，绝不入库
 const MCP_BASE = 'https://mcp.to.design'
 const IMPORT_TIMEOUT_MS = 10 * 60 * 1000                      // 插件导入整页 demo 的安全垫
-const JOB_TIMEOUT_MS = 35 * 60 * 1000                         // claude 自由设计模式超时
-const DESIGN_MODEL = process.env.FIGMA_MODEL || 'sonnet'
 
 // 任务排队：一次只跑一个（Figma 插件同一时刻只接一个导入）
 const queue = []
@@ -336,7 +334,7 @@ function resolveDemoSource(task, jobId, cb) {
   const finish = (info, src) => {
     console.log(info
       ? `[demo:${jobId}] demo 源就绪（${src}）: html=${info.htmlPath}`
-      : `[demo:${jobId}] 三层取源均未命中，走自由设计模式`)
+      : `[demo:${jobId}] 三层取源均未命中，任务放弃（无 demo 源不再有兜底）`)
     cb(info)
   }
 
@@ -354,7 +352,7 @@ function resolveDemoSource(task, jobId, cb) {
   const fromLocal = () => {
     const m = String(task.demoName || '').match(/REQ-(\d+)/i)
     if (m) {
-      const p = `${CLAUDE_CWD}/05_release/REQ-${m[1]}/demo.html`
+      const p = `${REPO_ROOT}/05_release/REQ-${m[1]}/demo.html`
       if (fs.existsSync(p)) {
         console.log(`[demo:${jobId}] 用本地归档 ${p}`)
         return finish({ htmlPath: p }, '本地归档')
@@ -464,72 +462,11 @@ function runImportJob(task, jobId, demo, done) {
   })
 }
 
-// ---- 无 demo 源时的自由设计模式：spawn claude + figma-remote（保持原行为）----
-
-const CLAUDE_BIN = spawnSync('which', ['claude'], { encoding: 'utf8' }).stdout.trim()
-
-const FIGMA_LIBS = [
-  '「Milesight_IOT_Web」',
-  '「（新版本）网关/路由器 通用业务组件库 业务组件」',
-]
-
-function buildPrompt(t) {
-  // 第一行的「先输出规划再动手」是 headless 下 OAuth MCP 握手竞态的解法，勿删
-  const warmup = '你是设计执行器。先花一个回合输出简短的执行规划（两三行即可），然后再动手——figma-remote MCP 握手需要几秒，第一回合看不到它的工具属正常，规划完它就绪了。'
-  const libRule = `组件复用优先：在 Figma 团队空间找 ${FIGMA_LIBS.join(' 和 ')} 两份库文件，能复用的组件（按钮、输入框、表格、徽标、侧边导航项等）优先从库里复制/引用，库里没有的再手画。`
-  const req = t.requirement || t.prompt || ''
-  return [
-    warmup + '随后使用 figma-remote MCP 的画布写入工具，把下面的需求落成 Figma 里一个可编辑的页面级设计稿（完整 frame，不要只输出文字说明）：',
-    `- 名称：${t.demoName || t.title || '未命名'}`,
-    t.category ? `- 分类：${t.category}` : '',
-    `- 需求：${req || t.demoName || '（无描述，按名称做一个物联网设备后台界面）'}`,
-    `- ${libRule}`,
-    '完成后用一两句话报告：写进了哪个文件、节点叫什么名字。'
-  ].filter(Boolean).join('\n')
-}
-
-function runClaudeJob(task, jobId, done) {
-  if (!CLAUDE_BIN) {
-    console.log(`[claude:${jobId}] 找不到 claude 可执行文件，任务放弃`)
-    return done()
-  }
-  const logFile = `/tmp/claude-job-${jobId}.log`
-  const log = fs.createWriteStream(logFile, { flags: 'a' })
-  const child = spawn(CLAUDE_BIN, [
-    '-p', buildPrompt(task),
-    '--model', DESIGN_MODEL,
-    '--allowedTools', 'Read,mcp__figma-remote,mcp__figma-dev-mode'
-  ], { cwd: CLAUDE_CWD, stdio: ['ignore', 'pipe', 'pipe'] })
-
-  const timer = setTimeout(() => {
-    console.log(`[claude:${jobId}] 超时(${JOB_TIMEOUT_MS / 60000}min)，强杀`)
-    child.kill('SIGKILL')
-  }, JOB_TIMEOUT_MS)
-
-  console.log(`[claude:${jobId}] 启动 pid=${child.pid} 日志=${logFile}`)
-  child.stdout.on('data', (d) => log.write(d))
-  child.stderr.on('data', (d) => log.write(d))
-  child.on('error', (e) => {
-    clearTimeout(timer)
-    console.log(`[claude:${jobId}] 启动失败:`, e.message)
-  })
-  child.on('close', (code) => {
-    clearTimeout(timer)
-    console.log(`[claude:${jobId}] 结束 code=${code}`)
-    try {
-      const finalText = fs.readFileSync(logFile, 'utf8')
-      writeBackToFeishu(task, jobId, extractFigmaUrl(finalText))
-    } catch (e) {
-      console.log(`[writeback:${jobId}] 读取日志失败:`, e.message)
-    }
-    done()
-  })
-}
-
 function runTask(task, jobId, done) {
   resolveDemoSource(task, jobId, (demo) => {
     if (demo) return runImportJob(task, jobId, demo, done)
-    runClaudeJob(task, jobId, done)
+    console.log(`[task:${jobId}] 无 demo 源，任务结束（不做 LLM 兜底）`)
+    done()
   })
 }
 
@@ -574,7 +511,6 @@ const server = http.createServer((req, res) => {
       ok: true,
       mode: 'h2d',
       auth: auth ? (auth.svc ? 'service-account' : 'refresh-token') : 'none',
-      claudeFallback: Boolean(CLAUDE_BIN),
       queued: queue.length,
       running,
     }))

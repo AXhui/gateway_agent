@@ -22,4 +22,4 @@
 ## 3. 与本仓库分层的关系
 
 - 本规则是 [.claude/rules/page-assembly.md](page-assembly.md)「组件复用」铁律在 **Figma 侧**的镜像：HTML demo 侧禁止绕过 `B_*`，Figma 侧禁止绕过两份库文件。
-- **适用范围**：claude 驱动的搭稿（figma-remote 自由设计模式、A8 Figma 转换、人工指挥）。`tools/figma-bridge` 的 html.to.design 直连导入是**机械转录**（产出普通图层、非库组件），不适用本规则；导入后的组件回填由设计师在 Figma 内做。桥接 `server.js` 的 `FIGMA_LIBS` 常量与 `buildPrompt` 已内置本规则（仅自由设计模式）；改库文件名时**两处同步**（本文件 + server.js）。
+- **适用范围**：claude 驱动的搭稿（A8 Figma 转换、人工指挥）。`tools/figma-bridge` 的 html.to.design 直连导入是**机械转录**（产出普通图层、非库组件），不适用本规则；导入后的组件回填由设计师在 Figma 内做。桥接 server.js 曾内置本规则（自由设计模式 spawn claude），该模式已于 2026-10-23 整体删除（token 耗费不可控），server.js 不再有任何 LLM 路径。
