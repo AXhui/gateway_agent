@@ -178,6 +178,29 @@ window.MS_FIGMA_EXPORT = {
 
 ---
 
+## 内部免费通道：html-to-figma-internal 插件（mcp.to.design 的免费替代）
+
+html.to.design 云 MCP 开始收费后，本机自研插件可完全替代导入环节（数据不出内网、零费用）：
+
+```
+demo.html → build-scene.js（本仓库 tools/figma-bridge/）
+  → 无头 Chrome 逐态渲染（消费 MS_FIGMA_EXPORT 契约，无契约单态）
+  → scene.json + figma-export.html 落 ~/Desktop（自动拉起 serve.py :8123）
+  → Figma 开发插件（~/Desktop/html-to-figma-internal/，一次性 manifest 导入）
+  → 启动即自动拉取落图（文本层/SVG 矢量/帧/圆角/阴影/边框）
+```
+
+```bash
+node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
+# Figma：右键 → Plugins → Development → HTML to Figma (Milesight Internal)
+```
+
+- 插件侧文件在 `~/Desktop/html-to-figma-internal/`（manifest/code.js/ui.html/serve.py），细节见该目录 README。
+- 产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 8）。
+- **桥接（按钮链路）当前仍走 mcp.to.design 收费通道**；切换为「build-scene.js + 深链拉起内部插件」是既定演进方向。
+
+---
+
 ## 日常使用
 
 1. 多维表格某行点按钮（Figma/插件没开也没关系，桥接自动拉起）
