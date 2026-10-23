@@ -31,6 +31,7 @@ const FEISHU = {
   baseToken: 'F2MebgSgMaUZSbseUWLcefqbnKd',
   tableId: 'tbln6WxfFJ6iYaek',
   linkField: 'Figma 链接',
+  statusField: 'Figma状态',   // 状态流：待转 → 转Figma中(工作流置位) → 已完成/失败(本服务回写)
 }
 
 function extractFigmaUrl(text) {
@@ -47,7 +48,7 @@ function larkCli(args, cb) {
 }
 
 function updateRecordField(recordId, url, jobId) {
-  const payload = JSON.stringify({ update_records: { [recordId]: { [FEISHU.linkField]: url } } })
+  const payload = JSON.stringify({ update_records: { [recordId]: { [FEISHU.linkField]: url, [FEISHU.statusField]: ['已完成'] } } })
   larkCli([
     'base', '+record-batch-update',
     '--base-token', FEISHU.baseToken,
@@ -57,11 +58,30 @@ function updateRecordField(recordId, url, jobId) {
   ], (code, out) => console.log(`[writeback:${jobId}] lark-cli 退出 code=${code} ${out.slice(0, 300)}`))
 }
 
+// 只更新状态列（失败场景：无 Figma 链接 / 任务异常退出）
+function updateRecordStatus(recordId, status, jobId) {
+  const payload = JSON.stringify({ update_records: { [recordId]: { [FEISHU.statusField]: [status] } } })
+  larkCli([
+    'base', '+record-batch-update',
+    '--base-token', FEISHU.baseToken,
+    '--table-id', FEISHU.tableId,
+    '--json', payload,
+    '--as', 'user',
+  ], (code, out) => console.log(`[writeback:${jobId}] 状态置为${status} lark-cli 退出 code=${code} ${out.slice(0, 300)}`))
+}
+
 function writeBackToFeishu(task, jobId, url) {
-  if (!url) { console.log(`[writeback:${jobId}] 日志里没有 Figma 链接，跳过回写`); return }
-  if (task.record_id) return updateRecordField(task.record_id, url, jobId)
+  // 按最终结果决定回写动作：有链接 → 写链接+已完成；无链接 → 标记失败（不让"转Figma中"卡住）
+  const apply = (recordId) => url
+    ? updateRecordField(recordId, url, jobId)
+    : updateRecordStatus(recordId, '失败', jobId)
+
+  if (task.record_id) return apply(task.record_id)
   // 兜底：工作流没带 record_id 时，按 Demo 名称+版本号 反查记录（同名多版本靠版本号区分）
-  if (!task.demoName) { console.log(`[writeback:${jobId}] 无 record_id 也无 demoName，跳过回写`); return }
+  if (!task.demoName) {
+    console.log(`[writeback:${jobId}] 无 record_id 也无 demoName，跳过回写`)
+    return
+  }
   const conditions = [["Demo 名称", "Is", task.demoName]]
   if (task.version) conditions.push(["版本号", "Is", task.version])
   const body = {
@@ -94,7 +114,7 @@ function writeBackToFeishu(task, jobId, url) {
       return console.log(`[writeback:${jobId}] 表里没找到 Demo 名称=${task.demoName} 版本=${task.version || '(任意)'} 的记录，跳过回写`)
     }
     console.log(`[writeback:${jobId}] 按 Demo 名称反查命中 ${ids.length} 条：${ids.join(', ')}`)
-    ids.forEach((id) => updateRecordField(id, url, jobId))
+    ids.forEach((id) => apply(id))
   })
 }
 
