@@ -7,195 +7,7 @@
 const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 const { buildExportPage } = require('./export-page');
 
-const BOOTSTRAP = `(function(){
-  function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn); else fn(); }
-  var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
-  function px(v){var n=parseFloat(v);return isNaN(n)?0:n}
-  function parseRgba(s){var m=(s||'').match(/rgba?\\(([^)]+)\\)/);if(!m)return null;var p=m[1].split(',').map(parseFloat);return{c:[p[0]/255,p[1]/255,p[2]/255],a:p.length>3?p[3]:1}}
-  function splitTop(s){var out=[],d=0,c='';for(var i=0;i<s.length;i++){var ch=s[i];if(ch==='(')d++;if(ch===')')d--;if(ch===','&&d===0){out.push(c);c=''}else c+=ch}out.push(c);return out}
-  function shadows(s){var out=[];if(!s||s==='none')return out;splitTop(s).forEach(function(ps){var inset=/inset/i.test(ps);ps=ps.replace(/inset/gi,'').trim();var cm=ps.match(/rgba?\\([^)]+\\)/);if(!cm)return;var nums=ps.replace(/rgba?\\([^)]+\\)/,'').trim().split(/\\s+/).map(parseFloat);if(nums.length<4)return;var c=parseRgba(cm[0]);out.push({k:inset?'in':'out',c:c.c,a:c.a,x:nums[0],y:nums[1],b:nums[2],s:nums[3]||0})});return out}
-  function radii(cs){var s=cs.borderRadius||'0';var f=s.split('/')[0].trim().split(/\\s+/).map(px);var tl=f[0]||0,tr=f.length>1?f[1]:tl,br=f.length>2?f[2]:tl,bl=f.length>3?f[3]:tr;return{tl:tl,tr:tr,br:br,bl:bl}}
-  // 背景图层解析：CSS backgroundImage（computed，Chrome 归一为 rgba()）→ url 层 + linear/radial 渐变层
-  // 停靠点无位置时按最近已知位置插值；radial 一律近似内切圆映射（CSS 默认 farthest-corner 视觉近似）
-  function bgLayers(cs,biSize){
-    var out=[],bi=cs.backgroundImage||'none';
-    if(bi==='none'||!bi||bi==='initial')return out;
-    var KW={'to right':90,'to left':270,'to top':0,'to bottom':180,'to top right':45,'to right top':45,'to bottom right':135,'to right bottom':135,'to bottom left':225,'to left bottom':225,'to top left':315,'to left top':315};
-    splitTop(bi).forEach(function(L){
-      L=L.trim();if(!L||L==='none')return;
-      var um=L.match(/^url\\(['"]?([^)'"]*)['"]?\\)$/);
-      if(um){out.push({k:'u',src:um[1],fit:/contain/.test(biSize||'')?'contain':'cover'});return}
-      var gm=L.match(/^(linear|radial)-gradient\\((.*)\\)$/);
-      if(!gm)return;
-      var rad=gm[1]==='radial',parts=splitTop(gm[2]),stops=[],ang=180,i=0;
-      if(!rad&&parts.length&&/deg|turn|^to /.test(parts[0].trim())&&!/rgba?\\(/.test(parts[0])){
-        var A=parts[0].trim(),dm=A.match(/^-?([\\d.]+)deg/);
-        if(dm)ang=parseFloat(dm[1]);
-        else if(A.indexOf('turn')>=0){var tm=A.match(/^-?([\\d.]+)/);if(tm)ang=parseFloat(tm[1])*360}
-        else if(KW[A]!=null)ang=KW[A];
-        i=1;
-      }
-      if(rad)while(i<parts.length&&!/rgba?\\(/.test(parts[i]))i++;
-      for(;i<parts.length;i++){
-        var seg=parts[i].trim();if(!seg)continue;
-        var cm=seg.match(/rgba?\\(([^)]+)\\)/);if(!cm)continue;
-        var col=parseRgba(cm[0]);if(!col)continue;
-        var pm=seg.replace(/rgba?\\([^)]+\\)/,'').trim().match(/(-?[\\d.]+)%/);
-        stops.push({c:col.c,a:col.a,p:pm?Math.max(0,Math.min(1,parseFloat(pm[1])/100)):null});
-      }
-      if(stops.length<2)return;
-      stops.forEach(function(s,ix){
-        if(s.p!=null)return;
-        var L2=ix-1,R2=ix+1;
-        while(L2>=0&&stops[L2].p==null)L2--;
-        while(R2<stops.length&&stops[R2].p==null)R2++;
-        if(L2<0&&R2>=stops.length)s.p=ix/(stops.length-1||1);
-        else if(L2<0)s.p=stops[R2].p*ix/R2;
-        else if(R2>=stops.length)s.p=stops[L2].p+(1-stops[L2].p)*(ix-L2)/(stops.length-1-L2);
-        else s.p=stops[L2].p+(stops[R2].p-stops[L2].p)*(ix-L2)/(R2-L2);
-      });
-      out.push(rad?{k:'r',stops:stops}:{k:'l',ang:ang,stops:stops});
-    });
-    return out;
-  }
-  function iconSig(s){return s.replace(/\\s+/g,'').replace(/<\\/[a-zA-Z]+>/g,'').replace(/\\/>/g,'>')}
-  var iconSigMap=null;
-  function iconName(el){
-    if(!window.MS_ICONS)return null;
-    if(!iconSigMap){iconSigMap={};for(var k in MS_ICONS){var m=MS_ICONS[k].match(/<svg[^>]*>([\\S\\s]*?)<\\/svg>/);if(m)iconSigMap[iconSig(m[1])]=k}}
-    return iconSigMap[iconSig(el.innerHTML)]||null;
-  }
-  function serEl(el,origin){
-    if(el.nodeType!==1)return null;
-    var cs=getComputedStyle(el);
-    if(cs.display==='none'||cs.visibility==='hidden')return null;
-    var rect=el.getBoundingClientRect();
-    var x=rect.left-origin.x,y=rect.top-origin.y,w=rect.width,h=rect.height;
-    var tag=(el.tagName||'').toLowerCase();
-    if(tag==='svg'){
-      var cl=el.cloneNode(true);
-      cl.setAttribute('width',Math.max(1,Math.round(w)));cl.setAttribute('height',Math.max(1,Math.round(h)));
-      var n={t:'s',svg:cl.outerHTML,x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,n:(el.getAttribute('class')||'').slice(0,40)||undefined};
-      var icn=iconName(el);
-      if(icn){n.ic=icn;var icc=parseRgba(cs.color);if(icc)n.col=icc.c}
-      return n;
-    }
-    if(tag==='img'||tag==='canvas'){
-      if(w<0.01||h<0.01)return null;
-      var src='';
-      if(tag==='img')src=el.currentSrc||el.getAttribute('src')||'';
-      else{try{src=el.toDataURL('image/png')}catch(e2){return null}}
-      if(!src||/^\\s*$/.test(src))return null;
-      var nimg={t:'img',src:src,x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,r:radii(cs),fit:(cs.objectFit||'fill')};
-      var imgCls=(typeof el.className==='string'?el.className:'').trim();
-      if(imgCls)nimg.n=imgCls.slice(0,40);
-      window.__imgCount=(window.__imgCount||0)+1;
-      return nimg;
-    }
-    if(tag==='script'||tag==='style'||tag==='link'||tag==='meta')return null;
-    var fills=[],bg=parseRgba(cs.backgroundColor);if(bg&&bg.a>0)fills.push({c:bg.c,a:bg.a});
-    var eff=shadows(cs.boxShadow);
-    var node={t:'f',f:fills,e:eff,r:radii(cs),clip:(cs.overflow==='hidden'||cs.overflow==='clip'),x:x,y:y,w:w,h:h,o:parseFloat(cs.opacity)||1,n:undefined,ch:[]};
-    var cls=(typeof el.className==='string'?el.className:'').trim();if(cls)node.n=cls.slice(0,80);
-    var bgL=bgLayers(cs,(cs.backgroundSize||'').split(',')[0]||'');
-    if(bgL.length){if(bgL.length>4)bgL=bgL.slice(0,4);node.bg=bgL;window.__bgCount=(window.__bgCount||0)+bgL.length;}
-    var txt='';for(var i=0;i<el.childNodes.length;i++){var cn=el.childNodes[i];if(cn.nodeType===3)txt+=cn.data}
-    txt=txt.replace(/\\s+/g,' ').trim();
-    if(txt){
-      var fs=px(cs.fontSize)||14;
-      var lh=cs.lineHeight==='normal'?fs*1.4:(px(cs.lineHeight)||fs*1.4);
-      var col=parseRgba(cs.color)||{c:[0,0,0],a:1};
-      var al=cs.textAlign==='center'?'center':(cs.textAlign==='right'||cs.textAlign==='end')?'right':'left';
-      var ty=0,th=lh;
-      try{var rg=document.createRange();rg.selectNodeContents(el);var tr=rg.getBoundingClientRect();if(tr.height>0){ty=tr.top-rect.top;th=tr.height}}catch(e){}
-      node.ch.push({t:'t',text:txt,fs:fs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(lh,fs),ls:px(cs.letterSpacing)||0,col:col.c,al:al,x:0,y:ty,w:w,h:th,o:1});
-    }
-    var sides=['Top','Right','Bottom','Left'];
-    for(var k=0;k<4;k++){
-      var side=sides[k];
-      var bc=parseRgba(cs['border'+side+'Color']),bwid=px(cs['border'+side+'Width']);
-      if(bwid>0&&bc&&bc.a>0){
-        var geo=k===0?{x:0,y:0,w:w,h:bwid}:k===1?{x:w-bwid,y:0,w:bwid,h:h}:k===2?{x:0,y:h-bwid,w:w,h:bwid}:{x:0,y:0,w:bwid,h:h};
-        node.ch.push({t:'f',f:[{c:bc.c,a:bc.a}],e:[],r:{tl:0,tr:0,br:0,bl:0},clip:false,x:geo.x,y:geo.y,w:geo.w,h:geo.h,o:1,n:'border-'+side.toLowerCase()});
-      }
-    }
-    for(var j=0;j<el.children.length;j++){
-      var c=serEl(el.children[j],{x:rect.left,y:rect.top});
-      if(c)node.ch.push(c);
-    }
-    // 自动布局置信转换（设计师视角：能增删内容的弹性容器，改文案不错位）：
-    // 条件全过才打 al 标——display:flex 且 nowrap、方向非 reverse、justify/align 在 Figma 可映射集、
-    // 子节点全流内（无 absolute/fixed、无 visibility:hidden）、无「文本+元素」混排、边框统一（转描边）或无、
-    // 主轴总宽吻合（无 grow/shrink 拉伸失真）；任一不过保持绝对定位（宁可不转，不可转错）
-    var alv=cs.display;
-    if((alv==='flex'||alv==='inline-flex')&&(cs.flexWrap==='nowrap'||!cs.flexWrap)&&w>=2&&h>=2){
-      var fd=cs.flexDirection||'row';
-      if(fd==='row'||fd==='column'){
-        var JM={'flex-start':'MIN','start':'MIN','left':'MIN','center':'CENTER','flex-end':'MAX','end':'MAX','right':'MAX','space-between':'SPACE_BETWEEN'};
-        var AM={'stretch':'STRETCH','normal':'STRETCH','flex-start':'MIN','start':'MIN','center':'CENTER','flex-end':'MAX','end':'MAX','baseline':'BASELINE'};
-        var jj=JM[cs.justifyContent||'flex-start']||null,aa=AM[cs.alignItems||'normal']||null;
-        if(jj&&aa){
-          var ok=true;
-          for(var q=0;q<el.children.length;q++){
-            var ccs=getComputedStyle(el.children[q]);
-            if(ccs.position==='absolute'||ccs.position==='fixed'||ccs.visibility==='hidden'){ok=false;break}
-          }
-          var hasTxt=!!txt,hasElCh=node.ch.some(function(c){return c.t!=='t'});
-          if(ok&&!(hasTxt&&hasElCh)){
-            var kids=node.ch.filter(function(c){return ['border-top','border-right','border-bottom','border-left'].indexOf(c.n)<0});
-            if(kids.length>=1){
-              var bws=[px(cs.borderTopWidth),px(cs.borderRightWidth),px(cs.borderBottomWidth),px(cs.borderLeftWidth)];
-              var ub=bws[0]===bws[1]&&bws[1]===bws[2]&&bws[2]===bws[3];
-              var bcA=parseRgba(cs.borderTopColor),bcB=parseRgba(cs.borderRightColor),bcC=parseRgba(cs.borderBottomColor),bcD=parseRgba(cs.borderLeftColor);
-              var uc=bcA&&bcB&&bcC&&bcD&&bcA.c.join()===bcB.c.join()&&bcB.c.join()===bcC.c.join()&&bcC.c.join()===bcD.c.join()&&bcA.a===bcB.a&&bcB.a===bcC.a&&bcC.a===bcD.a;
-              if(ub&&(bws[0]===0||uc)){
-                var row=fd==='row';
-                var pT=px(cs.paddingTop),pR=px(cs.paddingRight),pB=px(cs.paddingBottom),pL=px(cs.paddingLeft);
-                var gap=row?px(cs.columnGap):px(cs.rowGap);
-                var need=row?pL+pR+gap*(kids.length-1)+kids.reduce(function(s,k){return s+k.w},0):pT+pB+gap*(kids.length-1)+kids.reduce(function(s,k){return s+k.h},0);
-                if(need<=(row?w:h)+1){
-                  var alo={dir:row?'row':'col',gap:gap,just:jj,align:aa,pt:pT,pr:pR,pb:pB,pl:pL};
-                  if(bws[0]>0){alo.bw=bws[0];alo.bc=bcA.c;alo.ba=bcA.a;
-                    node.ch=node.ch.filter(function(c2){return ['border-top','border-right','border-bottom','border-left'].indexOf(c2.n)<0});}
-                  node.al=alo;window.__alCount=(window.__alCount||0)+1;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    if((!fills.length&&!eff.length&&!node.ch.length&&!bgL.length)||w<0.01)return null;
-    return node;
-  }
-  ready(async function(){
-    var hook=window.MS_FIGMA_EXPORT||{rootSelector:'#app',states:[{name:'默认态',setup:function(){}}],columns:1,frameWidth:1440,settleMs:200};
-    var root=document.querySelector(hook.rootSelector||'#app')||document.body;
-    var settle=hook.settleMs!=null?hook.settleMs:200;
-    var cols=hook.columns||1,W=hook.frameWidth||1440,GAP=64;
-    if(typeof hook.ready==='function'){try{await hook.ready()}catch(e){}}
-    var cells=[],colH=[];for(var c0=0;c0<cols;c0++)colH.push(0);
-    for(var i=0;i<hook.states.length;i++){
-      var s=hook.states[i],failed=false;
-      try{
-        if(typeof hook.reset==='function'){hook.reset();await sleep(settle)}
-        s.setup();await sleep(settle);
-      }catch(e){failed=true;console.error('[scene] 状态 '+s.name+' setup 失败:',e)}
-      var rr=root.getBoundingClientRect();
-      var tree=serEl(root,{x:rr.left,y:rr.top})||{t:'f',f:[],e:[],r:{tl:0,tr:0,br:0,bl:0},clip:false,x:0,y:0,w:W,h:600,o:1,ch:[]};
-      var col=i%cols,x=col*(W+GAP),y=colH[col];
-      var hh=Math.max(root.scrollHeight,600);
-      colH[col]+=hh+GAP;
-      cells.push({label:(i+1)+'. '+s.name+(failed?'（导出失败，按前态快照）':''),x:x,y:y,w:W,h:hh,root:tree});
-    }
-    var scene={v:1,generatedAt:new Date().toISOString(),cells:cells,stats:{al:window.__alCount||0,img:window.__imgCount||0,bg:window.__bgCount||0}};
-    var sc=document.createElement('script');sc.id='ms-scene-json';sc.type='application/json';
-    sc.textContent=JSON.stringify(scene).replace(/</g,'\\\\u003c');
-    document.documentElement.appendChild(sc);
-    document.title='__MS_SCENE_READY__';
-    console.log('[scene] 序列化完成: '+cells.length+' 屏');
-  });
-})()`;
+const { BOOTSTRAP } = require('./scene-bootstrap');
 
 const args = process.argv.slice(2);
 const demoPath = args.find(a => !a.startsWith('--'));
@@ -232,6 +44,34 @@ const scene = JSON.parse(m[1]);
 const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 
+// 原型连线（R5）：scene.proto 记录 setup 真实派发的 click（{state, evs:[{path}]}）→
+// 各屏同路径节点挂 rct {to, tg}；必须在拍平/组件化之前解析（此后 child 序列改变），
+// 路径落空（文本子节点/被丢弃节点）时沿路径上浮到最近已序列化祖先。
+let rctCount = 0;
+if (Array.isArray(scene.proto) && scene.proto.length) {
+  const edges = scene.proto.filter(t => t && t.state > 0 && t.evs && t.evs.length)
+    .map(t => ({ state: t.state, path: t.evs[0].path })).filter(e => e.path);
+  scene.cells.forEach(cell => {
+    const byPath = {};
+    (function idx(n) { if (n.p) byPath[n.p] = n; (n.ch || []).forEach(idx); })(cell.root);
+    edges.forEach(e2 => {
+      let seg = e2.path.split('/');
+      while (seg.length) {
+        const hit = byPath[seg.join('/')];
+        if (hit) {
+          if (!(hit.rct || []).some(r => r.to === e2.state)) {
+            hit.rct = (hit.rct || []).concat([{ to: e2.state, tg: 'ON_CLICK' }]);
+            rctCount++;
+          }
+          break;
+        }
+        seg.pop();
+      }
+    });
+  });
+}
+delete scene.proto;
+
 // 去多余嵌套：无视觉贡献（无填充/阴影/圆角/裁切、不透明）且无 bc-/ms- 语义类的透传容器拍平，
 // 子树坐标换算进父级——图层树不留空壳帧（设计师展开图层不剥洋葱）
 let flatCut = 0;
@@ -242,10 +82,16 @@ function flattenWrappers(node) {
   for (const c of node.ch) {
     const r = c.r || {};
     if (c.t === 'f' && !c.lib && !(c.f || []).length && !(c.e || []).length && !(c.bg || []).length && !c.al
+      && !c.stk && !c.bm && !c.rot
       && !(r.tl || r.tr || r.br || r.bl) && !c.clip && (c.o == null || c.o === 1)
       && !(c.n && /^(bc|ms)-/.test(c.n))) {
       flatCut++;
-      (c.ch || []).forEach(k => { k.x += c.x; k.y += c.y; out.push(k); });
+      (c.ch || []).forEach((k, ki) => {
+        k.x += c.x; k.y += c.y;
+        // 拍平壳上的原型连线转移到首个保留子节点（否则 reactions 随壳一起丢失）
+        if (c.rct && ki === 0) k.rct = (k.rct || []).concat(c.rct);
+        out.push(k);
+      });
     } else out.push(c);
   }
   node.ch = out;
@@ -322,8 +168,9 @@ let compStats = null;
     const parts = [n.t, n.n || '', r10(n.w), r10(n.h), JSON.stringify(n.f || []),
       JSON.stringify((n.e || []).map(e => [e.k, e.c, e.a, e.x, e.y, e.b, e.s])),
       JSON.stringify(n.r || {}), n.clip ? 1 : 0, n.o == null ? 1 : r10(n.o * 100) / 100,
-      JSON.stringify(n.bg || []), n.al ? JSON.stringify(n.al) : ''];
-    if (n.t === 't') parts.push(n.text, n.fs, n.fw, n.lh, n.ls, JSON.stringify(n.col), n.al, r10(n.w), r10(n.h));
+      JSON.stringify(n.bg || []), n.al ? JSON.stringify(n.al) : '',
+      n.rot || 0, n.bm || '', n.stk ? JSON.stringify(n.stk) : ''];
+    if (n.t === 't') parts.push(n.text, n.fs, n.fw, n.lh, n.ls, JSON.stringify(n.col), n.al, r10(n.w), r10(n.h), n.it || 0, n.tr || 0, n.td || '');
     if (n.t === 's' || n.t === 'ic') parts.push(n.k || n.svg || '');
     (n.ch || []).forEach(c => parts.push(sig(c), r10(c.x), r10(c.y)));
     return parts.join('|');
@@ -395,6 +242,15 @@ let compStats = null;
   }
 })(scene);
 
+// 序列化审计用的 DOM 路径 p 落盘前剥离（rct 已解析，运行时不再需要）
+function stripP(n) {
+  if (!n || typeof n !== 'object') return;
+  delete n.p;
+  (n.ch || []).forEach(stripP);
+}
+scene.cells.forEach(c => stripP(c.root));
+if (scene.defs) Object.keys(scene.defs).forEach(id => stripP(scene.defs[id].root));
+
 fs.writeFileSync(path.join(outDir, 'scene.json'), JSON.stringify(scene));
 
 const tiled = buildExportPage(html, path.basename(demoPath, '.html'));
@@ -409,6 +265,7 @@ if (scene.stats) console.log('自动布局: flex 置信转换 ' + (scene.stats.a
 if (flatCut) console.log('拍平: 透传空壳帧 ' + flatCut + ' 层（无视觉无语义类）');
 if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponentByKeyAsync 实例化');
 if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个（家族 ' + compStats.families + '，变体集 ' + compStats.variantSets + ' 个待 combineAsVariants）｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
+if (rctCount) console.log('原型连线: ' + rctCount + ' 条（setup 触发节点 ON_CLICK → 目标态画板，插件侧 reactions）');
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
 try {

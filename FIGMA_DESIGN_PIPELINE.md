@@ -164,12 +164,16 @@ window.MS_FIGMA_EXPORT = {
   ready() {},                       // 可选：返回 Promise，等异步初始化完成
   states: [
     { name: '设备列表 · 默认',    setup() {} },
-    { name: '设备列表 · 删除确认弹窗', setup() { document.querySelector('[data-modal="delete"]').classList.add('is-open') } },
+    { name: '设备列表 · 删除确认弹窗', setup() { document.querySelector('[data-modal="delete"]').classList.add('is-open') },
+      trigger: '[data-modal-open="delete"]' },   // 可选：函数驱动型 setup 标注触发元素（CSS 选择器）→ 原型连线
     { name: 'SNMP · 禁用态',      setup() { document.querySelector('.bc-eg71-snmp-fields').classList.add('bc-eg71-snmp-fields--disabled') } }
   ]
 }
 </script>
 ```
+
+- **状态枚举口径**：覆盖该页关键交互态——页面内 Tab 各态、危险操作确认弹窗、启用/禁用总闸两态、列表空态，与 `interaction-completeness.md` §1 必备状态集对齐。
+- **原型连线（可选，自动）**：setup 里真实派发的 `click`（如 `el.click()`）会被自动捕获，落图后该元素挂 Figma `reactions`（ON_CLICK → NAVIGATE 目标态画板），demo 变**可点击原型**；函数直接改 DOM 的 setup（无真实点击）可给该态补 `trigger: '<选择器>'` 标注触发元素。不标注则该态无连线（状态帧照常铺开）。
 
 - **状态枚举口径**：覆盖该页关键交互态——页面内 Tab 各态、危险操作确认弹窗、启用/禁用总闸两态、列表空态，与 `interaction-completeness.md` §1 必备状态集对齐。
 - **桥接注入行为**：每态 `reset → setup → settle` → 克隆 root（fixed 元素转 absolute）→ 帧高取当时 scrollHeight → 铺入网格后清空 body；某态 setup 抛错不中断整体，该帧标注「导出失败，按前态快照」。导入名带「· 全状态」后缀。
