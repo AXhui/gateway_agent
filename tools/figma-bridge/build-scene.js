@@ -125,6 +125,69 @@ let libStats = null;
 try {
   const libCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'component-keys.json'), 'utf8'));
   const comps = (libCfg.components || []).filter(c => c.enabled && c.cls && c.key);
+  // 守卫（First Draft 形状匹配原则）：复合块只有形状匹配库形态才整块替换，不硬凑。
+  // 守卫不过 → 不打 lib 标记，子树照常走本地重绘（内层控件仍会被各自锚点标记为库实例）。
+  const SEM_WORDS = { error: 'error', danger: 'error', success: 'success', warn: 'warn', warning: 'warn', info: 'info', waiting: 'waiting', loading: 'waiting' };
+  function deepTexts(m, cap) {
+    const out = [];
+    (function w2(x) {
+      if (out.length >= cap) return;
+      if (x.t === 't' && x.text && String(x.text).trim()) out.push(String(x.text).trim());
+      (x.ch || []).forEach(w2);
+    })(m);
+    return out;
+  }
+  function deepClassToks(m, cap) {
+    const out = [];
+    (function w3(x) {
+      if (out.length >= cap) return;
+      if (x.n) String(x.n).trim().split(/\s+/).forEach(t => { if (t && !out.includes(t)) out.push(t); });
+      (x.ch || []).forEach(w3);
+    })(m);
+    return out;
+  }
+  function evalGuard(ent, n) {
+    if (ent.guard === 'plainTitle') {
+      const kids = n.ch || [];
+      const onlyText = kids.length === 1 && kids[0].t === 't';
+      const fs = onlyText ? kids[0].fs : 0;
+      return onlyText && fs >= 15.5 && fs <= 16.5 && n.w >= 40 ? { texts: deepTexts(n, 4), fs, sw: false } : null;
+    }
+    if (ent.guard === 'simpleDialog') {
+      const clsAll = deepClassToks(n, 120);
+      // 富体拒绝：子树含进度条（ms-progress/-bar/-pct）/上传/拖拽/表格/统计/时间轴/树 →
+      // 库「弹窗」（图标+标题+描述+按钮）表达不了，本地重绘；家族类名（bc-*-progress）不算——只认真实富体元素
+      const rich = clsAll.some(c => c === 'ms-progress' || /progress-(bar|line|text|pct)/.test(c)
+        || /(^|-)(upload|drag|table|stats|stat|timeline|tree)(-|$)/.test(c));
+      if (rich) return null;
+      let modal = null, modalCount = 0;
+      (function fm(m) {
+        (m.ch || []).forEach(c => {
+          if (c.t === 'f' && c.n && /\bms-modal\b/.test(c.n)) { modalCount++; if (!modal) modal = c; }
+          fm(c);
+        });
+      })(n);
+      if (modalCount !== 1 || !modal || modal.w > 560) return null;
+      const texts = deepTexts(n, 9);
+      if (texts.length < 2 || texts.length > 8) return null;
+      const sem = [];
+      clsAll.forEach(c => { const m2 = c.match(/--([a-z]+)$/); if (m2 && SEM_WORDS[m2[1]] && !sem.includes(SEM_WORDS[m2[1]])) sem.push(SEM_WORDS[m2[1]]); });
+      if (!sem.length && clsAll.includes('ms-spin')) sem.push('waiting'); // 旋转图标 = Waiting 变体形状
+      return { texts: deepTexts(n, 8), sem, sw: false };
+    }
+    if (ent.guard === 'pageTabs') {
+      const items = [];
+      (n.ch || []).forEach(c => {
+        if (c.t !== 'f' || !c.n) return;
+        const ct = c.n.trim().split(/\s+/);
+        if (!ct.includes('bc-eg71-page-tab')) return;
+        items.push({ text: deepTexts(c, 2).join(' '), active: ct.includes('bc-eg71-page-tab--active') });
+      });
+      if (items.length < 2) return null;
+      return { tabs: items, sw: false, aux: ent.aux };
+    }
+    return {};
+  }
   function walkLib(n) {
     if (!n || typeof n !== 'object') return;
     if (Array.isArray(n)) { n.forEach(walkLib); return; }
@@ -136,13 +199,22 @@ try {
         toks.forEach(t => { if (t.startsWith(ent.cls + '--')) { const m = (ent.tokens || {})[t.slice(ent.cls.length + 2)]; if (m && !vt.includes(m)) vt.push(m); } });
         const bgP = (n.f || []).find(p => p && p.c && (p.a == null || p.a > 0.05));
         const tch = (n.ch || []).find(c => c.t === 't' && c.col);
-        n.lib = {
+        const lib = {
           k: ent.key, f: ent.figmaName, cls: String(n.n).slice(0, 80), tok: vt,
           // col/tc：块背景色+首段文字色——插件侧 token 未决变体轴按颜色比色距裁决（库引用规则 2026-10-25）
           col: bgP ? bgP.c : undefined, tc: tch ? tch.col : undefined,
           text: ((n.ch || []).filter(c => c.t === 't').map(c => c.text).join(' ').trim().slice(0, 40)) || undefined,
           ic: (function hasVec(m) { return (m.ch || []).some(c => c.t === 'ic' || c.t === 's' || hasVec(c)); })(n)
         };
+        if (ent.guard) {
+          const g = evalGuard(ent, n);
+          if (g) {
+            Object.assign(lib, g);
+            if (g.sem) g.sem.forEach(w => { if (!lib.tok.includes(w)) lib.tok.push(w); });
+            delete lib.sem;
+          } else { (n.ch || []).forEach(walkLib); return; }
+        }
+        n.lib = lib;
       }
     }
     (n.ch || []).forEach(walkLib);

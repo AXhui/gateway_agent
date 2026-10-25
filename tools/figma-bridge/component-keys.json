@@ -1,5 +1,5 @@
 {
-  "$comment": "demo 类名 → Figma 发布库组件 key 映射（转 Figma 库实例化二期）。build-scene.js lib-pass 给命中节点打 n.lib 标记（子树原样保留作导入失败回退；同时采集块背景色 col/文字色 tc 供颜色择变体），插件 code.js 先试 importComponentByKeyAsync、失败回退 importComponentSetByKeyAsync（组件集 key 只认后者——2026-10-25 库引用契约，规则见 .claude/rules/figma-asset-libs.md §4）→ component_set 按「修饰类 token → HTML 颜色比色距」择变体 → createInstance → setProperties（VARIANT/BOOLEAN/TEXT，含颜色裁决）→ 覆写首个文本层。铁律：EG71（网关）HTML 必走本映射调用库基础组件（ms-*→Milesight_IOT_Web），业务库已有整块形态（侧边栏等）优先直调实例、不本地重画——设计师在 Figma 里直接换库组件/切变体。原子控件 enabled:true；复合块默认 enabled:false（整体替换丢动态内容），侧边栏已按用户指示 2026-10-24 启用。重建方法：figma-remote get_libraries 反查 libraryKey → search_design_system includeLibraryKeys 定向检索，componentSetKey/componentKey 即导入 API 入参（注意 assetType 决定走哪个 API）。检索日期 2026-10-24（key 复验 2026-10-25 全部有效）。",
+  "$comment": "demo 类名 → Figma 发布库组件 key 映射（转 Figma 库实例化二期）。build-scene.js lib-pass 给命中节点打 n.lib 标记（子树原样保留作导入失败回退；同时采集块背景色 col/文字色 tc 供颜色择变体），插件 code.js 先试 importComponentByKeyAsync、失败回退 importComponentSetByKeyAsync（组件集 key 只认后者——2026-10-25 库引用契约，规则见 .claude/rules/figma-asset-libs.md §4）→ component_set 按「修饰类 token → HTML 颜色比色距」择变体 → createInstance → setProperties（VARIANT/BOOLEAN/TEXT，含颜色裁决）→ 覆写首个文本层。铁律：EG71（网关）HTML 必走本映射调用库基础组件（ms-*→Milesight_IOT_Web），业务库已有整块形态（侧边栏等）优先直调实例、不本地重画——设计师在 Figma 里直接换库组件/切变体。原子控件 enabled:true；复合块按 guard 守卫启用（2026-10-25，First Draft 形状匹配：plainTitle 标题 / simpleDialog 弹窗 / pageTabs 页签栏三层嵌套 swap，守卫不过本地重绘+内件实例，见 .claude/rules/figma-asset-libs.md §4.3）。重建方法：figma-remote get_libraries 反查 libraryKey → search_design_system includeLibraryKeys 定向检索，componentSetKey/componentKey 即导入 API 入参（注意 assetType 决定走哪个 API）。检索日期 2026-10-24（key 复验 2026-10-25 全部有效）。",
   "libraries": {
     "biz": { "name": "（新版本）网关/路由器 通用业务组件库", "libraryKey": "lk-1456c337361aa8e31ab587202acc4492171fc5a9f8a4366070f51f5270b4d9301a85dd833450010f9809a1c2195dca47caeddcf37554c86996913a70d5bccee0", "fileKey": "（团队库，fileKey 未知；71.0.0.4 设计稿 CVVyZcQHpcu8lipmsXRZIm 订阅了它）" },
     "web": { "name": "Milesight_IOT_Web", "libraryKey": "lk-fd11ca356b4084d6ff11636a401c556a1f97795cf92cced550aceb1c9722d02b14fbf9b7ba8136f0b1eb24a945b1a727e64ee41590650f2d04487852c74adae8", "fileKey": "Er9jFJWKavCdkG7HXPc58v" }
@@ -80,13 +80,34 @@
       "tokens": {}
     },
     {
-      "cls": "bc-com-title",
+      "cls": "ms-modal-title",
       "lib": "biz",
       "key": "91179db6f5813c122baff3e65790cf3cac75b415",
       "figmaName": "标题",
       "kind": "set",
-      "enabled": false,
-      "note": "标题行常带 tag/describe/开关/按钮组，整体替换丢动态内容；待确认库变体覆盖后启用"
+      "enabled": true,
+      "guard": "plainTitle",
+      "note": "纯文本标题帧（16px）→ 业务库「标题」实例（First Draft 形状匹配：无开关形态贴 plain 变体，带 ms-switch 子树贴 with-switch 变体）；守卫 plainTitle=仅 1 段 16px 文本、无图标/控件子树；文本经 TEXT 属性或嵌套文本层覆写"
+    },
+    {
+      "cls": "ms-card-title",
+      "lib": "biz",
+      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+      "figmaName": "标题",
+      "kind": "set",
+      "enabled": true,
+      "guard": "plainTitle",
+      "note": "同 ms-modal-title——卡片标题纯文本帧 →「标题」实例"
+    },
+    {
+      "cls": "bc-com-title-main",
+      "lib": "biz",
+      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+      "figmaName": "标题",
+      "kind": "set",
+      "enabled": true,
+      "guard": "plainTitle",
+      "note": "同上——主标题变体纯文本形态才实例化；带 tag/开关/按钮组的标题行守卫不过，保持本地编排（内件已是库实例）"
     },
     {
       "cls": "bc-eg71-page-tabs",
@@ -94,8 +115,33 @@
       "key": "65284824528fbd8c076f80950f08c910be23f4a8",
       "figmaName": "Tabs/Top",
       "kind": "set",
+      "enabled": true,
+      "guard": "pageTabs",
+      "aux": {
+        "top": { "figmaName": "Components/Tabs-Top", "key": "b9efb13a831161d5e9666b10ec944a311ec85a55" },
+        "tab": { "figmaName": "Components/Tab", "key": "1ce4e4986f20a3677ab5927cbd2ef6ed33fad1e7" }
+      },
+      "note": "页签栏整块库实例（三层嵌套 swap）：Tabs/Top → 内部 Components/Tabs-Top（Item 数量=页签数）→ 逐个 Tab（Selecte 选择=active）+ 文案覆写；tab 清单由 bc-eg71-page-tab[--active] 子帧采集"
+    },
+    {
+      "cls": "ms-mask",
+      "lib": "biz",
+      "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
+      "figmaName": "弹窗",
+      "kind": "set",
+      "enabled": true,
+      "guard": "simpleDialog",
+      "exclude": ["ms-mask--drawer"],
+      "note": "简单确认/结果弹窗 → 业务库「弹窗」整页实例（自带全页蒙版 1440×900，rgba(39,46,59,0.5)——蒙版覆盖问题的设计师正解）；布尔轴 Info/Error/Waiting/Warn/Success 按子树语义修饰类（--danger→Error 等）裁决；守卫 simpleDialog=单一 ms-modal 卡 ≤560px、2-8 段文本、无 upload/progress/stats/table/drag 富体——富弹窗（REQ-017 结果/上传/进度）守卫不过，本地重绘+内件实例（不硬凑）"
+    },
+    {
+      "cls": "bc-com-title",
+      "lib": "biz",
+      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+      "figmaName": "标题",
+      "kind": "set",
       "enabled": false,
-      "note": "页签文案动态；待变体验证"
+      "note": "标题行整块（常带 tag/describe/开关/按钮组）不整体替换——动态内容丢不起；纯文本形态已由 bc-com-title-main/ms-modal-title/ms-card-title 三个锚点守卫启用"
     },
     {
       "cls": "ms-modal",

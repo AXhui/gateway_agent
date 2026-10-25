@@ -35,6 +35,17 @@ class FNode {
     this.children.forEach(k => c.appendChild(k.clone()));
     return c;
   }
+  set mainComponent(c) {
+    // 对齐真 API：换 mainComponent → 子树换成新变体结构（组件子件以实例形态出现）
+    this._main = c;
+    if (c) {
+      this.children.slice().forEach(k => k.remove());
+      c.children.map(k => k.clone()).forEach(k => { if (k.type === 'COMPONENT') k.type = 'INSTANCE'; this.appendChild(k); });
+      this.variantProperties = c.variantProperties ? Object.assign({}, c.variantProperties) : this.variantProperties;
+      this.componentPropertyDefinitions = c.componentPropertyDefinitions || this.componentPropertyDefinitions;
+    }
+  }
+  get mainComponent() { return this._main; }
   createInstance() {
     const inst = this.clone();
     inst.type = 'INSTANCE';
@@ -86,6 +97,60 @@ const MOCK_LIBS = new Map();
   };
   MOCK_LIBS.set('lib:btn', set);
   MOCK_LIBS.set('icon:check', mkIconComp('check'));
+
+  // biz 标题 set：plain / with-switch 两变体（形状择变体的靶子）
+  const titleSet = new FNode('COMPONENT_SET', { name: '标题', width: 200, height: 24 });
+  const mkTitle = withSw => {
+    const c = new FNode('COMPONENT', { name: 'Type=' + (withSw ? 'Switch' : 'Plain'), width: 200, height: 24 });
+    c.variantProperties = { Type: withSw ? 'Switch' : 'Plain' };
+    c.componentPropertyDefinitions = {
+      Type: { type: 'VARIANT', variantOptions: ['Plain', 'Switch'], defaultValue: 'Plain' },
+      '标题#10': { type: 'TEXT', defaultValue: '标题' },
+    };
+    const t1 = mkText('标题'); t1.fontSize = 16; c.appendChild(t1);
+    if (withSw) c.appendChild(new FNode('INSTANCE', { name: 'Switch', width: 28, height: 16 }));
+    return c;
+  };
+  titleSet.appendChild(mkTitle(false)); titleSet.appendChild(mkTitle(true));
+  MOCK_LIBS.set('lib:title', titleSet);
+
+  // biz 弹窗 set：语义布尔轴（Info/Error/Waiting/Warn/Success）+ 多 TEXT 属性
+  const dlgSet = new FNode('COMPONENT_SET', { name: '弹窗', width: 1440, height: 900 });
+  const dlg = new FNode('COMPONENT', { name: '弹窗/Info', width: 1440, height: 900 });
+  dlg.componentPropertyDefinitions = {
+    Info: { type: 'BOOLEAN', defaultValue: false }, Error: { type: 'BOOLEAN', defaultValue: false },
+    Waiting: { type: 'BOOLEAN', defaultValue: false }, Warn: { type: 'BOOLEAN', defaultValue: false },
+    Success: { type: 'BOOLEAN', defaultValue: false },
+    '标题#201': { type: 'TEXT', defaultValue: '提示' }, '描述#202': { type: 'TEXT', defaultValue: '内容' }, '按钮#203': { type: 'TEXT', defaultValue: 'OK' },
+  };
+  const mask = new FNode('FRAME', { name: 'Mask', width: 1440, height: 900, fills: [{ type: 'SOLID', color: { r: 0.15, g: 0.18, b: 0.23 }, opacity: 0.5 }] });
+  const card = new FNode('FRAME', { name: 'Message', width: 416, height: 160 });
+  card.appendChild(mkText('提示')); card.appendChild(mkText('内容')); card.appendChild(mkText('OK'));
+  mask.appendChild(card); dlg.appendChild(mask); dlgSet.appendChild(dlg);
+  MOCK_LIBS.set('lib:dialog', dlgSet);
+
+  // web Tabs/Top 三层：外壳 set + 内部 Components/Tabs-Top（Item 数量轴）+ Components/Tab（Selecte 选择轴）
+  const mkTabComp = sel => {
+    const c = new FNode('COMPONENT', { name: 'Selecte=' + sel, width: 100, height: 48 });
+    c.variantProperties = { 'Selecte 选择': sel, 'Size 尺寸': 'medium' };
+    c.appendChild(mkText('Tab'));
+    return c;
+  };
+  const tabSet = new FNode('COMPONENT_SET', { name: 'Components/Tab', width: 100, height: 48 });
+  tabSet.appendChild(mkTabComp('true')); tabSet.appendChild(mkTabComp('false'));
+  const mkTabsTopComp = n2 => {
+    const c = new FNode('COMPONENT', { name: 'Item 数量=' + n2, width: 100 * n2, height: 48 });
+    c.variantProperties = { 'Item 数量': String(n2), 'Size 尺寸': 'medium', 'Icon 图标': 'false' };
+    for (let i = 0; i < n2; i++) c.appendChild(new FNode('INSTANCE', { name: 'Tab', width: 100, height: 48 }));
+    return c;
+  };
+  const tabsTopSet = new FNode('COMPONENT_SET', { name: 'Components/Tabs-Top', width: 200, height: 48 });
+  tabsTopSet.appendChild(mkTabsTopComp(2)); tabsTopSet.appendChild(mkTabsTopComp(3));
+  const tabsComp = new FNode('COMPONENT', { name: 'Tabs/Top', width: 1220, height: 48 });
+  tabsComp.appendChild(new FNode('INSTANCE', { name: 'Components/Tabs-Top', width: 200, height: 48 }));
+  const tabsSet = new FNode('COMPONENT_SET', { name: 'Tabs/Top', width: 1220, height: 48 });
+  tabsSet.appendChild(tabsComp);
+  MOCK_LIBS.set('lib:tabs', tabsSet); MOCK_LIBS.set('lib:tabs-top', tabsTopSet); MOCK_LIBS.set('lib:tab', tabSet);
 })();
 
 // ---------- mock figma ----------
@@ -157,6 +222,21 @@ const SCENE = {
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: ['primary'], text: 'Save', ic: false }, ch: [T('Save')] },
         { t: 'f', n: 'ms-btn', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 120, y: 340, w: 60, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: [], col: [0.2, 0.4, 0.9], text: 'OK', ic: false }, ch: [T('OK')] },
+        { t: 'f', n: 'ms-modal-title', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 480, w: 160, h: 24, o: 1,
+          lib: { k: 'lib:title', f: '标题', cls: 'ms-modal-title', tok: [], texts: ['导入离线包'], fs: 16, sw: false }, ch: [T('导入离线包', { fs: 16 })] },
+        { t: 'f', n: 'ms-mask', f: [{ c: [0.15, 0.18, 0.23], a: 0.5 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 520, w: 1440, h: 900, o: 1,
+          lib: { k: 'lib:dialog', f: '弹窗', cls: 'ms-mask', tok: [], texts: ['确认删除？', '此操作不可恢复', '删除', '取消'] },
+          ch: [{ t: 'f', n: 'ms-modal', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 512, y: 380, w: 416, h: 160, o: 1,
+            ch: [T('确认删除？'), T('此操作不可恢复'), T('删除'), T('取消')] }] },
+        { t: 'f', n: 'ms-mask', f: [{ c: [0.15, 0.18, 0.23], a: 0.5 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 530, w: 1440, h: 900, o: 1,
+          lib: { k: 'lib:dialog', f: '弹窗', cls: 'ms-mask', tok: ['waiting'], texts: ['Online Update', 'Fetching…', 'Cancel'] },
+          ch: [{ t: 'f', n: 'ms-modal', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 512, y: 385, w: 416, h: 160, o: 1,
+            ch: [T('Online Update'), T('Fetching…'), T('Cancel')] }] },
+        { t: 'f', n: 'bc-eg71-page-tabs', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 600, w: 1220, h: 48, o: 1,
+          lib: { k: 'lib:tabs', f: 'Tabs/Top', cls: 'bc-eg71-page-tabs', tok: [], sw: false,
+            tabs: [{ text: '设备', active: true }, { text: '固件', active: false }],
+            aux: { top: { figmaName: 'Components/Tabs-Top', key: 'lib:tabs-top' }, tab: { figmaName: 'Components/Tab', key: 'lib:tab' } } },
+          ch: [T('设备'), T('固件')] },
         { t: 'inst', d: 'c1', x: 0, y: 400, w: 60, h: 24, o: 1 },
         { t: 's', svg: '<svg viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>', x: 0, y: 440, w: 20, h: 20, o: 1 },
       ],
@@ -194,6 +274,8 @@ vm.runInContext(code, sandbox);
   const tree = cell ? cell.children.slice(1) : [];
 
   const findBy = (pred, list = tree) => { let out = []; (function w(n) { if (Array.isArray(n)) return n.forEach(w); if (pred(n)) out.push(n); (n.children || []).forEach(w); })(list); return out; };
+  const findByNameM = (r, re) => { let o = null; (function w2(n2) { if (o) return; if (re.test(String(n2.name || ''))) { o = n2; return; } (n2.children || []).forEach(w2); })(r); return o; };
+  const findFirstTextM = r => { if (r.type === 'TEXT') return r; for (const c of r.children || []) { const x = findFirstTextM(c); if (x) return x; } return null; };
 
   const ital = findBy(n => n.type === 'TEXT' && n.characters === 'Italic Underline')[0];
   A('斜体 fontStyle', ital && ital.fontName && ital.fontName.style === 'Medium Italic', ital && ital.fontName.style);
@@ -267,6 +349,41 @@ vm.runInContext(code, sandbox);
     const p2 = propsOf(okInst);
     A('颜色变体写入 setProperties', p2['Type'] === 'Primary', JSON.stringify(p2));
   }
+
+  // ---- 复合块实质库引用：标题（形状择变体）/弹窗（多文本+语义布尔）/页签栏（三层嵌套 swap）----
+  const titleInst = iconInsts.find(i => i.name === 'ms-modal-title');
+  A('标题库实例', !!titleInst);
+  A('标题形状择变体 Plain（无开关）', titleInst && titleInst.variantProperties && titleInst.variantProperties.Type === 'Plain',
+    titleInst && JSON.stringify(titleInst.variantProperties));
+  A('标题 TEXT 属性覆写', titleInst && propsOf(titleInst)['标题#10'] === '导入离线包',
+    titleInst && JSON.stringify(propsOf(titleInst)));
+  const dlgInst = iconInsts.find(i => i.name === 'ms-mask');
+  A('弹窗库实例（全页蒙版整块替换）', !!dlgInst);
+  const dp = dlgInst && propsOf(dlgInst);
+  A('弹窗多文本 TEXT 覆写（标题+描述）', dp && dp['标题#201'] === '确认删除？' && dp['描述#202'] === '此操作不可恢复',
+    dp && JSON.stringify(dp));
+  A('弹窗语义布尔保持默认（无 --danger token）', dlgInst && !(dp.Error || dp.Success || dp.Waiting || dp.Warn || dp.Info));
+  const waitInst = iconInsts.filter(i => i.name === 'ms-mask')[1];
+  const wp = waitInst && propsOf(waitInst);
+  A('弹窗 Waiting 语义布尔（ms-spin → Waiting=true）', wp && wp.Waiting === true, wp && JSON.stringify(wp));
+  const tabsInst = iconInsts.find(i => i.name === 'bc-eg71-page-tabs');
+  A('页签栏库实例', !!tabsInst);
+  if (tabsInst) {
+    const topInner = findByNameM(tabsInst, /tabs-top/i);
+    A('嵌套 Tabs-Top swap 到 Item=2', topInner && topInner.variantProperties && topInner.variantProperties['Item 数量'] === '2',
+      topInner && JSON.stringify(topInner.variantProperties));
+    const tabKids = topInner ? topInner.children.filter(c => /^tab$/i.test(String(c.name))) : [];
+    A('Tab 实例 ×2（active/inactive 择变体）',
+      tabKids.length === 2 && tabKids[0].variantProperties['Selecte 选择'] === 'true' && tabKids[1].variantProperties['Selecte 选择'] === 'false',
+      tabKids.map(t4 => JSON.stringify(t4.variantProperties)).join(','));
+    const tabTexts = tabKids.map(t4 => { const tt = findFirstTextM(t4); return tt ? tt.characters : null; });
+    A('Tab 文案覆写 = 设备/固件', tabTexts.join('|') === '设备|固件', tabTexts.join('|'));
+    A('辅助组件集导入（tabs-top/tab 走 set API）',
+      calls.importSetKey.includes('lib:tabs-top') && calls.importSetKey.includes('lib:tab'), JSON.stringify(calls.importSetKey));
+  }
+  const doneMsg0 = calls.notify.find(t => t.indexOf('导入完成') === 0);
+  A('通知含形状择变体计数', doneMsg0 && /形状择变体/.test(doneMsg0), doneMsg0);
+  A('通知含嵌套 swap 计数', doneMsg0 && /嵌套实例 swap/.test(doneMsg0), doneMsg0);
 
   A('def 组件 ×2', figma.currentPage.children[0].children.filter(n => n.type === 'COMPONENT' || n.type === 'COMPONENT_SET').length >= 0 && calls.combineAsVariants.length >= 1,
     'combine=' + JSON.stringify(calls.combineAsVariants));
