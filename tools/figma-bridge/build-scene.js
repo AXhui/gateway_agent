@@ -134,8 +134,12 @@ try {
       if (ent && !(ent.exclude || []).some(x => toks.includes(x))) {
         const vt = [];
         toks.forEach(t => { if (t.startsWith(ent.cls + '--')) { const m = (ent.tokens || {})[t.slice(ent.cls.length + 2)]; if (m && !vt.includes(m)) vt.push(m); } });
+        const bgP = (n.f || []).find(p => p && p.c && (p.a == null || p.a > 0.05));
+        const tch = (n.ch || []).find(c => c.t === 't' && c.col);
         n.lib = {
           k: ent.key, f: ent.figmaName, cls: String(n.n).slice(0, 80), tok: vt,
+          // col/tc：块背景色+首段文字色——插件侧 token 未决变体轴按颜色比色距裁决（库引用规则 2026-10-25）
+          col: bgP ? bgP.c : undefined, tc: tch ? tch.col : undefined,
           text: ((n.ch || []).filter(c => c.t === 't').map(c => c.text).join(' ').trim().slice(0, 40)) || undefined,
           ic: (function hasVec(m) { return (m.ch || []).some(c => c.t === 'ic' || c.t === 's' || hasVec(c)); })(n)
         };
@@ -263,7 +267,7 @@ console.log('完成 → ' + path.join(outDir, 'scene.json') +
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
 if (scene.stats) console.log('自动布局: flex 置信转换 ' + (scene.stats.al || 0) + ' 容器｜图片 ' + (scene.stats.img || 0) + '｜背景图层(渐变/底图) ' + (scene.stats.bg || 0));
 if (flatCut) console.log('拍平: 透传空壳帧 ' + flatCut + ' 层（无视觉无语义类）');
-if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponentByKeyAsync 实例化');
+if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + libStats.by + '）→ 插件 importComponent(Set)ByKeyAsync 实例化（token+颜色择变体）');
 if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个（家族 ' + compStats.families + '，变体集 ' + compStats.variantSets + ' 个待 combineAsVariants）｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 if (rctCount) console.log('原型连线: ' + rctCount + ' 条（setup 触发节点 ON_CLICK → 目标态画板，插件侧 reactions）');
 

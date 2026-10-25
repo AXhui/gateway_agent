@@ -51,14 +51,17 @@ class FNode {
 function mkText(chars) {
   return new FNode('TEXT', { characters: chars, fontName: { family: 'PingFang SC', style: 'Regular' }, fontSize: 14 });
 }
-function mkBtnVariant(sizeVal, label) {
-  const c = new FNode('COMPONENT', { name: 'Size=' + sizeVal, width: 88, height: 32 });
-  c.variantProperties = { Size: sizeVal };
+function mkBtnVariant(sizeVal, typeVal, label) {
+  const c = new FNode('COMPONENT', { name: 'Type=' + typeVal + ', Size=' + sizeVal, width: 88, height: 32 });
+  c.variantProperties = { Size: sizeVal, Type: typeVal };
   c.componentPropertyDefinitions = {
     'Size': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+    'Type': { type: 'VARIANT', variantOptions: ['Primary', 'Default'], defaultValue: 'Default' },
     'icon#101': { type: 'BOOLEAN', defaultValue: false },
     'Label#102': { type: 'TEXT', defaultValue: 'Button' },
   };
+  // 变体主导填充色（Primary 蓝 / Default 白）——颜色择变体的比对源
+  c.fills = [{ type: 'SOLID', color: typeVal === 'Primary' ? { r: 0.2, g: 0.4, b: 0.9 } : { r: 1, g: 1, b: 1 } }];
   c.appendChild(mkText(label));
   return c;
 }
@@ -73,15 +76,20 @@ function mkIconComp(key) {
 const MOCK_LIBS = new Map();
 (function () {
   const set = new FNode('COMPONENT_SET', { name: 'Button', width: 88, height: 32 });
-  set.appendChild(mkBtnVariant('Small', 'Button'));
-  set.appendChild(mkBtnVariant('Large', 'Button'));
-  set.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  set.appendChild(mkBtnVariant('Small', 'Primary', 'Button'));
+  set.appendChild(mkBtnVariant('Small', 'Default', 'Button'));
+  set.appendChild(mkBtnVariant('Large', 'Primary', 'Button'));
+  set.appendChild(mkBtnVariant('Large', 'Default', 'Button'));
+  set.componentPropertyDefinitions = {
+    Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+    Type: { type: 'VARIANT', variantOptions: ['Primary', 'Default'], defaultValue: 'Default' },
+  };
   MOCK_LIBS.set('lib:btn', set);
   MOCK_LIBS.set('icon:check', mkIconComp('check'));
 })();
 
 // ---------- mock figma ----------
-const calls = { importKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0 };
+const calls = { importKey: [], importSetKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0 };
 const figma = {
   createFrame: () => new FNode('FRAME'),
   createText: () => new FNode('TEXT', { characters: '' }),
@@ -100,8 +108,17 @@ const figma = {
   loadFontAsync: async f => { calls.fonts.add(f.family + '/' + f.style); },
   importComponentByKeyAsync: async k => {
     calls.importKey.push(k);
-    if (!MOCK_LIBS.has(k)) throw new Error('key not found: ' + k);
-    return MOCK_LIBS.get(k);
+    const n = MOCK_LIBS.get(k);
+    if (!n) throw new Error('key not found: ' + k);
+    // 对齐真 API：component_set 的 key 走本方法必抛错（曾掩盖根因的 mock 盲区）
+    if (n.type === 'COMPONENT_SET') throw new Error('COMPONENT_SET key must use importComponentSetByKeyAsync: ' + k);
+    return n;
+  },
+  importComponentSetByKeyAsync: async k => {
+    calls.importSetKey.push(k);
+    const n = MOCK_LIBS.get(k);
+    if (!n || n.type !== 'COMPONENT_SET') throw new Error('set key not found: ' + k);
+    return n;
   },
   notify: (t, o) => { calls.notify.push(t); },
   viewport: { scrollAndZoomIntoView: () => {} },
@@ -138,6 +155,8 @@ const SCENE = {
         { t: 'ic', k: 'icon:check', f: 'icon/check', svg: '<svg viewBox="0 0 24 24"></svg>', x: 0, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] },
         { t: 'f', n: 'ms-btn ms-btn--primary', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 340, w: 88, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: ['primary'], text: 'Save', ic: false }, ch: [T('Save')] },
+        { t: 'f', n: 'ms-btn', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 120, y: 340, w: 60, h: 32, o: 1,
+          lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: [], col: [0.2, 0.4, 0.9], text: 'OK', ic: false }, ch: [T('OK')] },
         { t: 'inst', d: 'c1', x: 0, y: 400, w: 60, h: 24, o: 1 },
         { t: 's', svg: '<svg viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>', x: 0, y: 440, w: 20, h: 20, o: 1 },
       ],
@@ -228,11 +247,25 @@ vm.runInContext(code, sandbox);
   A('图标黑填充重绘', paintedFill.some(v => v.fills[0].color.b > 0.89 && v.fills[0].color.r > 0.19 && v.fills[0].color.r < 0.21));
 
   const libInsts = iconInsts.filter(i => i.componentPropertyDefinitions && 'Label#102' in i.componentPropertyDefinitions);
-  const libInst = libInsts[0];
-  A('库组件实例（Button set）', !!libInst, 'insts=' + libInsts.length);
-  if (libInst) {
-    const payload = libInst.setProps.reduce((m, p) => Object.assign(m, p), {});
+  const propsOf = i => i.setProps.reduce((m, p) => Object.assign(m, p), {});
+  // 实例文案经 setProperties(TEXT 属性)写入，mock 不改 characters——按 payload 定位实例
+  const saveInst = libInsts.find(i => propsOf(i)['Label#102'] === 'Save');
+  const okInst = libInsts.find(i => propsOf(i)['Label#102'] === 'OK');
+  A('库组件实例（Button set ×2）', libInsts.length === 2, 'insts=' + libInsts.length);
+  A('组件集 key 走 set 专属 API', calls.importSetKey.includes('lib:btn') && calls.importKey.includes('lib:btn'),
+    'setApi=' + JSON.stringify(calls.importSetKey));
+  if (saveInst) {
+    const payload = propsOf(saveInst);
     A('TEXT 属性写入 Save', payload['Label#102'] === 'Save', JSON.stringify(payload));
+    A('token 择变体 Type=Primary', saveInst.variantProperties && saveInst.variantProperties.Type === 'Primary',
+      JSON.stringify(saveInst.variantProperties));
+  }
+  // 颜色择变体：tok 空、col=主题蓝 → Type=Primary（用户规则：按 HTML 颜色匹配库组件变体）
+  A('颜色择变体 Type=Primary', okInst && okInst.variantProperties && okInst.variantProperties.Type === 'Primary',
+    okInst && JSON.stringify(okInst.variantProperties));
+  if (okInst) {
+    const p2 = propsOf(okInst);
+    A('颜色变体写入 setProperties', p2['Type'] === 'Primary', JSON.stringify(p2));
   }
 
   A('def 组件 ×2', figma.currentPage.children[0].children.filter(n => n.type === 'COMPONENT' || n.type === 'COMPONENT_SET').length >= 0 && calls.combineAsVariants.length >= 1,
