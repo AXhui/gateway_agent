@@ -98,6 +98,23 @@ function flattenWrappers(node) {
 }
 scene.cells.forEach(c => flattenWrappers(c.root));
 
+// 蒙版全页铁律（用户 2026-10-25）：弹窗蒙版一律铺满状态帧，禁止局部覆盖——
+// DOM 层 ms-mask 若未全幅（局部定位/尺寸缩水），scene 侧强制扩到 0,0,frame w×h；
+// 库「弹窗」实例侧同理吃到全页尺寸（自带全页蒙版），富弹窗本地重绘的蒙版同样被本条兜底
+let maskFix = 0;
+scene.cells.forEach(c => {
+  (function fixMask(nd) {
+    (nd.ch || []).forEach(m => {
+      if (m.t === 'f' && m.n && String(m.n).trim().split(/\s+/).includes('ms-mask')
+        && (m.x !== 0 || m.y !== 0 || m.w < c.w || m.h < c.h)) {
+        m.x = 0; m.y = 0; m.w = c.w; m.h = c.h; maskFix++;
+      }
+      fixMask(m);
+    });
+  })(c.root);
+});
+if (maskFix) console.log('蒙版全页强制: ' + maskFix + ' 处 ms-mask 扩到状态帧尺寸（弹窗蒙版铁律）');
+
 // 图标实例化：页内已反查出 MS_ICONS 名（node.ic），命中 icon-keys.json 的升级为 t:'ic'（携带库组件 key）
 let iconStats = null;
 try {

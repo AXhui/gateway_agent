@@ -128,6 +128,12 @@ const MOCK_LIBS = new Map();
   card.appendChild(mkText('提示')); card.appendChild(mkText('内容')); card.appendChild(mkText('OK'));
   mask.appendChild(card); dlg.appendChild(mask); dlgSet.appendChild(dlg);
   MOCK_LIBS.set('lib:dialog', dlgSet);
+  // resize 被锁的弹窗库（蒙版铁律：resize 失败保持库原生全页尺寸）
+  const dlgLock = dlg.clone(); dlgLock.name = '弹窗/Lock';
+  dlgLock.resize = () => { throw new Error('resize locked'); };
+  const dlgLockSet = new FNode('COMPONENT_SET', { name: '弹窗Lock', width: 1440, height: 900 });
+  dlgLockSet.appendChild(dlgLock);
+  MOCK_LIBS.set('lib:dialog-lock', dlgLockSet);
 
   // web Tabs/Top 三层：外壳 set + 内部 Components/Tabs-Top（Item 数量轴）+ Components/Tab（Selecte 选择轴）
   const mkTabComp = sel => {
@@ -232,6 +238,10 @@ const SCENE = {
           lib: { k: 'lib:dialog', f: '弹窗', cls: 'ms-mask', tok: ['waiting'], texts: ['Online Update', 'Fetching…', 'Cancel'] },
           ch: [{ t: 'f', n: 'ms-modal', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 512, y: 385, w: 416, h: 160, o: 1,
             ch: [T('Online Update'), T('Fetching…'), T('Cancel')] }] },
+        { t: 'f', n: 'ms-mask', f: [{ c: [0.15, 0.18, 0.23], a: 0.5 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 540, w: 1440, h: 900, o: 1,
+          lib: { k: 'lib:dialog-lock', f: '弹窗', cls: 'ms-mask', tok: [], texts: ['Lock', 'Locked', 'OK'] },
+          ch: [{ t: 'f', n: 'ms-modal', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 512, y: 390, w: 416, h: 160, o: 1,
+            ch: [T('Lock'), T('Locked'), T('OK')] }] },
         { t: 'f', n: 'bc-eg71-page-tabs', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 600, w: 1220, h: 48, o: 1,
           lib: { k: 'lib:tabs', f: 'Tabs/Top', cls: 'bc-eg71-page-tabs', tok: [], sw: false,
             tabs: [{ text: '设备', active: true }, { text: '固件', active: false }],
@@ -366,6 +376,9 @@ vm.runInContext(code, sandbox);
   const waitInst = iconInsts.filter(i => i.name === 'ms-mask')[1];
   const wp = waitInst && propsOf(waitInst);
   A('弹窗 Waiting 语义布尔（ms-spin → Waiting=true）', wp && wp.Waiting === true, wp && JSON.stringify(wp));
+  // 蒙版全页铁律：resize 失败的弹窗实例保持库原生全页尺寸（1440 宽），不得缩放成局部覆盖
+  const lockInst = iconInsts.filter(i => i.name === 'ms-mask')[2];
+  A('弹窗 resize 失败保持原生全页宽', lockInst && lockInst.width === 1440, lockInst && String(lockInst.width));
   const tabsInst = iconInsts.find(i => i.name === 'bc-eg71-page-tabs');
   A('页签栏库实例', !!tabsInst);
   if (tabsInst) {

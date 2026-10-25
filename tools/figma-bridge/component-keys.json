@@ -230,6 +230,124 @@
       "kind": "set",
       "enabled": false,
       "note": "选择单元格（无 demo 类名锚点，记录备用）"
+    },
+    {
+      "cls": "ms-page-item",
+      "lib": "web",
+      "key": "ad19d0d3e3753d5f7ca7f4281f218ac705816b96",
+      "figmaName": "pagination-element",
+      "kind": "set",
+      "enabled": true,
+      "tokens": {},
+      "note": "分页页码项（全局检索 2026-10-25 命中）；逐项独立实例化，页码文本经 TEXT 属性/首文本层覆写，active 态（--active 修饰或主题色底）走颜色择变体"
+    },
+    {
+      "cls": "ms-pagination",
+      "lib": "web",
+      "key": "58252ddff814925408a3a07f7c171776e4071db0",
+      "figmaName": "pagination-simple",
+      "kind": "single",
+      "enabled": false,
+      "note": "分页整块——页码数/跳转框动态，整实例丢内容；已由 ms-page-item 逐项实例化覆盖"
+    },
+    {
+      "cls": "ms-table",
+      "lib": "web",
+      "key": "3d84c89cddd7319a9314395cf3cf0f3a374b4a32",
+      "figmaName": "Table/Column-Based",
+      "kind": "set",
+      "enabled": false,
+      "note": "表格整块（列基，支持列固定/增删）——数据行动态，整实例丢真实数据行；二期行级/单元格级策略，单元格集已检索记录：Tag 66ead654cad0c1cb7c07b87bab531b4f11884802、Text de7e692700d1129b74927d986071b6ba5e921ca4、Switch 85cb6225d17e05309896d0022bfcce73663ad500、Action 4d50dc013f4dfe6b2773150b83664061cea24d3b、Status 09101245684ad4fc2ea70206c30539134133ff7b、Header 0ed0cd95b360b9d96bb0b93ca4286aaff9e2ac6c、Icon 0bd253db5ecc678077da73bd3ebe44afa4dcb565、Checkbox 8b6b613ccc01d430e2cc788d86d1ca422f094a74、Button 64745f8851cd603b5177878301d38f314abfb606、Link 6b91ec0c3f60def39c15b747bff4d1ae2b05b7c0、Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb、Text+Icon 6f9020b9fb1f2489a0b871d0b6bb8443ece8ebb3；行基表 Row-Based ef1445ff78b6a7890c52e8a89968e7938eaa42c6"
+    },
+    {
+      "cls": "ms-table-toolbar",
+      "lib": "web",
+      "key": "cc7cfc899e5d060c255d59235be18fd14496e195",
+      "figmaName": "Table-Toolbar/Default",
+      "kind": "single",
+      "enabled": false,
+      "note": "表格工具栏——搜索/筛选/批量按钮内容动态，整实例丢内件；内件已是库实例"
+    },
+    {
+      "cls": "ms-progress-line",
+      "lib": "web",
+      "key": "2a6a70bde7caf0814903c01bf62b9615a3d4dad2",
+      "figmaName": "Progress-Line",
+      "kind": "set",
+      "enabled": false,
+      "note": "进度条（track+bar）——已检索命中；变体轴未勘验且填充百分比不可由实例表达（30% 进度会失真），待变体勘验后启用；表格内进度另有 Components/Table-Cell/Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb"
+    },
+    {
+      "cls": "ms-form-item",
+      "lib": "web",
+      "key": "b01d6aa13e7bc0eba1f1364c7a9ff82dd2310b68",
+      "figmaName": "Form-Item",
+      "kind": "set",
+      "enabled": false,
+      "note": "表单项（label+控件+校验消息）——控件类型各异（input/select/switch），整实例丢真实控件；内件已逐个库实例化"
+    },
+    {
+      "cls": "ms-card",
+      "lib": "web",
+      "key": "38a2872000d2b49c9d5d1fe0d80c202ca8bc19fb",
+      "figmaName": "Card",
+      "kind": "set",
+      "enabled": false,
+      "note": "卡片容器——内容动态（head/body/extra），整实例丢内容；业务库 Card 3f644bf163582ee1b69a72a8606547acc9779504 备用；Card-Head e0c620cd0efef065d4d44881f5e83aad0a91e202 对应 ms-card-head（标题行+extra 动态）"
+    },
+    {
+      "cls": "ms-text",
+      "lib": "web",
+      "key": "b0ce4b7d1216a65f351c8ee3979a10732dd10db1",
+      "figmaName": "Text/Paragraph",
+      "kind": "single",
+      "enabled": false,
+      "note": "字体/排版——库内仅 Text/Paragraph 单组件（无标题字号变体集）；scene 文本节点（t:'t'）当前不携带类名，启用需序列化器捕获 cls + 库侧补字号变体；标题已走业务库「标题」集覆盖"
+    },
+    {
+      "cls": "ms-stat",
+      "lib": "web",
+      "key": "cc291893851b98f523d845428eb424c6b36d5d43",
+      "figmaName": "Statistic",
+      "kind": "set",
+      "enabled": false,
+      "note": "统计数值——demo 无 ms-stat 块级锚点（仅 stat-title/value/suffix/trend 子件类）；待统计卡形态守卫；Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
+    },
+    {
+      "cls": "ms-step",
+      "lib": "web",
+      "key": "b9453771916484a745f8ebbf330eebd810b85d6a",
+      "figmaName": "components/steps-item",
+      "kind": "set",
+      "enabled": false,
+      "note": "步骤项——变体轴未勘验（步骤条集 95e3f2fc32b88278e2443515e88ea6ddc8884239 / steps-item-dot 865d4969d43ef3abf39fb87d37db7b7f6821a269 / steps-item-icon 18203362a6ba9fdd8c94767c1a8787bd52a01aeb 记录备用）"
+    },
+    {
+      "cls": "ms-timeline-item",
+      "lib": "web",
+      "key": "25c49e2f0d7c63340bb8a3a523373f9758bc7dfa",
+      "figmaName": "time-dot",
+      "kind": "set",
+      "enabled": false,
+      "note": "时间轴项——变体轴未勘验（Timeline 整条 8b68ec5abaef290026e4d65dd7fe4fc4ce11cbbc / time 组件集 7fa25d5c673a1a62aea93cd49b331a3bacd5fe34 记录备用）"
+    },
+    {
+      "cls": "ms-segmented",
+      "lib": "web",
+      "key": "bac33c7889e56fd62f740a667af511ed3aaa8af0",
+      "figmaName": "Segmented-group",
+      "kind": "set",
+      "enabled": false,
+      "note": "分段单选——demo 锚点为 ms-segmented-item（项级）而非组级；内部项集 ab98425f47361fb7360528a2c647a895c6c241f8 记录备用，待项级锚点启用"
+    },
+    {
+      "cls": "ms-tabs",
+      "lib": "web",
+      "key": "481faafbc2afd829ba9c0eb62869df46858e96bf",
+      "figmaName": "Tabs/Card",
+      "kind": "set",
+      "enabled": false,
+      "note": "卡片式页签——EG71 页面级页签已由 bc-eg71-page-tabs 三层 swap 覆盖；卡片式页签出现时再启用（内部 Card-Tab/Item 99a0c608e85bd5f36f0930b9e17fa55e7f071359 记录备用）"
     }
   ]
 }
