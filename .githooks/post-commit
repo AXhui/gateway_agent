@@ -227,6 +227,15 @@ except Exception:
     --req-id "$REQ_ID" \
     "${CATEGORY_ARG[@]}" \
     --status "已生成" || echo "[post-commit] 警告：同步失败（不影响提交）"
+
+  # 回写「使用组件」关联 + 「AI自评」reason（Webhook 写不了 link 字段，须用 lark-cli 直接更新）
+  if [ -n "$REQ_ID" ]; then
+    bash tools/backfill_demo_components.sh \
+      --demo-file "$DEMO_PATH" \
+      --req-id "$REQ_ID" \
+      --quality-file "$QUALITY_FILE" \
+      || echo "[post-commit] 警告：组件关联回写失败（不影响提交）"
+  fi
 done
 
 echo "[post-commit] 同步完成"
