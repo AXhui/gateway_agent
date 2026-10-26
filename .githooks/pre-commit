@@ -60,4 +60,49 @@ if [ -n "$BAD_LIB" ]; then
   exit 1
 fi
 
+# ===== 质量自评校验：quality.json 必须含非空 reason（AI 打分依据文字）=====
+BAD_QUALITY=""
+echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  DIR=$(dirname "$DEMO_PATH")
+  QF="$DIR/quality.json"
+  if [ -f "$QF" ]; then
+    HAS_REASON=$(python3 -c "import json,sys;
+try:
+ d=json.load(open('$QF',encoding='utf-8'))
+ print('1' if str(d.get('reason','')).strip() else '0')
+except Exception:
+ print('0')" 2>/dev/null || echo "0")
+    if [ "$HAS_REASON" != "1" ]; then
+      echo "  [缺失 reason] $QF（AI 自评文字：说明每个维度为什么是这个分数）"
+    fi
+  else
+    echo "  [缺失 quality.json] $DIR/quality.json（5 维度自评文件）"
+  fi
+done
+
+BAD_QUALITY=$(echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
+  [ -z "$DEMO_PATH" ] && continue
+  DIR=$(dirname "$DEMO_PATH")
+  QF="$DIR/quality.json"
+  if [ -f "$QF" ]; then
+    HAS_REASON=$(python3 -c "import json,sys;
+try:
+ d=json.load(open('$QF',encoding='utf-8'))
+ print('1' if str(d.get('reason','')).strip() else '0')
+except Exception:
+ print('0')" 2>/dev/null || echo "0")
+    [ "$HAS_REASON" = "1" ] || echo "$QF"
+  else
+    echo "$QF"
+  fi
+done)
+
+if [ -n "$BAD_QUALITY" ]; then
+  echo ""
+  echo "[pre-commit] 提交 demo 前必须完成质量自评：同目录 quality.json 需含 5 维度分数和 reason 自评文字"
+  echo "（说明每个维度为什么是这个分数，供 UED 复核；格式见 AGENTS.md）。确认要跳过请用 git commit --no-verify。"
+  exit 1
+fi
+
 exit 0
