@@ -139,8 +139,11 @@ try {
 // 库组件实例化二期：component-keys.json 命中的控件块打 n.lib 标记（子树原样保留——插件导入库失败时整块回退重绘）。
 // 插件侧 importComponentByKeyAsync → set 按修饰类择变体 → createInstance → 覆写文本。
 let libStats = null;
+let needLibs = new Set();   // 本页实际命中的库（web/biz）——scene.libs 供插件 assets 选择门禁
+let LIBRARIES = null;       // component-keys.json libraries 元数据（name + libraryKey）
 try {
   const libCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'component-keys.json'), 'utf8'));
+  LIBRARIES = libCfg.libraries || null;
   const comps = (libCfg.components || []).filter(c => c.enabled && c.cls && c.key);
   // 守卫（First Draft 形状匹配原则）：复合块只有形状匹配库形态才整块替换，不硬凑。
   // 守卫不过 → 不打 lib 标记，子树照常走本地重绘（内层控件仍会被各自锚点标记为库实例）。
@@ -232,6 +235,7 @@ try {
           } else { (n.ch || []).forEach(walkLib); return; }
         }
         n.lib = lib;
+        needLibs.add(ent.lib);
       }
     }
     (n.ch || []).forEach(walkLib);
@@ -245,6 +249,21 @@ try {
   const total = [...hits.values()].reduce((a, b) => a + b, 0);
   if (total) libStats = { total, by: [...hits].map(([k, v]) => k.split(/\s+/)[0] + '×' + v).join(' ') };
 } catch (e) { console.warn('component-keys.json 缺失或损坏，库组件实例化跳过: ' + e.message); }
+
+// scene.libs：图标命中（icon-keys.json library 字段）+ 控件命中聚合出的库需求，
+// 插件面板据此做 assets 选择门禁（库未订阅时 importComponent 必回退，生成了也不是库实例）
+try {
+  if (iconStats && iconStats.inst > 0 && LIBRARIES) {
+    const icCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'icon-keys.json'), 'utf8'));
+    const hit = Object.entries(LIBRARIES).find(([, v]) => v && v.name === icCfg.library);
+    if (hit) needLibs.add(hit[0]);
+  }
+} catch (e) { /* icon-keys 元数据缺失不阻断 */ }
+if (needLibs.size && LIBRARIES) {
+  scene.libs = [...needLibs].filter(id => LIBRARIES[id])
+    .map(id => ({ id, name: LIBRARIES[id].name, key: LIBRARIES[id].libraryKey }));
+  console.log('库需求: ' + scene.libs.map(l => l.name).join(' + ') + '（插件面板 assets 门禁）');
+}
 
 // 重复块自动成组件：bc-* / ms-* 块级类做结构签名（类名+几何+填充+阴影+圆角+文本全量哈希），
 // 跨屏出现 ≥2 次的块 → scene.defs 定义一份 + 原位替换为 {t:'inst'} 引用；插件侧 createComponent/createInstance。
