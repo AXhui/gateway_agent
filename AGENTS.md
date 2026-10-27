@@ -52,6 +52,11 @@ python tools/fetch_feishu_doc.py "<飞书链接>" --out prd.md
    python tools/score_component.py --demo 05_release/REQ-XXX/demo.html --write
    ```
    脚本按 5 条规则自动算分（①组件库命中率 20% ②注册表覆盖 20% ③契约调用 25% ④壳契约 15% ⑤设计令牌 20%），并把 `component` 覆盖为脚本分（其余 4 维仍为自评）。若与自评分差异大，说明组件实现与规则不符，先修复 demo 再同步；不要跳过本步直接同步。
+3b. **结构/字段分自动校准（硬性，--write 覆盖自评分）**：继续运行结构/字段打分脚本校准 `structure` 与 `field` 分：
+   ```bash
+   python tools/score_fidelity.py --demo 05_release/REQ-XXX/demo.html --write
+   ```
+   脚本按 6 条子规则自动算分（字段：①实体定义完整 40% ②装配活跃度 35% ③静态字段校验 25%；结构：①统一壳 35% ②骨架完整 35% ③装配健康 30%），并把 `structure`、`field` 覆盖为脚本分（`component`/`interaction`/`visual` 不动）。若与自评分差异大，说明结构/字段实现与规则不符，先修复 demo 再同步；不要跳过本步直接同步。
 3. **同步到飞书（二选一，禁止重复同步）**：
 
    - **质量门槛（硬性）**：综合还原度（按结构0.2+组件0.2+交互0.25+视觉0.2+字段0.15 加权）**低于 80 分不得同步到飞书多维表格**，脚本会自动拦截并提示修复；先修复 demo 使综合分 ≥80 再重新同步。5 维分数不齐全时跳过门槛检查（等 UED 打分）。
