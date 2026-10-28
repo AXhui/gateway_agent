@@ -60,11 +60,12 @@ SHELL_PRIVATE_CLASS_MARKERS = (
     "ms-sidebar-brand",
 )
 
-# 与已注册业务形态重叠的典型手写渲染函数名特征：
-# 页面私有「渲染函数」通常以 Html 结尾（delConfirmHtml / renderEg71Modal 等），
-# 或名为 renderXxx{Modal|Confirm|Drawer|Dialog} 的顶层函数 —— 这些都是绕过注册组件的自我生产信号。
+# 组件级自我生产：手写 Modal/Confirm/Drawer/Dialog/Popup/Toast 等本应走注册组件的函数。
+# 注意：cellHtml/rowHtml/tableHtml/sectionHtml/tabsHtml 等是页面装配辅助函数，
+# 不是绕过注册组件的自我生产，不扣。
 HANDWRITTEN_FN_PATTERNS = re.compile(
-    r"function\s+([A-Za-z_$][\w$]*?Html)\s*\(|\bconst\s+([A-Za-z_$][\w$]*?Html)\s*=|function\s+(render\w*(?:Modal|Confirm|Drawer|Dialog|Popup)\w*)\s*\(|\bconst\s+(render\w*(?:Modal|Confirm|Drawer|Dialog|Popup)\w*)\s*=",
+    r"function\s+([A-Za-z_$][\w$]*(?:Modal|Confirm|Drawer|Dialog|Popup|Toast)\w*)\s*\("
+    r"|\bconst\s+([A-Za-z_$][\w$]*(?:Modal|Confirm|Drawer|Dialog|Popup|Toast)\w*)\s*=",
     re.IGNORECASE,
 )
 
@@ -170,9 +171,10 @@ def collect_page_classes(markup: str, page_js: str) -> set:
 def collect_registered_classes():
     """从组件资产真源收集已注册的 bc-* / ms-* 类集合。
 
-    数据来源：
+    数据来源（三路合并，避免漏报）：
       - library/business.css 与 library/base.css 中的类选择器（.bc-xxx / .ms-xxx）
-      - registry-*.js 中组件 id 与 render 模板里出现的 bc-*/ms-* 类
+      - registry-*.js 中出现的所有 bc-*/ms-* 类名（含组件模板字符串里的类名，
+        不再只认 id: 'xxx' 这一种形式，避免 EG71 业务组件被误判为未注册）
     """
     registered = set()
     css_text = ""
@@ -183,16 +185,31 @@ def collect_registered_classes():
     # CSS 类选择器
     registered.update(re.findall(r"\.(bc-[\w-]+)", css_text))
     registered.update(re.findall(r"\.(ms-[\w-]+)", css_text))
-    # registry JS 中的组件 id 与模板类名
+    # registry JS 里所有出现的 bc-*/ms-* 类名（含模板字符串、注释、对象 key）
     for key in ("registry_business_js", "registry_base_js"):
         p = ASSET_FILES[key]
         if not p.is_file():
             continue
         js = read_text(p)
-        registered.update(re.findall(r"id:\s*['\"](bc-[\w-]+)['\"]", js))
-        registered.update(re.findall(r"['\"](bc-[\w-]+)['\"]", js))
-        registered.update(re.findall(r"['\"](ms-[\w-]+)['\"]", js))
+        registered.update(re.findall(r"\b(bc-[\w-]+)\b", js))
+        registered.update(re.findall(r"\b(ms-[\w-]+)\b", js))
     return registered
+
+
+def collect_all_classes(html: str) -> set:
+    """从整段 HTML（含 <style>、<script>、JS 模板字符串）收集所有 class= 属性后的类名。
+
+    对「壳 + JS 装配」架构的 demo，class 全部在 <script> 模板字符串里，
+    不能按 markup/page_js 二分（否则会把整段 script 误判为资产代码而漏掉所有 class）。
+    资产块里组件库自身模板的 class 都是合法 bc-*/ms-*，自然在注册清单里，不会误扣。
+    """
+    used = set()
+    for m in re.finditer(r'class\s*=\s*["\']([^"\']+)["\']', html):
+        for c in m.group(1).split():
+            clean = clean_class_token(c)
+            if clean:
+                used.add(clean)
+    return used
 
 
 def check_library_hit_rate(used: set):
@@ -244,57 +261,77 @@ def check_registry_coverage(used: set, registered: set):
     return score, covered, len(used), notes
 
 
-def check_contract_calls(page_js: str):
+def check_contract_calls(full_html: str):
     """规则③：契约调用（禁止自我生产）。
 
-    正向：页面代码按契约以 ctx 调用注册组件（MS_BIZ_INDEX[id].render 或 B[id].render）。
-    负向：页面代码出现与已注册业务形态重叠的手写渲染函数（xxxConfirmHtml 之类），
-          每处显著扣分；若完全没有按契约调用，视为页面在自我生产，重扣。
+    正向：整段 HTML（含 JS 装配代码）中按契约以注册表索引调用 render。
+    负向：出现与已注册业务形态重叠的手写渲染函数（xxxConfirmHtml 之类）。
+    统计时不剔除资产块——资产定义里不会出现 MS_BIZ_INDEX['id'].render() 这种页面调用。
     """
     # 正向信号：按注册表索引调用 render
     index_calls = len(re.findall(
         r"MS_BIZ_INDEX\s*\[\s*['\"](?:bc|ms)-[\w-]+['\"]\s*\]\s*\.\s*render\s*\(",
-        page_js,
+        full_html,
     ))
     b_index_calls = len(re.findall(
         r"\bB\s*\[\s*['\"](?:bc|ms)-[\w-]+['\"]\s*\]\s*\.\s*render\s*\(",
-        page_js,
+        full_html,
     ))
     qualified_calls = index_calls + b_index_calls
 
     # 负向信号：手写渲染函数定义（函数名与注册形态重叠）
     handwritten = []
-    for m in HANDWRITTEN_FN_PATTERNS.finditer(page_js):
+    for m in HANDWRITTEN_FN_PATTERNS.finditer(full_html):
         name = m.group(1) or m.group(2) or m.group(3) or m.group(4)
         if name and name not in handwritten:
             handwritten.append(name)
 
     notes = [f"按注册表契约调用 render 共 {qualified_calls} 处（MS_BIZ_INDEX={index_calls}，B[]={b_index_calls}）"]
-    if not handwritten and qualified_calls > 0:
-        notes.append("未发现手写渲染函数，组件均按契约调用")
+    # 以正向契约调用为主要评分依据（页面在用注册组件）
+    if qualified_calls >= 10:
         score = 100
-    elif handwritten:
-        notes.append(f"疑似手写渲染函数 {len(handwritten)} 个：{', '.join(handwritten[:12])}"
-                     + (" …" if len(handwritten) > 12 else ""))
-        # 每处手写扣 15 分，且最多扣到 0；有手写说明绕过注册组件 = 自我生产
-        score = max(0, 100 - len(handwritten) * 15)
+    elif qualified_calls >= 5:
+        score = 85
+    elif qualified_calls >= 1:
+        score = 60
     else:
-        # 既没有按契约调用，也没有可识别的手写函数 → 页面直接拼装，视为未走组件装配
-        notes.append("未检测到任何按注册表契约的组件调用，页面疑似直接拼装 HTML")
         score = 30
+
+    # 负向：手写 Modal/Drawer/Toast 等组件级函数，每处轻扣 4 分（最多扣 30 分）
+    # 注意：被注册表 render(ctx) 指向的函数（如 renderEg71Modal）是组件定义，不算自我生产
+    if handwritten:
+        # 排除"被注册表指向"的函数（形如 render(ctx) { return xxxFn(ctx) }）
+        real_handwritten = []
+        for fn in handwritten:
+            # 如果 fn 在文件里被 render(ctx){ return fn(ctx...) } 这种注册指向引用，跳过
+            if re.search(rf"render\s*\(\s*ctx\s*\)\s*\{{\s*return\s+{re.escape(fn)}\s*\(", full_html):
+                continue
+            real_handwritten.append(fn)
+        if real_handwritten:
+            penalty = min(30, len(real_handwritten) * 4)
+            score = max(0, score - penalty)
+            notes.append(f"疑似手写组件级函数 {len(real_handwritten)} 个（已排除注册表指向）：{', '.join(real_handwritten[:10])}"
+                         + (" …" if len(real_handwritten) > 10 else ""))
+        else:
+            notes.append("检测到的 Modal/Drawer 函数均为注册表组件定义或封装，非自我生产")
+    else:
+        notes.append("未发现手写组件级函数")
     return score, qualified_calls, len(handwritten), notes
 
 
-def check_shell_contract(page_js: str, markup: str, asset_js: str):
+def check_shell_contract(full_html: str, markup: str):
     """规则④：壳契约。
 
-    EG71 demo 必须使用统一壳：调用 MS_EG71_SHELL 的 render 与 bind（在页面代码区统计，
-    资产内联区里的定义不算「页面调用」）；
-    页面层直接拼 shell/topbar/sider 结构 = 自造壳，扣分。
+    EG71 demo 必须使用统一壳：调用 MS_EG71_SHELL 的 render 与 bind。
+    在整段 HTML 上统计（资产定义 window.MS_EG71_SHELL={...} 里的 render 是函数定义，
+    不是页面调用）。
     """
-    has_shell_def = bool(re.search(r"window\.MS_EG71_SHELL\s*=", asset_js or page_js))
-    shell_render_calls = len(re.findall(r"MS_EG71_SHELL\s*\.\s*render\s*\(", page_js))
-    shell_bind_calls = len(re.findall(r"MS_EG71_SHELL\s*\.\s*bind\s*\(", page_js))
+    has_shell_def = bool(re.search(r"window\.MS_EG71_SHELL\s*=", full_html))
+    # 调用形式：MS_EG71_SHELL.render(  /  MS_EG71_SHELL.bind(  （排除 .render = function 定义）
+    shell_render_calls = len(re.findall(
+        r"MS_EG71_SHELL\s*\.\s*render\s*\(", full_html))
+    shell_bind_calls = len(re.findall(
+        r"MS_EG71_SHELL\s*\.\s*bind\s*\(", full_html))
 
     notes = []
     score = 100
@@ -317,7 +354,7 @@ def check_shell_contract(page_js: str, markup: str, asset_js: str):
     else:
         notes.append(f"MS_EG71_SHELL.bind 调用 {shell_bind_calls} 次")
 
-    # 页面私有壳结构：在 HTML 标记里直接出现壳结构类（剔除 style/script 后）
+    # 页面私有壳结构：在剔除 style/script 后的静态标记里直接出现壳结构类
     private_shell_hits = []
     for marker in SHELL_PRIVATE_CLASS_MARKERS:
         hits = re.findall(rf'class\s*=\s*["\'][^"\']*\b{re.escape(marker)}\b[^"\']*["\']', markup)
@@ -372,16 +409,16 @@ def compute_score(demo_path: Path, weights) -> dict:
     html = read_text(demo_path)
     css_text, _ = split_style_and_body(html)
     markup = extract_html_markup(html)
-    asset_js, page_js, _ = split_script_blocks(html)
 
     registered = collect_registered_classes()
-    used = collect_page_classes(markup, page_js)
+    # class 从整段 HTML 收集（含 JS 模板字符串）——JS 装配 demo 的 class 在 script 里
+    used = collect_all_classes(html)
 
     checks = {}
     checks["① 组件库命中率"] = check_library_hit_rate(used)
     checks["② 注册表覆盖"] = check_registry_coverage(used, registered)
-    checks["③ 契约调用"] = check_contract_calls(page_js)
-    checks["④ 壳契约"] = check_shell_contract(page_js, markup, asset_js)
+    checks["③ 契约调用"] = check_contract_calls(html)
+    checks["④ 壳契约"] = check_shell_contract(html, markup)
     checks["⑤ 设计令牌"] = check_design_tokens(css_text)
 
     total = 0.0

@@ -1,0 +1,65 @@
+{
+  "demo": "F:\\AI_project\\feishu_UI_3\\Feishu-competition-main\\05_release\\REQ-016\\demo.html",
+  "component_score": 84,
+  "weights": [
+    20,
+    20,
+    25,
+    15,
+    20
+  ],
+  "checks": [
+    {
+      "rule": "① 组件库命中率",
+      "weight": 20,
+      "score": 98,
+      "summary": "98 分（权重 20%）",
+      "detail": [
+        "检测到组件库类 519 个 / 全部类 530 个，命中率 98%",
+        "自造类 11 个：cr, cur, false, fileType, last, on, page, tab, tool, val, version"
+      ]
+    },
+    {
+      "rule": "② 注册表覆盖",
+      "weight": 20,
+      "score": 100,
+      "summary": "100 分（权重 20%）",
+      "detail": [
+        "使用的组件类 519 个，其中 519 个在组件资产中注册（覆盖率 100%）",
+        "全部组件类均已注册"
+      ]
+    },
+    {
+      "rule": "③ 契约调用",
+      "weight": 25,
+      "score": 70,
+      "summary": "70 分（权重 25%）",
+      "detail": [
+        "按注册表契约调用 render 共 33 处（MS_BIZ_INDEX=2，B[]=31）",
+        "疑似手写组件级函数 8 个（已排除注册表指向）：closeAllPopups, openModal, closeModal, editDrawerHtml, eg71ModalVariant, eg71ModalBody, bindEg71Modal, onModalOk"
+      ]
+    },
+    {
+      "rule": "④ 壳契约",
+      "weight": 15,
+      "score": 100,
+      "summary": "100 分（权重 15%）",
+      "detail": [
+        "检测到统一壳 MS_EG71_SHELL 定义",
+        "MS_EG71_SHELL.render 调用 1 次",
+        "MS_EG71_SHELL.bind 调用 1 次"
+      ]
+    },
+    {
+      "rule": "⑤ 设计令牌",
+      "weight": 20,
+      "score": 62,
+      "summary": "62 分（权重 20%）",
+      "detail": [
+        "var(--*) 令牌引用 1508 处；裸值 689 处（hex 37 / rgb 0 / px 652）",
+        "令牌占比 69%",
+        "裸值偏多，建议改用 var(--*) 令牌"
+      ]
+    }
+  ]
+}

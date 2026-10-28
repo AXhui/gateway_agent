@@ -1,0 +1,65 @@
+{
+  "demo": "F:\\AI_project\\feishu_UI_3\\Feishu-competition-main\\05_release\\REQ-014\\demo.html",
+  "component_score": 80,
+  "weights": [
+    20,
+    20,
+    25,
+    15,
+    20
+  ],
+  "checks": [
+    {
+      "rule": "① 组件库命中率",
+      "weight": 20,
+      "score": 93,
+      "summary": "93 分（权重 20%）",
+      "detail": [
+        "检测到组件库类 313 个 / 全部类 336 个，命中率 93%",
+        "自造类 23 个：cr, on, req013-bubble, req013-bubble-row, req013-bubble-text, req013-caret, req013-dev, req013-drawer, req013-foot, req013-head, req013-hover, req013-kicker …"
+      ]
+    },
+    {
+      "rule": "② 注册表覆盖",
+      "weight": 20,
+      "score": 98,
+      "summary": "98 分（权重 20%）",
+      "detail": [
+        "使用的组件类 313 个，其中 310 个在组件资产中注册（覆盖率 99%）",
+        "未注册类 3 个：ms-page-head, ms-tag--green, ms-tag--red"
+      ]
+    },
+    {
+      "rule": "③ 契约调用",
+      "weight": 25,
+      "score": 55,
+      "summary": "55 分（权重 25%）",
+      "detail": [
+        "按注册表契约调用 render 共 9 处（MS_BIZ_INDEX=1，B[]=8）",
+        "疑似手写组件级函数 8 个（已排除注册表指向）：closeAllPopups, openModal, closeModal, eg71ModalVariant, eg71ModalBody, bindEg71Modal, addDrawerHtml, editDrawerHtml"
+      ]
+    },
+    {
+      "rule": "④ 壳契约",
+      "weight": 15,
+      "score": 100,
+      "summary": "100 分（权重 15%）",
+      "detail": [
+        "检测到统一壳 MS_EG71_SHELL 定义",
+        "MS_EG71_SHELL.render 调用 2 次",
+        "MS_EG71_SHELL.bind 调用 2 次"
+      ]
+    },
+    {
+      "rule": "⑤ 设计令牌",
+      "weight": 20,
+      "score": 63,
+      "summary": "63 分（权重 20%）",
+      "detail": [
+        "var(--*) 令牌引用 1151 处；裸值 522 处（hex 36 / rgb 0 / px 486）",
+        "令牌占比 69%",
+        "裸值偏多，建议改用 var(--*) 令牌"
+      ]
+    }
+  ]
+}
