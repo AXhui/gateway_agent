@@ -28,6 +28,19 @@ import urllib.error
 
 ALLOWED_CATEGORIES = {"", "云平台", "CCTV", "CV", "网关", "路由器", "uink"}
 
+
+def clean_prompt(text: str) -> str:
+    """清洗提示词：剥掉 AI 写 prompt.md 时加的 markdown 标题行（如 '# REQ-020 用户原始输入'）
+    和首尾空行，只保留用户真正的原始提示词正文。"""
+    if not text:
+        return text
+    lines = [ln for ln in text.splitlines() if not ln.lstrip().startswith("#")]
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
+
 # 默认内置团队 Webhook 配置（所有同事 clone 下来就能用）
 DEFAULT_WEBHOOK_URL = "https://milesight.feishu.cn/base/workflow/webhook/event/ShLZa9qoWwcCBihQSjccAlV5nEd"
 DEFAULT_WEBHOOK_TOKEN = "Uq7RWQID5Ht8mpGjvJg5ESG7"
@@ -197,7 +210,7 @@ def main():
         "来源": args.source,
         "状态": args.status,
         "记录类型": args.action_type,
-        "提示词": args.prompt,
+        "提示词": clean_prompt(args.prompt),
         "生成耗时(分钟)": args.duration,
         "需求编号": args.req_id,
         "结构还原度": structure,
