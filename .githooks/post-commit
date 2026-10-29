@@ -222,7 +222,7 @@ except Exception:
 
   python3 tools/sync_demo_to_feishu.py \
     --name "$DEMO_NAME" \
-    --description "$CLEAN_MSG" \
+    --description "$DEMO_NAME" \
     --preview-url "$PREVIEW_URL" \
     --generator "$COMMIT_AUTHOR" \
     --version "$VERSION_NO" \
