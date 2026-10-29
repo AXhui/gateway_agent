@@ -42,7 +42,14 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
   [ -z "$DEMO_PATH" ] && continue
 
   REQ_ID=$(echo "$DEMO_PATH" | sed -n 's|^05_release/\(REQ-[^/]*\)/demo\.html$|\1|p')
-  DEMO_NAME="${REQ_ID:+$REQ_ID · }${COMMIT_MSG}"
+  # 清洗 commit message：剥掉 conventional commit 前缀（feat:/fix:/feat(scope): 等）
+  # 和重复的 REQ-XXX 编号，只留干净的功能描述
+  CLEAN_MSG=$(echo "$COMMIT_MSG" | sed -E \
+    -e 's/^(feat|fix|docs|chore|refactor|style|test|build|ci|perf)(\([^)]*\))?:[[:space:]]*//' \
+    -e 's/^生成[[:space:]]*REQ-[0-9]+[[:space:]]*//' \
+    -e "s/^${REQ_ID}[[:space:]]*//" \
+    -e 's/^[[:space:]]+//;s/[[:space:]]+$//')
+  DEMO_NAME="${REQ_ID:+$REQ_ID · }${CLEAN_MSG}"
 
   # 读取用户本次的原始提示词（AI 按 AGENTS.md 规则写入同目录 prompt.md）；没有则留空
   DEMO_DIR=$(dirname "$DEMO_PATH")
@@ -215,7 +222,7 @@ except Exception:
 
   python3 tools/sync_demo_to_feishu.py \
     --name "$DEMO_NAME" \
-    --description "$COMMIT_MSG" \
+    --description "$CLEAN_MSG" \
     --preview-url "$PREVIEW_URL" \
     --generator "$COMMIT_AUTHOR" \
     --version "$VERSION_NO" \
