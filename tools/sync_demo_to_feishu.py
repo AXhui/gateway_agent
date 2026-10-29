@@ -212,7 +212,7 @@ def main():
         "记录类型": args.action_type,
         "提示词": clean_prompt(args.prompt),
         "生成耗时(分钟)": args.duration,
-        "REQ编号": args.req_id,
+        "需求编号": args.req_id,
         "结构还原度": structure,
         "组件类型还原度": component,
         "交互逻辑还原度": interaction,
