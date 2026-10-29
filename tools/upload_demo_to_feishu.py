@@ -163,6 +163,45 @@ def main():
     except Exception:
         pass
 
+    # 5. 追加记录到 figma-html-list.json（Figma 插件读取的清单），并 push 到 GitHub
+    try:
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        list_path = os.path.join(repo_root, "figma-html-list.json")
+        if os.path.isfile(list_path):
+            with open(list_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        else:
+            manifest = []
+        # 同一 req_id 旧版本去重，保留最新
+        manifest = [item for item in manifest if item.get("req_id") != args.req_id]
+        manifest.append({
+            "req_id": args.req_id,
+            "file_name": file_name,
+            "file_token": file_token,
+            "url": file_url,
+            "version": args.version,
+            "upload_time": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+        })
+        # 按上传时间倒序
+        manifest.sort(key=lambda x: x.get("upload_time", ""), reverse=True)
+        with open(list_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+        # git add + commit + push
+        git = r"C:\Program Files\Git\cmd\git.exe"
+        for cmd in (
+            [git, "add", "figma-html-list.json"],
+            [git, "commit", "-m", f"chore: 更新 Figma HTML 清单 {args.req_id}_v{args.version}"],
+            [git, "push", "origin", "master"],
+        ):
+            r = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True,
+                               timeout=60, encoding="utf-8", errors="replace")
+            if r.returncode != 0:
+                print(f"[upload] 警告：git {' '.join(cmd[1:3])} 失败: {(r.stderr or r.stdout)[:200]}", file=sys.stderr)
+                break
+    except Exception as e:
+        print(f"[upload] 警告：写 figma-html-list.json 失败: {e}", file=sys.stderr)
+
     print(f"[upload] 成功：{file_url}", file=sys.stderr)
     # 输出 URL 到 stdout（供 post-commit 捕获）
     print(file_url)
