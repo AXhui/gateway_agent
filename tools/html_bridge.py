@@ -22,7 +22,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
-GITHUB_RAW_LIST = "https://raw.githubusercontent.com/AXhui/gateway_agent/main/figma-html-list.json"
+GITHUB_RAW_LIST = "https://raw.githubusercontent.com/AXhui/gateway_agent/master/figma-html-list.json"
 PORT = 7777
 
 
