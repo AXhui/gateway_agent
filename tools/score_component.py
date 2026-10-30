@@ -435,11 +435,16 @@ def compute_score(demo_path: Path, weights) -> dict:
         })
 
     final_score = round(total / 100)
+    # 页面用到的组件库类（bc-*/ms-*），供 sync 脚本关联到组件质量表
+    component_classes = sorted(c for c in used if c.startswith(("bc-", "ms-")))
     return {
         "demo": str(demo_path),
         "component_score": final_score,
         "weights": weights,
         "checks": detail,
+        "used_component_classes": component_classes,
+        "used_class_count": len(used),
+        "registered_class_count": len(registered),
     }
 
 

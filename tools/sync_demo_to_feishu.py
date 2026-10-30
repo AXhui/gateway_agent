@@ -21,9 +21,11 @@
 import argparse
 import json
 import os
+import subprocess
 import sys
 import urllib.request
 import urllib.error
+from pathlib import Path
 
 
 ALLOWED_CATEGORIES = {"", "云平台", "CCTV", "CV", "网关", "路由器", "uink"}
@@ -135,6 +137,11 @@ def main():
     )
     parser.add_argument("--webhook-url", default="", help="飞书 Webhook 地址（覆盖环境变量/默认值）")
     parser.add_argument("--webhook-token", default="", help="飞书 Webhook Token（覆盖环境变量/默认值）")
+    parser.add_argument(
+        "--demo-dir",
+        default="",
+        help="demo 目录路径（如 05_release/REQ-014）；提供后自动跑 score_component.py 分析组件列表并写入「组件清单」字段",
+    )
 
     args = parser.parse_args()
 
@@ -201,6 +208,35 @@ def main():
             )
             sys.exit(2)
 
+    # 自动跑 score_component.py，收集页面用到的组件类列表
+    component_list_text = ""
+    if args.demo_dir:
+        demo_dir = Path(args.demo_dir)
+        demo_html = demo_dir / "demo.html"
+        report_json = demo_dir / "score_component.json"
+        if demo_html.is_file():
+            repo_root = Path(__file__).resolve().parent.parent
+            score_script = repo_root / "tools" / "score_component.py"
+            if score_script.is_file():
+                print(f"[组件分析] 正在跑 score_component.py → {demo_dir.name}")
+                try:
+                    subprocess.run(
+                        [sys.executable, str(score_script), "--demo", str(demo_html), "--report"],
+                        cwd=str(repo_root), check=True, capture_output=True, text=True,
+                    )
+                    if report_json.is_file():
+                        with open(report_json, "r", encoding="utf-8-sig") as f:
+                            report = json.load(f)
+                        comp_classes = report.get("used_component_classes", [])
+                        component_list_text = ", ".join(comp_classes)
+                        # 同时回写 component 分到 quality.json（如果命令行没显式传）
+                        if component is None and report.get("component_score") is not None:
+                            component = report["component_score"]
+                            print(f"[组件分析] component 分自动取为 {component}")
+                        print(f"[组件分析] 检测到 {len(comp_classes)} 个组件类")
+                except Exception as e:
+                    print(f"[组件分析] 失败（不阻塞同步）: {e}", file=sys.stderr)
+
     payload = {
         "Demo 名称": args.name,
         "需求描述": args.description,
@@ -221,6 +257,7 @@ def main():
         "校验状态": check_status,
         "产品分类": category,
         "AI自评": ai_comment,
+        "组件清单": component_list_text,
     }
 
     print(f"[同步中] {args.name} → {webhook_url}")
