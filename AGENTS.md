@@ -114,7 +114,8 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 1. **清单格式**：每个业务形态一行——`形态描述 → B_* 组件 ID + ctx 参数`（例：`删除确认弹窗 → B_Eg71Modal + ctx.action='delete'`）。清单先给用户确认（或落 `04_pages/REQ-###/` 供链路消费），确认后才开写 demo。
 2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
 3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
-4. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
+4. **重复需求重走全链（硬性）**：同一 PRD/需求再次下发——之前交付过 REQ 也一样——按**当前**规则体系当作全新需求重做：重新拉 PRD 正文（文档可能已迭代）、重新出映射清单、重读当前版规则与契约重新装配 + 三角色验收；**旧 demo 不是基线**，其形态须逐条对照当前契约核验，冲突按新规则改并在 validation.md 记修订行；禁止凭记忆沿用旧形态（详见 `.claude/rules/page-assembly.md` §0 第 5 条）。
+4b. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
 
 > 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
 
@@ -224,9 +225,9 @@ EG71 线表格一律左对齐，写死不改：
 - **runtime 落点**：`bc-eg71-toolbar` 现仅表达操作版；搜索版（左搜索 + 右工具的镜像排布）按 [page-assembly.md](.claude/rules/page-assembly.md) §3 铸造 `ctx.layout='search'` 变体入库后再拼装，禁止页面层手搓。
 
 
-## PRD 评论锚定（生成 demo 后，如用户要求发 review 到 PRD）
+## PRD 评论锚定（每次生成 demo 后主动询问）
 
-生成 demo 后，若用户要求把 review 评论发到飞书 PRD 文档，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
+每次生成 demo 后，必须按 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5 做反向评论差异核对，并把核对结论（可发清单 + 不发清单及原因）展示给用户、**主动询问是否需要评论**（2026-10-30 用户裁定：每次必问，零逻辑漏洞候选也要确认，不得静默跳过）。用户确认发送后，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
 
 **评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md + 台账；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
 
