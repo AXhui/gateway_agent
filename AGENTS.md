@@ -115,6 +115,7 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
 3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
 4. **重复需求重走全链（硬性）**：同一 PRD/需求再次下发——之前交付过 REQ 也一样——按**当前**规则体系当作全新需求重做：重新拉 PRD 正文（文档可能已迭代）、重新出映射清单、重读当前版规则与契约重新装配 + 三角色验收；**旧 demo 不是基线**，其形态须逐条对照当前契约核验，冲突按新规则改并在 validation.md 记修订行；禁止凭记忆沿用旧形态（详见 `.claude/rules/page-assembly.md` §0 第 5 条）。
+5. **动词闭环全局扫描（硬性）**：PRD 全文扫描操作动词（添加 / 编辑 / 删除 / 导入 / 导出 / 启停 / 搜索 / 下发 / 同步…），**只要提到，整条闭环链必须落地**（入口→操作→反馈→结果态→边界）；PRD 只写一步也补全整链，只渲染字面一步 = B 类断链退回（详见 `.claude/rules/interaction-completeness.md` §1.4）。
 4b. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
 
 > 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
