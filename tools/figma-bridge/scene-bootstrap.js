@@ -233,10 +233,31 @@ const BOOTSTRAP = `(function(){
       }
     }
     var tag=(el.tagName||'').toLowerCase();
+    // 同源链接标记（仅 ext 模式注入 __MS_LINKMARK__ 后生效）：标记 <a> 自身与锚内叶子
+    // （img/svg），供插件挂原型连线 ON_CLICK → 对应页帧；跨源/自跳转不标
+    function linkMark(node){
+      if(!window.__MS_LINKMARK__)return undefined;
+      var a=null;
+      try{a=(tag==='a'&&el.getAttribute('href'))?el:(el.closest?el.closest('a[href]'):null)}catch(e){}
+      if(!a)return undefined;
+      try{
+        var u=new URL(a.getAttribute('href'),location.href);
+        // 本地多文件场景（zip 解包/本地批量）：链接按 file: 解析 → 取文件名做连线键（build-scene 同规则记 cell.u）
+        if(u.protocol==='file:'||u.origin==='null'){
+          var bn=u.pathname.split('/').pop();
+          return bn&&bn!==location.pathname.split('/').pop()?bn:undefined;
+        }
+        if(u.origin!==location.origin)return undefined;
+        if(u.pathname===location.pathname&&u.search===location.search)return undefined;
+        var pk=u.pathname+(u.search||'');
+        return pk.replace(/\\/(index|default)\\.html?(?=\\?|$)/i,'/');
+      }catch(e2){return undefined}
+    }
     if(tag==='svg'){
       var cl=el.cloneNode(true);
       cl.setAttribute('width',Math.max(1,Math.round(w)));cl.setAttribute('height',Math.max(1,Math.round(h)));
       var n={t:'s',svg:cl.outerHTML,x:x,y:y,w:w,h:h,o:isNaN(parseFloat(cs.opacity))?1:parseFloat(cs.opacity),n:(el.getAttribute('class')||'').slice(0,40)||undefined};
+      var slk=linkMark(n);if(slk)n.lk=slk;
       if(rot)n.rot=rot;
       if(path!==undefined)n.p=path;
       var icn=iconName(el);
@@ -277,6 +298,7 @@ const BOOTSTRAP = `(function(){
       else{try{src=el.toDataURL('image/png')}catch(e2){return null}}
       if(!src||/^\\s*$/.test(src))return null;
       var nimg={t:'img',src:src,x:x,y:y,w:w,h:h,o:isNaN(parseFloat(cs.opacity))?1:parseFloat(cs.opacity),r:radii(cs,w,h),fit:(cs.objectFit||'fill')};
+      var ilk=linkMark(nimg);if(ilk)nimg.lk=ilk;
       if(rot)nimg.rot=rot;
       if(path!==undefined)nimg.p=path;
       var imgCls=(typeof el.className==='string'?el.className:'').trim();
@@ -292,6 +314,9 @@ const BOOTSTRAP = `(function(){
     if(rot)node.rot=rot;
     if(path!==undefined)node.p=path;
     var cls=(typeof el.className==='string'?el.className:'').trim();if(cls)node.n=cls.slice(0,80);
+    var alk=linkMark(node);if(alk)node.lk=alk;
+    // fixed/sticky 吸顶元素标记：插件侧提升为页面帧直接子节点（不被 overflow 滚走）
+    if(cs.position==='fixed'||cs.position==='sticky')node.fix=1;
     var bgL=bgLayers(cs,(cs.backgroundSize||'').split(',')[0]||'');
     if(bgL.length){if(bgL.length>4)bgL=bgL.slice(0,4);node.bg=bgL;window.__bgCount=(window.__bgCount||0)+bgL.length;}
     var txt='';for(var i=0;i<el.childNodes.length;i++){var cn=el.childNodes[i];if(cn.nodeType===3)txt+=cn.data}
@@ -309,6 +334,8 @@ const BOOTSTRAP = `(function(){
       var ty=0,th=lh,trInfo=null;
       try{var rg=document.createRange();rg.selectNodeContents(el);var tr=rg.getBoundingClientRect();if(tr.height>0){ty=tr.top-rect.top;th=tr.height;trInfo={tx:tr.left-rect.left,ty:tr.top-rect.top,w:tr.width}}}catch(e){}
       var tn={t:'t',text:txt,fs:fs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(lh,fs),ls:px(cs.letterSpacing)||0,col:col.c,al:al,x:0,y:ty,w:w,h:th,o:1};
+      var ffam=(cs.fontFamily||'').split(',')[0].replace(/["']/g,'').trim();
+      if(ffam)tn.ff=ffam.slice(0,40);
       if(col.a>=1){var ttk=tokOf(col.c,'text');if(ttk)tn.tk=ttk}
       if(cs.fontStyle==='italic'||cs.fontStyle==='oblique')tn.it=1;
       if(cs.textOverflow==='ellipsis'&&cs.overflowX!=='visible'&&cs.whiteSpace==='nowrap')tn.tr=1;

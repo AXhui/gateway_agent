@@ -39,17 +39,28 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
    - **① 选择 HTML**：下拉选要转换的 demo（扫描 `05_release/` / `output/` / 桌面，按修改时间排序）；或**把 .html 文件直接拖进面板任意位置**；或在链接框**粘贴 http(s) 链接 / 本地绝对路径**后点「导入链接」（面板空白处粘贴链接会自动填入）。三种入口点后都走「生成 scene.json 并导入」。**入口模式差异（2026-10-30 用户裁定：复制的网页链接不走本地组件）**：粘贴的 http(s) 链接一律按**外部网页模式**导入（serve.py 传 `--ext` → scene.ext）——纯图层转录，跳过本地组件库匹配、组件化、图标库映射、颜色令牌绑定，也不拉库目录，完成通知报「外部网页 · 纯图层（不走本地组件库）」；本地路径（下拉/绝对路径）与拖拽文件仍是自家 demo，组件体系照常全套。**链接多页转录**：链接导入自动发现入口页里的同源页面（导航区链接优先、去重、上限 8，`--pages` 可调），逐页抓取转录，一次落「1. 入口 + 2..N 子页」多帧（帧名取链接文字）；相对 CSS/图片按原始域名解析（补 `<base>`）。仅覆盖带真实 href 的页面，纯 JS 路由与登录后的页面不自动发现。
    - **PRO 对标四件套（2026-10-30，免费补齐 html.to.design Pro plan 卖点）**：
      - **批量导入（bulk imports）**：链接框多行/逗号分隔粘贴多个 http(s) 链接（面板空白处多链接粘贴同样识别）→ 一次批量抓取转录，显式清单优先于自动发现（不 crawl），上限 20 个。
-     - **多视口（multi-viewport）**：链接框下方「多视口 1440+390」勾选后，入口页按桌面+移动两个真实视口各出一帧（帧名带 `·390px`，移动端是真实重排布局，非缩放）。
+     - **多视口（multi-viewport）**：链接框下方「多视口」下拉（桌面+手机 1440+390 / 桌面+平板+手机 1440+768+390），入口页按各真实视口各出一帧（帧名带 `·390px`，移动端是真实重排布局，非缩放）。
      - **一键重导（re-import）**：每次导入（下拉/路径/链接/批量）自动记入「最近导入」历史（`figma.clientStorage` 持久化，跨会话保留，上限 12 条），点击历史行即原参数重跑；拖拽全文无持久负载不进历史。
      - **高清图（high-res images）**：图片转录取 `srcset` 最大 w/x 候选（含 `<picture><source>`，替代浏览器按视口选的小图）；懒加载占位图（data:/pixel/placeholder）自动回退 `data-src` 真实源。
+   - **Free 层核心全量（2026-10-30，对标 html.to.design free-features）**：
+     - **浏览器捕获（browser capture）**：面板「浏览器捕获」区有一个 📌 书签按钮——**拖到 Chrome 收藏夹栏**，在任意目标页面（登录后内网/本地页/需交互 JS 页）点一下，渲染后的 DOM 全文直传 serve.py（`{capture}` 分支，走 `--ext --site`）——curl 抓不到的页面全走这里；捕获后回面板点「导入当前 scene.json」。
+     - **暗色/亮色双主题（dark & light themes）**：链接/捕获/粘贴代码导入可勾「暗色补帧」，入口页按暗色约定（head 前置 localStorage 主题键 + `.dark`/`data-theme` class）补渲染一帧（帧名 `·暗色`）。**尽力转换**：站点需自带暗色约定，无暗色 CSS 则与亮色同貌。
+     - **本地色样式（use local styles）**：外部网页导入时，重复 ≥3 次的不透明实色自动建本地 paint style（名称 = `#HEX`，上限 30 色）并回绑到所有节点——改一处样式全局换色。自家 ms-* demo 不走此路（实色一律绑库 Color Token 变量，契约不变）。
+     - **字体映射（replace missing fonts）**：文本按页面真实 font-family 首族映射（系统栈→PingFang SC、Arial/Helvetica/Inter/Roboto/Georgia/Times/Menlo 等直用；表外字体名原样尝试加载），整族加载失败自动回退默认家族，不再全部拍平成一种字体。
+     - **代码转换（convert your own code）**：高级区「粘贴代码」把 HTML/CSS 片段直接转图层（`mode:'ext'` 纯图层转录；相对资源可在代码头写 `<base href=...>`）。
+     - **.zip 整站包上传**：拖入/浏览选 .zip → 解包 `~/Desktop/_drops/zip-<ts>/`（防穿越/防炸弹：≤200 文件、≤100MB）→ 入口取最浅 index.html，其余 .html 批量转录多帧；解包目录以 `file://` base 渲染，包内相对 CSS/图片天然可用。
+     - **自动原型连线（automatic linking）**：多页转录时每帧记录来源 URL（cell.u），页面内同源 `<a>` 链接（含 zip 包内页间跳转，键=文件名）自动挂 ON_CLICK → 对应页帧——导入即得可点击站点原型。
+     - **滚动支持（overflow scroll）**：裁切且内容超高 >40px 的容器自动设 `overflowDirection: VERTICAL`（Figma 原型里可滚）；position:fixed/sticky 吸顶元素提升为帧直接子节点（`吸顶 N` 计数进完成通知）。
+     - **多语言导入（multilingual）**：用批量导入贴多语言 URL（`/zh/` `/en/` 各站约定不同，显式清单比自动猜测可靠）等价实现。
    - **② 组件匹配（全自动，面板无此区块）**：库匹配零手动步骤、无可选项，面板不再设独立「组件库」区块（2026-10-30 用户指令：没有选择就隐藏），状态收进面板下方状态卡的「库」一行；导入按 HTML 内容自动匹配团队库组件，命中即按组件 key 直接加载成库实例，无权限/未启用自动回退本地重绘。匹配三层（引用优先，不自己生产）：**快路径** component-keys.json / icon-keys.json 映射（含变体 token 与复合块守卫）；**库目录动态找回**（2026-10-29）——key 失效（库重发布 key 轮换）按家族名从 `getTeamLibraryAsync` 库目录找回现 key 重试，未入映射表的原子 `ms-*` 控件按类名词干匹配目录组件名就地实例化（复合容器仍本地编排）；最后才回退重绘。**跨导入复用**：重复块 def 同名同尺寸即引用本文件既有组件（多页面重复不再每次新建组件）。建议在 Figma 资源库面板启用 Milesight_IOT_Web 与（新版本）网关/路由器 通用业务组件库两份库——启用后组件集（Button/Input/Select 等）稳定落成库实例；完成通知里的「库目录动态命中」「复用既有」即两层兜底统计，「库导入失败数」为最终回退（库实例 0 = 异常，查 key / 库订阅 / 库目录）
 3. 高级：终端手动 `node build-scene.js <demo.html>` 生成后面板直接「导入当前 scene.json」，或粘贴 scene.json 全文导入
 
-> HTML 允许范围（serve.py `/api/build`）：`{path}` 仅接受白名单根（仓库 `05_release/`、`output/`、`~/Desktop`）内的 HTML；**拖拽文件**与**链接导入**的内容存 `~/Desktop/_drops/` 再构建（不参与下拉列表扫描）；链接仅 http(s)，单文件上限 20MB。
+> HTML 允许范围（serve.py `/api/build`）：`{path}` 仅接受白名单根（仓库 `05_release/`、`output/`、`~/Desktop`）内的 HTML；**拖拽文件**与**链接导入**的内容存 `~/Desktop/_drops/` 再构建（不参与下拉列表扫描）；链接仅 http(s)，单文件上限 20MB；`{capture}` 浏览器书签捕获同上限；`{zip_b64}` 整站包解包后转录。
 
 ## 约束（v1）
 
 - 覆盖：实色填充 / 圆角 / box-shadow（外+内）/ 边框（合成等宽填充条）/ opacity / overflow 裁切 / 文本（字号/字重/行高/字距/颜色/对齐，取真实行盒 y）/ 内联 SVG（矢量）/ **库图标（Milesight_IOT_Web 团队库实例，需 Figma 账号可访问该团队库）**
-- 不覆盖：渐变、背景图、伪元素、img/canvas；字体统一映射 **PingFang SC**（与组件库 tokens.css `--font-family` 对齐；PingFang 无 Bold，700+ 退化 Semibold）——Figma 桌面端首次需在 设置 里允许「字体读取权限」，取不到时自动退 Inter Regular（可在 code.js 顶部 FONT_FAMILY 改）
+- 字体：默认 PingFang SC（与组件库 tokens.css `--font-family` 对齐；PingFang 无 Bold，700+ 退化 Semibold）；外部网页按页面真实 font-family 映射（见 free 层字体映射）——Figma 桌面端首次需在 设置 里允许「字体读取权限」，取不到时自动退 Inter Regular
+- 暗色补帧为尽力转换：依赖站点自带 `.dark`/`data-theme`/localStorage 主题约定，无暗色 CSS 的站点出帧与亮色同貌（帧仍会生成并标注 `·暗色`）
 - 只用于自家 demo 页（CSS 子集已知）；任意网页不在目标内
 - serve.py 以 `~/Desktop` 为根开 CORS、`/api/build` 仅接受白名单根（`05_release/` `output/` `~/Desktop`）内的 HTML——导入间隙仍建议关掉，避免本机文件被网页跨域读取

@@ -96,6 +96,9 @@
   summary{font-size:11px;color:var(--dim);cursor:pointer;padding:4px 0;user-select:none}
   summary:hover{color:var(--sub)}
   details .dgrid{display:flex;flex-direction:column;gap:7px;margin:6px 0 4px}
+  .capbtn{display:block;text-align:center;padding:8px 0;font-size:11.5px;font-weight:600;
+    background:var(--acc-dim);color:#fff;border-radius:8px;cursor:grab}
+  .capbtn:hover{background:var(--acc)}
   textarea{width:100%;height:60px;font-size:10px;font-family:ui-monospace,Menlo,monospace;
     border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--card2);color:var(--txt);outline:none}
 
@@ -122,14 +125,26 @@
     <textarea id="urlIn" rows="1" placeholder="粘贴 http 链接（可多行/逗号分隔批量）或本地绝对路径" spellcheck="false"></textarea>
     <button id="urlBtn" class="mini">导入链接</button>
   </div>
-  <div class="row" style="margin-top:-2px">
-    <label class="vpchk"><input type="checkbox" id="vpChk">多视口 1440+390（链接导入出桌面+移动两帧）</label>
+  <div class="row" style="margin-top:-2px;align-items:center">
+    <select id="vpSel" style="flex:none;width:auto">
+      <option value="">单视口 1440</option>
+      <option value="1440,390">多视口 · 桌面+手机</option>
+      <option value="1440,768,390">多视口 · 桌面+平板+手机</option>
+    </select>
+    <label class="vpchk"><input type="checkbox" id="dkChk">暗色补帧（尽力转换）</label>
   </div>
   <div class="dropbox" id="dropbox">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-    <b>拖入 .html 文件</b><span>或</span><button id="browseBtn" class="link">浏览…</button>
-    <input id="fileIn" type="file" accept=".html,.htm" hidden>
+    <b>拖入 .html / .zip 文件</b><span>或</span><button id="browseBtn" class="link">浏览…</button>
+    <input id="fileIn" type="file" accept=".html,.htm,.zip" hidden>
   </div>
+  <details>
+    <summary>浏览器捕获（登录页 / 本地页 / 需交互页面）</summary>
+    <div class="dgrid">
+      <div style="font-size:10.5px;color:var(--dim);line-height:1.5">把下面的按钮<b style="color:var(--sub)">拖到 Chrome 收藏夹栏</b>，在目标页面点一下——捕获的是你眼前渲染后的页面（含登录态，curl 够不着的都走这里）。回本面板点「导入当前 scene.json」。</div>
+      <a class="capbtn" href="javascript:(function(){var h='<!DOCTYPE html>'+document.documentElement.outerHTML;fetch('http://127.0.0.1:8124/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({capture:1,url:location.href,name:document.title||'capture',content:h})}).then(function(r){return r.json()}).then(function(j){alert(j.ok?'✅ 已捕获并发送，回 Figma 面板点「导入当前 scene.json」':'❌ '+(j.error||(j.log||[]).join(' ')))}).catch(function(e){alert('❌ 发送失败：'+e+'（确认终端已跑 serve.py）')})})();">📌 捕获此页 → Figma（拖到收藏夹栏）</a>
+    </div>
+  </details>
   <details id="histWrap" style="display:none">
     <summary>最近导入（点击重导）</summary>
     <div class="hlist" id="histList"></div>
@@ -153,11 +168,13 @@
   <div id="st"></div>
 
   <details>
-    <summary>高级：直接导入 / 粘贴 JSON</summary>
+    <summary>高级：直接导入 / 粘贴 JSON / 粘贴代码</summary>
     <div class="dgrid">
       <button id="importBtn">导入当前 scene.json</button>
       <textarea id="ta" placeholder="或把 scene.json 内容粘贴到这里"></textarea>
       <button id="pasteBtn">导入粘贴的 JSON</button>
+      <textarea id="codeTa" placeholder="或把 HTML/CSS 代码粘贴到这里（纯图层转录，相对资源可在代码头写 &lt;base href=...&gt;）"></textarea>
+      <button id="codeBtn">转换粘贴的代码</button>
     </div>
   </details>
 
@@ -236,6 +253,7 @@ function updateGate(){
   $('urlBtn').disabled = busy;
   $('listBtn').disabled = busy;
   $('browseBtn').disabled = busy;
+  $('codeBtn').disabled = busy;
   document.body.classList.toggle('busy', !!busy);
 }
 
@@ -310,7 +328,7 @@ $('buildBtn').onclick = function(){
   runBuild({path:p}, '生成 scene.json 中');
 };
 
-// 拖拽导入：面板全域为放置区，.html 落地即上传内容走 build
+// 拖拽导入：面板全域为放置区，.html 全文上传走 build；.zip 整站包 base64 上传解包批量转录
 document.addEventListener('dragover', function(e){ e.preventDefault(); $('dropbox').classList.add('on'); });
 document.addEventListener('dragleave', function(){ $('dropbox').classList.remove('on'); });
 document.addEventListener('drop', function(e){
@@ -319,8 +337,8 @@ document.addEventListener('drop', function(e){
   var fs = e.dataTransfer && e.dataTransfer.files;
   if (!fs || !fs.length) return;
   var f = null;
-  for (var i=0;i<fs.length;i++){ if (/\.html?$/i.test(fs[i].name)){ f = fs[i]; break; } }
-  if (!f){ status('只接受 .html 文件（收到 ' + fs[0].name + '）', 'err'); return; }
+  for (var i=0;i<fs.length;i++){ if (/\.(html?|zip)$/i.test(fs[i].name)){ f = fs[i]; break; } }
+  if (!f){ status('只接受 .html / .zip 文件（收到 ' + fs[0].name + '）', 'err'); return; }
   importFile(f);
 });
 
@@ -332,29 +350,38 @@ $('fileIn').onchange = function(){
   this.value = '';
 };
 function importFile(f){
+  if (/\.zip$/i.test(f.name)){
+    var rd = new FileReader();
+    rd.onload = function(){ runBuild({name:f.name, zip_b64:String(rd.result).split(',')[1] || ''}, '解包导入 ' + f.name); };
+    rd.onerror = function(){ status('zip 读取失败', 'err'); };
+    rd.readAsDataURL(f);
+    return;
+  }
   f.text().then(function(txt){
     runBuild({name:f.name, content:txt}, '导入 ' + f.name);
   }, function(err){ status('文件读取失败：' + err.message, 'err'); });
 }
 
 // 链接导入：http(s) 由 serve.py 下载后构建；本地绝对路径仍走白名单。
-// 多个 http(s)（空格/逗号/换行分隔）→ {urls} 批量导入（PRO bulk imports）；勾选多视口 → {viewports}
+// 多个 http(s)（空格/逗号/换行分隔）→ {urls} 批量导入（PRO bulk imports）；
+// 多视口下拉 → {viewports}；暗色勾选 → {theme:'dark'} 入口页补一帧（free 层 dark & light themes）
 function importLink(){
   var v = ($('urlIn').value || '').trim();
   if (!v){ status('先粘贴链接或路径', 'err'); return; }
   var parts = v.split(/[\s,]+/).filter(Boolean);
-  var vp = $('vpChk').checked ? '1440,390' : '';
+  var vp = $('vpSel').value || '';
+  var dk = $('dkChk').checked;
   if (parts.length > 20){ status('批量上限 20 个链接', 'err'); return; }
   if (parts.length > 1){
     if (!parts.every(function(x){ return /^https?:\/\//i.test(x); })){
       status('批量导入仅支持多个 http(s) 链接（空格/逗号/换行分隔）', 'err'); return;
     }
-    var plm = {urls:parts}; if (vp) plm.viewports = vp;
+    var plm = {urls:parts}; if (vp) plm.viewports = vp; if (dk) plm.theme = 'dark';
     runBuild(plm, '批量抓取 ' + parts.length + ' 个链接');
     return;
   }
   if (/^https?:\/\//i.test(v)){
-    var pl = {url:v}; if (vp) pl.viewports = vp;
+    var pl = {url:v}; if (vp) pl.viewports = vp; if (dk) pl.theme = 'dark';
     runBuild(pl, '抓取链接并生成 scene.json');
   }
   else if (v.charAt(0) === '/') runBuild({path:v}, '按路径生成 scene.json');
@@ -378,7 +405,8 @@ function histLabel(pl){
 }
 function saveHist(){ parent.postMessage({pluginMessage:{type:'history-save', list:hist}}, '*'); }
 function pushHist(pl){
-  if (!pl || (!pl.path && !pl.url && !pl.urls)) return; // 拖拽全文无持久负载，不进历史
+  if (!pl || (!pl.path && !pl.url && !pl.urls)) return; // 拖拽全文/粘贴代码/zip 无持久负载，不进历史
+  if (pl.zip_b64 || pl.content) return; // zip base64 与代码全文不入 clientStorage（体积）
   var key = JSON.stringify(pl);
   hist = hist.filter(function(h){ return JSON.stringify(h.payload) !== key; });
   var d = new Date(), pad = function(x){ return (x < 10 ? '0' : '') + x; };
@@ -435,6 +463,14 @@ $('pasteBtn').onclick = function(){
     if (!j.cells){ status('JSON 无 cells，不是 scene.json', 'err'); return; }
     adoptScene(j); send(scene);
   }catch(e){ status('JSON 解析失败：' + e.message, 'err'); }
+};
+
+// 粘贴 HTML 代码转换（free 层 code editor 对标）：外部代码走 --ext 纯图层转录
+$('codeBtn').onclick = function(){
+  var c = ($('codeTa').value || '').trim();
+  if (!c){ status('先粘贴 HTML 代码', 'err'); return; }
+  if (!/<[a-z!]/i.test(c)){ status('看起来不是 HTML 代码（没找到标签）', 'err'); return; }
+  runBuild({name:'pasted-code.html', content:c, mode:'ext'}, '转换粘贴的代码');
 };
 
 renderCard();

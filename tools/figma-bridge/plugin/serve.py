@@ -2,14 +2,19 @@
 """CORS 静态 + 构建桥服务：给 Figma 插件 ui.html 用。
 - GET  /            静态文件（根 ~/Desktop，含 scene.json）
 - GET  /api/list    扫描 HTML 根（05_release / output / ~/Desktop）返回可选 demo 清单
-- POST /api/build   三种输入统一落 build-scene.js：
+- POST /api/build   输入统一落 build-scene.js：
                      {path}            白名单根内的本地 HTML 路径
                      {name, content}   拖拽进面板的 HTML 全文 → 存 ~/Desktop/_drops/ 再 build
+                                       （mode:'ext' = 粘贴的外部代码 → --ext 纯图层，可带 url 补 base）
                      {url}             粘贴的 http(s) 链接 → 下载到 ~/Desktop/_drops/ 再 build
                      {urls:[...]}      批量链接（PRO bulk imports）→ 逐个下载，位置参数批量转录
+                     {capture, url, content} 浏览器书签捕获：任意页面（登录页/本地页）渲染后 DOM
+                                       全文直传 → --ext --site（free 层 browser capture 对标）
+                     {name, zip_b64}   .zip 整站包 → 解包 _drops/（file:// 相对资源天然可用）→ 批量转录
                      {viewports}       可选 '1440,390' 多视口（仅链接导入转发 build-scene --viewport）
+                     {theme}           可选 'dark' 入口页暗色补帧（--theme dark，尽力转换）
 用法：python3 serve.py [port]   （默认 8124，与 V2 插件面板 127.0.0.1:8124 对齐）"""
-import http.server, socketserver, os, sys, json, subprocess, urllib.request, time, re
+import http.server, socketserver, os, sys, json, subprocess, urllib.request, time, re, base64, zipfile, io
 from urllib.parse import urlparse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8124
@@ -19,6 +24,50 @@ BUILD = os.path.join(REPO, 'tools/figma-bridge/build-scene.js')
 HTML_ROOTS = [os.path.join(REPO, '05_release'), os.path.join(REPO, 'output'), ROOT]
 DROPS = os.path.join(ROOT, '_drops')   # 拖拽/链接导入的暂存目录（在白名单根内，不参与 /api/list 扫描）
 MAX_IN = 20 * 1024 * 1024
+
+
+def extract_zip(b64):
+    """解包上传的 .zip 整站包到 _drops/zip-<ts>/：只收常规资源文件，防路径穿越/炸弹。
+    入口页 = 最浅层 index.html（回退最浅层首个 .html），其余 .html 作批量位置参数。"""
+    try:
+        data = base64.b64decode(b64, validate=False)
+    except Exception as e:
+        return None, None, 'zip base64 解码失败：' + str(e), 400
+    if len(data) > MAX_IN:
+        return None, None, 'zip 超过 20MB 上限', 413
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+    except Exception as e:
+        return None, None, 'zip 打开失败：' + str(e), 400
+    infos = [i for i in zf.infolist() if not i.is_dir()]
+    if len(infos) > 200:
+        return None, None, 'zip 文件数超 200 上限', 413
+    if sum(i.file_size for i in infos) > 100 * 1024 * 1024:
+        return None, None, 'zip 解压总量超 100MB 上限', 413
+    dest = os.path.join(DROPS, 'zip-' + str(int(time.time())))
+    os.makedirs(dest, exist_ok=True)
+    htmls = []
+    for i in infos:
+        name = os.path.basename(i.filename)
+        if not name or '..' in i.filename.split('/'):
+            continue
+        low = name.lower()
+        if not (low.endswith(('.html', '.htm', '.css', '.js', '.json', '.svg', '.png', '.jpg',
+                              '.jpeg', '.gif', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.map'))):
+            continue
+        tgt = os.path.realpath(os.path.join(dest, i.filename))
+        if not (tgt == dest or tgt.startswith(dest + os.sep)):
+            continue
+        os.makedirs(os.path.dirname(tgt), exist_ok=True)
+        with open(tgt, 'wb') as f:
+            f.write(zf.read(i))
+        if low.endswith(('.html', '.htm')):
+            htmls.append(tgt)
+    if not htmls:
+        return None, None, 'zip 内没有 .html 页面', 400
+    idx = [h for h in htmls if os.path.basename(h).lower() in ('index.html', 'index.htm', 'default.html')]
+    entry = min(idx or htmls, key=lambda h: (h.count(os.sep), h))
+    return entry, [h for h in htmls if h != entry][:20], None, None
 
 
 def drop_path(name):
@@ -104,16 +153,40 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             req = json.loads(self.rfile.read(length) or b'{}')
         except ValueError:
             return self.reply_json({'ok': False, 'error': 'JSON 解析失败'}, 400)
-        # 三种输入：content（拖拽文件）/ url·urls（粘贴链接，urls=批量）/ path（白名单本地路径）
+        # 输入分支：capture（书签捕获）/ content（拖拽或粘贴代码）/ url·urls（链接）/ zip / path（白名单）
         p = None
         extra_paths = []   # 批量导入的后续页面 → build-scene 位置参数（显式清单，不做自动发现）
         site_url = None    # 链接导入的入口 URL（--ext --site）
-        if isinstance(req.get('content'), str):
+        ext_mode = False   # 拖拽/粘贴的外部内容强制纯图层（--ext，不带 site）
+        if req.get('capture') and isinstance(req.get('content'), str):
+            # 浏览器书签「捕获此页」：任意页面（登录后/本地/JS 渲染）的渲染后 DOM 全文直传，
+            # 走 --ext --site（base 让外链样式/图片按原域名解析）——curl 够不着的页面从这里进
+            cap_url = str(req.get('url') or '')
+            if cap_url and not cap_url.lower().startswith(('http://', 'https://')):
+                cap_url = ''
+            if len(req['content'].encode('utf-8')) > MAX_IN:
+                return self.reply_json({'ok': False, 'error': '捕获内容超过 20MB 上限'}, 413)
+            os.makedirs(DROPS, exist_ok=True)
+            p = os.path.join(DROPS, 'capture-' + time.strftime('%m%d-%H%M%S') + '.html')
+            with open(p, 'w', encoding='utf-8') as f:
+                f.write(req['content'])
+            site_url = cap_url or None
+        elif req.get('zip_b64'):
+            entry, extras, err, code = extract_zip(req['zip_b64'])
+            if err:
+                return self.reply_json({'ok': False, 'error': err}, code or 400)
+            p, extra_paths, ext_mode = entry, extras, True
+        elif isinstance(req.get('content'), str):
             if len(req['content'].encode('utf-8')) > MAX_IN:
                 return self.reply_json({'ok': False, 'error': '文件超过 20MB 上限'}, 413)
             p = drop_path(req.get('name'))
             with open(p, 'w', encoding='utf-8') as f:
                 f.write(req['content'])
+            if req.get('mode') == 'ext':
+                # 粘贴的外部 HTML 代码（free 层 code editor 对标）：纯图层转录
+                ext_mode = True
+                if str(req.get('url') or '').lower().startswith(('http://', 'https://')):
+                    site_url = str(req['url'])
         elif isinstance(req.get('urls'), list):
             us = [str(u).strip() for u in req['urls'] if str(u).strip()]
             bad = [u for u in us if not u.lower().startswith(('http://', 'https://'))]
@@ -169,15 +242,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # 多视口参数（PRO multi-viewport）：仅链接导入转发；格式 '1440,390'（1-4 个 3-4 位宽数）
         vp = str(req.get('viewports') or '')
         vp_ok = re.fullmatch(r'\d{3,4}(?:,\d{3,4}){0,3}', vp) if vp else None
+        dk = str(req.get('theme') or '').lower() == 'dark'   # 暗色补帧（free 层 dark & light themes 对标）
         try:
             # 链接导入 = 外部网页模式（--ext）：build-scene 纯图层转录，不走本地组件库匹配/组件化/令牌绑定；
             # --site 带原始链接 → 入口页自动发现同源页面（导航优先，上限 8）逐页转录多帧；
-            # urls[] 批量 = 显式位置参数清单（与自动发现互斥）；本地路径/拖拽照常全套
+            # urls[] 批量 = 显式位置参数清单（与自动发现互斥）；本地路径/拖拽照常全套；
+            # 书签捕获/粘贴代码/zip = --ext（前者带 site 补 base）；--theme dark 追加暗色帧
             cmd = ['node', BUILD, p] + extra_paths
             if site_url:
                 cmd += ['--ext', '--site', site_url]
                 if vp_ok:
                     cmd += ['--viewport', vp_ok.group(0)]
+            elif ext_mode:
+                cmd += ['--ext']
+            if (site_url or ext_mode) and dk:
+                cmd += ['--theme', 'dark']
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             tail = [l for l in (r.stdout + r.stderr).strip().splitlines()
                     if l and 'CVDisplayLink' not in l][-6:]

@@ -24,6 +24,12 @@ class FNode {
   resize(w, h) { this._w = w; this._h = h; }
   resizeWithoutConstraints(w, h) { this._w = w; this._h = h; }
   rescale(s) { this._w *= s; this._h *= s; }
+  // 对齐真 API：绝对变换（沿父链累加 x/y，忽略旋转——fix 提升换算用）
+  get absoluteTransform() {
+    let tx = this.x, ty = this.y, p = this.parent;
+    while (p) { tx += p.x; ty += p.y; p = p.parent; }
+    return [[1, 0, tx], [0, 1, ty], [0, 0, 1]];
+  }
   appendChild(ch) {
     if (ch.parent) ch.parent.children = ch.parent.children.filter(c => c !== ch);
     ch.parent = this; this.children.push(ch); return ch;
@@ -209,6 +215,7 @@ const MOCK_LIBS = new Map();
 
 // ---------- mock figma ----------
 const calls = { importKey: [], importSetKey: [], importVarKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0, teamLib: 0, uiPost: [], csGet: [], csSet: [] };
+let PAINT_STYLES = [], styleSeq = 0;
 
 // ---------- 颜色令牌变量注册表（2026-10-30 令牌绑定契约）----------
 // 对齐 Milesight_IOT_Web「Color Token」库变量：scopes 空=全域；值经 valuesByMode 提供，
@@ -253,6 +260,12 @@ const figma = {
     return { libraryName: 'Milesight_Mock', components: of('COMPONENT'), componentSets: of('COMPONENT_SET') };
   },
   loadFontAsync: async f => { calls.fonts.add(f.family + '/' + f.style); },
+  // paint styles（free 层 use local styles 对标）：复刻真 API create/getLocalPaintStylesAsync
+  createPaintStyle: () => {
+    const s = { id: 'style:' + (++styleSeq), type: 'PAINT_STYLE', name: '', paints: [] };
+    PAINT_STYLES.push(s); return s;
+  },
+  getLocalPaintStylesAsync: async () => PAINT_STYLES.slice(),
   importComponentByKeyAsync: async k => {
     calls.importKey.push(k);
     const n = MOCK_LIBS.get(k);
@@ -635,19 +648,30 @@ vm.runInContext(code, sandbox);
 
   // ---- 外部网页模式（2026-10-30 用户裁定：复制的网页链接不走本地组件）----
   // scene.ext=1 → 不拉库目录（getTeamLibraryAsync 不新增）、通知报「外部网页 · 纯图层」而非库/令牌段。
-  // 多 cell = build-scene --ext 三路多帧（--viewport 多视口 / 批量位置参数 / --site 自动发现），cells 纵向堆叠 → 插件每 cell 落一帧
+  // 多 cell = build-scene --ext 三路多帧（--viewport 多视口 / 批量位置参数 / --site 自动发现），cells 纵向堆叠 → 插件每 cell 落一帧。
+  // free 层四能力靶子：cell.u + n.lk 原型连线、clip 高帧 overflow VERTICAL、n.ff 字体映射、重复实色 ≥3 本地色样式
   const teamLibBeforeExt = calls.teamLib;
   const combineBeforeExt = calls.combineAsVariants.length;
-  const extCell = (label, y, text) => ({ label, x: 0, y, w: 800, h: 600,
-    root: { t: 'f', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 800, h: 600, o: 1,
-      ch: [T(text)] } });
+  const BLUE = [0.2, 0.4, 0.8]; // #3366CC —— 重复实色靶子
+  const extCell = (label, y, u, ch) => ({ label, x: 0, y, u, w: 800, h: 600,
+    root: { t: 'f', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 800, h: 600, o: 1, ch } });
   await handler({
     type: 'scene', json: {
       v: 2, name: 'ExtPage', ext: 1,
       cells: [
-        extCell('1. 首页 /', 0, 'Hello Web'),
-        extCell('2. 首页 / ·390px', 664, 'Hello Web Mobile'),
-        extCell('3. 关于 /about', 1328, 'About Page'),
+        extCell('1. 首页 /', 0, '/', [
+          T('Hello Web'),
+          T('Arial Font', { ff: 'Arial, sans-serif', y: 30 }),
+          { t: 'f', n: 'nav-about', f: [{ c: BLUE, a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 60, w: 120, h: 32, o: 1, lk: '/about',
+            ch: [T('About', { col: [1, 1, 1] })] },
+          { t: 'f', n: 'side-blue', f: [{ c: BLUE, a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 640, y: 60, w: 100, h: 200, o: 1 },
+          { t: 'f', n: 'footer-blue', f: [{ c: BLUE, a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 480, w: 800, h: 60, o: 1 },
+          { t: 'f', n: 'tall-clip', f: [{ c: [0.95, 0.95, 0.96], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: true, x: 0, y: 300, w: 300, h: 120, o: 1,
+            ch: [{ t: 'f', n: 'inner-tall', f: [{ c: [0.8, 0.8, 0.85], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 300, h: 500, o: 1 }] },
+          { t: 'f', n: 'sticky-top', f: [{ c: [0.1, 0.1, 0.1], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 550, w: 800, h: 40, o: 1, fix: 1 },
+        ]),
+        extCell('2. 首页 / ·390px', 664, undefined, [T('Hello Web Mobile')]),
+        extCell('3. 关于 /about', 1328, '/about', [T('About Page')]),
       ],
     },
   });
@@ -664,6 +688,33 @@ vm.runInContext(code, sandbox);
     extFrames.map(f => f.name).join(','));
   A('外部网页多帧按 scene 堆叠定位', extFrames[1] && Math.abs(extFrames[1].y - 664) < 1 && extFrames[2] && Math.abs(extFrames[2].y - 1328) < 1,
     'y=' + (extFrames[1] && extFrames[1].y) + ',' + (extFrames[2] && extFrames[2].y));
+
+  // ---- free 层核心能力断言（2026-10-30 free-features 全量对标）----
+  const extFind = (re) => { let o = null; (function w3(n3) { if (o) return; if (re.test(String(n3.name || ''))) { o = n3; return; } (n3.children || []).forEach(w3); })(extBoard || { children: [] }); return o; };
+  // ① automatic linking：nav-about 带 lk:'/about' → ON_CLICK NAVIGATE 到 cell3 帧
+  const navN = extFind(/^nav-about$/);
+  A('自动连线挂 reactions',
+    !!(navN && navN.reactions && navN.reactions.length === 1 && navN.reactions[0].action.destinationId === extFrames[2].id
+      && navN.reactions[0].action.navigation === 'NAVIGATE'),
+    navN && navN.reactions ? JSON.stringify(navN.reactions[0] && navN.reactions[0].action) : 'no reactions');
+  // ② scroll support：tall-clip 裁切且内容 500 > 帧 120+40 → overflowDirection VERTICAL
+  const tallN = extFind(/^tall-clip$/);
+  A('overflow 滚动 VERTICAL', !!(tallN && tallN.overflowDirection === 'VERTICAL'), tallN && tallN.overflowDirection);
+  // ③ replace missing fonts：ff 'Arial, sans-serif' → 首族 Arial 生效
+  const arialN = (function () { let t2 = null; (function w4(n4) { if (t2) return; if (n4.type === 'TEXT' && n4.characters === 'Arial Font') { t2 = n4; return; } (n4.children || []).forEach(w4); })(extBoard || { children: [] }); return t2; })();
+  A('字体映射 Arial 生效', !!(arialN && arialN.fontName && arialN.fontName.family === 'Arial'), arialN && arialN.fontName && arialN.fontName.family);
+  // ④ use local styles：BLUE ×3 → #3366CC paint style 创建并回绑
+  const blueStyle = PAINT_STYLES.find(s => s.name === '#3366CC');
+  A('重复实色建本地色样式', !!blueStyle, 'styles=' + PAINT_STYLES.map(s => s.name).join(','));
+  A('本地色样式回绑节点',
+    !!(blueStyle && ((navN && navN.paintStyleId === blueStyle.id) || (extFind(/^side-blue$/) || {}).paintStyleId === blueStyle.id)),
+    'nav=' + (navN && navN.paintStyleId) + ' styleId=' + (blueStyle && blueStyle.id));
+  // ⑤ fixed/sticky 提升：sticky-top 成为 cell 帧直接子节点（不被内层裁走）
+  const stickyN = extFind(/^sticky-top$/);
+  A('吸顶元素提升为 cell 直接子节点',
+    !!(stickyN && stickyN.parent && /1\./.test(String(stickyN.parent.name || ''))),
+    stickyN && stickyN.parent && stickyN.parent.name);
+  A('能力计数进通知', extMsg && /原型连线 1/.test(extMsg) && /滚动 1/.test(extMsg) && /本地色样式/.test(extMsg) && /吸顶 1/.test(extMsg) && /字体映射 1/.test(extMsg), extMsg);
 
   // ---- 历史一键重导（clientStorage 代理：save → get 回环）----
   await handler({ type: 'history-save', list: [{ payload: { url: 'https://a.com' }, label: 'a.com/', time: '10-30 12:00' }] });

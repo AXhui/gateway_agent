@@ -29,8 +29,7 @@ const STYLE_MAP = {
 };
 
 let loadedStyles = new Set();
-// 纯映射（不依赖字体已加载——collectFontStyles 在 loadFontAsync 之前跑，须用本函数）；
-// styleFor 才做「已加载回退」
+// styleFor 在 loadFontAsync 之后跑，做「已加载回退」
 function styleNameFor(fw) {
   return STYLE_MAP[fw] || (fw >= 600 ? 'Semibold' : fw >= 500 ? 'Medium' : fw >= 300 ? 'Light' : 'Regular');
 }
@@ -41,6 +40,28 @@ function styleFor(fw) {
 }
 function fontFamilyFor() {
   return loadedStyles.size ? FONT_FAMILY : 'Inter';
+}
+// 字体映射（free 层 replace missing fonts 对标）：bootstrap 捕获文本首个 font-family（n.ff）→
+// 别名表归到本机可用的 Figma 家族；表外站点字体原样尝试加载，整族加载失败回退默认家族
+const FONT_ALIASES = {
+  '-apple-system': FONT_FAMILY, 'system-ui': FONT_FAMILY, 'blinkmacsystemfont': FONT_FAMILY,
+  'pingfang sc': FONT_FAMILY, 'pingfang': FONT_FAMILY, 'hiragino sans gb': FONT_FAMILY,
+  'microsoft yahei': FONT_FAMILY, 'heiti sc': FONT_FAMILY, 'sans-serif': FONT_FAMILY,
+  'segoe ui': 'Inter', 'sf pro display': 'Inter', 'sf pro text': 'Inter', 'sf pro icons': 'Inter',
+  'helvetica': 'Helvetica', 'helvetica neue': 'Helvetica', 'arial': 'Arial',
+  'inter': 'Inter', 'roboto': 'Roboto', 'robotoflex': 'Roboto',
+  'times new roman': 'Times New Roman', 'times': 'Times New Roman', 'georgia': 'Georgia', 'serif': 'Times New Roman',
+  'menlo': 'Menlo', 'courier new': 'Courier New', 'consolas': 'Menlo', 'monospace': 'Menlo',
+  'verdana': 'Verdana', 'tahoma': 'Tahoma', 'trebuchet ms': 'Verdana'
+};
+let famStyles = {}; // family -> Set(已加载 style)；加载不到的家族不进表 → 文本回退默认家族
+let famHitCount = 0;
+function famOf(ff) {
+  const k = String(ff || '').split(',')[0].toLowerCase().replace(/["']/g, '').trim();
+  if (!k) return null;
+  if (FONT_ALIASES[k]) return FONT_ALIASES[k];
+  if (k.length > 40 || /^(ui-|var\(|-)/.test(k)) return null;
+  return String(ff).split(',')[0].trim().slice(0, 40);
 }
 function solid(c, a) {
   return { type: 'SOLID', color: { r: c[0], g: c[1], b: c[2] }, opacity: a == null ? 1 : a };
@@ -55,11 +76,6 @@ function toEffect(e) {
     visible: true, blendMode: 'NORMAL'
   };
 }
-function collectFontStyles(node, set) {
-  if (node.t === 't') { const s = styleNameFor(node.fw); set.add(s); if (node.it) set.add(s + ' Italic'); }
-  (node.ch || []).forEach(c => collectFontStyles(c, set));
-}
-
 function postStatus(text) {
   try { figma.ui.postMessage({ type: 'status', text }); } catch (e) {}
 }
@@ -71,17 +87,33 @@ function sceneRoots(scene) {
 }
 
 async function ensureFonts(scene) {
-  const set = new Set(['Regular', 'Medium', 'Semibold']);
-  sceneRoots(scene).forEach(r => collectFontStyles(r, set));
+  const need = new Map(); // family -> Set(style)：默认家族保底三档 + 全部文本按映射家族收集
+  const add = (fam, st) => { if (!need.has(fam)) need.set(fam, new Set()); need.get(fam).add(st); };
+  ['Regular', 'Medium', 'Semibold'].forEach(s => add(FONT_FAMILY, s));
+  sceneRoots(scene).forEach(r => (function walk(n) {
+    if (n.t === 't') {
+      const f = famOf(n.ff) || FONT_FAMILY; // 无 ff/映射不出的文本归默认家族
+      const s = styleNameFor(n.fw); add(f, s); if (n.it) add(f, s + ' Italic');
+    }
+    (n.ch || []).forEach(walk);
+  })(r));
   loadedStyles = new Set();
-  for (const style of set) {
+  famStyles = {};
+  for (const style of (need.get(FONT_FAMILY) || [])) {
     try {
       await figma.loadFontAsync({ family: FONT_FAMILY, style });
       loadedStyles.add(style);
     }
     catch (e) { console.warn('font load fail', style, e); }
   }
-  if (!loadedStyles.size) await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+  if (loadedStyles.size) famStyles[FONT_FAMILY] = loadedStyles;
+  else await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+  for (const [fam, sts] of need) {
+    if (fam === FONT_FAMILY) continue;
+    const ok = new Set();
+    for (const st of sts) { try { await figma.loadFontAsync({ family: fam, style: st }); ok.add(st); } catch (e) {} }
+    if (ok.size) famStyles[fam] = ok;
+  }
 }
 
 let ICON_MAP = new Map();
@@ -720,7 +752,13 @@ async function materialize(n, parent) {
   if (n.t === 't') {
     node = figma.createText();
     const st = styleFor(n.fw), stIt = st + ' Italic';
-    node.fontName = { family: fontFamilyFor(), style: (n.it && loadedStyles.has(stIt)) ? stIt : st };
+    const fam = famOf(n.ff);
+    const fs = (fam && famStyles[fam]) || loadedStyles;
+    node.fontName = {
+      family: (fam && famStyles[fam]) ? fam : fontFamilyFor(),
+      style: (n.it && fs.has(stIt)) ? stIt : (fs.has(st) ? st : (fs.has('Regular') ? 'Regular' : st))
+    };
+    if (fam && famStyles[fam] && fam !== FONT_FAMILY) famHitCount++;
     node.characters = n.text;
     node.fontSize = n.fs;
     node.lineHeight = { unit: 'PIXELS', value: Math.max(n.lh, n.fs) };
@@ -770,6 +808,8 @@ async function materialize(n, parent) {
   node.opacity = n.o == null ? 1 : n.o;
   if (n.rot) { try { node.rotation = n.rot; } catch (e) { console.warn('rotation skip', n.n, e); } }
   if (n.rct) RCT_NODES.push({ node, rct: n.rct });
+  if (n.lk) LK_NODES.push({ node, lk: n.lk });
+  if (n.fix) FIX_NODES.push(node);
   parent.appendChild(node);
   if (!skipChildren) for (const c of (n.ch || [])) { await materialize(c, node); }
   if (n.al && (node.type === 'FRAME' || node.type === 'COMPONENT')) applyAutoLayout(node, n.al);
@@ -782,6 +822,9 @@ let DEF_REUSED = new Set(); // 跨导入复用的 def id（引用既有组件，
 let defReuseCount = 0;
 let EXISTING_COMPS = new Map(); // norm(名) → [ComponentNode] 本文件既有组件索引（重复块引用源）
 let RCT_NODES = []; // 原型连线：带 rct 的 scene 节点 → 已落图 figma 节点（所有屏建完后统一挂 reactions）
+let LK_NODES = []; // 外部网页原型连线（free 层 automatic linking 对标）：带 lk（同源链接目标）的节点 → reactions 跳对应页帧
+let FIX_NODES = []; // position:fixed/sticky 节点（吸顶）→ 提升为 cell 帧直接子节点（不被 overflow 滚走）
+let lkCount = 0, scrollCount = 0, extStyleCount = 0, fixLiftCount = 0;
 
 // 跨导入复用索引（2026-10-29 用户指令：多页面重复块引用既有组件，不要一直新建）：
 // 导入前扫全文件组件按名归一建索引；def 同名且尺寸一致（±3px）即引用既有件，不 createComponent
@@ -912,6 +955,7 @@ figma.ui.onmessage = async msg => {
   libDynHitCount = 0; CATALOG_CACHE.clear(); dialogFullPageCount = 0;
   imgFillCount = 0; gradFillCount = 0; alApplyCount = 0;
   rctCount = 0; RCT_NODES = []; cellFrames = [];
+  LK_NODES = []; FIX_NODES = []; lkCount = 0; scrollCount = 0; extStyleCount = 0; fixLiftCount = 0; famHitCount = 0;
   CUR_SCENE = scene; tokBindCount = 0; TOK_BIND_QUEUE.length = 0;
   IMG_CACHE.clear();
   DEF_COMPS = new Map(); DEF_FAMILY = new Map(); DEF_REUSED = new Set(); defReuseCount = 0;
@@ -949,6 +993,25 @@ figma.ui.onmessage = async msg => {
       cellF.appendChild(lab);
       await materialize(c.root, cellF);
       cellF.children.slice(1).forEach(ch => { ch.y += 24; });
+      // fixed/sticky 提升：吸顶元素挪为 cell 帧直接子节点（绝对坐标换算），不被内层 overflow 裁走
+      const lifts = FIX_NODES.splice(0);
+      for (const fn of lifts) {
+        try {
+          const pa = fn.absoluteTransform, fa = cellF.absoluteTransform;
+          cellF.appendChild(fn);
+          fn.x = pa[0][2] - fa[0][2]; fn.y = pa[1][2] - fa[1][2] + 24;
+          fixLiftCount++;
+        } catch (e) { console.warn('fix lift skip', fn.name, e); }
+      }
+      // overflow 滚动（free 层 scroll support 对标）：裁切且内容超高 >40px 的帧 → overflowDirection VERTICAL
+      (function recScroll(f) {
+        if (f.type !== 'FRAME') return;
+        if (f.clipsContent) {
+          let maxB = 0; f.children.forEach(ch => { maxB = Math.max(maxB, ch.y + ch.height); });
+          if (maxB > f.height + 40) { try { f.overflowDirection = 'VERTICAL'; scrollCount++; } catch (e) {} }
+        }
+        f.children.forEach(recScroll);
+      })(cellF);
       maxX = Math.max(maxX, c.x + c.w); maxY = Math.max(maxY, c.y + c.h + 24);
       await yieldUI();
     }
@@ -963,6 +1026,62 @@ figma.ui.onmessage = async msg => {
         reactions.push({ trigger: { type: r.tg || 'ON_CLICK' }, action: { type: 'NODE', destinationId: dest.id, navigation: 'NAVIGATE', transition: null, preserveScrollPosition: false } });
       }
       if (reactions.length) { try { node.reactions = reactions; rctCount += reactions.length; } catch (e) { console.warn('reactions skip', node.name, e); } }
+    }
+    // 外部网页自动连线（free 层 automatic linking 对标）：cell.u 记录了各帧页面 URL 归一键，
+    // 节点 lk（同源 a[href] 目标）命中即挂 ON_CLICK NAVIGATE → 对应页帧，导入即得可点击站点原型
+    if (LK_NODES.length) {
+      const uFrame = new Map();
+      scene.cells.forEach((c, i) => { if (c.u && cellFrames[i]) uFrame.set(c.u, cellFrames[i]); });
+      for (const { node, lk } of LK_NODES) {
+        const dest = uFrame.get(lk);
+        if (!dest || dest.id === node.id) continue;
+        try {
+          node.reactions = (node.reactions || []).concat([{ trigger: { type: 'ON_CLICK' }, action: { type: 'NODE', destinationId: dest.id, navigation: 'NAVIGATE', transition: null } }]);
+          lkCount++;
+        } catch (e) { console.warn('lk skip', node.name, e); }
+      }
+    }
+    // 外部网页本地色板（free 层 use local styles 对标）：重复 ≥3 次的实色建本地 paint style 并回绑
+    //（自家 ms-* demo 不走此路——那边实色一律绑库 Color Token 变量，§4.7 契约不变）
+    if (EXT_SCENE) {
+      try {
+        const hex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+        const counts = new Map();
+        // 计数：仅不透明实色（半透明色保持裸值，与令牌绑定例外口径一致）；
+        // 范围 = 各 cell 帧内容（跳过首行标签——那是导入器自加的序号标签，不是页面内容）
+        const walkFills = (fn) => cellFrames.forEach(cf => cf.children.slice(1).forEach(nd => (function recW(n2) {
+          fn(n2); (n2.children || []).forEach(recW);
+        })(nd)));
+        walkFills(nd => {
+          if (nd.fills && nd.fills !== figma.mixed) {
+            nd.fills.forEach(p => {
+              if (p && p.type === 'SOLID' && p.visible !== false && (p.opacity == null || p.opacity === 1)) {
+                const k = hex(p.color.r, p.color.g, p.color.b);
+                counts.set(k, (counts.get(k) || 0) + 1);
+              }
+            });
+          }
+        });
+        const existing = new Map((await figma.getLocalPaintStylesAsync()).map(s => [s.name, s]));
+        const hot = [...counts.entries()].filter(([, n2]) => n2 >= 3)
+          .sort((a, b) => b[1] - a[1]).slice(0, 30);
+        const styleByKey = new Map();
+        for (const [k] of hot) {
+          const st = existing.get(k) || figma.createPaintStyle();
+          st.name = k;
+          st.paints = [{ type: 'SOLID', color: { r: parseInt(k.slice(1, 3), 16) / 255, g: parseInt(k.slice(3, 5), 16) / 255, b: parseInt(k.slice(5, 7), 16) / 255 } }];
+          styleByKey.set(k, st);
+        }
+        if (styleByKey.size) {
+          walkFills(nd => {
+            if (nd.fills && nd.fills !== figma.mixed && nd.fills.length === 1 && nd.fills[0].type === 'SOLID'
+              && (nd.fills[0].opacity == null || nd.fills[0].opacity === 1)) {
+              const st = styleByKey.get(hex(nd.fills[0].color.r, nd.fills[0].color.g, nd.fills[0].color.b));
+              if (st && nd.paintStyleId !== st.id) { try { nd.paintStyleId = st.id; extStyleCount++; } catch (e) {} }
+            }
+          });
+        }
+      } catch (e) { console.warn('ext local styles skip', e); }
     }
     // 组件定义收进一个画板（设计师习惯：组件库画板分节收纳，不散落长龙）：
     // 按家族分节 → 同家族 ≥2 个 combineAsVariants 合成变体组件集 → 节内网格换行
@@ -1019,7 +1138,7 @@ figma.ui.onmessage = async msg => {
     const libSeg = EXT_SCENE
       ? '｜外部网页 · 纯图层（不走本地组件库）'
       : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
-    figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + '｜变体集 ' + variantSetCount + '｜图标库实例 ' + iconInstCount + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount ? '｜原型连线 ' + rctCount : ''));
+    figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + '｜变体集 ' + variantSetCount + '｜图标库实例 ' + iconInstCount + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
     importing = false; // 连续导入（多页面逐个导入）不被「导入进行中」挡住
     figma.closePlugin();
   } catch (e) {

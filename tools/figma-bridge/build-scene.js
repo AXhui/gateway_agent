@@ -14,7 +14,7 @@ const { BOOTSTRAP } = require('./scene-bootstrap');
 
 const args = process.argv.slice(2);
 // 位置参数 = 文件清单（首个为入口）；--site/--pages/--out-dir/--viewport 的取值不算文件
-const FLAG_VALS = new Set(['--site', '--pages', '--out-dir', '--viewport']);
+const FLAG_VALS = new Set(['--site', '--pages', '--out-dir', '--viewport', '--theme']);
 const skipNext = new Set();
 args.forEach((a, i) => { if (FLAG_VALS.has(a) && i + 1 < args.length) skipNext.add(i + 1); });
 const files = args.filter((a, i) => !a.startsWith('--') && !skipNext.has(i));
@@ -28,6 +28,8 @@ const PAGES_CAP = Math.min(20, Math.max(1, (pagesIdx >= 0 ? parseInt(args[pagesI
 const vpIdx = args.indexOf('--viewport');
 const VWS = EXT && vpIdx >= 0 ? String(args[vpIdx + 1] || '').split(',').map(s => parseInt(s, 10))
   .filter(n => n >= 320 && n <= 2560) : []; // 多视口宽度列表（仅外部网页模式；入口页每个宽度出一帧）
+const thIdx = args.indexOf('--theme');
+const THEME = thIdx >= 0 && String(args[thIdx + 1] || '').toLowerCase() === 'dark' ? 'dark' : ''; // 暗色补帧（尽力转换）
 const outDirIdx = args.indexOf('--out-dir');
 const outDir = outDirIdx >= 0 ? args[outDirIdx + 1] : path.join(os.homedir(), 'Desktop');
 if (!demoPath || !fs.existsSync(demoPath)) {
@@ -53,17 +55,29 @@ if (!fs.existsSync(chrome)) { console.error('找不到 Chrome: ' + chrome + '（
 // SITE 存在时在 <head> 顶部补 <base>（file:// 下相对 CSS/JS/图片按原始域名解析，外部网页还原度关键）。
 // width = 渲染视口宽（多视口用），同步注入 __MS_VIEWPORT__ 供 bootstrap 无契约页取 W。
 let pageSeq = 0;
-function renderPage(src, width) {
+function renderPage(src, width, opts) {
+  opts = opts || {};
   const vw = width || 1440;
   let head = src;
-  if (SITE && EXT && !/<base\b/i.test(head)) {
-    const bt = '<base href="' + SITE.replace(/"/g, '&quot;') + '">';
+  // base 解析：SITE（链接导入，原域名）优先；本地多文件场景（zip 解包/批量本地页）用原目录的
+  // file:// base——渲染的是 /tmp 注入副本，相对 CSS/JS/图片若按 tmp 位置解析必然 404（zip 实测根因）
+  const baseRef = SITE || (opts.dir ? 'file://' + opts.dir.replace(/\/+$/, '') + '/' : null);
+  if (EXT && baseRef && !/<base\b/i.test(head)) {
+    const bt = '<base href="' + baseRef.replace(/"/g, '&quot;') + '">';
     head = /<head[^>]*>/i.test(head) ? head.replace(/<head[^>]*>/i, m0 => m0 + '\n' + bt)
       : (/<html[^>]*>/i.test(head) ? head.replace(/<html[^>]*>/i, m0 => m0 + '\n' + bt) : bt + '\n' + head);
   }
-  const inject = (EXT && SITE ? '<script>window.__MS_EXT_CRAWL__=' + JSON.stringify(SITE) + '<\/script>\n' : '') +
+  // 暗色补帧（--theme dark）：head 顶部先置常见 localStorage 主题键（赶在站点脚本读取之前），
+  // body 尾再补 class/data-theme 约定（Tailwind .dark 等 CSS 约定即时生效）——尽力转换，站点无暗色则同亮色
+  if (opts.dark && /<head[^>]*>/i.test(head)) {
+    const dk = '<script>try{["theme","color-scheme","darkMode","mode","colorMode"].forEach(function(k){try{localStorage.setItem(k,"dark")}catch(e){}})}catch(e2){}<\/script>';
+    head = head.replace(/<head[^>]*>/i, m0 => m0 + '\n' + dk);
+  }
+  const inject = (EXT ? '<script>window.__MS_LINKMARK__=1<\/script>\n' : '') +
+    (EXT && SITE ? '<script>window.__MS_EXT_CRAWL__=' + JSON.stringify(SITE) + '<\/script>\n' : '') +
     (tokNames.length && !EXT ? '\n<script>window.__MS_TOK_NAMES__=' + JSON.stringify(tokNames) + '<\/script>' : '') +
     '\n<script>window.__MS_VIEWPORT__=' + vw + '<\/script>' +
+    (opts.dark ? '\n<script>try{var d=document.documentElement;d.classList.add("dark","theme-dark");d.setAttribute("data-theme","dark");var m=document.querySelector(\'meta[name="color-scheme"]\');if(m)m.setAttribute("content","dark")}catch(e){}<\/script>' : '') +
     '\n<script>' + BOOTSTRAP + '<\/script>';
   const built = /<\/body>/i.test(head) ? head.replace(/<\/body>/i, inject + '\n</body>') : head + inject;
   const tmp = '/tmp/ms-scene-in-' + Date.now() + '-' + (++pageSeq) + '.html';
@@ -89,9 +103,12 @@ function titleOf(h) {
   const t = String(h).match(/<title>([^<]*)<\/title>/i);
   return (t && t[1].trim()) || '';
 }
+// 页面 URL 归一键（原型连线用）：/index.html ≡ /，仅 pathname+search（与 bootstrap linkMark 同规则）
+const normKey = k => String(k).replace(/\/(index|default)\.html?(?=\?|$)/i, '/');
+const pathKey = u => { try { const x = new URL(u); return normKey(x.pathname + x.search); } catch (e) { return null; } };
 
 let scene, extLinks = null;
-try { ({ scene, links: extLinks } = renderPage(html, VWS[0])); }
+try { ({ scene, links: extLinks } = renderPage(html, VWS[0], { dir: path.dirname(path.resolve(demoPath)) })); }
 catch (e) { console.error(e.message); process.exit(3); }
 
 // 命名规范：demo <title>（回退文件名）→ scene.name；插件侧主画板/组件画板/变体集按此命名——
@@ -99,6 +116,8 @@ catch (e) { console.error(e.message); process.exit(3); }
 const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
+// 入口页 URL 归一记录（cell.u）：原型连线——入口内链接 lk 命中其它 cell.u 即挂 ON_CLICK 跳转
+if (EXT && scene.cells[0]) scene.cells[0].u = SITE ? pathKey(SITE) : path.basename(demoPath);
 
 // 外部网页多帧转录（--ext --site）三路来源，统一编入 cells：
 //   ① 多视口（--viewport，PRO multi-viewport）：入口页按宽度列表补渲染（首宽度即上面首次渲染），每宽一帧；
@@ -125,10 +144,11 @@ if (EXT && extras.length) {
     try {
       console.log('  批量页 ' + (i + 2) + '/' + (Math.min(20, extras.length) + 1) + ' · ' + path.basename(fp));
       const subHtml = fs.readFileSync(fp, 'utf8');
-      const r2 = renderPage(subHtml);
+      const r2 = renderPage(subHtml, null, { dir: path.dirname(path.resolve(fp)) });
       const cell = (r2.scene.cells || [])[0];
       if (cell) {
         cell.label = (titleOf(subHtml) || path.basename(fp, '.html')).slice(0, 24);
+        cell.u = path.basename(fp); // 本地页连线键 = 文件名（linkMark 对 file: 取 basename）
         scene.cells.push(cell);
         mergeStats(r2);
       }
@@ -137,7 +157,6 @@ if (EXT && extras.length) {
 } else if (EXT && SITE && Array.isArray(extLinks) && extLinks.length) {
   let org = null; try { org = new URL(SITE); } catch (eO) {}
   if (org) {
-    const normKey = k => String(k).replace(/\/(index|default)\.html?(?=\?|$)/i, '/'); // /index.html ≡ /，同页去重
     const seen = new Set([normKey(org.pathname + org.search)]);
     const todo = [];
     extLinks.forEach(L => {
@@ -157,6 +176,7 @@ if (EXT && extras.length) {
           const cell = (r2.scene.cells || [])[0];
           if (cell) {
             cell.label = (String(L.t || L.u).trim().slice(0, 24) || L.u);
+            cell.u = pathKey(L.url); // 原型连线：链接 lk 命中此键 → ON_CLICK 跳到该帧
             scene.cells.push(cell);
             mergeStats(r2);
           }
@@ -164,6 +184,22 @@ if (EXT && extras.length) {
       });
     }
   }
+}
+// 暗色补帧（--theme dark，free 层 dark & light themes 对标）：入口页按暗色约定补渲染一帧，
+// 排在末帧（编序自动给它 N.）；尽力转换——站点支持 .dark/localStorage 约定才生效，不支持则与亮色同貌
+if (EXT && THEME) {
+  try {
+    console.log('暗色补帧渲染中（' + (VWS[0] || 1440) + 'px）…');
+    const rv = renderPage(html, VWS[0], { dark: true });
+    const cell = (rv.scene.cells || [])[0];
+    if (cell) {
+      cell.label = String(scene.name).slice(0, 20) + ' ·暗色';
+      if (scene.cells[0] && scene.cells[0].u) cell.u = scene.cells[0].u;
+      scene.cells.push(cell);
+      mergeStats(rv);
+      console.log('  暗色帧已追加（尽力转换：站点需支持 .dark/data-theme/localStorage 主题约定）');
+    }
+  } catch (e) { console.warn('  暗色帧跳过：' + e.message); }
 }
 if (EXT && scene.cells.length > 1) {
   // 统一编序：入口 1.（视口帧跟其后带 ·宽度 标签，其余按序 2..N），全部纵向堆叠
@@ -175,7 +211,8 @@ if (EXT && scene.cells.length > 1) {
   scene.cells[0].label = '1. ' + String(scene.name).slice(0, 24);
   let y = 0; scene.cells.forEach(c => { c.x = 0; c.y = y; y += (c.h || 600) + 64; });
   console.log('多帧转录: 共 ' + scene.cells.length + ' 帧' +
-    (VWS.length > 1 ? '（含 ' + VWS.length + ' 个视口）' : ''));
+    (VWS.length > 1 ? '（含 ' + VWS.length + ' 个视口）' : '') +
+    (THEME ? '（含暗色帧）' : ''));
 }
 
 // 原型连线（R5）：scene.proto 记录 setup 真实派发的 click（{state, evs:[{path}]}）→
@@ -222,8 +259,10 @@ function flattenWrappers(node) {
       flatCut++;
       (c.ch || []).forEach((k, ki) => {
         k.x += c.x; k.y += c.y;
-        // 拍平壳上的原型连线转移到首个保留子节点（否则 reactions 随壳一起丢失）
+        // 拍平壳上的原型连线转移到首个保留子节点（否则 reactions 随壳一起丢失）；
+        // lk（外部网页链接标记）同理转移——锚壳自身不留层，连线语义传给内容
         if (c.rct && ki === 0) k.rct = (k.rct || []).concat(c.rct);
+        if (c.lk && ki === 0) k.lk = c.lk;
         out.push(k);
       });
     } else out.push(c);
