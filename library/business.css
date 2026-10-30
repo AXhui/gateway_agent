@@ -580,8 +580,9 @@
    卡内工具栏/分页脚与表格的间距固定 20px；上下 padding 场景化可调：--tb-12 紧凑档。 */
 .bc-eg71-table { padding: var(--spacing-20); }
 /* 表头黑色加粗：EG71 表头一律 主文本色 + 500 加粗（对齐库内 snmp/event/app 表头范式），
-   覆写 L2 ms-table 默认的 12px 灰色大写；内容单元格保持 ms-table 正文形态不动 */
-.bc-eg71-table thead th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); letter-spacing: normal; text-transform: none; }
+   覆写 L2 ms-table 默认的 12px 灰色大写；内容单元格保持 ms-table 正文形态不动。
+   bc-eg71-device-lib-table 不挂 bc-eg71-table 裸类（免 20px padding 副作用），表头范式经并列选择器共享 */
+.bc-eg71-table thead th, .bc-eg71-device-lib-table thead th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); letter-spacing: normal; text-transform: none; }
 .bc-eg71-table .ms-table-toolbar { padding: 0 0 var(--spacing-20); }
 .bc-eg71-table .bc-table-foot { padding: var(--spacing-20) 0 0; }
 .bc-eg71-table--tb-12 { padding-top: var(--spacing-12); padding-bottom: var(--spacing-12); }

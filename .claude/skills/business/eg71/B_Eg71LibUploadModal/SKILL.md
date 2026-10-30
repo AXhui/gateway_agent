@@ -1,6 +1,6 @@
 ---
 name: B_Eg71LibUploadModal
-version: 1.0.0
+version: 1.1.0
 description: 离线包上传弹窗（内置库导入 · EG71）
 ---
 
@@ -23,6 +23,7 @@ description: 离线包上传弹窗（内置库导入 · EG71）
 | `ctx.errorText` | string | 内置文案 | 校验失败文案（文件类型/大小错误） |
 | `ctx.note` | string | 内置文案 | 说明 Alert 正文（醒目提示） |
 | `ctx.linkText` | string | `'Official Download'` | 官方下载链接文案 |
+| `ctx.hideLink` | boolean | `false` | `true` 时不渲染官方下载链接（自定义库包等非官方源场景，v1.1.0 新增，向后兼容） |
 | `ctx.dropHint` / `ctx.dropSub` | string | 内置文案 | 拖拽区主/副文案 |
 | `ctx.title` / `ctx.cancelText` / `ctx.confirmText` | string | `'Import Offline Package'` / `'Cancel'` / `'Upload'` | 文案 |
 | `ctx.open` | boolean | `true` | `false` 时产物 hidden |

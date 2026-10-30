@@ -1,6 +1,6 @@
 ---
 name: B_ComTitle
-version: 1.1.0
+version: 1.2.0
 description: 标题（业务组件）
 ---
 
@@ -12,7 +12,7 @@ description: 标题（业务组件）
 > **entityHint**：`com`（跨产品线通用）
 > **包归属**：`ui-com`
 > **依赖基础组件**：`ui-core ^1.1.0`
-> **bind**：无（纯编排，状态由父级持有）
+> **bind**：有（v1.2.0 起：按钮区 `data-title-btn` 分发 `eg71-com-title-btn`）
 
 ---
 
@@ -77,7 +77,7 @@ description: 标题（业务组件）
 | `switchChecked` | boolean | `false` | 开关初始态 |
 | `switchLabel` | string | — | 开关左侧标签 |
 | `showButton` | boolean | `false` | 是否显示操作按钮组 |
-| `buttons` | `{ t: string, kind?: 'filled'\|'outline'\|'text' }[]` | — | 按钮组 |
+| `buttons` | `{ t: string, kind?: 'filled'\|'outline'\|'text', icon?: string, key?: string, disabled?: boolean }[]` | — | 按钮组；`icon`（16px 前置图标名）、`key`（渲染 `data-title-btn` 并经 bind 分发事件）、`disabled` 为 v1.2.0 新增可选字段，向后兼容 |
 | `showDescribe` | boolean | `false` | 是否显示描述文案 |
 | `describe` | string | — | 描述文案 |
 | `describeMode` | `'inline' \| 'below' \| 'tip'` | `'inline'` | 描述展示模式：inline=**同行**（标题/Tag 后，16px/400/行高24 + `--color-text-auxiliary`，Figma「备注」形态）；below=下一行小字；tip=并入提示图标 tooltip |
@@ -89,7 +89,7 @@ description: 标题（业务组件）
 4. `describeMode='below'`：标题下一行 `.ms-text.ms-text--auxiliary`。
 
 ### bind 骨架
-无 bind。开关态、按钮点击均由父级通过回调持有，组件只读 Props、只发事件。
+v1.2.0 起新增 `bind(root)`：容器内所有 `[data-title-btn]`（即 buttons 传了 `key` 的按钮）点击时派发 `eg71-com-title-btn`（`detail: { key }`，bubbles）；`disabled` 按钮不派发。开关态仍由父级 Props 持有，组件只读 Props、只发事件。
 
 ---
 

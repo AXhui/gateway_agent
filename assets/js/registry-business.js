@@ -723,7 +723,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-com-title', cn: '标题', cat: '通用',
-      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。',
+      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。v1.2.0（REQ-020）：按钮区 buttons 增可选 icon/key/disabled，bind 分发 eg71-com-title-btn（detail.key），向后兼容。',
       atoms: ['typography', 'form', 'tag', 'icon', 'tooltip', 'switch', 'button', 'text'],
       entityHint: 'com',
       tags: ['标题', '页面', 'Tab', '卡片', '分组', 'Tag', '开关', '按钮'],
@@ -752,12 +752,12 @@ window.MS_BIZ_UTIL = (function () {
           const sw = `<label class="ms-switch ms-switch--xs"><input type="checkbox"${ctx.switchChecked ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
           main.push(`${label}${sw}`);
         }
-        // 右组：操作按钮区——独立按钮、gap 12（契约禁贴合式 ms-btn-group）
+        // 右组：操作按钮区——独立按钮、gap 12（契约禁贴合式 ms-btn-group）；v1.2.0 增可选 icon/key/disabled + bind 事件分发
         let extraEl = '';
         if (ctx.showButton && Array.isArray(ctx.buttons) && ctx.buttons.length) {
           extraEl = `<div class="bc-com-title-extra">${ctx.buttons.map(b => {
             const kind = b.kind === 'filled' ? ' ms-btn--filled' : (b.kind === 'text' ? ' ms-btn--text' : '');
-            return `<button class="ms-btn ms-btn--sm${kind}">${esc(b.t)}</button>`;
+            return `<button type="button" class="ms-btn ms-btn--sm${kind}"${b.key ? ` data-title-btn="${esc(b.key)}"` : ''}${b.disabled ? ' disabled' : ''}>${b.icon ? ico(b.icon, 16) : ''}${esc(b.t)}</button>`;
           }).join('')}</div>`;
         }
         const row = `<div class="bc-com-title-row"><div class="bc-com-title-main">${main.join('')}</div>${extraEl}</div>`;
@@ -765,6 +765,13 @@ window.MS_BIZ_UTIL = (function () {
           ? `<span class="bc-com-title-desc ms-text ms-text--auxiliary">${esc(ctx.describe)}</span>`
           : '';
         return `<div class="bc-com-title bc-com-title--${level}${alignCls}">${row}${descEl}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-title-btn]').forEach(b => b.addEventListener('click', () => {
+          if (b.disabled) return;
+          b.dispatchEvent(new CustomEvent('eg71-com-title-btn', { bubbles: true, detail: { key: b.getAttribute('data-title-btn') } }));
+        }));
       }
     },
     {
@@ -4840,7 +4847,7 @@ window.MS_BIZ_UTIL = (function () {
           + '<div class="ms-modal-body bc-eg71-lib-upload-body">'
           + '<div class="ms-alert ms-alert--info"><span class="ms-alert-icon">' + ico('info', 16) + '</span>'
           + '<div class="ms-alert-body"><span>' + esc(ctx.note || 'Please make sure the offline package is a standard package officially released by Milesight.') + '</span>'
-          + ' <a class="ms-link" href="javascript:void(0)" data-lib-upload-download>' + esc(ctx.linkText || 'Official Download') + '</a></div></div>'
+          + (ctx.hideLink ? '' : ' <a class="ms-link" href="javascript:void(0)" data-lib-upload-download>' + esc(ctx.linkText || 'Official Download') + '</a>') + '</div></div>'
           + '<div class="bc-eg71-lib-upload-drop">'
           + '<div class="ms-upload" data-lib-upload-file tabindex="0" role="button" aria-label="Select offline package">'
           + ico('upload', 32)
@@ -4888,13 +4895,17 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-device-lib-table', cn: '设备库型号表', cat: '数据服务',
-      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库帧 · EG71 表格左对齐契约硬性落地）：Device Model / Service Reference Count（bc-num 计数下钻链接）/ Operation（eye 图标钮，bc-eg71-table-ops 仅 nowrap）三列全左对齐，表尾 Total N + 单页分页；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count（计数下钻）/ eg71-devicelib-view（型号查看，detail.model）。',
+      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库主帧 6 列 · EG71 表格左对齐契约硬性落地）：Device Model / Vendor / Protocol Type / Number of Objects（bc-num）/ Device Reference Count（bc-num 计数下钻链接）/ Operation（opsMode=view 单 eye 钮；manage 追加 edit/trash 钮，bc-eg71-table-ops 仅 nowrap）全列左对齐，表尾 Total N + 分页（pageSize/page 派生页码，点击翻页）；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count / eg71-devicelib-view / eg71-devicelib-edit / eg71-devicelib-delete（detail.model）/ eg71-devicelib-page（detail.page）。v2.0.0（REQ-020）：3 列升 6 列（rows 增 vendor/protocol/objects，列头默认随 Figma 主帧），Operation 增 manage 形态与翻页。',
       atoms: ['table', 'button', 'icon', 'pagination', 'empty'],
       entityHint: 'gateway',
-      tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', 'EG71'],
+      tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', '厂商', '协议', 'EG71'],
       render(ctx) {
         const rows = ctx.rows || [];
         const total = typeof ctx.total === 'number' ? ctx.total : rows.length;
+        const opsMode = ctx.opsMode === 'manage' ? 'manage' : 'view';
+        const pageSize = typeof ctx.pageSize === 'number' && ctx.pageSize > 0 ? ctx.pageSize : 10;
+        const page = typeof ctx.page === 'number' && ctx.page > 0 ? ctx.page : 1;
+        const pages = Math.max(1, Math.ceil(total / pageSize));
         if (!rows.length) {
           return '<div class="bc-eg71-device-lib-table"><div class="ms-empty">'
             + ico('fileText', 32)
@@ -4905,18 +4916,33 @@ window.MS_BIZ_UTIL = (function () {
           + '<table class="ms-table">'
           + '<thead><tr>'
           + '<th>' + esc(ctx.modelTitle || 'Device Model') + '</th>'
-          + '<th>' + esc(ctx.countTitle || 'Service Reference Count') + '</th>'
+          + '<th>' + esc(ctx.vendorTitle || 'Vendor') + '</th>'
+          + '<th>' + esc(ctx.protocolTitle || 'Protocol Type') + '</th>'
+          + '<th>' + esc(ctx.objectsTitle || 'Number of Objects') + '</th>'
+          + '<th>' + esc(ctx.countTitle || 'Device Reference Count') + '</th>'
           + '<th>' + esc(ctx.opsTitle || 'Operation') + '</th>'
           + '</tr></thead>'
           + '<tbody>' + rows.map(r => '<tr>'
             + '<td><span class="bc-eg71-device-lib-name">' + esc(r.model) + '</span></td>'
-            + '<td><a class="ms-link bc-num bc-eg71-device-lib-count" href="javascript:void(0)" data-devicelib-count="' + esc(r.model) + '" aria-label="' + esc(r.model) + ' service references">' + r.refs + '</a></td>'
-            + '<td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-devicelib-view="' + esc(r.model) + '" aria-label="View ' + esc(r.model) + '" title="View">' + ico('eye', 16) + '</button></td>'
+            + '<td>' + esc(r.vendor || '—') + '</td>'
+            + '<td>' + esc(r.protocol || '—') + '</td>'
+            + '<td><span class="bc-num">' + (r.objects != null ? r.objects : '—') + '</span></td>'
+            + '<td><a class="ms-link bc-num bc-eg71-device-lib-count" href="javascript:void(0)" data-devicelib-count="' + esc(r.model) + '" aria-label="' + esc(r.model) + ' reference count">' + r.refs + '</a></td>'
+            + '<td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-devicelib-view="' + esc(r.model) + '" aria-label="View ' + esc(r.model) + '" title="View">' + ico('eye', 16) + '</button>'
+            + (opsMode === 'manage'
+              ? '<button type="button" class="ms-btn ms-btn--sm" data-devicelib-edit="' + esc(r.model) + '" aria-label="Edit ' + esc(r.model) + '" title="Edit">' + ico('edit', 16) + '</button>'
+                + '<button type="button" class="ms-btn ms-btn--sm" data-devicelib-delete="' + esc(r.model) + '" aria-label="Delete ' + esc(r.model) + '" title="Delete">' + ico('trash', 16) + '</button>'
+              : '')
+            + '</td>'
             + '</tr>').join('') + '</tbody>'
           + '</table>'
           + '<div class="bc-table-foot bc-eg71-device-lib-foot">'
           + '<span class="ms-text ms-text--secondary ms-text--sm">Total <span class="bc-num">' + total + '</span></span>'
-          + '<span class="ms-pagination"><span class="ms-page-item" disabled>‹</span><span class="ms-page-item ms-page-item--active">1</span><span class="ms-page-item" disabled>›</span></span>'
+          + '<span class="ms-pagination">'
+          + '<span class="ms-page-item"' + (page <= 1 ? ' disabled' : ' data-devicelib-page="' + (page - 1) + '"') + '>‹</span>'
+          + Array.from({ length: pages }, (_, i) => i + 1).map(p => '<span class="ms-page-item' + (p === page ? ' ms-page-item--active' : '') + '"' + (p === page ? '' : ' data-devicelib-page="' + p + '"') + '>' + p + '</span>').join('')
+          + '<span class="ms-page-item"' + (page >= pages ? ' disabled' : ' data-devicelib-page="' + (page + 1) + '"') + '>›</span>'
+          + '</span>'
           + '</div>'
           + '</div>';
       },
@@ -4929,7 +4955,13 @@ window.MS_BIZ_UTIL = (function () {
           const cnt = e.target.closest('[data-devicelib-count]');
           if (cnt) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-count', { bubbles: true, detail: { model: cnt.getAttribute('data-devicelib-count') } })); return; }
           const view = e.target.closest('[data-devicelib-view]');
-          if (view) wrap.dispatchEvent(new CustomEvent('eg71-devicelib-view', { bubbles: true, detail: { model: view.getAttribute('data-devicelib-view') } }));
+          if (view) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-view', { bubbles: true, detail: { model: view.getAttribute('data-devicelib-view') } })); return; }
+          const edit = e.target.closest('[data-devicelib-edit]');
+          if (edit) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-edit', { bubbles: true, detail: { model: edit.getAttribute('data-devicelib-edit') } })); return; }
+          const del = e.target.closest('[data-devicelib-delete]');
+          if (del) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-delete', { bubbles: true, detail: { model: del.getAttribute('data-devicelib-delete') } })); return; }
+          const pg = e.target.closest('[data-devicelib-page]');
+          if (pg) wrap.dispatchEvent(new CustomEvent('eg71-devicelib-page', { bubbles: true, detail: { page: Number(pg.getAttribute('data-devicelib-page')) } }));
         });
       }
     }
