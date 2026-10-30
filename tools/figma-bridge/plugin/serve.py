@@ -20,10 +20,77 @@ from urllib.parse import urlparse
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8124
 ROOT = os.path.realpath(os.path.expanduser('~/Desktop'))
 REPO = os.path.expanduser('~/Feishu-competition')
-BUILD = os.path.join(REPO, 'tools/figma-bridge/build-scene.js')
+# 自动探测实际项目路径（多种候选）
+for _cand in [os.path.expandvars(r'F:\AI_project\feishu_UI_3\Feishu-competition-main'),
+              os.path.expanduser('~/Feishu-competition'),
+              r'C:\Feishu-competition']:
+    if os.path.isdir(_cand):
+        REPO = _cand
+        break
+BUILD = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bridge', 'build-scene.js')
 HTML_ROOTS = [os.path.join(REPO, '05_release'), os.path.join(REPO, 'output'), ROOT]
 DROPS = os.path.join(ROOT, '_drops')   # 拖拽/链接导入的暂存目录（在白名单根内，不参与 /api/list 扫描）
 MAX_IN = 20 * 1024 * 1024
+CLOUD_LIST_FILE = os.path.join(REPO, 'figma-html-list.json')
+
+
+def find_lark_cli():
+    for c in (os.environ.get('LARK_CLI'), 'lark-cli', 'lark-cli.cmd',
+              os.path.expandvars(r'%APPDATA%\npm\lark-cli.cmd')):
+        if c and (os.path.isfile(c) or shutil.which(c)):
+            return c
+    return 'lark-cli'
+
+
+def fetch_pending_list():
+    """实时查飞书表格里 Figma状态='转Figma中' 的记录，只返回待处理的云盘文件"""
+    cli = find_lark_cli()
+    base = 'F2MebgSgMaUZSbseUWLcefqbnKd'
+    table = 'tbln6WxfFJ6iYaek'
+    try:
+        r = subprocess.run(
+            [cli, 'base', '+record-list',
+             '--base-token', base, '--table-id', table,
+             '--filter-json', '{"conjunction":"and","conditions":[{"field_name":"Figma状态","operator":"is","value":["转Figma中"]}]}',
+             '--page-size', '50', '--format', 'json', '--as', 'user'],
+            capture_output=True, text=True, timeout=30, encoding='utf-8', errors='replace')
+        if r.returncode != 0:
+            print('fetch_pending_list lark-cli error:', r.stderr[:200], file=sys.stderr)
+            return []
+        data = json.loads(r.stdout)
+        d = data.get('data', {})
+        # 数组格式：data.data 是二维数组，data.fields 是字段名，data.record_id_list 是 record_id
+        rows = d.get('data') or []
+        fields = d.get('fields') or []
+        record_ids = d.get('record_id_list') or []
+        # 建字段名→列索引映射
+        col = {name: i for i, name in enumerate(fields)}
+        url_idx = col.get('预览 URL', -1)
+        req_idx = col.get('需求编号', -1)
+        out = []
+        import re
+        for ri, row in enumerate(rows):
+            url_val = str(row[url_idx]) if url_idx >= 0 and url_idx < len(row) else ''
+            m = re.search(r'https://milesight\.feishu\.cn/file/([A-Za-z0-9]+)', url_val)
+            if not m:
+                continue
+            file_token = m.group(1)
+            name_m = re.search(r'\[([^\]]+)\]', url_val)
+            file_name = name_m.group(1) if name_m else ('cloud_' + file_token[:8] + '.html')
+            req_id = str(row[req_idx]) if req_idx >= 0 and req_idx < len(row) else ''
+            rid = record_ids[ri] if ri < len(record_ids) else ''
+            out.append({
+                'path': 'cloud:' + file_token,
+                'rel': '☁ ' + req_id + ' · ' + file_name,
+                'name': file_name,
+                'mtime': 0, 'size': 0, 'cloud': True,
+                'url': 'https://milesight.feishu.cn/file/' + file_token,
+                'record_id': rid,
+            })
+        return out
+    except Exception as e:
+        print('fetch_pending_list error:', e, file=sys.stderr)
+        return []
 
 
 def extract_zip(b64):
@@ -80,23 +147,8 @@ def drop_path(name):
 
 
 def scan_htmls():
-    out = []
-    for base in HTML_ROOTS:
-        base = os.path.realpath(base)
-        if not os.path.isdir(base):
-            continue
-        if base == ROOT:
-            paths = [os.path.join(ROOT, f) for f in os.listdir(ROOT) if f.endswith('.html')]
-        else:
-            paths = [os.path.join(dp, f) for dp, _, fs in os.walk(base) for f in fs if f.endswith('.html')]
-        for p in paths:
-            st = os.stat(p)
-            out.append({
-                'path': p, 'rel': os.path.relpath(p, base),
-                'name': os.path.basename(p), 'mtime': int(st.st_mtime), 'size': st.st_size,
-            })
-    out.sort(key=lambda x: x['mtime'], reverse=True)
-    return out
+    """只返回飞书表格里待处理（转Figma中）的云盘文件，不再扫本地目录"""
+    return fetch_pending_list()
 
 
 def allowed(path):
@@ -109,28 +161,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
 
-    # 访问留痕（时间 + Origin + 客户端）：面板再报 Failed to fetch 时，
-    # 查 serve.log 即可判定请求是否到达后台（到=服务端问题；不到=浏览器/客户端拦截）
-    def log_message(self, fmt, *args):
-        sys.stderr.write('%s %s %s %s\n' % (
-            time.strftime('%m-%d %H:%M:%S'),
-            self.headers.get('Origin') or '-', self.address_string(), fmt % args))
-        sys.stderr.flush()
-
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
-
-    # CORS 预检：插件 iframe POST application/json 前浏览器必发 OPTIONS，
-    # 不回 204+允许头会被 CORS 拦下，面板报 Failed to fetch（GET 无预检不受影响）
-    def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        if self.headers.get('Access-Control-Request-Private-Network'):
-            self.send_header('Access-Control-Allow-Private-Network', 'true')
-        self.send_header('Access-Control-Max-Age', '86400')
-        self.end_headers()
 
     def reply_json(self, obj, code=200):
         body = json.dumps(obj, ensure_ascii=False).encode('utf-8')
@@ -140,12 +173,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
     def do_GET(self):
         if self.path.split('?')[0] == '/api/list':
             return self.reply_json({'ok': True, 'htmls': scan_htmls()})
         super().do_GET()
 
     def do_POST(self):
+        try:
+            self.handle_build()
+        except subprocess.TimeoutExpired:
+            self.reply_json({'ok': False, 'error': '下载或构建超时，请重试'}, 504)
+        except Exception as e:
+            self.reply_json({'ok': False, 'error': str(e)}, 500)
+
+    def handle_build(self):
         if self.path.split('?')[0] != '/api/build':
             return self.reply_json({'ok': False, 'error': 'not found'}, 404)
         length = int(self.headers.get('Content-Length') or 0)
@@ -237,7 +284,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return self.reply_json({'ok': False, 'error': '链接抓取失败：' + str(e)}, 502)
         else:
             p = str(req.get('path') or '')
-            if not allowed(p):
+            # 云盘文件：path 形如 "cloud:file_token"，先用 lark-cli 下载到 DROPS
+            if p.startswith('cloud:'):
+                file_token = p[6:]
+                cloud_name = os.path.basename(str(req.get('name') or 'cloud.html'))
+                if not cloud_name.lower().endswith('.html'):
+                    cloud_name += '.html'
+                os.makedirs(DROPS, exist_ok=True)
+                p = os.path.join(DROPS, '_cloud_' + cloud_name)
+                cli = find_lark_cli()
+                dl = subprocess.run(
+                    [cli, 'drive', '+download', '--file-token', file_token,
+                     '--output', os.path.basename(p), '--overwrite', '--as', 'user'],
+                    cwd=DROPS, capture_output=True, text=True, timeout=120, encoding='utf-8', errors='replace')
+                if dl.returncode != 0 or not os.path.isfile(p):
+                    return self.reply_json({'ok': False, 'error': '云盘下载失败：' + (dl.stderr or dl.stdout)[:300]}, 502)
+            elif not allowed(p):
                 return self.reply_json({'ok': False, 'error': '路径不在允许范围（05_release / output / 桌面）；桌面外文件请拖拽进面板'}, 403)
         # 多视口参数（PRO multi-viewport）：仅链接导入转发；格式 '1440,390'（1-4 个 3-4 位宽数）
         vp = str(req.get('viewports') or '')
@@ -257,7 +319,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 cmd += ['--ext']
             if (site_url or ext_mode) and dk:
                 cmd += ['--theme', 'dark']
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            # Windows 兼容：自动注入 CHROME 环境变量 + 强制 UTF-8 解码
+            env = os.environ.copy()
+            if os.name == 'nt':
+                for cp in (r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+                           r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'):
+                    if os.path.isfile(cp):
+                        env['CHROME'] = cp
+                        break
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, encoding='utf-8', errors='replace', env=env)
             tail = [l for l in (r.stdout + r.stderr).strip().splitlines()
                     if l and 'CVDisplayLink' not in l][-6:]
             self.reply_json({'ok': r.returncode == 0, 'returncode': r.returncode, 'log': tail})
@@ -267,9 +337,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.reply_json({'ok': False, 'error': str(e)}, 500)
 
 
-# 多线程：/api/build 处理中可能回抓本服务自己的静态页（粘贴 127.0.0.1:8124 链接的场景），
-# 单线程 TCPServer 会自锁超时；静态并发拉取（插件取 scene.json）也不再排队
-socketserver.ThreadingTCPServer.allow_reuse_address = True
-with socketserver.ThreadingTCPServer(('', PORT), Handler) as httpd:
+http.server.ThreadingHTTPServer.allow_reuse_address = True
+with http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler) as httpd:
     print(f'serving {ROOT} on http://localhost:{PORT} (CORS on, /api/list /api/build)')
     httpd.serve_forever()

@@ -80,11 +80,12 @@ function renderPage(src, width, opts) {
     (opts.dark ? '\n<script>try{var d=document.documentElement;d.classList.add("dark","theme-dark");d.setAttribute("data-theme","dark");var m=document.querySelector(\'meta[name="color-scheme"]\');if(m)m.setAttribute("content","dark")}catch(e){}<\/script>' : '') +
     '\n<script>' + BOOTSTRAP + '<\/script>';
   const built = /<\/body>/i.test(head) ? head.replace(/<\/body>/i, inject + '\n</body>') : head + inject;
-  const tmp = '/tmp/ms-scene-in-' + Date.now() + '-' + (++pageSeq) + '.html';
+  const os = require('os'), path = require('path'), { pathToFileURL } = require('url');
+  const tmp = path.join(os.tmpdir(), 'ms-scene-in-' + Date.now() + '-' + (++pageSeq) + '.html');
   fs.writeFileSync(tmp, built);
   console.log('无头 Chrome 渲染中（' + vw + 'px · ' + (built.length / 1024).toFixed(0) + 'KB）…');
   const dump = cp.execFileSync(chrome,
-    ['--headless', '--disable-gpu', '--window-size=' + vw + ',900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
+    ['--headless', '--disable-gpu', '--window-size=' + vw + ',900', '--virtual-time-budget=20000', '--dump-dom', pathToFileURL(tmp).href],
     { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
   fs.unlinkSync(tmp);
   const m = dump.match(/<script id="ms-scene-json" type="application\/json">([\s\S]*?)<\/script>/);
