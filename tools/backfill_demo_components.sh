@@ -178,13 +178,16 @@ if [ "$DRY_RUN" = "1" ]; then
   exit 0
 fi
 
-echo "[backfill] 更新记录 $TARGET_RECORD_ID（使用组件 + AI自评）"
-printf '%s' "$UPDATE_JSON" > "$WIN_TMP/payload.json"
+echo "[backfill] 更新记录 ${TARGET_RECORD_ID}（使用组件 + AI自评）"
+# lark-cli --json 只允许 cwd//tmp/~/files 下的文件；mktemp 目录在 /var/folders 会被拒，payload 单独落 /tmp
+PAYLOAD_FILE="/tmp/backfill-payload-$$.json"
+printf '%s' "$UPDATE_JSON" > "$PAYLOAD_FILE"
 RESULT=$(lark-cli base +record-batch-update \
   --base-token "$BASE_TOKEN" \
   --table-id "$DEMO_TABLE" \
-  --json @"$WIN_TMP/payload.json" \
+  --json @"$PAYLOAD_FILE" \
   --as user --format json 2>&1 || true)
+rm -f "$PAYLOAD_FILE" 2>/dev/null || true
 
 if printf '%s' "$RESULT" | grep -q '"ok": true'; then
   echo "[backfill] 组件关联与 AI 自评回写成功"
