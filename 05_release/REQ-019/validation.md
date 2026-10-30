@@ -83,3 +83,28 @@
 ## 七、旧形态 × 新规则核验（page-assembly §0 第 5 条）
 
 本 REQ 为该 PRD 首次交付（无旧 REQ 基线）；对照当前 AGENTS.md 契约逐条走：唯一壳 ✓、表格左对齐（bc-num/bc-eg71-table-ops）✓、工具栏置顶（标题行+操作栏+分隔线贴卡顶）✓、Tab 契约（page-tabs 组件原生）✓、标题契约（bc-com-title 两变体）✓、动词闭环 13 动词全扫描（mapping.md 清单）✓。
+
+## 八、修复轮修订行（2026-10-30，交付后用户反馈 ×3）
+
+### 修订 1：工具栏恒单行自适应（反馈：「操作栏只能一行，要适配。左边是添加等功能按钮，右侧是搜索筛选按钮。全局统一」）
+
+- **源头修复**（组件库，非 demo 局部补丁）：`library/business.css` `.bc-eg71-toolbar` 增补恒单行方案——容器 `flex-wrap: nowrap` + `gap: var(--spacing-12)`；左操作组 `.ms-space` 子项 `flex: 0 0 auto` 保形不压缩；spacer `flex: 1 1 auto; min-width: 0`；右筛选组（spacer 后随 `.ms-space`）`flex: 0 1 auto; min-width: 0` 允许收缩，搜索 260→120px / 下拉 140→96px 收缩下限。
+- **SKILL bump**：`B_Eg71Toolbar` 1.0.1（§1 恒单行语义 + §5 收缩下限）。
+- **验证**：Playwright 1440 / 1100 / 900 三宽——全部控件垂直中心离散 = 0px（严格同行）、容器 wrap=nowrap、无横向溢出；900px 下右组收缩仍单行。工具栏 44px 高为 page.css `padding-top: var(--spacing-12)` 所致（间距非换行）。
+
+### 修订 2：侧边栏范围锁定（反馈：「需求里有写主功能是哪些，实现哪些就好。其他没有的页面，侧边栏做禁用处理」）
+
+- **实现**：页面层 `navScopeLock`（/tmp 构建源 p4.js）——LEAF_OK 白名单 = PRD 范围 3 路由（/data-services/data-acquisition、data-library、data-stream）；不在范围的单叶子与其所属整组挂 `bc-req019-nav-off`（`opacity: .45 + pointer-events: none`，business-specific §6.2 既有灰显范式值，子元素继承 pointer-events）+ `aria-disabled="true"`。
+- **「dashboard没有tab栏」反馈归因**：Overview Tab 栏（Overview / Device / Device Access Network）视觉与 DOM 均存在并验证 ≥3 个 tab；反馈根因是点击了 PRD 范围外的 Dashboard 页（无 Tab 属该页自身形态）。范围锁定后 Dashboard 等范围外入口禁用不可点，不再 reachable。
+- **验证**：DOM 祖先链审计——存活叶子恰为 3 条 PRD 路由；Dashboard / LoRa / Network / Platform / System Setting / APP 六组 + Data Forwarding 子页 computed opacity 全部 0.45、pointer-events none。
+
+### 修订 3：表头黑色加粗（反馈：「表头业务组件库以及组件库单元格都要做优化，表头是黑色加粗，内容当前是正常的」）
+
+- **源头修复**（组件库）：`library/business.css` 新增共享结构类覆写 `.bc-eg71-table thead th`——`--color-text-primary` 字色 + 500 字重 + 14px/22px + `--color-fill-base-normal` 底，对齐库内 snmp/event/app 表头既有范式，覆写 L2 `.ms-table thead th` 默认的 12px 灰色大写（原表头比正文还小且发灰）；内容单元格保持 ms-table 正文形态不动。
+- **SKILL bump**：`B_Eg71DeviceList` 1.1.3（§1 / §5 表头范式记录；同 wrapper 的 DeviceLibTable / ScanDeviceTable / ProtocolDetail / MeshFleetTable 共享该结构类，视觉同步统一，不逐个 bump）。
+- **验证**：computed style 断言——表头 th = 500 / 14px / rgb(39,46,59) / text-transform none；正文 td 保持 400 不动；视觉截图确认表头深色加粗、正文正常。
+
+### 修复轮五维复核
+
+- 三项修复均无新增违规证据行；`score_component.py --write` 82、`score_fidelity.py --write` structure 100 / field 100——与修复前一致，quality.json 无需变更。
+- 冒烟全量重跑（9 状态 + 7 交互链 + 装配完整性 8 块 64B diff）：**ALL PASS**。

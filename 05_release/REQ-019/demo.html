@@ -1701,6 +1701,9 @@ body {
    L2 ms-table-wrap 保持 0 padding 不动 —— hvac 等其他线沿用旧形态，即回退处理。
    卡内工具栏/分页脚与表格的间距固定 20px；上下 padding 场景化可调：--tb-12 紧凑档。 */
 .bc-eg71-table { padding: var(--spacing-20); }
+/* 表头黑色加粗：EG71 表头一律 主文本色 + 500 加粗（对齐库内 snmp/event/app 表头范式），
+   覆写 L2 ms-table 默认的 12px 灰色大写；内容单元格保持 ms-table 正文形态不动 */
+.bc-eg71-table thead th { background: var(--color-fill-base-normal); font: 500 14px/22px var(--font-sans); color: var(--color-text-primary); letter-spacing: normal; text-transform: none; }
 .bc-eg71-table .ms-table-toolbar { padding: 0 0 var(--spacing-20); }
 .bc-eg71-table .bc-table-foot { padding: var(--spacing-20) 0 0; }
 .bc-eg71-table--tb-12 { padding-top: var(--spacing-12); padding-bottom: var(--spacing-12); }
@@ -1938,10 +1941,14 @@ body {
 .bc-eg71-page-tab--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--spacing-2); border-radius: var(--radius-s); background: var(--color-divider-primary); }
 
 /* ---- B_Eg71Toolbar 列表工具栏（站点 .device-list-toolbar / .table-header 同构，31/37 页） ---- */
-.bc-eg71-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-12); }
-.bc-eg71-toolbar-spacer { flex: 1; }
-.bc-eg71-toolbar-search { width: 260px; /* 站点 .ms-table-topbar-search .ant-input 202px → 库既有搜索宽档 260px（bc-filter-search 同源） */ }
-.bc-eg71-toolbar-select { min-width: 140px; /* 站点筛选下拉 min-width 220px → 库既有下拉宽档 140px（bc-filter-select 同源） */ }
+/* 单行铁律：nowrap + 组内不换行；左操作组保形（按钮不压缩），右筛选组可收缩适配窄容器（搜索 260→120、下拉 140→96 下限） */
+.bc-eg71-toolbar { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--spacing-12); }
+.bc-eg71-toolbar .ms-space { flex-wrap: nowrap; flex: 0 0 auto; }
+.bc-eg71-toolbar .ms-space .ms-btn { flex: 0 0 auto; }
+.bc-eg71-toolbar-spacer { flex: 1 1 auto; min-width: 0; }
+.bc-eg71-toolbar-spacer + .ms-space { flex: 0 1 auto; min-width: 0; }
+.bc-eg71-toolbar-search { flex: 0 1 260px; width: auto; min-width: 120px; /* 站点 .ms-table-topbar-search .ant-input 202px → 库既有搜索宽档 260px（bc-filter-search 同源） */ }
+.bc-eg71-toolbar-select { flex: 0 1 140px; min-width: 96px; /* 站点筛选下拉 min-width 220px → 库既有下拉宽档 140px（bc-filter-select 同源） */ }
 
 /* ---- B_Eg71PageBack 子页返回头（站点 .title-back 同构，9 页） ---- */
 .bc-eg71-page-back { display: flex; align-items: center; height: var(--spacing-48); padding: 0 var(--spacing-20); background: var(--color-bg-card); border-bottom: 1px solid var(--color-border-base); }
@@ -2175,6 +2182,9 @@ body {
 .bc-req019-entry-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
 .bc-req019-entry-desc { font-size: 12px; color: var(--color-text-secondary); }
 .bc-req019-protohost .bc-eg71-protocol-card-items { grid-template-columns: minmax(0, 1fr); }
+
+/* ---- 需求范围锁：范围外侧边栏入口整体置灰不可点（视觉值沿用既定禁用范式 .45 + pointer-events none） ---- */
+.bc-req019-nav-off { opacity: .45; pointer-events: none; }
 
 </style>
 </head>
@@ -12364,6 +12374,32 @@ window.MS_BIZ_UTIL = (function () {
     { content: contentHtml(), footer: '' }
   );
   window.MS_EG71_SHELL.bind(app);
+  /* 需求范围锁（证明本需求未改动其他模块）：侧边栏仅放开 PRD 落地页面，
+     范围外入口整体置灰不可点（视觉值沿用既定禁用范式 opacity .45 + pointer-events none） */
+  (function navScopeLock() {
+    var LEAF_OK = { '/data-services/data-acquisition': 1, '/data-services/data-library': 1, '/data-services/data-stream': 1 };
+    var side = app.querySelector('.bc-eg71-sidenav');
+    if (!side) return;
+    var off = function (el) { el.classList.add('bc-req019-nav-off'); el.setAttribute('aria-disabled', 'true'); };
+    var groupOk = {};
+    side.querySelectorAll('[data-nav]').forEach(function (nav) {
+      var trigger = nav.querySelector('[data-nav-trigger]');
+      var subs = nav.querySelectorAll('.ms-nav-item--sub[data-route]');
+      var tr = trigger ? trigger.getAttribute('data-route') : '';
+      var ok = subs.length ? false : !!LEAF_OK[tr];
+      subs.forEach(function (s) { if (LEAF_OK[s.getAttribute('data-route')]) ok = true; });
+      groupOk[tr] = ok;
+      if (!ok) off(nav);
+      else subs.forEach(function (s) { if (!LEAF_OK[s.getAttribute('data-route')]) off(s); });
+    });
+    side.querySelectorAll('.bc-eg71-popup').forEach(function (p) {
+      var gr = p.getAttribute('data-popup') || '';
+      if (!groupOk[gr]) { off(p); return; }
+      p.querySelectorAll('.ms-nav-item--sub[data-route]').forEach(function (s) {
+        if (!LEAF_OK[s.getAttribute('data-route')]) off(s);
+      });
+    });
+  })();
   var contentEl = app.querySelector('.ms-content');
   if (contentEl) contentEl.classList.add('ms-content--wide'); /* 壳契约 3：列表/流程类页面内容区 20px */
   app.insertAdjacentHTML('beforeend', B['bc-eg71-message'].render({ hidden: false }));

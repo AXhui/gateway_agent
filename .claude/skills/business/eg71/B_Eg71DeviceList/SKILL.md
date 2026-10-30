@@ -1,7 +1,7 @@
 ---
 name: B_Eg71DeviceList
-version: 1.1.2
-description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 入网失败状态；v1.1.1 站点转录色票勘误 Offline→暖橙；v1.1.2 表格卡 20px 内边距（hover 内收）+ 工具栏与表格卡间距 20px
+version: 1.1.3
+description: EG71 设备数采设备列表（业务组件，存量补档）：工具栏 + 设备表 + 信号气泡 + 分页表尾；v1.1.0 入网失败状态；v1.1.1 站点转录色票勘误 Offline→暖橙；v1.1.2 表格卡 20px 内边距（hover 内收）+ 工具栏与表格卡间距 20px；v1.1.3 表头黑色加粗（共享结构类，对齐库内表头范式）
 ---
 
 # 设备数采 · 设备列表 · B_Eg71DeviceList
@@ -10,7 +10,7 @@ description: EG71 设备数采设备列表（业务组件，存量补档）：�
 
 ## 1. 描述
 
-**这是什么**：Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 `bc-eg71-modal` 删除确认弹窗。v1.1.0（REQ-012）：状态新增 **Join failed（入网失败，error 态）**，`failReason` 存在时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。v1.1.1（站点转录）：Offline 色票勘误 `muted→warm`——真实站 equipment-data 页 Offline 渲染为暖橙 tag（`ant-tag-orange`），依据 `output/eg71-site-distill/diff-matrix.md` §1#14；Props 与结构零变化。
+**这是什么**：Milesight 网关「Data Services → Data Acquisition → Device」设备列表：工具栏（Manually Add 主按钮 / Scan Add / Batch Add / Delete 危险钮随勾选启停）+ 设备表（复选列 + Identifier / Name / Model / Protocol Type / Signal / Last updated / Status / Number of objects，行内 Edit·Monitor·Delete）+ 信号列 hover 气泡（SF / SNR / RSSI）+ 表尾（Total + 已选计数 + 分页跳转）；空态保留表头、表体替换 Empty；行删除 / 批量删除复用 `bc-eg71-modal` 删除确认弹窗。v1.1.0（REQ-012）：状态新增 **Join failed（入网失败，error 态）**，`failReason` 存在时状态右侧渲染问号图标，hover 气泡展示失败原因（密钥错误 / 节点未收到入网应答包）。v1.1.1（站点转录）：Offline 色票勘误 `muted→warm`——真实站 equipment-data 页 Offline 渲染为暖橙 tag（`ant-tag-orange`），依据 `output/eg71-site-distill/diff-matrix.md` §1#14；Props 与结构零变化。v1.1.3（表头范式统一）：**表头黑色加粗**——共享结构类 `.bc-eg71-table thead th` 覆写 L2 `ms-table` 默认的 12px 灰色大写，统一为 `--color-text-primary` + 500 加粗 + 14px + `--color-fill-base-normal` 底（对齐库内 snmp/event/app 表头既有范式）；内容单元格保持正文形态不动；同 wrapper 的 DeviceLibTable / ScanDeviceTable / ProtocolDetail / MeshFleetTable 视觉同步统一。
 
 **不是什么**：不是扫描确认页的发现设备表（那是 `bc-eg71-scan-device-table`，双 Tab + 行内编辑 + 添加/放弃）；不做真实增删改——操作以冒泡事件交宿主。
 
@@ -73,6 +73,7 @@ description: EG71 设备数采设备列表（业务组件，存量补档）：�
 
 - 信号条：`--color-success-normal`（good）/ `--color-primary-normal`（medium）/ `--color-warm-normal`（poor）/ `--color-divider-base-2`（底）；条高 `--spacing-4/6/8/12`、宽 `--spacing-2`
 - 气泡（信号 + 失败原因同范式）：`--color-bg-card` 底 + `--color-divider-base-1` 边 + `--shadow-3` + `--radius-6`，偏移 `calc(100% + --spacing-8)`
+- 表头（v1.1.3 共享结构类 `.bc-eg71-table thead th`）：`--color-text-primary` 字色 + `--color-fill-base-normal` 底 + 500/14px/22px（`--font-sans`），内容单元格正文形态不动
 - 失败原因图标：`--color-icon-secondary`；文案 `--color-text-secondary` 12px
 - 状态 Tag：statusTag 语义色（error 态 = Join failed）
 - 左对齐契约：数字列 `bc-num`、操作列 `bc-eg71-table-ops`
@@ -105,4 +106,4 @@ app.addEventListener('eg71-device-add', e => {
 
 ## 8. 版本（Version）
 
-见 frontmatter `version:`。v1.1.0（REQ-012）：状态枚举新增 Join failed（error）+ failReason/failReasonText 行级字段与 hover 原因提示；默认行为与其余契约不变。
+见 frontmatter `version:`。v1.1.0（REQ-012）：状态枚举新增 Join failed（error）+ failReason/failReasonText 行级字段与 hover 原因提示；默认行为与其余契约不变。v1.1.3：表头黑色加粗（共享 wrapper，详见 §1/§5）。
