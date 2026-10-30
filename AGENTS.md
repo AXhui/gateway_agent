@@ -229,7 +229,7 @@ EG71 线表格一律左对齐，写死不改：
 
 每次生成 demo 后，必须按 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5 做反向评论差异核对，并把核对结论（可发清单 + 不发清单及原因）展示给用户、**主动询问是否需要评论**（2026-10-30 用户裁定：每次必问，零逻辑漏洞候选也要确认，不得静默跳过）。用户确认发送后，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
 
-**评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md + 台账；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
+**评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——demo 与 PRD 交互不一致的逻辑：PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md（多维表格台账已于 2026-10-30 废弃）；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
 
 1. 先把 review 整理成 JSON 文件（如 `05_release/REQ-XXX/prd_comments.json`），每条包含：
    - `quote`：评论引用的 PRD 原文片段（从 PRD 原文里摘，要能被搜索到）
