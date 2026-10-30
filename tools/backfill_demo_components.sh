@@ -161,7 +161,14 @@ if miss:
 fields={'使用组件': links}
 if ai_comment:
   fields['AI自评']=ai_comment
-print(json.dumps({'update_records':{i:fields for i in ids}},ensure_ascii=False))
+# 「最新」标记维护：ids 由 record-search 按更新时间倒序返回（该字段=同步时刻，回填不改动），
+# 首条=最新行标 True，其余标 False——每次同步后标记自动挪到新行，首页视图（筛选 最新=✓）每 REQ 恒一条
+per={}
+for n,i in enumerate(ids):
+  f=dict(fields)
+  f['最新']= (n==0)
+  per[i]=f
+print(json.dumps({'update_records':per},ensure_ascii=False))
 " "$ALL_RECORD_IDS" 2>"$TMP_DIR/missing.log" || echo '{}')
 if [ -s "$TMP_DIR/missing.log" ]; then
   cat "$TMP_DIR/missing.log" >&2

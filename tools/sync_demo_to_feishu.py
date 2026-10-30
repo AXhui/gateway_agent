@@ -247,6 +247,9 @@ def main():
         "产品分类": category,
         "AI自评": ai_comment,
         "组件清单": component_list_text,
+        # 新行即该 REQ 当前最新（webhook 若映射此字段则新行自带标记；
+        # 随后 backfill_demo_components.sh 会清掉旧行的「最新」，保证每 REQ 恒一条）
+        "最新": True,
     }
 
     print(f"[同步中] {args.name} → {webhook_url}")
