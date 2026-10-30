@@ -65,5 +65,33 @@
 
 ### 4.5 key 清单维护
 
-- 唯一映射源：`tools/figma-bridge/component-keys.json`（含 libraryKey/重建方法注释）；重建 = get_libraries 反查 libraryKey → search_design_system `includeLibraryKeys` 定向检索。
-- 设计稿必须订阅两份库（资源库面板开启）——`importComponentSetByKeyAsync` 只在库已订阅的文件里可用。
+- **快路径权威映射**：`tools/figma-bridge/component-keys.json`（含 libraryKey/重建方法注释、变体 token、复合块守卫）；重建 = get_libraries 反查 libraryKey → search_design_system `includeLibraryKeys` 定向检索。
+- **运行时库目录兜底（2026-10-29，内部插件落地）**：导入时 `getAvailableLibrariesAsync` + `getTeamLibraryAsync` 拉库目录（key+name），两类动态命中——key 失效（库重发布 key 轮换）按家族名找回现 key；未入映射表的原子 `ms-*` 控件按类名词干匹配目录组件名就地实例化（复合容器不整块替换，本地编排 + 内层原子命中）。component-keys.json 仍为第一优先（带 token/守卫元数据），动态目录是引用兜底，**两者都不命中才允许本地重绘**。
+- **词干匹配三补（2026-10-29 用户实测「组件库很多没有匹配上」）**：①目录名归一双轨——全名归一 + **末段归一**（'/' 后去前导序号，'2 Navigation/1 Breadcrumb'→'breadcrumb'）；②**双语词干桥接**——业务库中文名（标题/弹窗/导航栏/picker-cell…）与英文词干经别名表互查；③**权威库优先**——团队空间多库同名组件（弹窗/标题在 YCM UI、Linkus、管理端等库各有一份）按库名裁决，Milesight_IOT_Web 与网关/路由器业务库优先，防命中错误库。
+- 设计稿必须订阅两份库（资源库面板开启）——`importComponentSetByKeyAsync` 只在库已订阅的文件里可用；未订阅时目录兜底同样拿不到组件集。
+
+### 4.6 引用即改写（实例内容按 HTML，硬性）
+
+> 来源：2026-10-29 用户指令「引用了组件要做改写，文本要按照 html 去填写。内容视觉要按照 html 去拼凑」——库实例落画布后**不得残留库默认文案**，内容呈现以 HTML demo 为准。
+
+- **文本**：build-scene 给每个 lib 命中节点采集**深层文本清单 `texts`（阅读顺序，≤8 段）+ 逐段颜色 `tcols`**；插件侧按序消费——组件 TEXT 属性逐段写入（setProperties），剩余文本**全部**按阅读顺序回填到嵌套文本层（`characters` 覆写，非只改首层）；已由 TEXT 属性写对的层跳过。
+- **视觉**：文字色按 `tcols` 覆盖对应文本层 fills；图标色按 HTML `currentColor` 覆盖描边/填充；变体（颜色/形状）按 HTML 证据裁决（§4.2）——右侧面板所见即 demo 内容。
+- **蒙版铺满（弹窗实例收口，2026-10-29「蒙版只有一半」实测）**：蒙版只盖半页有三个根因，两侧收口——①库「弹窗」实例内部蒙版子帧默认约束固定、不随根 resize 长高：插件侧强制 根尺寸到帧宽高 → 蒙版子帧铺满 0,0 → 卡片重居中，通知报「蒙版铺满 N」；②蒙版子帧透明度做在**图层**上（fill 不透明 + layer opacity）而非 FILL paint 上：识别必须双通道（fill 级 + 图层级），只查 FILL 会漏判；③DOM 层 ms-mask 嵌在**有裁切的容器**（右列/卡片）内：序列化侧把非根级 ms-mask **提升为状态帧直接子节点**（顶层）再强制全幅，只改宽高不提升会被父容器裁掉一半。
+- **边界**：实例内部结构不可重构是 Figma 实例模型限制——表达不了的形态走守卫不过 → 本地编排 + 内层原子件实例（§4.3），不属于「残留库默认内容」。
+
+### 4.7 颜色令牌引用（实色绑库变量，不新建裸色，硬性）
+
+> 来源：2026-10-30 用户指令「颜色token不要自己新建，脚本要去引用基础组件库的token color」——内部通道落 Figma 的实色不得是裸色值，一律绑定 Milesight_IOT_Web 库「Color Token」集合的已发布变量（`importVariableByKeyAsync` + `setBoundVariableForPaint`），改库变量即全局改稿。
+
+| 环节 | 动作 | 落点 |
+|---|---|---|
+| 注册表 | tokens.css 令牌名 → 库变量 key（63 条）；scopes **不落表**，以运行时 `Variable.scopes` 为准（空数组=全域） | `tools/figma-bridge/token-vars.json` |
+| 页内反查 | build-scene 注入 `window.__MS_TOK_NAMES__`（注册表全量名）→ `getComputedStyle(:root)` 建值→名映射（自定义属性返回**声明字面量**，解析 #HEX / #RGBA / rgb() / `var()` 链 ≤4 跳；自动跟随暗色/主题覆写）→ 同值多候选按站点家族优先（text→`color-text-`、fill→`color-fill-|color-bg-|color-base-|color-mask|color-primary-`、icon→`color-icon-`、stroke→`color-border-|color-divider-`），家族内语义名压色阶名（`primary-normal` > `blue-06`）；**仅不透明色参与** | `scene-bootstrap.js` tokOf |
+| 采集点 | 文本色 `tk` / 帧填充 `ftk` / 图标 currentColor `ctk` / 描边 `stk.tk`·`al.btk` / 库实例文本逐段 `lib.ttoks`；`verify-scene` 路径不注入名单 → 标记整体关闭、审计基线不变 | scene 各节点 |
+| Node 汇总 | 收集树内全部标记 → `scene.tokVars={令牌名:key}`（只保留注册表有的名） | `build-scene.js` |
+| 插件绑定 | scope 门禁（变量 scopes 不含目标落点即跳过：fill 族绑不到 stroke 等）→ 绑定 → **读回校验**（绑定后 `paint.color` 反映变量值，与 demo 色偏差 >0.02 → 回退裸色，防暗色 demo 进亮色文件/别名值漂移）；同步路径（applyFrameProps/applyAutoLayout 的 strokes）先落裸色入队、导入尾声统一 flush | `code.js` tokPaint |
+
+- **可见性**：完成通知报「令牌绑定 N」；**N=0 且 scene 有 tokVars = 异常**（查 token-vars.json key 失效 / 库未订阅），不得当正常结果。
+- **允许裸色的例外**：半透明色（库变量不含 alpha）、注册表无名命中（gray/green 等色阶库未发布）、scope 错配、读回漂移——回退裸色保视觉，不算违规。
+- **别名保护**：tokens.css `color-blue-01..10` 对应库 `color-primary-1..10`，key 已直录注册表；库值≠demo 色由读回校验兜底回退。
+- **重建**：key 失效时 get_libraries 反查 libraryKey → search_design_system `includeLibraryKeys` 定向检索，同名变量在 Color Token（a5396ce6…）与 UINK 专用（f431adcf…）两集合发布，**只收前者**；变量全名带分组前缀（'3 Text/color-text-primary'）取末段对齐 tokens.css。

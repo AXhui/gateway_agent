@@ -1,353 +1,414 @@
 {
-  "$comment": "demo 类名 → Figma 发布库组件 key 映射（转 Figma 库实例化二期）。build-scene.js lib-pass 给命中节点打 n.lib 标记（子树原样保留作导入失败回退；同时采集块背景色 col/文字色 tc 供颜色择变体），插件 code.js 先试 importComponentByKeyAsync、失败回退 importComponentSetByKeyAsync（组件集 key 只认后者——2026-10-25 库引用契约，规则见 .claude/rules/figma-asset-libs.md §4）→ component_set 按「修饰类 token → HTML 颜色比色距」择变体 → createInstance → setProperties（VARIANT/BOOLEAN/TEXT，含颜色裁决）→ 覆写首个文本层。铁律：EG71（网关）HTML 必走本映射调用库基础组件（ms-*→Milesight_IOT_Web），业务库已有整块形态（侧边栏等）优先直调实例、不本地重画——设计师在 Figma 里直接换库组件/切变体。原子控件 enabled:true；复合块按 guard 守卫启用（2026-10-25，First Draft 形状匹配：plainTitle 标题 / simpleDialog 弹窗 / pageTabs 页签栏三层嵌套 swap，守卫不过本地重绘+内件实例，见 .claude/rules/figma-asset-libs.md §4.3）。重建方法：figma-remote get_libraries 反查 libraryKey → search_design_system includeLibraryKeys 定向检索，componentSetKey/componentKey 即导入 API 入参（注意 assetType 决定走哪个 API）。检索日期 2026-10-24（key 复验 2026-10-25 全部有效）。",
-  "libraries": {
-    "biz": { "name": "（新版本）网关/路由器 通用业务组件库", "libraryKey": "lk-1456c337361aa8e31ab587202acc4492171fc5a9f8a4366070f51f5270b4d9301a85dd833450010f9809a1c2195dca47caeddcf37554c86996913a70d5bccee0", "fileKey": "（团队库，fileKey 未知；71.0.0.4 设计稿 CVVyZcQHpcu8lipmsXRZIm 订阅了它）" },
-    "web": { "name": "Milesight_IOT_Web", "libraryKey": "lk-fd11ca356b4084d6ff11636a401c556a1f97795cf92cced550aceb1c9722d02b14fbf9b7ba8136f0b1eb24a945b1a727e64ee41590650f2d04487852c74adae8", "fileKey": "Er9jFJWKavCdkG7HXPc58v" }
+ "$comment": "demo 类名 → Figma 发布库组件 key 映射（转 Figma 库实例化二期）。build-scene.js lib-pass 给命中节点打 n.lib 标记（子树原样保留作导入失败回退；同时采集块背景色 col/文字色 tc 供颜色择变体），插件 code.js 先试 importComponentByKeyAsync、失败回退 importComponentSetByKeyAsync（组件集 key 只认后者——2026-10-25 库引用契约，规则见 .claude/rules/figma-asset-libs.md §4）→ component_set 按「修饰类 token → HTML 颜色比色距」择变体 → createInstance → setProperties（VARIANT/BOOLEAN/TEXT，含颜色裁决）→ 覆写首个文本层。铁律：EG71（网关）HTML 必走本映射调用库基础组件（ms-*→Milesight_IOT_Web），业务库已有整块形态（侧边栏等）优先直调实例、不本地重画——设计师在 Figma 里直接换库组件/切变体。原子控件 enabled:true；复合块按 guard 守卫启用（2026-10-25，First Draft 形状匹配：plainTitle 标题 / simpleDialog 弹窗 / pageTabs 页签栏三层嵌套 swap，守卫不过本地重绘+内件实例，见 .claude/rules/figma-asset-libs.md §4.3）。重建方法：figma-remote get_libraries 反查 libraryKey → search_design_system includeLibraryKeys 定向检索，componentSetKey/componentKey 即导入 API 入参（注意 assetType 决定走哪个 API）。检索日期 2026-10-24（key 复验 2026-10-25 全部有效）。",
+ "libraries": {
+  "biz": {
+   "name": "（新版本）网关/路由器 通用业务组件库",
+   "libraryKey": "lk-1456c337361aa8e31ab587202acc4492171fc5a9f8a4366070f51f5270b4d9301a85dd833450010f9809a1c2195dca47caeddcf37554c86996913a70d5bccee0",
+   "fileKey": "（团队库，fileKey 未知；71.0.0.4 设计稿 CVVyZcQHpcu8lipmsXRZIm 订阅了它）"
   },
-  "components": [
-    {
-      "cls": "ms-btn",
-      "lib": "web",
-      "key": "89948411acf1ba86f46f75f4cc82c3295bd85e88",
-      "figmaName": "1 Basic/2 Button",
-      "kind": "set",
-      "enabled": true,
-      "tokens": { "primary": "primary", "danger": "danger", "success": "success", "dashed": "dashed", "link": "link", "text": "text", "filled": "filled", "xs": "xs", "sm": "small", "lg": "large", "loading": "loading", "disabled": "disabled" }
+  "web": {
+   "name": "Milesight_IOT_Web",
+   "libraryKey": "lk-fd11ca356b4084d6ff11636a401c556a1f97795cf92cced550aceb1c9722d02b14fbf9b7ba8136f0b1eb24a945b1a727e64ee41590650f2d04487852c74adae8",
+   "fileKey": "Er9jFJWKavCdkG7HXPc58v"
+  }
+ },
+ "components": [
+  {
+   "cls": "ms-btn",
+   "lib": "web",
+   "key": "89948411acf1ba86f46f75f4cc82c3295bd85e88",
+   "figmaName": "1 Basic/2 Button",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {
+    "primary": "primary",
+    "danger": "danger",
+    "success": "success",
+    "dashed": "dashed",
+    "link": "link",
+    "text": "text",
+    "filled": "filled",
+    "xs": "xs",
+    "sm": "small",
+    "lg": "large",
+    "loading": "loading",
+    "disabled": "disabled"
+   }
+  },
+  {
+   "cls": "ms-input",
+   "lib": "web",
+   "key": "c9d4614245e9718f1e3cad7461536c00d71b5260",
+   "figmaName": "Input",
+   "kind": "set",
+   "enabled": true,
+   "exclude": [
+    "ms-input--textarea",
+    "ms-input-number",
+    "ms-input-affix-wrapper"
+   ],
+   "tokens": {
+    "sm": "small",
+    "lg": "large",
+    "error": "error",
+    "disabled": "disabled"
+   }
+  },
+  {
+   "cls": "ms-select",
+   "lib": "web",
+   "key": "f584971473e4717309afe2695d42043328f7d967",
+   "figmaName": "Select",
+   "kind": "set",
+   "enabled": true,
+   "exclude": [
+    "ms-select-native"
+   ],
+   "tokens": {
+    "sm": "small",
+    "lg": "large",
+    "error": "error",
+    "disabled": "disabled"
+   }
+  },
+  {
+   "cls": "ms-switch",
+   "lib": "web",
+   "key": "6267417a76a2cc4480b8f52db323d2351c326655",
+   "figmaName": "3 Data Entry/ 2 Switch",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {
+    "xs": "xs",
+    "sm": "small"
+   }
+  },
+  {
+   "cls": "ms-checkbox",
+   "lib": "web",
+   "key": "28c4580ca26a5011556fbeb15cbe3c921cd9df07",
+   "figmaName": "checkbox",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {
+    "disabled": "disabled"
+   }
+  },
+  {
+   "cls": "ms-radio",
+   "lib": "web",
+   "key": "dd53b71045ccbd8bf3eb305e25718f79d2709954",
+   "figmaName": "Radio",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {
+    "disabled": "disabled"
+   }
+  },
+  {
+   "cls": "ms-tag",
+   "lib": "web",
+   "key": "df5f4dc0f290f62ea05b37eca50e84c3d84b1c50",
+   "figmaName": "Tag 标签",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {
+    "primary": "primary",
+    "success": "success",
+    "error": "error",
+    "warn": "warning",
+    "warm": "warning",
+    "remind": "remind",
+    "outline": "outline",
+    "round": "round"
+   }
+  },
+  {
+   "cls": "ms-empty",
+   "lib": "biz",
+   "key": "062206e2ad770c17cfbed038073d56b94a8f756e",
+   "figmaName": "Empty",
+   "kind": "single",
+   "enabled": true,
+   "tokens": {}
+  },
+  {
+   "cls": "ms-modal-title",
+   "lib": "biz",
+   "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+   "figmaName": "标题",
+   "kind": "set",
+   "enabled": true,
+   "guard": "plainTitle",
+   "note": "纯文本标题帧（16px）→ 业务库「标题」实例（First Draft 形状匹配：无开关形态贴 plain 变体，带 ms-switch 子树贴 with-switch 变体）；守卫 plainTitle=仅 1 段 16px 文本、无图标/控件子树；文本经 TEXT 属性或嵌套文本层覆写"
+  },
+  {
+   "cls": "ms-card-title",
+   "lib": "biz",
+   "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+   "figmaName": "标题",
+   "kind": "set",
+   "enabled": true,
+   "guard": "plainTitle",
+   "note": "同 ms-modal-title——卡片标题纯文本帧 →「标题」实例"
+  },
+  {
+   "cls": "bc-com-title-main",
+   "lib": "biz",
+   "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+   "figmaName": "标题",
+   "kind": "set",
+   "enabled": true,
+   "guard": "plainTitle",
+   "note": "同上——主标题变体纯文本形态才实例化；带 tag/开关/按钮组的标题行守卫不过，保持本地编排（内件已是库实例）"
+  },
+  {
+   "cls": "bc-eg71-page-tabs",
+   "lib": "web",
+   "key": "65284824528fbd8c076f80950f08c910be23f4a8",
+   "figmaName": "Tabs/Top",
+   "kind": "set",
+   "enabled": true,
+   "guard": "pageTabs",
+   "aux": {
+    "top": {
+     "figmaName": "Components/Tabs-Top",
+     "key": "b9efb13a831161d5e9666b10ec944a311ec85a55"
     },
-    {
-      "cls": "ms-input",
-      "lib": "web",
-      "key": "c9d4614245e9718f1e3cad7461536c00d71b5260",
-      "figmaName": "Input",
-      "kind": "set",
-      "enabled": true,
-      "exclude": ["ms-input--textarea", "ms-input-number", "ms-input-affix-wrapper"],
-      "tokens": { "sm": "small", "lg": "large", "error": "error", "disabled": "disabled" }
-    },
-    {
-      "cls": "ms-select",
-      "lib": "web",
-      "key": "f584971473e4717309afe2695d42043328f7d967",
-      "figmaName": "Select",
-      "kind": "set",
-      "enabled": true,
-      "exclude": ["ms-select-native"],
-      "tokens": { "sm": "small", "lg": "large", "error": "error", "disabled": "disabled" }
-    },
-    {
-      "cls": "ms-switch",
-      "lib": "web",
-      "key": "6267417a76a2cc4480b8f52db323d2351c326655",
-      "figmaName": "3 Data Entry/ 2 Switch",
-      "kind": "set",
-      "enabled": true,
-      "tokens": { "xs": "xs", "sm": "small" }
-    },
-    {
-      "cls": "ms-checkbox",
-      "lib": "web",
-      "key": "28c4580ca26a5011556fbeb15cbe3c921cd9df07",
-      "figmaName": "checkbox",
-      "kind": "set",
-      "enabled": true,
-      "tokens": { "disabled": "disabled" }
-    },
-    {
-      "cls": "ms-radio",
-      "lib": "web",
-      "key": "dd53b71045ccbd8bf3eb305e25718f79d2709954",
-      "figmaName": "Radio",
-      "kind": "set",
-      "enabled": true,
-      "tokens": { "disabled": "disabled" }
-    },
-    {
-      "cls": "ms-tag",
-      "lib": "web",
-      "key": "df5f4dc0f290f62ea05b37eca50e84c3d84b1c50",
-      "figmaName": "Tag 标签",
-      "kind": "set",
-      "enabled": true,
-      "tokens": { "primary": "primary", "success": "success", "error": "error", "warn": "warning", "warm": "warning", "remind": "remind", "outline": "outline", "round": "round" }
-    },
-    {
-      "cls": "ms-empty",
-      "lib": "biz",
-      "key": "062206e2ad770c17cfbed038073d56b94a8f756e",
-      "figmaName": "Empty",
-      "kind": "single",
-      "enabled": true,
-      "tokens": {}
-    },
-    {
-      "cls": "ms-modal-title",
-      "lib": "biz",
-      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
-      "figmaName": "标题",
-      "kind": "set",
-      "enabled": true,
-      "guard": "plainTitle",
-      "note": "纯文本标题帧（16px）→ 业务库「标题」实例（First Draft 形状匹配：无开关形态贴 plain 变体，带 ms-switch 子树贴 with-switch 变体）；守卫 plainTitle=仅 1 段 16px 文本、无图标/控件子树；文本经 TEXT 属性或嵌套文本层覆写"
-    },
-    {
-      "cls": "ms-card-title",
-      "lib": "biz",
-      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
-      "figmaName": "标题",
-      "kind": "set",
-      "enabled": true,
-      "guard": "plainTitle",
-      "note": "同 ms-modal-title——卡片标题纯文本帧 →「标题」实例"
-    },
-    {
-      "cls": "bc-com-title-main",
-      "lib": "biz",
-      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
-      "figmaName": "标题",
-      "kind": "set",
-      "enabled": true,
-      "guard": "plainTitle",
-      "note": "同上——主标题变体纯文本形态才实例化；带 tag/开关/按钮组的标题行守卫不过，保持本地编排（内件已是库实例）"
-    },
-    {
-      "cls": "bc-eg71-page-tabs",
-      "lib": "web",
-      "key": "65284824528fbd8c076f80950f08c910be23f4a8",
-      "figmaName": "Tabs/Top",
-      "kind": "set",
-      "enabled": true,
-      "guard": "pageTabs",
-      "aux": {
-        "top": { "figmaName": "Components/Tabs-Top", "key": "b9efb13a831161d5e9666b10ec944a311ec85a55" },
-        "tab": { "figmaName": "Components/Tab", "key": "1ce4e4986f20a3677ab5927cbd2ef6ed33fad1e7" }
-      },
-      "note": "页签栏整块库实例（三层嵌套 swap）：Tabs/Top → 内部 Components/Tabs-Top（Item 数量=页签数）→ 逐个 Tab（Selecte 选择=active）+ 文案覆写；tab 清单由 bc-eg71-page-tab[--active] 子帧采集"
-    },
-    {
-      "cls": "ms-mask",
-      "lib": "biz",
-      "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
-      "figmaName": "弹窗",
-      "kind": "set",
-      "enabled": true,
-      "guard": "simpleDialog",
-      "exclude": ["ms-mask--drawer"],
-      "note": "简单确认/结果弹窗 → 业务库「弹窗」整页实例（自带全页蒙版 1440×900，rgba(39,46,59,0.5)——蒙版覆盖问题的设计师正解）；布尔轴 Info/Error/Waiting/Warn/Success 按子树语义修饰类（--danger→Error 等）裁决；守卫 simpleDialog=单一 ms-modal 卡 ≤560px、2-8 段文本、无 upload/progress/stats/table/drag 富体——富弹窗（REQ-017 结果/上传/进度）守卫不过，本地重绘+内件实例（不硬凑）"
-    },
-    {
-      "cls": "bc-com-title",
-      "lib": "biz",
-      "key": "91179db6f5813c122baff3e65790cf3cac75b415",
-      "figmaName": "标题",
-      "kind": "set",
-      "enabled": false,
-      "note": "标题行整块（常带 tag/describe/开关/按钮组）不整体替换——动态内容丢不起；纯文本形态已由 bc-com-title-main/ms-modal-title/ms-card-title 三个锚点守卫启用"
-    },
-    {
-      "cls": "ms-modal",
-      "lib": "web",
-      "key": "60c778ee8c78bbc968eac2dd61c440d0b47876c6",
-      "figmaName": "Modal/Basic",
-      "kind": "set",
-      "enabled": false,
-      "note": "复合弹窗，正文动态"
-    },
-    {
-      "cls": "ms-alert",
-      "lib": "web",
-      "key": "559d1a03b62d3fc2dba41e9eb597ed650a815054",
-      "figmaName": "Alert",
-      "kind": "set",
-      "enabled": false,
-      "note": "标题+描述双文本；待覆写策略"
-    },
-    {
-      "cls": "ms-message",
-      "lib": "web",
-      "key": "14cf7d7a980abf4ce41478e26eb3a77263e8efa1",
-      "figmaName": "Message",
-      "kind": "set",
-      "enabled": false,
-      "note": "toast 动态文案"
-    },
-    {
-      "cls": "ms-breadcrumb",
-      "lib": "web",
-      "key": "9ba7ac316be155bb90479201d0b8fec2fa9a37ca",
-      "figmaName": "2 Navigation/1 Breadcrumb",
-      "kind": "set",
-      "enabled": false,
-      "note": "多级面包屑文本动态"
-    },
-    {
-      "cls": "ms-drawer",
-      "lib": "web",
-      "key": "84711588590bc4006a619e522a5af40c3fcb4063",
-      "figmaName": "Drawer",
-      "kind": "set",
-      "enabled": false,
-      "note": "复合抽屉"
-    },
-    {
-      "cls": "bc-eg71-sidenav",
-      "lib": "biz",
-      "key": "b0a2f0467524c5ed13e8a9303354f5b059690067",
-      "figmaName": "侧边栏-账户",
-      "kind": "set",
-      "enabled": true,
-      "note": "壳侧边栏整块直调业务库实例（用户 2026-10-24 指示：库里已做好，直接调用去改造）；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
-    },
-    {
-      "cls": "ms-header",
-      "lib": "biz",
-      "key": "377ff47b1ff3820b57b60e63126e79f7735059ff",
-      "figmaName": "导航栏",
-      "kind": "set",
-      "enabled": false,
-      "exclude": [],
-      "note": "壳顶部导航栏（锚点=壳 render 的 header.ms-header）；面包屑/标题/操作区动态，暂不整块替换"
-    },
-    {
-      "figmaName": "弹窗",
-      "lib": "biz",
-      "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
-      "kind": "set",
-      "enabled": false,
-      "note": "业务弹窗集（无 demo 类名锚点，记录备用）"
-    },
-    {
-      "figmaName": "框架（引用后需要解绑使用）",
-      "lib": "biz",
-      "key": "adf4b89fd14fd92750a559068fd5bf042dbd26e7",
-      "kind": "set",
-      "enabled": false,
-      "note": "整页框架（无 demo 类名锚点，记录备用）"
-    },
-    {
-      "figmaName": "picker-cell",
-      "lib": "biz",
-      "key": "e06a83f00823bc4444ffd8583f0b8ae02c078dc1",
-      "kind": "set",
-      "enabled": false,
-      "note": "选择单元格（无 demo 类名锚点，记录备用）"
-    },
-    {
-      "cls": "ms-page-item",
-      "lib": "web",
-      "key": "ad19d0d3e3753d5f7ca7f4281f218ac705816b96",
-      "figmaName": "pagination-element",
-      "kind": "set",
-      "enabled": true,
-      "tokens": {},
-      "note": "分页页码项（全局检索 2026-10-25 命中）；逐项独立实例化，页码文本经 TEXT 属性/首文本层覆写，active 态（--active 修饰或主题色底）走颜色择变体"
-    },
-    {
-      "cls": "ms-pagination",
-      "lib": "web",
-      "key": "58252ddff814925408a3a07f7c171776e4071db0",
-      "figmaName": "pagination-simple",
-      "kind": "single",
-      "enabled": false,
-      "note": "分页整块——页码数/跳转框动态，整实例丢内容；已由 ms-page-item 逐项实例化覆盖"
-    },
-    {
-      "cls": "ms-table",
-      "lib": "web",
-      "key": "3d84c89cddd7319a9314395cf3cf0f3a374b4a32",
-      "figmaName": "Table/Column-Based",
-      "kind": "set",
-      "enabled": false,
-      "note": "表格整块（列基，支持列固定/增删）——数据行动态，整实例丢真实数据行；二期行级/单元格级策略，单元格集已检索记录：Tag 66ead654cad0c1cb7c07b87bab531b4f11884802、Text de7e692700d1129b74927d986071b6ba5e921ca4、Switch 85cb6225d17e05309896d0022bfcce73663ad500、Action 4d50dc013f4dfe6b2773150b83664061cea24d3b、Status 09101245684ad4fc2ea70206c30539134133ff7b、Header 0ed0cd95b360b9d96bb0b93ca4286aaff9e2ac6c、Icon 0bd253db5ecc678077da73bd3ebe44afa4dcb565、Checkbox 8b6b613ccc01d430e2cc788d86d1ca422f094a74、Button 64745f8851cd603b5177878301d38f314abfb606、Link 6b91ec0c3f60def39c15b747bff4d1ae2b05b7c0、Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb、Text+Icon 6f9020b9fb1f2489a0b871d0b6bb8443ece8ebb3；行基表 Row-Based ef1445ff78b6a7890c52e8a89968e7938eaa42c6"
-    },
-    {
-      "cls": "ms-table-toolbar",
-      "lib": "web",
-      "key": "cc7cfc899e5d060c255d59235be18fd14496e195",
-      "figmaName": "Table-Toolbar/Default",
-      "kind": "single",
-      "enabled": false,
-      "note": "表格工具栏——搜索/筛选/批量按钮内容动态，整实例丢内件；内件已是库实例"
-    },
-    {
-      "cls": "ms-progress-line",
-      "lib": "web",
-      "key": "2a6a70bde7caf0814903c01bf62b9615a3d4dad2",
-      "figmaName": "Progress-Line",
-      "kind": "set",
-      "enabled": false,
-      "note": "进度条（track+bar）——已检索命中；变体轴未勘验且填充百分比不可由实例表达（30% 进度会失真），待变体勘验后启用；表格内进度另有 Components/Table-Cell/Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb"
-    },
-    {
-      "cls": "ms-form-item",
-      "lib": "web",
-      "key": "b01d6aa13e7bc0eba1f1364c7a9ff82dd2310b68",
-      "figmaName": "Form-Item",
-      "kind": "set",
-      "enabled": false,
-      "note": "表单项（label+控件+校验消息）——控件类型各异（input/select/switch），整实例丢真实控件；内件已逐个库实例化"
-    },
-    {
-      "cls": "ms-card",
-      "lib": "web",
-      "key": "38a2872000d2b49c9d5d1fe0d80c202ca8bc19fb",
-      "figmaName": "Card",
-      "kind": "set",
-      "enabled": false,
-      "note": "卡片容器——内容动态（head/body/extra），整实例丢内容；业务库 Card 3f644bf163582ee1b69a72a8606547acc9779504 备用；Card-Head e0c620cd0efef065d4d44881f5e83aad0a91e202 对应 ms-card-head（标题行+extra 动态）"
-    },
-    {
-      "cls": "ms-text",
-      "lib": "web",
-      "key": "b0ce4b7d1216a65f351c8ee3979a10732dd10db1",
-      "figmaName": "Text/Paragraph",
-      "kind": "single",
-      "enabled": false,
-      "note": "字体/排版——库内仅 Text/Paragraph 单组件（无标题字号变体集）；scene 文本节点（t:'t'）当前不携带类名，启用需序列化器捕获 cls + 库侧补字号变体；标题已走业务库「标题」集覆盖"
-    },
-    {
-      "cls": "ms-stat",
-      "lib": "web",
-      "key": "cc291893851b98f523d845428eb424c6b36d5d43",
-      "figmaName": "Statistic",
-      "kind": "set",
-      "enabled": false,
-      "note": "统计数值——demo 无 ms-stat 块级锚点（仅 stat-title/value/suffix/trend 子件类）；待统计卡形态守卫；Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
-    },
-    {
-      "cls": "ms-step",
-      "lib": "web",
-      "key": "b9453771916484a745f8ebbf330eebd810b85d6a",
-      "figmaName": "components/steps-item",
-      "kind": "set",
-      "enabled": false,
-      "note": "步骤项——变体轴未勘验（步骤条集 95e3f2fc32b88278e2443515e88ea6ddc8884239 / steps-item-dot 865d4969d43ef3abf39fb87d37db7b7f6821a269 / steps-item-icon 18203362a6ba9fdd8c94767c1a8787bd52a01aeb 记录备用）"
-    },
-    {
-      "cls": "ms-timeline-item",
-      "lib": "web",
-      "key": "25c49e2f0d7c63340bb8a3a523373f9758bc7dfa",
-      "figmaName": "time-dot",
-      "kind": "set",
-      "enabled": false,
-      "note": "时间轴项——变体轴未勘验（Timeline 整条 8b68ec5abaef290026e4d65dd7fe4fc4ce11cbbc / time 组件集 7fa25d5c673a1a62aea93cd49b331a3bacd5fe34 记录备用）"
-    },
-    {
-      "cls": "ms-segmented",
-      "lib": "web",
-      "key": "bac33c7889e56fd62f740a667af511ed3aaa8af0",
-      "figmaName": "Segmented-group",
-      "kind": "set",
-      "enabled": false,
-      "note": "分段单选——demo 锚点为 ms-segmented-item（项级）而非组级；内部项集 ab98425f47361fb7360528a2c647a895c6c241f8 记录备用，待项级锚点启用"
-    },
-    {
-      "cls": "ms-tabs",
-      "lib": "web",
-      "key": "481faafbc2afd829ba9c0eb62869df46858e96bf",
-      "figmaName": "Tabs/Card",
-      "kind": "set",
-      "enabled": false,
-      "note": "卡片式页签——EG71 页面级页签已由 bc-eg71-page-tabs 三层 swap 覆盖；卡片式页签出现时再启用（内部 Card-Tab/Item 99a0c608e85bd5f36f0930b9e17fa55e7f071359 记录备用）"
+    "tab": {
+     "figmaName": "Components/Tab",
+     "key": "1ce4e4986f20a3677ab5927cbd2ef6ed33fad1e7"
     }
-  ]
+   },
+   "note": "页签栏整块库实例（三层嵌套 swap）：Tabs/Top → 内部 Components/Tabs-Top（Item 数量=页签数）→ 逐个 Tab（Selecte 选择=active）+ 文案覆写；tab 清单由 bc-eg71-page-tab[--active] 子帧采集"
+  },
+  {
+   "cls": "ms-mask",
+   "lib": "biz",
+   "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
+   "figmaName": "弹窗",
+   "kind": "set",
+   "enabled": true,
+   "guard": "simpleDialog",
+   "exclude": [
+    "ms-mask--drawer"
+   ],
+   "note": "简单确认/结果弹窗 → 业务库「弹窗」整页实例（自带全页蒙版 1440×900，rgba(39,46,59,0.5)——蒙版覆盖问题的设计师正解）；布尔轴 Info/Error/Waiting/Warn/Success 按子树语义修饰类（--danger→Error 等）裁决；守卫 simpleDialog=单一 ms-modal 卡 ≤560px、2-8 段文本、无 upload/progress/stats/table/drag 富体——富弹窗（REQ-017 结果/上传/进度）守卫不过，本地重绘+内件实例（不硬凑）"
+  },
+  {
+   "cls": "bc-com-title",
+   "lib": "biz",
+   "key": "91179db6f5813c122baff3e65790cf3cac75b415",
+   "figmaName": "标题",
+   "kind": "set",
+   "enabled": false,
+   "note": "标题行整块（常带 tag/describe/开关/按钮组）不整体替换——动态内容丢不起；纯文本形态已由 bc-com-title-main/ms-modal-title/ms-card-title 三个锚点守卫启用"
+  },
+  {
+   "cls": "ms-modal",
+   "lib": "web",
+   "key": "60c778ee8c78bbc968eac2dd61c440d0b47876c6",
+   "figmaName": "Modal/Basic",
+   "kind": "set",
+   "enabled": false,
+   "note": "复合弹窗，正文动态"
+  },
+  {
+   "cls": "ms-alert",
+   "lib": "web",
+   "key": "559d1a03b62d3fc2dba41e9eb597ed650a815054",
+   "figmaName": "Alert",
+   "kind": "set",
+   "enabled": true,
+   "note": "标题+描述双文本；待覆写策略"
+  },
+  {
+   "cls": "ms-message",
+   "lib": "web",
+   "key": "14cf7d7a980abf4ce41478e26eb3a77263e8efa1",
+   "figmaName": "Message",
+   "kind": "set",
+   "enabled": false,
+   "note": "toast 动态文案"
+  },
+  {
+   "cls": "ms-breadcrumb",
+   "lib": "web",
+   "key": "9ba7ac316be155bb90479201d0b8fec2fa9a37ca",
+   "figmaName": "2 Navigation/1 Breadcrumb",
+   "kind": "set",
+   "enabled": false,
+   "note": "多级面包屑文本动态"
+  },
+  {
+   "cls": "ms-drawer",
+   "lib": "web",
+   "key": "84711588590bc4006a619e522a5af40c3fcb4063",
+   "figmaName": "Drawer",
+   "kind": "set",
+   "enabled": false,
+   "note": "复合抽屉"
+  },
+  {
+   "cls": "bc-eg71-sidenav",
+   "lib": "biz",
+   "key": "b0a2f0467524c5ed13e8a9303354f5b059690067",
+   "figmaName": "侧边栏-账户",
+   "kind": "set",
+   "enabled": true,
+   "note": "壳侧边栏整块直调业务库实例（用户 2026-10-24 指示：库里已做好，直接调用去改造）；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
+  },
+  {
+   "cls": "ms-header",
+   "lib": "biz",
+   "key": "377ff47b1ff3820b57b60e63126e79f7735059ff",
+   "figmaName": "导航栏",
+   "kind": "set",
+   "enabled": false,
+   "exclude": [],
+   "note": "壳顶部导航栏（锚点=壳 render 的 header.ms-header）；面包屑/标题/操作区动态，暂不整块替换"
+  },
+  {
+   "figmaName": "弹窗",
+   "lib": "biz",
+   "key": "e1e625b77313ab7da01d2aac57eec071edd5eb9a",
+   "kind": "set",
+   "enabled": false,
+   "note": "业务弹窗集（无 demo 类名锚点，记录备用）"
+  },
+  {
+   "figmaName": "框架（引用后需要解绑使用）",
+   "lib": "biz",
+   "key": "adf4b89fd14fd92750a559068fd5bf042dbd26e7",
+   "kind": "set",
+   "enabled": false,
+   "note": "整页框架（无 demo 类名锚点，记录备用）"
+  },
+  {
+   "figmaName": "picker-cell",
+   "lib": "biz",
+   "key": "e06a83f00823bc4444ffd8583f0b8ae02c078dc1",
+   "kind": "set",
+   "enabled": false,
+   "note": "选择单元格（无 demo 类名锚点，记录备用）"
+  },
+  {
+   "cls": "ms-page-item",
+   "lib": "web",
+   "key": "ad19d0d3e3753d5f7ca7f4281f218ac705816b96",
+   "figmaName": "pagination-element",
+   "kind": "set",
+   "enabled": true,
+   "tokens": {},
+   "note": "分页页码项（全局检索 2026-10-25 命中）；逐项独立实例化，页码文本经 TEXT 属性/首文本层覆写，active 态（--active 修饰或主题色底）走颜色择变体"
+  },
+  {
+   "cls": "ms-pagination",
+   "lib": "web",
+   "key": "58252ddff814925408a3a07f7c171776e4071db0",
+   "figmaName": "pagination-simple",
+   "kind": "single",
+   "enabled": false,
+   "note": "分页整块——页码数/跳转框动态，整实例丢内容；已由 ms-page-item 逐项实例化覆盖"
+  },
+  {
+   "cls": "ms-table",
+   "lib": "web",
+   "key": "3d84c89cddd7319a9314395cf3cf0f3a374b4a32",
+   "figmaName": "Table/Column-Based",
+   "kind": "set",
+   "enabled": false,
+   "note": "表格整块（列基，支持列固定/增删）——数据行动态，整实例丢真实数据行；二期行级/单元格级策略，单元格集已检索记录：Tag 66ead654cad0c1cb7c07b87bab531b4f11884802、Text de7e692700d1129b74927d986071b6ba5e921ca4、Switch 85cb6225d17e05309896d0022bfcce73663ad500、Action 4d50dc013f4dfe6b2773150b83664061cea24d3b、Status 09101245684ad4fc2ea70206c30539134133ff7b、Header 0ed0cd95b360b9d96bb0b93ca4286aaff9e2ac6c、Icon 0bd253db5ecc678077da73bd3ebe44afa4dcb565、Checkbox 8b6b613ccc01d430e2cc788d86d1ca422f094a74、Button 64745f8851cd603b5177878301d38f314abfb606、Link 6b91ec0c3f60def39c15b747bff4d1ae2b05b7c0、Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb、Text+Icon 6f9020b9fb1f2489a0b871d0b6bb8443ece8ebb3；行基表 Row-Based ef1445ff78b6a7890c52e8a89968e7938eaa42c6"
+  },
+  {
+   "cls": "ms-table-toolbar",
+   "lib": "web",
+   "key": "cc7cfc899e5d060c255d59235be18fd14496e195",
+   "figmaName": "Table-Toolbar/Default",
+   "kind": "single",
+   "enabled": false,
+   "note": "表格工具栏——搜索/筛选/批量按钮内容动态，整实例丢内件；内件已是库实例"
+  },
+  {
+   "cls": "ms-progress-line",
+   "lib": "web",
+   "key": "2a6a70bde7caf0814903c01bf62b9615a3d4dad2",
+   "figmaName": "Progress-Line",
+   "kind": "set",
+   "enabled": false,
+   "note": "进度条（track+bar）——已检索命中；变体轴未勘验且填充百分比不可由实例表达（30% 进度会失真），待变体勘验后启用；表格内进度另有 Components/Table-Cell/Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb"
+  },
+  {
+   "cls": "ms-form-item",
+   "lib": "web",
+   "key": "b01d6aa13e7bc0eba1f1364c7a9ff82dd2310b68",
+   "figmaName": "Form-Item",
+   "kind": "set",
+   "enabled": false,
+   "note": "表单项（label+控件+校验消息）——控件类型各异（input/select/switch），整实例丢真实控件；内件已逐个库实例化"
+  },
+  {
+   "cls": "ms-card",
+   "lib": "web",
+   "key": "38a2872000d2b49c9d5d1fe0d80c202ca8bc19fb",
+   "figmaName": "Card",
+   "kind": "set",
+   "enabled": false,
+   "note": "卡片容器——内容动态（head/body/extra），整实例丢内容；业务库 Card 3f644bf163582ee1b69a72a8606547acc9779504 备用；Card-Head e0c620cd0efef065d4d44881f5e83aad0a91e202 对应 ms-card-head（标题行+extra 动态）"
+  },
+  {
+   "cls": "ms-text",
+   "lib": "web",
+   "key": "b0ce4b7d1216a65f351c8ee3979a10732dd10db1",
+   "figmaName": "Text/Paragraph",
+   "kind": "single",
+   "enabled": false,
+   "note": "字体/排版——库内仅 Text/Paragraph 单组件（无标题字号变体集）；scene 文本节点（t:'t'）当前不携带类名，启用需序列化器捕获 cls + 库侧补字号变体；标题已走业务库「标题」集覆盖"
+  },
+  {
+   "cls": "ms-stat",
+   "lib": "web",
+   "key": "cc291893851b98f523d845428eb424c6b36d5d43",
+   "figmaName": "Statistic",
+   "kind": "set",
+   "enabled": true,
+   "note": "统计数值——demo 无 ms-stat 块级锚点（仅 stat-title/value/suffix/trend 子件类）；待统计卡形态守卫；Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
+  },
+  {
+   "cls": "ms-step",
+   "lib": "web",
+   "key": "b9453771916484a745f8ebbf330eebd810b85d6a",
+   "figmaName": "components/steps-item",
+   "kind": "set",
+   "enabled": false,
+   "note": "步骤项——变体轴未勘验（步骤条集 95e3f2fc32b88278e2443515e88ea6ddc8884239 / steps-item-dot 865d4969d43ef3abf39fb87d37db7b7f6821a269 / steps-item-icon 18203362a6ba9fdd8c94767c1a8787bd52a01aeb 记录备用）"
+  },
+  {
+   "cls": "ms-timeline-item",
+   "lib": "web",
+   "key": "25c49e2f0d7c63340bb8a3a523373f9758bc7dfa",
+   "figmaName": "time-dot",
+   "kind": "set",
+   "enabled": false,
+   "note": "时间轴项——变体轴未勘验（Timeline 整条 8b68ec5abaef290026e4d65dd7fe4fc4ce11cbbc / time 组件集 7fa25d5c673a1a62aea93cd49b331a3bacd5fe34 记录备用）"
+  },
+  {
+   "cls": "ms-segmented",
+   "lib": "web",
+   "key": "bac33c7889e56fd62f740a667af511ed3aaa8af0",
+   "figmaName": "Segmented-group",
+   "kind": "set",
+   "enabled": false,
+   "note": "分段单选——demo 锚点为 ms-segmented-item（项级）而非组级；内部项集 ab98425f47361fb7360528a2c647a895c6c241f8 记录备用，待项级锚点启用"
+  },
+  {
+   "cls": "ms-tabs",
+   "lib": "web",
+   "key": "481faafbc2afd829ba9c0eb62869df46858e96bf",
+   "figmaName": "Tabs/Card",
+   "kind": "set",
+   "enabled": false,
+   "note": "卡片式页签——EG71 页面级页签已由 bc-eg71-page-tabs 三层 swap 覆盖；卡片式页签出现时再启用（内部 Card-Tab/Item 99a0c608e85bd5f36f0930b9e17fa55e7f071359 记录备用）"
+  }
+ ]
 }

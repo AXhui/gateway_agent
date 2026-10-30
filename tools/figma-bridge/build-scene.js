@@ -19,7 +19,17 @@ if (!demoPath || !fs.existsSync(demoPath)) {
 }
 
 const html = fs.readFileSync(demoPath, 'utf8');
-const inject = '\n<script>' + BOOTSTRAP + '<\/script>';
+// 颜色令牌注册表（token-vars.json）：tokens.css 名 -> Milesight_IOT_Web「Color Token」库变量 key。
+// 注入名清单后页内 getComputedStyle 值反查（跟随主题/暗色覆写）+ 家族优先裁决，节点打 tk/ftk/ctk 标记；
+// 插件侧不新建颜色，实色一律绑库变量（改库全局生效），scope 门禁 + 读回校验失败回退裸色。
+let TOK_VARS = null;
+try {
+  const tokCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'token-vars.json'), 'utf8'));
+  if (tokCfg && tokCfg.vars) TOK_VARS = tokCfg.vars;
+} catch (e) { console.warn('token-vars.json 缺失或损坏，颜色令牌绑定关闭: ' + e.message); }
+const tokNames = TOK_VARS ? Object.keys(TOK_VARS).map(n => '--' + n) : [];
+const inject = (tokNames.length ? '\n<script>window.__MS_TOK_NAMES__=' + JSON.stringify(tokNames) + '<\/script>' : '') +
+  '\n<script>' + BOOTSTRAP + '<\/script>';
 const built = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, inject + '\n</body>') : html + inject;
 const tmp = '/tmp/ms-scene-in-' + Date.now() + '.html';
 fs.writeFileSync(tmp, built);
@@ -101,19 +111,26 @@ scene.cells.forEach(c => flattenWrappers(c.root));
 // 蒙版全页铁律（用户 2026-10-25）：弹窗蒙版一律铺满状态帧，禁止局部覆盖——
 // DOM 层 ms-mask 若未全幅（局部定位/尺寸缩水），scene 侧强制扩到 0,0,frame w×h；
 // 库「弹窗」实例侧同理吃到全页尺寸（自带全页蒙版），富弹窗本地重绘的蒙版同样被本条兜底
-let maskFix = 0;
+// 2026-10-29 补提升：ms-mask 常嵌在有裁切的容器（右列/卡片）内，只改宽高不改父级 → 蒙版仍被
+// 父容器裁掉一半（用户实测「mask 没有全屏幕」根因）。修法：非根级 ms-mask 一律提升为状态帧
+// 直接子节点并置于最顶层（子级坐标本就相对蒙版，提升后位置不变），再强制全幅。
+let maskFix = 0, maskLift = 0;
 scene.cells.forEach(c => {
+  const lifted = [];
   (function fixMask(nd) {
+    const out = [];
     (nd.ch || []).forEach(m => {
-      if (m.t === 'f' && m.n && String(m.n).trim().split(/\s+/).includes('ms-mask')
-        && (m.x !== 0 || m.y !== 0 || m.w < c.w || m.h < c.h)) {
-        m.x = 0; m.y = 0; m.w = c.w; m.h = c.h; maskFix++;
-      }
+      const isMask = m.t === 'f' && m.n && String(m.n).trim().split(/\s+/).includes('ms-mask');
+      if (isMask && nd !== c.root) { lifted.push(m); maskLift++; return; }
+      if (isMask && (m.x !== 0 || m.y !== 0 || m.w < c.w || m.h < c.h)) { m.x = 0; m.y = 0; m.w = c.w; m.h = c.h; maskFix++; }
+      out.push(m);
       fixMask(m);
     });
+    nd.ch = out;
   })(c.root);
+  lifted.forEach(m => { m.x = 0; m.y = 0; m.w = c.w; m.h = c.h; c.root.ch.push(m); });
 });
-if (maskFix) console.log('蒙版全页强制: ' + maskFix + ' 处 ms-mask 扩到状态帧尺寸（弹窗蒙版铁律）');
+if (maskFix || maskLift) console.log('蒙版全页强制: ' + maskFix + ' 处扩幅 + ' + maskLift + ' 处提升到帧根（弹窗蒙版铁律）');
 
 // 图标实例化：页内已反查出 MS_ICONS 名（node.ic），命中 icon-keys.json 的升级为 t:'ic'（携带库组件 key）
 let iconStats = null;
@@ -148,15 +165,17 @@ try {
   // 守卫（First Draft 形状匹配原则）：复合块只有形状匹配库形态才整块替换，不硬凑。
   // 守卫不过 → 不打 lib 标记，子树照常走本地重绘（内层控件仍会被各自锚点标记为库实例）。
   const SEM_WORDS = { error: 'error', danger: 'error', success: 'success', warn: 'warn', warning: 'warn', info: 'info', waiting: 'waiting', loading: 'waiting' };
-  function deepTexts(m, cap) {
+  function deepTextPairs(m, cap) {
+    // 深层文本对（文本+颜色，阅读顺序）：引用实例的文案改写数据源（2026-10-29 用户规则：文本按 HTML 填写）
     const out = [];
     (function w2(x) {
       if (out.length >= cap) return;
-      if (x.t === 't' && x.text && String(x.text).trim()) out.push(String(x.text).trim());
+      if (x.t === 't' && x.text && String(x.text).trim()) out.push({ s: String(x.text).trim(), c: x.col });
       (x.ch || []).forEach(w2);
     })(m);
     return out;
   }
+  function deepTexts(m, cap) { return deepTextPairs(m, cap).map(p => p.s); }
   function deepClassToks(m, cap) {
     const out = [];
     (function w3(x) {
@@ -226,10 +245,16 @@ try {
           text: ((n.ch || []).filter(c => c.t === 't').map(c => c.text).join(' ').trim().slice(0, 40)) || undefined,
           ic: (function hasVec(m) { return (m.ch || []).some(c => c.t === 'ic' || c.t === 's' || hasVec(c)); })(n)
         };
+        // 实例文案改写数据源（2026-10-29 用户规则：引用实例的文本按 HTML 填写）：
+        // 深层文本清单 texts + 逐段颜色 tcols（阅读顺序对齐），插件侧 TEXT 属性逐段吃、剩余按嵌套文本层回填
+        const tp = deepTextPairs(n, 8);
+        lib.texts = tp.map(p => p.s);
+        lib.tcols = tp.map(p => p.c || undefined);
         if (ent.guard) {
           const g = evalGuard(ent, n);
           if (g) {
             Object.assign(lib, g);
+            if (g.texts) lib.tcols = undefined; // 守卫 texts 用自身截断，颜色序列不对齐 → 不带
             if (g.sem) g.sem.forEach(w => { if (!lib.tok.includes(w)) lib.tok.push(w); });
             delete lib.sem;
           } else { (n.ch || []).forEach(walkLib); return; }
@@ -354,6 +379,48 @@ let compStats = null;
   }
 })(scene);
 
+// 颜色令牌汇总（scene.tokMap 由页内反查导出，仅 Node 侧消费）：lib 文本逐段颜色反查 ttoks（与 tcols 平行），
+// 再收集树内全部令牌标记（tk/ftk/ctk/stk.tk/al.btk/lib.ttoks）→ scene.tokVars={令牌名:库变量key} 供插件绑定。
+if (scene.tokMap) {
+  const FAM = { text: ['color-text-'], fill: ['color-fill-', 'color-bg-', 'color-base-', 'color-mask', 'color-primary-'], icon: ['color-icon-'], stroke: ['color-border-', 'color-divider-'] };
+  const pickTok = (c, site) => {
+    if (!c) return undefined;
+    const cand = scene.tokMap[Math.round(c[0] * 255) + ',' + Math.round(c[1] * 255) + ',' + Math.round(c[2] * 255)];
+    if (!cand || !cand.length) return undefined;
+    const fam = FAM[site] || [];
+    let best = null, bs = -1;
+    cand.forEach(nm => {
+      const s = (fam.some(p => nm.indexOf(p) === 0) ? 100 : 0) + (/\d\d$/.test(nm) ? 0 : 10);
+      if (s > bs) { bs = s; best = nm; }
+    });
+    return best;
+  };
+  scene.cells.forEach(c => (function wt(n) {
+    if (n.lib && Array.isArray(n.lib.tcols)) n.lib.ttoks = n.lib.tcols.map(cc => pickTok(cc, 'text'));
+    (n.ch || []).forEach(wt);
+  })(c.root));
+  const used = new Set();
+  const gather = n => {
+    if (!n || typeof n !== 'object') return;
+    if (n.tk) used.add(n.tk);
+    if (n.ftk) used.add(n.ftk);
+    if (n.ctk) used.add(n.ctk);
+    if (n.stk && n.stk.tk) used.add(n.stk.tk);
+    if (n.al && n.al.btk) used.add(n.al.btk);
+    if (n.lib && n.lib.ttoks) n.lib.ttoks.forEach(t => { if (t) used.add(t); });
+    (n.ch || []).forEach(gather);
+  };
+  scene.cells.forEach(c => gather(c.root));
+  if (scene.defs) Object.keys(scene.defs).forEach(id => gather(scene.defs[id].root));
+  const tokVars = {};
+  used.forEach(nm => { const k = TOK_VARS && TOK_VARS[nm]; if (k) tokVars[nm] = k; });
+  if (Object.keys(tokVars).length) {
+    scene.tokVars = tokVars;
+    console.log('令牌绑定: ' + Object.keys(tokVars).length + ' 个库颜色变量（Milesight_IOT_Web · Color Token，插件 importVariableByKeyAsync 绑定）');
+  }
+  delete scene.tokMap;
+}
+
 // 序列化审计用的 DOM 路径 p 落盘前剥离（rct 已解析，运行时不再需要）
 function stripP(n) {
   if (!n || typeof n !== 'object') return;
@@ -381,11 +448,11 @@ if (rctCount) console.log('原型连线: ' + rctCount + ' 条（setup 触发节�
 
 // 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
 try {
-  cp.execSync('lsof -i :8123 -sTCP:LISTEN', { stdio: 'ignore' });
+  cp.execSync('lsof -i :8124 -sTCP:LISTEN', { stdio: 'ignore' });
 } catch (e) {
   const serve = path.join(os.homedir(), 'Desktop/html-to-figma-internal/serve.py');
   if (fs.existsSync(serve)) {
     cp.spawn('python3', [serve], { detached: true, stdio: 'ignore' }).unref();
-    console.log('已自动启动 serve.py（localhost:8123）');
+    console.log('已自动启动 serve.py（127.0.0.1:8124，V2 插件面板端口）');
   }
 }

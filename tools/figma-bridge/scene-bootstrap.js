@@ -60,6 +60,50 @@ const BOOTSTRAP = `(function(){
     return out;
   }
   function iconSig(s){return s.replace(/\\s+/g,'').replace(/<\\/[a-zA-Z]+>/g,'').replace(/\\/>/g,'>')}
+  // 颜色令牌反查（build-scene 注入 __MS_TOK_NAMES__=tokens.css 全量色令牌名；verify 注入 absent 时整体关闭，输出与基线一致）。
+  // 值->名映射走 getComputedStyle(:root)：自动跟随页面主题（暗色块/级联覆写）；同值多候选按站点家族优先（文本/填充/图标/描边），
+  // 家族内语义名再压色阶名（primary-normal > blue-06）；仅不透明色参与（透明令牌库变量不含）。
+  // 注意：自定义属性 getPropertyValue 返回声明字面量（tokens.css 为 #HEX / var() 别名，非 rgb() 计算值），
+  // 解析需覆盖 rgb()/rgba()、#RGB/#RGBA/#RRGGBB/#RRGGBBAA、var() 链（≤4 跳，防环）。
+  function tokParse(v,rs,depth){
+    v=String(v==null?'':v).trim();
+    if(!v||depth>4)return null;
+    var m=v.match(/^rgba?\\(([^)]+)\\)/);
+    if(m){var p=m[1].split(/[ ,\\/]+/).map(parseFloat);if(p.length>3&&p[3]<1)return null;
+      return[Math.round(p[0]),Math.round(p[1]),Math.round(p[2])]}
+    m=v.match(/^#([0-9a-fA-F]{3,8})$/);
+    if(m){var h=m[1];
+      if(h.length===3||h.length===4){h=h.split('').map(function(c){return c+c}).join('')}
+      if(h.length===6||h.length===8){
+        if(h.length===8&&parseInt(h.slice(6,8),16)<255)return null;
+        return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+      return null}
+    m=v.match(/^var\\((--[^),\\s]+)/);
+    if(m)return tokParse(rs.getPropertyValue(m[1]),rs,depth+1);
+    return null;
+  }
+  var TOK_BY_VAL=null;
+  var TOK_FAM={text:['color-text-'],fill:['color-fill-','color-bg-','color-base-','color-mask','color-primary-'],icon:['color-icon-'],stroke:['color-border-','color-divider-']};
+  function tokOf(cArr,site){
+    if(!window.__MS_TOK_NAMES__||!cArr)return undefined;
+    if(!TOK_BY_VAL){
+      TOK_BY_VAL={};
+      var rs=getComputedStyle(document.documentElement);
+      window.__MS_TOK_NAMES__.forEach(function(nm){
+        var v=tokParse(rs.getPropertyValue(nm),rs,0);if(!v)return;
+        var k=v[0]+','+v[1]+','+v[2];
+        (TOK_BY_VAL[k]=TOK_BY_VAL[k]||[]).push(nm.slice(2));
+      });
+    }
+    var cand=TOK_BY_VAL[Math.round(cArr[0]*255)+','+Math.round(cArr[1]*255)+','+Math.round(cArr[2]*255)];
+    if(!cand||!cand.length)return undefined;
+    var fam=TOK_FAM[site]||[],best=null,bs=-1;
+    cand.forEach(function(nm){
+      var s=(fam.some(function(p){return nm.indexOf(p)===0})?100:0)+(/\\d\\d$/.test(nm)?0:10);
+      if(s>bs){bs=s;best=nm}
+    });
+    return best;
+  }
   var iconSigMap=null;
   function iconName(el){
     if(!window.MS_ICONS)return null;
@@ -158,9 +202,13 @@ const BOOTSTRAP = `(function(){
     if(isTxt){
       var pcol=parseRgba(pcs.color)||{c:[0,0,0],a:1};
       var ptn={t:'t',text:rawTxt,fs:fs,fw:(parseInt(pcs.fontWeight)||400),lh:Math.max(lh,fs),ls:parseFloat(pcs.letterSpacing)||0,col:pcol.c,al:'left',x:x,y:y,w:w,h:h,o:1,n:'pseudo-'+short};
+      if(pcol.a>=1){var ptk=tokOf(pcol.c,'text');if(ptk)ptn.tk=ptk}
       return ptn;
     }
-    return {t:'f',f:bg&&bg.a>0?[{c:bg.c,a:bg.a}]:[],e:eff,r:radii(pcs,w,h),clip:false,x:x,y:y,w:w,h:h,o:1,n:'pseudo-'+short,ch:[]};
+    var pfFills=bg&&bg.a>0?[{c:bg.c,a:bg.a}]:[];
+    var pfn={t:'f',f:pfFills,e:eff,r:radii(pcs,w,h),clip:false,x:x,y:y,w:w,h:h,o:1,n:'pseudo-'+short,ch:[]};
+    if(bg&&bg.a>=1){var pftk=tokOf(bg.c,'fill');if(pftk)pfn.ftk=pftk}
+    return pfn;
   }
   function serEl(el,origin,path){
     if(el.nodeType!==1)return null;
@@ -192,7 +240,7 @@ const BOOTSTRAP = `(function(){
       if(rot)n.rot=rot;
       if(path!==undefined)n.p=path;
       var icn=iconName(el);
-      if(icn){n.ic=icn;var icc=parseRgba(cs.color);if(icc)n.col=icc.c}
+      if(icn){n.ic=icn;var icc=parseRgba(cs.color);if(icc){n.col=icc.c;if(icc.a>=1){var ctk=tokOf(icc.c,'icon');if(ctk)n.ctk=ctk}}}
       return n;
     }
     if(tag==='img'||tag==='canvas'){
@@ -213,6 +261,7 @@ const BOOTSTRAP = `(function(){
     var fills=[],bg=parseRgba(cs.backgroundColor);if(bg&&bg.a>0)fills.push({c:bg.c,a:bg.a});
     var eff=shadows(cs.boxShadow);
     var node={t:'f',f:fills,e:eff,r:radii(cs,w,h),clip:((cs.overflowX==='hidden'||cs.overflowX==='clip')||(cs.overflowY==='hidden'||cs.overflowY==='clip')),x:x,y:y,w:w,h:h,o:isNaN(parseFloat(cs.opacity))?1:parseFloat(cs.opacity),n:undefined,ch:[]};
+    if(bg&&bg.a>=1){var ftk=tokOf(bg.c,'fill');if(ftk)node.ftk=ftk}
     if(rot)node.rot=rot;
     if(path!==undefined)node.p=path;
     var cls=(typeof el.className==='string'?el.className:'').trim();if(cls)node.n=cls.slice(0,80);
@@ -233,6 +282,7 @@ const BOOTSTRAP = `(function(){
       var ty=0,th=lh,trInfo=null;
       try{var rg=document.createRange();rg.selectNodeContents(el);var tr=rg.getBoundingClientRect();if(tr.height>0){ty=tr.top-rect.top;th=tr.height;trInfo={tx:tr.left-rect.left,ty:tr.top-rect.top,w:tr.width}}}catch(e){}
       var tn={t:'t',text:txt,fs:fs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(lh,fs),ls:px(cs.letterSpacing)||0,col:col.c,al:al,x:0,y:ty,w:w,h:th,o:1};
+      if(col.a>=1){var ttk=tokOf(col.c,'text');if(ttk)tn.tk=ttk}
       if(cs.fontStyle==='italic'||cs.fontStyle==='oblique')tn.it=1;
       if(cs.textOverflow==='ellipsis'&&cs.overflowX!=='visible'&&cs.whiteSpace==='nowrap')tn.tr=1;
       var dl=cs.textDecorationLine||'none';
@@ -249,6 +299,7 @@ const BOOTSTRAP = `(function(){
     if(ubst&&bst[0]!=='solid'&&bst[0]!=='none'&&ubw&&ubc&&bws[0]>0){
       // 非实线边框：色条表达不了 dash，整体转描边（strokeDashes）
       node.stk={w:bws[0],c:bcx[0].c,a:bcx[0].a,dash:bst[0]};
+      if(bcx[0].a>=1){var stkTk=tokOf(bcx[0].c,'stroke');if(stkTk)node.stk.tk=stkTk}
     } else for(var k=0;k<4;k++){
       var side=sides[k];
       var bc=bcx[k],bwid=bws[k];
@@ -304,6 +355,7 @@ const BOOTSTRAP = `(function(){
                 if(need<=(row?w:h)+1){
                   var alo={dir:row?'row':'col',gap:gap,just:jj,align:aa,pt:pT,pr:pR,pb:pB,pl:pL};
                   if(bws[0]>0){alo.bw=bws[0];alo.bc=bcx[0].c;alo.ba=bcx[0].a;
+                    if(bcx[0].a>=1){var altk=tokOf(bcx[0].c,'stroke');if(altk)alo.btk=altk}
                     node.ch=node.ch.filter(function(c2){return ['border-top','border-right','border-bottom','border-left'].indexOf(c2.n)<0});}
                   node.al=alo;window.__alCount=(window.__alCount||0)+1;
                 }
@@ -355,6 +407,7 @@ const BOOTSTRAP = `(function(){
       }
     }
     var scene={v:1,generatedAt:new Date().toISOString(),cells:cells,proto:trigAll.length?trigAll:undefined,stats:{al:window.__alCount||0,img:window.__imgCount||0,bg:window.__bgCount||0}};
+    if(TOK_BY_VAL)scene.tokMap=TOK_BY_VAL; // 值->候选令牌名映射，Node 侧（build-scene walkLib）反查 lib.tcols 用
     var sc=document.createElement('script');sc.id='ms-scene-json';sc.type='application/json';
     sc.textContent=JSON.stringify(scene).replace(/</g,'\\\\u003c');
     document.documentElement.appendChild(sc);
