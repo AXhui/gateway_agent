@@ -251,6 +251,44 @@ def main():
 
     print(f"[同步中] {args.name} → {webhook_url}")
     ok = sync_to_feishu(payload, webhook_url, webhook_token)
+
+    # 同步成功后自动回填「使用组件」link 字段（webhook 写不了 link，只能靠 lark-cli）。
+    # 根因（2026-10-31 空白行事故）：webhook 插行不带 link 字段，回填此前只挂在
+    # post-commit 钩子上——手动同步、或钩子回填早于 webhook 索引刷新，都会留下空白行。
+    # 这里兜底：本机有 lark-cli 就地回填（全量更新该 REQ 的记录），没有则显式警告。
+    if ok and args.req_id:
+        demo_dir = (
+            Path(args.demo_dir) if args.demo_dir
+            else (Path(args.quality_file).parent if args.quality_file else None)
+        )
+        demo_html = (demo_dir / "demo.html") if demo_dir else None
+        if demo_html and demo_html.is_file():
+            import shutil
+            import time
+
+            if shutil.which("lark-cli"):
+                time.sleep(2)  # webhook 插行后 record-search 索引有滞后
+                repo_root = Path(__file__).resolve().parent.parent
+                cmd = [
+                    "bash", str(repo_root / "tools" / "backfill_demo_components.sh"),
+                    "--demo-file", str(demo_html),
+                    "--req-id", args.req_id,
+                ]
+                if args.quality_file:
+                    cmd += ["--quality-file", args.quality_file]
+                res = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+                lines = (res.stdout or "").strip().splitlines()
+                for ln in lines[-3:] or ["（回填脚本无输出）"]:
+                    print(f"[回填] {ln}")
+                if res.returncode != 0:
+                    print(f"[警告] 回填退出码 {res.returncode}：{(res.stderr or '').strip()[:300]}", file=sys.stderr)
+            else:
+                print(
+                    "[警告] 本机无 lark-cli，「使用组件/AI自评」字段暂空："
+                    "请在本机登录 lark-cli 后重跑，或手动执行 tools/backfill_demo_components.sh",
+                    file=sys.stderr,
+                )
+
     sys.exit(0 if ok else 1)
 
 
