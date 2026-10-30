@@ -1,9 +1,9 @@
 {
-  "structure": 100,
+  "structure": 90,
   "component": 82,
-  "interaction": 100,
-  "visual": 100,
-  "field": 100,
+  "interaction": 90,
+  "visual": 90,
+  "field": 90,
   "category": "网关",
-  "reason": "structure 100：脚本分（score_fidelity 骨架 5/5 + 装配健康 276 调用点 + 业务定制度满分，json 报告）；component 82：脚本分（①命中率 98 ②注册表 89 ③契约调用 70——疑似手写函数 19 个实为页面层 helper 均内部调 B_*，R2b 零命中 ④壳 100 ⑤令牌 69%——裸值多为内联库 CSS 固有 px，score_component.json）；interaction 100：零扣分（T1-T5 全过：7 交互链/状态集/开关状态保持/字段逐项/边界，T1-1 为备忘非扣分）；visual 100：零扣分（U1-U5 全过：壳入口/模块清点/三级基准/三契约/纯净性，U3-1 为文案备忘非条款命中）；field 100：脚本分（score_fidelity 字段维满分，json 报告）。"
+  "reason": "structure 90：脚本分 100（score_fidelity 骨架 5/5 + 装配健康 276 调用点，json 报告），按落分区间控制写 90（scoring.md §0.6）；component 82：脚本分（①命中率 98 ②注册表 89 ③契约调用 70——疑似手写函数 19 个实为页面层 helper 均内部调 B_*，R2b 零命中 ④壳 100 ⑤令牌 69%——裸值多为内联库 CSS 固有 px，score_component.json）；interaction 90：证据零扣分（T1-T5 全过：7 交互链/状态集/开关状态保持/字段逐项/边界），按区间控制写 90；visual 90：证据零扣分（U1-U5 全过：壳入口/模块清点/三级基准/三契约/纯净性），按区间控制写 90；field 90：脚本分 100（score_fidelity 字段维满分，json 报告），按区间控制写 90。"
 }

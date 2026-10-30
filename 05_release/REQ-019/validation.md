@@ -108,3 +108,19 @@
 
 - 三项修复均无新增违规证据行；`score_component.py --write` 82、`score_fidelity.py --write` structure 100 / field 100——与修复前一致，quality.json 无需变更。
 - 冒烟全量重跑（9 状态 + 7 交互链 + 装配完整性 8 块 64B diff）：**ALL PASS**。
+
+## 九、评分区间控制修订（2026-10-31，用户裁定）
+
+用户反馈「飞书的评分分数太高了……如果达到了100，也要写90，最低要有80」——quality.json 写入分按新规钳制：
+
+| 维度 | 原始分（证据/脚本） | 写入分 |
+|---|---|---|
+| structure | 100（score_fidelity json） | 90 |
+| component | 82（score_component json） | 82 |
+| interaction | 100（TEST 零扣分） | 90 |
+| visual | 100（UED 零扣分） | 90 |
+| field | 100（score_fidelity json） | 90 |
+
+- 综合加权 = 88.4（≥80 门槛通过）。
+- 规则已固化：`.claude/rules/scoring.md` §0.6（封顶 90 / 托底 80；脚本 `--write` 之后钳制；原始分保留在 json 报告与本文件证据行，reason 注明区间控制出处）。
+- 真实性校验：写入分 = 原始分经 §0.6 钳制后的值，两处均可追溯，通过。
