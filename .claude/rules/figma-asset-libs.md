@@ -23,6 +23,8 @@
 
 - 本规则是 [.claude/rules/page-assembly.md](page-assembly.md)「组件复用」铁律在 **Figma 侧**的镜像：HTML demo 侧禁止绕过 `B_*`，Figma 侧禁止绕过两份库文件。
 - **适用范围**：claude 驱动的搭稿（A8 Figma 转换、人工指挥）。`tools/figma-bridge` 的 html.to.design 直连导入是**机械转录**（产出普通图层、非库组件），不适用本规则；导入后的组件回填由设计师在 Figma 内做。桥接 server.js 曾内置本规则（自由设计模式 spawn claude），该模式已于 2026-10-23 整体删除（token 耗费不可控），server.js 不再有任何 LLM 路径。
+- **外部网页链接导入不走本地组件（2026-10-30 用户裁定）**：内部插件面板**粘贴的 http(s) 链接**一律按外部网页模式（serve.py `url` 分支 → build-scene `--ext --site` → `scene.ext=1`）——纯图层转录，跳过 §4 全部库匹配机制与 §4.7 令牌绑定、不做组件化、插件不拉库目录；本地路径/拖拽的自家 demo 照常全套。§4 以下契约只对自家 `ms-*` demo 生效。
+- **外部网页多页转录（--site，2026-10-30）**：对齐 demo 侧 `MS_FIGMA_EXPORT` 多态铺开的思路——入口页渲染后由 scene-bootstrap 收集可见同源链接（`a[href]`，导航区 nav/header/aside 优先、pathname+search 去重且 `/index.html`≡`/`、排除资源文件），Node 侧逐页抓取（curl，20MB/30s 上限，失败跳页不阻断）转录，cells 依次 `1. 入口 2..N 子页` 纵向堆叠、插件每 cell 落一帧（标签取锚文本 ≤24 字）；`--pages` 子页上限默认 8；`--ext --site` 同时在 `<head>` 顶部补 `<base>`，修正 file:// 渲染下相对 CSS/JS/图片按原始域名解析。仅 href 可发现的页面（SPA 纯 JS 路由不带真实 href 的不发现）、仅入口外一跳不递归。
 
 ## 4. 转录链路（html→Figma 内部插件）的库引用契约
 

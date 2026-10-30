@@ -371,6 +371,31 @@ const BOOTSTRAP = `(function(){
     return node;
   }
   ready(async function(){
+    // 外部网页多页转录（__MS_EXT_CRAWL__ = 原始链接，build-scene --ext --site 注入）：
+    // 收集可见同源链接（导航区 nav/header/aside 优先、pathname+search 去重、排除资源文件），
+    // 写 ms-ext-links 标记 → Node 侧逐页抓取转录（对齐 demo 侧 MS_FIGMA_EXPORT 多态铺开）
+    if(window.__MS_EXT_CRAWL__){
+      try{
+        var org2=new URL(window.__MS_EXT_CRAWL__),seenL={},listL=[];
+        Array.prototype.forEach.call(document.querySelectorAll('a[href]'),function(a){
+          try{
+            var u=new URL(a.getAttribute('href'),org2);
+            if(u.protocol!=='http:'&&u.protocol!=='https:')return;
+            if(u.host!==org2.host)return;
+            var key=u.pathname+u.search;
+            if(!key||seenL[key])return;
+            if(/\\.(pdf|zip|rar|7z|png|jpe?g|gif|svg|webp|ico|mp4|mp3|css|js|mjs|json|xml|csv|xlsx?|docx?|pptx?|txt)(\\?|$)/i.test(u.pathname))return;
+            if(!a.getClientRects().length)return;
+            seenL[key]=1;
+            listL.push({u:key,t:(a.textContent||'').replace(/\\s+/g,' ').trim().slice(0,24),nav:a.closest('nav,header,aside')?1:0,url:u.origin+key});
+          }catch(e2){}
+        });
+        listL.sort(function(a,b){return b.nav-a.nav});
+        var lsc=document.createElement('script');lsc.id='ms-ext-links';lsc.type='application/json';
+        lsc.textContent=JSON.stringify(listL.slice(0,30)).replace(/</g,'\\\\u003c');
+        document.documentElement.appendChild(lsc);
+      }catch(e3){}
+    }
     var hook=window.MS_FIGMA_EXPORT||{rootSelector:'#app',states:[{name:'默认态',setup:function(){}}],columns:1,frameWidth:1440,settleMs:200};
     var root=document.querySelector(hook.rootSelector||'#app')||document.body;
     var settle=hook.settleMs!=null?hook.settleMs:200;

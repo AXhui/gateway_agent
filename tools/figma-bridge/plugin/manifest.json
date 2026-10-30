@@ -1,0 +1,11 @@
+{
+  "name": "HTML to Figma (Milesight Internal)",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "Import internal demo scene.json from the local dev server (127.0.0.1:8124); fetch remote/data-URL images referenced by the demo for image fills."
+  }
+}

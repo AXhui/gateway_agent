@@ -627,6 +627,34 @@ vm.runInContext(code, sandbox);
   A('复用时不再 combineAsVariants', calls.combineAsVariants.length === combineBefore,
     'combine=' + JSON.stringify(calls.combineAsVariants));
 
+  // ---- 外部网页模式（2026-10-30 用户裁定：复制的网页链接不走本地组件）----
+  // scene.ext=1 → 不拉库目录（getTeamLibraryAsync 不新增）、通知报「外部网页 · 纯图层」而非库/令牌段。
+  // 多 cell = build-scene --ext --site 多页转录（入口 + 同源子页，cells 纵向堆叠）→ 插件每 cell 落一帧
+  const teamLibBeforeExt = calls.teamLib;
+  const combineBeforeExt = calls.combineAsVariants.length;
+  const extCell = (label, y, text) => ({ label, x: 0, y, w: 800, h: 600,
+    root: { t: 'f', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 800, h: 600, o: 1,
+      ch: [T(text)] } });
+  await handler({
+    type: 'scene', json: {
+      v: 2, name: 'ExtPage', ext: 1,
+      cells: [extCell('1. 首页 /', 0, 'Hello Web'), extCell('2. 关于 /about', 664, 'About Page')],
+    },
+  });
+  const extMsg = calls.notify.filter(t => t.indexOf('导入完成') === 0).pop();
+  A('外部网页通知报纯图层模式', extMsg && /外部网页 · 纯图层/.test(extMsg) && !/库组件实例/.test(extMsg) && !/令牌绑定/.test(extMsg), extMsg);
+  A('外部网页不报库实例 0 异常', extMsg && !/库导入失败/.test(extMsg), extMsg);
+  A('外部网页不拉库目录', calls.teamLib === teamLibBeforeExt, 'teamLib=' + calls.teamLib + ' before=' + teamLibBeforeExt);
+  A('外部网页不建组件', calls.combineAsVariants.length === combineBeforeExt, 'combine=' + JSON.stringify(calls.combineAsVariants));
+  const extBoard = figma.currentPage.children.find(n => n.type === 'FRAME' && /ExtPage/.test(n.name));
+  A('外部网页画板落图层', !!extBoard, figma.currentPage.children.map(n => n.name).join(','));
+  const extFrames = extBoard ? extBoard.children.filter(n => n.type === 'FRAME') : [];
+  A('外部网页多页落多帧（每 cell 一帧带序号标签）',
+    extFrames.length === 2 && /1\./.test(extFrames[0].name) && /2\./.test(extFrames[1].name),
+    extFrames.map(f => f.name).join(','));
+  A('外部网页多帧按 scene 堆叠定位', extFrames[1] && Math.abs(extFrames[1].y - 664) < 1,
+    'y=' + (extFrames[1] && extFrames[1].y));
+
   const doneMsg = calls.notify.find(t => t.indexOf('导入完成') === 0);
   A('完成通知', !!doneMsg, calls.notify.join(' | '));
   if (doneMsg) console.log('  通知: ' + doneMsg);

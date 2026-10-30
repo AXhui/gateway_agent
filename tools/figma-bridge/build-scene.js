@@ -2,7 +2,8 @@
 // scene.json 生成器 —— html-to-figma-internal 插件（~/Desktop）的数据源。
 // 原理：向 demo 注入序列化脚本 → 无头 Chrome 真实渲染 → 逐态 walk DOM + computed style
 // → scene.json（插件 code.js 的消费格式）落桌面；无 MS_FIGMA_EXPORT 契约时回退单态。
-// 用法: node build-scene.js <demo.html> [--out-dir ~/Desktop]
+// 用法: node build-scene.js <demo.html> [--out-dir ~/Desktop] [--ext [--site <原始链接>] [--pages N]]
+//   --ext  外部网页纯图层转录（serve.py 链接导入）；--site 带原始链接时自动发现同源页面多页转录（--pages 子页上限，默认 8）
 
 const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 const { buildExportPage } = require('./export-page');
@@ -11,6 +12,11 @@ const { BOOTSTRAP } = require('./scene-bootstrap');
 
 const args = process.argv.slice(2);
 const demoPath = args.find(a => !a.startsWith('--'));
+const EXT = args.includes('--ext'); // 外部网页模式（serve.py 链接导入传入）：纯图层转录，不走本地组件体系
+const siteIdx = args.indexOf('--site');
+const SITE = siteIdx >= 0 ? args[siteIdx + 1] : null; // 外部网页原始链接：补 <base> 相对资源解析 + 多页转录的同源基准
+const pagesIdx = args.indexOf('--pages');
+const PAGES_CAP = Math.min(20, Math.max(1, (pagesIdx >= 0 ? parseInt(args[pagesIdx + 1], 10) : 0) || 8)); // 子页上限
 const outDirIdx = args.indexOf('--out-dir');
 const outDir = outDirIdx >= 0 ? args[outDirIdx + 1] : path.join(os.homedir(), 'Desktop');
 if (!demoPath || !fs.existsSync(demoPath)) {
@@ -28,31 +34,88 @@ try {
   if (tokCfg && tokCfg.vars) TOK_VARS = tokCfg.vars;
 } catch (e) { console.warn('token-vars.json 缺失或损坏，颜色令牌绑定关闭: ' + e.message); }
 const tokNames = TOK_VARS ? Object.keys(TOK_VARS).map(n => '--' + n) : [];
-const inject = (tokNames.length ? '\n<script>window.__MS_TOK_NAMES__=' + JSON.stringify(tokNames) + '<\/script>' : '') +
-  '\n<script>' + BOOTSTRAP + '<\/script>';
-const built = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, inject + '\n</body>') : html + inject;
-const tmp = '/tmp/ms-scene-in-' + Date.now() + '.html';
-fs.writeFileSync(tmp, built);
-
 const chrome = process.env.CHROME && fs.existsSync(process.env.CHROME) ? process.env.CHROME
   : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 if (!fs.existsSync(chrome)) { console.error('找不到 Chrome: ' + chrome + '（可用 CHROME 环境变量指定）'); process.exit(2); }
 
-console.log('无头 Chrome 渲染中（' + (built.length / 1024).toFixed(0) + 'KB）…');
-const dump = cp.execFileSync(chrome,
-  ['--headless', '--disable-gpu', '--window-size=1440,900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
-  { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
-fs.unlinkSync(tmp);
+// 单页渲染管线：注入 → 无头 Chrome → 抽取 scene（+ 外部网页链接发现标记）。
+// SITE 存在时在 <head> 顶部补 <base>（file:// 下相对 CSS/JS/图片按原始域名解析，外部网页还原度关键）
+let pageSeq = 0;
+function renderPage(src) {
+  let head = src;
+  if (SITE && EXT && !/<base\b/i.test(head)) {
+    const bt = '<base href="' + SITE.replace(/"/g, '&quot;') + '">';
+    head = /<head[^>]*>/i.test(head) ? head.replace(/<head[^>]*>/i, m0 => m0 + '\n' + bt)
+      : (/<html[^>]*>/i.test(head) ? head.replace(/<html[^>]*>/i, m0 => m0 + '\n' + bt) : bt + '\n' + head);
+  }
+  const inject = (EXT && SITE ? '<script>window.__MS_EXT_CRAWL__=' + JSON.stringify(SITE) + '<\/script>\n' : '') +
+    (tokNames.length && !EXT ? '\n<script>window.__MS_TOK_NAMES__=' + JSON.stringify(tokNames) + '<\/script>' : '') +
+    '\n<script>' + BOOTSTRAP + '<\/script>';
+  const built = /<\/body>/i.test(head) ? head.replace(/<\/body>/i, inject + '\n</body>') : head + inject;
+  const tmp = '/tmp/ms-scene-in-' + Date.now() + '-' + (++pageSeq) + '.html';
+  fs.writeFileSync(tmp, built);
+  console.log('无头 Chrome 渲染中（' + (built.length / 1024).toFixed(0) + 'KB）…');
+  const dump = cp.execFileSync(chrome,
+    ['--headless', '--disable-gpu', '--window-size=1440,900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
+    { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
+  fs.unlinkSync(tmp);
+  const m = dump.match(/<script id="ms-scene-json" type="application\/json">([\s\S]*?)<\/script>/);
+  if (!m) throw new Error('未找到 scene.json 标记——渲染未完成或注入脚本异常');
+  const lm = dump.match(/<script id="ms-ext-links" type="application\/json">([\s\S]*?)<\/script>/);
+  return { scene: JSON.parse(m[1]), links: lm ? JSON.parse(lm[1]) : null };
+}
 
-const m = dump.match(/<script id="ms-scene-json" type="application\/json">([\s\S]*?)<\/script>/);
-if (!m) { console.error('未找到 scene.json 标记——渲染未完成或注入脚本异常'); process.exit(3); }
-
-const scene = JSON.parse(m[1]);
+let scene, extLinks = null;
+try { ({ scene, links: extLinks } = renderPage(html)); }
+catch (e) { console.error(e.message); process.exit(3); }
 
 // 命名规范：demo <title>（回退文件名）→ scene.name；插件侧主画板/组件画板/变体集按此命名——
 // 画板名 = 功能名（"EG71 · Data Library · Inbuilt Update"），组件名 = 类名家族 + 文本变体，不出现无名层
 const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
+if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
+
+// 外部网页多页转录（--ext --site）：入口页 DOM 里的同源链接（scene-bootstrap 收集，导航优先/去重）
+// 逐页抓取渲染，cells 依次为 1.入口 2..N 子页纵向堆叠，插件侧每 cell 落一帧——
+// 对齐 demo 侧 MS_FIGMA_EXPORT 多态铺开的思路（用户 2026-10-30：链接导入要自动转出全部页面）
+if (EXT && SITE && Array.isArray(extLinks) && extLinks.length) {
+  let org = null; try { org = new URL(SITE); } catch (eO) {}
+  if (org) {
+    const normKey = k => String(k).replace(/\/(index|default)\.html?(?=\?|$)/i, '/'); // /index.html ≡ /，同页去重
+    const seen = new Set([normKey(org.pathname + org.search)]);
+    const todo = [];
+    extLinks.forEach(L => {
+      if (!L || !L.url || seen.has(normKey(L.u))) return;
+      seen.add(normKey(L.u)); if (todo.length < PAGES_CAP) todo.push(L);
+    });
+    if (todo.length) {
+      console.log('外部网页多页: 发现 ' + todo.length + ' 个同源页面（导航优先，上限 ' + PAGES_CAP + '，入口外一跳）');
+      todo.forEach((L, i) => {
+        try {
+          console.log('  子页 ' + (i + 2) + '/' + (todo.length + 1) + ' · ' + L.u);
+          const subHtml = cp.execFileSync('curl',
+            ['-sLf', '--compressed', '--max-time', '30', '--max-filesize', String(20 * 1024 * 1024),
+              '-A', 'Mozilla/5.0 (Macintosh) build-scene ext import', L.url],
+            { maxBuffer: 24 * 1024 * 1024 }).toString('utf8');
+          const r2 = renderPage(subHtml);
+          const cell = (r2.scene.cells || [])[0];
+          if (cell) {
+            cell.label = (i + 2) + '. ' + (String(L.t || L.u).trim().slice(0, 24) || L.u);
+            scene.cells.push(cell);
+            if (r2.scene.stats) ['al', 'img', 'bg'].forEach(k => {
+              if (r2.scene.stats[k]) scene.stats[k] = (scene.stats[k] || 0) + r2.scene.stats[k];
+            });
+          }
+        } catch (e) { console.warn('  子页跳过 ' + (L.u || '') + '：' + e.message); }
+      });
+    }
+    if (scene.cells.length > 1) {
+      scene.cells[0].label = '1. ' + String(scene.name).slice(0, 24);
+      let y = 0; scene.cells.forEach(c => { c.x = 0; c.y = y; y += (c.h || 600) + 64; });
+      console.log('多页转录: 共 ' + scene.cells.length + ' 帧（1 入口 + ' + (scene.cells.length - 1) + ' 子页）');
+    }
+  }
+}
 
 // 原型连线（R5）：scene.proto 记录 setup 真实派发的 click（{state, evs:[{path}]}）→
 // 各屏同路径节点挂 rct {to, tg}；必须在拍平/组件化之前解析（此后 child 序列改变），
@@ -134,7 +197,7 @@ if (maskFix || maskLift) console.log('蒙版全页强制: ' + maskFix + ' 处扩
 
 // 图标实例化：页内已反查出 MS_ICONS 名（node.ic），命中 icon-keys.json 的升级为 t:'ic'（携带库组件 key）
 let iconStats = null;
-try {
+if (!EXT) try {
   const keys = JSON.parse(fs.readFileSync(path.join(__dirname, 'icon-keys.json'), 'utf8')).icons;
   let inst = 0, nomap = 0, plain = 0;
   function walk(n) {
@@ -158,7 +221,7 @@ try {
 let libStats = null;
 let needLibs = new Set();   // 本页实际命中的库（web/biz）——scene.libs 供插件 assets 选择门禁
 let LIBRARIES = null;       // component-keys.json libraries 元数据（name + libraryKey）
-try {
+if (!EXT) try {
   const libCfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'component-keys.json'), 'utf8'));
   LIBRARIES = libCfg.libraries || null;
   const comps = (libCfg.components || []).filter(c => c.enabled && c.cls && c.key);
@@ -284,7 +347,7 @@ try {
     if (hit) needLibs.add(hit[0]);
   }
 } catch (e) { /* icon-keys 元数据缺失不阻断 */ }
-if (needLibs.size && LIBRARIES) {
+if (!EXT && needLibs.size && LIBRARIES) {
   scene.libs = [...needLibs].filter(id => LIBRARIES[id])
     .map(id => ({ id, name: LIBRARIES[id].name, key: LIBRARIES[id].libraryKey }));
   console.log('库需求: ' + scene.libs.map(l => l.name).join(' + ') + '（插件面板 assets 门禁）');
@@ -297,6 +360,7 @@ if (needLibs.size && LIBRARIES) {
 // 不散落成 N 个孤立组件；组件定义统一收进「组件定义」画板按家族分节网格排版。
 let compStats = null;
 (function componentize(scene) {
+  if (EXT) return; // 外部网页：不产本地组件/变体集，纯图层
   const MIN_DUP = 2, MIN_AREA = 64;
   function isBlockClass(n) { return n && !n.lib && n.n && /^(bc|ms)-/.test(n.n) && n.w * n.h >= MIN_AREA; }
   function sig(n) {
@@ -438,7 +502,9 @@ if (tiled.states) fs.writeFileSync(path.join(outDir, 'figma-export.html'), tiled
 const count = n => 1 + (n.ch || []).reduce((a, c) => a + count(c), 0);
 scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) + ' 节点｜' + c.w + '×' + Math.round(c.h)));
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
-  (tiled.states ? ' + figma-export.html（全状态铺开参考页）' : '（无契约，单态）'));
+  (tiled.states ? ' + figma-export.html（全状态铺开参考页）'
+    : (EXT && scene.cells.length > 1 ? '（外部网页多页转录 ' + scene.cells.length + ' 帧）' : '（无契约，单态）')));
+if (EXT) console.log('模式: 外部网页纯图层转录——跳过本地组件库匹配/组件化/图标库映射/令牌绑定（--ext，链接导入不走自家组件体系）');
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别但无映射(矢量) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);
 if (scene.stats) console.log('自动布局: flex 置信转换 ' + (scene.stats.al || 0) + ' 容器｜图片 ' + (scene.stats.img || 0) + '｜背景图层(渐变/底图) ' + (scene.stats.bg || 0));
 if (flatCut) console.log('拍平: 透传空壳帧 ' + flatCut + ' 层（无视觉无语义类）');
@@ -446,13 +512,35 @@ if (libStats) console.log('库组件: 命中 ' + libStats.total + ' 处（' + li
 if (compStats) console.log('组件化: 定义 ' + compStats.defs + ' 个（家族 ' + compStats.families + '，变体集 ' + compStats.variantSets + ' 个待 combineAsVariants）｜实例引用 ' + compStats.insts + ' 处｜省节点 ' + compStats.cutNodes + '（scene v2 defs）');
 if (rctCount) console.log('原型连线: ' + rctCount + ' 条（setup 触发节点 ON_CLICK → 目标态画板，插件侧 reactions）');
 
-// 端口空闲时自动拉起插件数据服务（serve.py，CORS 静态服务）
-try {
-  cp.execSync('lsof -i :8124 -sTCP:LISTEN', { stdio: 'ignore' });
-} catch (e) {
+// 插件数据服务（serve.py，CORS 静态服务）保活：
+// 端口空闲 → 自动拉起；端口被占但 serve.py 源码比运行进程新 → 旧进程跑的是旧代码
+// （改了不生效，2026-10-30 面板连不上/链接导入不走 --ext 的根因），自动重启对时。
+// 日志统一落 serve.log（此前 stdio ignore 导致 Failed to fetch 无从取证）。
+(function ensureServe() {
   const serve = path.join(os.homedir(), 'Desktop/html-to-figma-internal/serve.py');
-  if (fs.existsSync(serve)) {
-    cp.spawn('python3', [serve], { detached: true, stdio: 'ignore' }).unref();
-    console.log('已自动启动 serve.py（127.0.0.1:8124，V2 插件面板端口）');
-  }
-}
+  if (!fs.existsSync(serve)) return;
+  const spawnServe = (msg) => {
+    const log = path.join(path.dirname(serve), 'serve.log');
+    cp.spawn('python3', [serve], { detached: true,
+      stdio: ['ignore', fs.openSync(log, 'a'), fs.openSync(log, 'a')] }).unref();
+    if (msg) console.log(msg);
+  };
+  let pid = null;
+  try { pid = cp.execSync('lsof -ti :8124 -sTCP:LISTEN').toString().trim().split('\n')[0]; }
+  catch (e) { return spawnServe('已自动启动 serve.py（127.0.0.1:8124，V2 插件面板端口，日志 serve.log）'); }
+  if (!pid || String(process.ppid) === pid) return; // 自己就是 serve.py 拉起的：重启会切断本次构建的 HTTP 响应
+  try {
+    const cmd = cp.execSync('ps -o command= -p ' + pid).toString();
+    if (!/serve\.py/.test(cmd)) return; // 8124 被其他程序占用，不动
+    const started = new Date(cp.execSync('ps -o lstart= -p ' + pid).toString().trim()).getTime();
+    if (isNaN(started) || fs.statSync(serve).mtimeMs <= started) return;
+    process.kill(Number(pid), 'SIGTERM');
+    for (let i = 0; i < 15; i++) { // 等端口释放，最多 ~3s
+      try { cp.execSync('lsof -ti :8124 -sTCP:LISTEN', { stdio: 'ignore' }); cp.execSync('sleep 0.2'); }
+      catch (e) { break; }
+    }
+    try { cp.execSync('lsof -ti :8124 -sTCP:LISTEN', { stdio: 'ignore' }); }
+    catch (e) { return spawnServe('serve.py 源码已更新：已自动重启后台（旧进程 ' + pid + '）'); }
+    console.log('serve.py 源码已更新，但旧进程 ' + pid + ' 未退出——手动重启：kill ' + pid + ' && python3 ' + serve);
+  } catch (e) {}
+})();
