@@ -42,7 +42,23 @@
   select,input[type=text]{flex:1;min-width:0;padding:8px 10px;font-size:11.5px;
     border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--txt);outline:none}
   select:focus,input[type=text]:focus{border-color:var(--acc)}
-  input::placeholder{color:var(--dim)}
+  input::placeholder,textarea::placeholder{color:var(--dim)}
+
+  /* 链接框（textarea 形态，可多行批量）：视觉与单行输入一致，自动长高 */
+  #urlIn{flex:1;min-width:0;padding:8px 10px;font:11.5px/1.4 inherit;
+    border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--txt);outline:none;
+    resize:none;height:34px;min-height:34px;max-height:96px;overflow-y:auto}
+  #urlIn:focus{border-color:var(--acc)}
+  .vpchk{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--dim);cursor:pointer;user-select:none}
+  .vpchk input{accent-color:var(--acc);margin:0}
+
+  /* 历史一键重导（clientStorage 持久化） */
+  .hlist{display:flex;flex-direction:column;gap:4px;margin:6px 0 4px}
+  .hbtn{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:var(--card);
+    border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:11px;font-weight:500;color:var(--sub)}
+  .hbtn:hover:not(:disabled){background:var(--card);border-color:var(--acc);color:var(--txt)}
+  .hbtn .hv{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hbtn .ht2{flex:none;color:var(--dim);font-size:9.5px;font-weight:400}
 
   button{border:0;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:600;
     padding:8px 12px;background:var(--card2);color:var(--sub)}
@@ -103,14 +119,21 @@
     <button class="ico" id="listBtn" title="刷新 HTML 列表"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
   </div>
   <div class="row">
-    <input id="urlIn" type="text" placeholder="粘贴 http 链接或本地绝对路径" spellcheck="false">
+    <textarea id="urlIn" rows="1" placeholder="粘贴 http 链接（可多行/逗号分隔批量）或本地绝对路径" spellcheck="false"></textarea>
     <button id="urlBtn" class="mini">导入链接</button>
+  </div>
+  <div class="row" style="margin-top:-2px">
+    <label class="vpchk"><input type="checkbox" id="vpChk">多视口 1440+390（链接导入出桌面+移动两帧）</label>
   </div>
   <div class="dropbox" id="dropbox">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
     <b>拖入 .html 文件</b><span>或</span><button id="browseBtn" class="link">浏览…</button>
     <input id="fileIn" type="file" accept=".html,.htm" hidden>
   </div>
+  <details id="histWrap" style="display:none">
+    <summary>最近导入（点击重导）</summary>
+    <div class="hlist" id="histList"></div>
+  </details>
 
   <div class="card">
     <div class="crow">
@@ -150,6 +173,7 @@ var libRefreshTimer = null;
 var avail = [];       // getAvailableLibrariesAsync 结果 {id,name,enabled}（仅状态展示，不设门禁）
 var busy = false;     // 构建进行中（三个入口互斥，一次只跑一个）
 var serverOk = null;  // 后台连通性：null 未知 / true / false
+var hist = [];        // 导入历史（PRO 一键重导）：clientStorage 持久化，code.js 代理读写
 
 function $(id){return document.getElementById(id);}
 function status(m, cls){
@@ -164,6 +188,7 @@ function send(json){
 window.onmessage = function(e){
   var m = e.data && e.data.pluginMessage;
   if (m && m.type === 'status') status(m.text);
+  if (m && m.type === 'history') { hist = Array.isArray(m.list) ? m.list : []; renderHist(); }
   if (m && m.type === 'libs') {
     clearTimeout(libRefreshTimer);
     libsUnavailable = !!m.unavailable;
@@ -255,7 +280,7 @@ async function loadList(){
 
 $('listBtn').onclick = function(){ loadList(); };
 
-// 统一构建入口：payload = {path} | {name, content} | {url}，serve.py 三分支
+// 统一构建入口：payload = {path} | {name, content} | {url} | {urls:[...]}（可选 {viewports}），serve.py 四分支
 async function runBuild(payload, label){
   if (busy) return;
   busy = true; updateGate();
@@ -271,6 +296,7 @@ async function runBuild(payload, label){
       status('生成失败：' + ((j.error||'') + ' ' + (j.log||[]).join(' ⏎ ')).slice(0,280), 'err');
       return;
     }
+    pushHist(payload);
     await fetchScene(true);
   }catch(e){
     serverOk = false;
@@ -311,25 +337,88 @@ function importFile(f){
   }, function(err){ status('文件读取失败：' + err.message, 'err'); });
 }
 
-// 链接导入：http(s) 由 serve.py 下载后构建；本地绝对路径仍走白名单
+// 链接导入：http(s) 由 serve.py 下载后构建；本地绝对路径仍走白名单。
+// 多个 http(s)（空格/逗号/换行分隔）→ {urls} 批量导入（PRO bulk imports）；勾选多视口 → {viewports}
 function importLink(){
   var v = ($('urlIn').value || '').trim();
   if (!v){ status('先粘贴链接或路径', 'err'); return; }
-  if (/^https?:\/\//i.test(v)) runBuild({url:v}, '抓取链接并生成 scene.json');
+  var parts = v.split(/[\s,]+/).filter(Boolean);
+  var vp = $('vpChk').checked ? '1440,390' : '';
+  if (parts.length > 20){ status('批量上限 20 个链接', 'err'); return; }
+  if (parts.length > 1){
+    if (!parts.every(function(x){ return /^https?:\/\//i.test(x); })){
+      status('批量导入仅支持多个 http(s) 链接（空格/逗号/换行分隔）', 'err'); return;
+    }
+    var plm = {urls:parts}; if (vp) plm.viewports = vp;
+    runBuild(plm, '批量抓取 ' + parts.length + ' 个链接');
+    return;
+  }
+  if (/^https?:\/\//i.test(v)){
+    var pl = {url:v}; if (vp) pl.viewports = vp;
+    runBuild(pl, '抓取链接并生成 scene.json');
+  }
   else if (v.charAt(0) === '/') runBuild({path:v}, '按路径生成 scene.json');
   else status('只支持 http(s) 链接或以 / 开头的本地绝对路径', 'err');
 }
 $('urlBtn').onclick = importLink;
-$('urlIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') importLink(); });
+// 链接框（textarea）：Enter 触发导入（Shift+Enter 换行可贴多行），输入自动长高
+$('urlIn').addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); importLink(); } });
+$('urlIn').addEventListener('input', function(){
+  this.style.height = 'auto';
+  this.style.height = Math.min(96, this.scrollHeight) + 'px';
+});
 
-// 粘贴捕获：焦点不在输入框时，粘进面板的纯链接自动填入链接框
+// ===== 导入历史一键重导（PRO shortcut to re-import）：clientStorage 持久化，code.js 代理 =====
+function hostOf(u){ try{ return new URL(u).host + new URL(u).pathname; }catch(e){ return u; } }
+function histLabel(pl){
+  if (pl.urls) return pl.urls.length + ' 个链接 · ' + hostOf(pl.urls[0]) + (pl.urls.length > 1 ? ' …' : '');
+  if (pl.url) return hostOf(pl.url);
+  if (pl.path){ var s = String(pl.path).split('/'); return s[s.length - 1]; }
+  return '';
+}
+function saveHist(){ parent.postMessage({pluginMessage:{type:'history-save', list:hist}}, '*'); }
+function pushHist(pl){
+  if (!pl || (!pl.path && !pl.url && !pl.urls)) return; // 拖拽全文无持久负载，不进历史
+  var key = JSON.stringify(pl);
+  hist = hist.filter(function(h){ return JSON.stringify(h.payload) !== key; });
+  var d = new Date(), pad = function(x){ return (x < 10 ? '0' : '') + x; };
+  hist.unshift({payload:pl, label:histLabel(pl), time:pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())});
+  if (hist.length > 12) hist.length = 12;
+  saveHist(); renderHist();
+}
+function renderHist(){
+  var w = $('histWrap'), list = $('histList');
+  if (!hist.length){ w.style.display = 'none'; return; }
+  w.style.display = '';
+  list.innerHTML = '';
+  hist.forEach(function(h){
+    var b = document.createElement('button');
+    b.className = 'hbtn';
+    var hv = document.createElement('span'); hv.className = 'hv';
+    var ht2 = document.createElement('span'); ht2.className = 'ht2';
+    hv.textContent = h.label || '';
+    ht2.textContent = h.time || '';
+    b.appendChild(hv); b.appendChild(ht2);
+    b.onclick = function(){ if (!busy) runBuild(h.payload, '重导 ' + (h.label || '')); };
+    list.appendChild(b);
+  });
+  var clr = document.createElement('button');
+  clr.className = 'link'; clr.textContent = '清空历史';
+  clr.onclick = function(){ hist = []; saveHist(); renderHist(); };
+  list.appendChild(clr);
+}
+parent.postMessage({pluginMessage:{type:'history-get'}}, '*');
+
+// 粘贴捕获：焦点不在输入框时，粘进面板的纯链接（单个或多个）自动填入链接框
 document.addEventListener('paste', function(e){
   var t = e.target && e.target.tagName;
   if (t === 'INPUT' || t === 'TEXTAREA') return;
   var d = ((e.clipboardData && e.clipboardData.getData('text')) || '').trim();
-  if (/^https?:\/\/\S+$/i.test(d)){
-    $('urlIn').value = d;
-    status('链接已粘贴 → 点「导入链接」或回车');
+  var parts = d.split(/[\s,]+/).filter(Boolean);
+  if (parts.length && parts.length <= 20 && parts.every(function(x){ return /^https?:\/\//i.test(x); })){
+    $('urlIn').value = parts.join('\n');
+    $('urlIn').dispatchEvent(new Event('input'));
+    status(parts.length > 1 ? '已粘贴 ' + parts.length + ' 个链接 → 点「导入链接」批量导入' : '链接已粘贴 → 点「导入链接」或回车');
   }
 });
 

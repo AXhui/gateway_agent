@@ -208,7 +208,7 @@ const MOCK_LIBS = new Map();
 })();
 
 // ---------- mock figma ----------
-const calls = { importKey: [], importSetKey: [], importVarKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0, teamLib: 0 };
+const calls = { importKey: [], importSetKey: [], importVarKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0, teamLib: 0, uiPost: [], csGet: [], csSet: [] };
 
 // ---------- 颜色令牌变量注册表（2026-10-30 令牌绑定契约）----------
 // 对齐 Milesight_IOT_Web「Color Token」库变量：scopes 空=全域；值经 valuesByMode 提供，
@@ -285,12 +285,18 @@ const figma = {
     },
   },
   notify: (t, o) => { calls.notify.push(t); },
+  // clientStorage（历史一键重导代理）：真 API 异步 KV；mock 复刻 get/set 行为
+  clientStorage: {
+    _store: {},
+    getAsync: async k => { calls.csGet.push(k); return (k in figma.clientStorage._store) ? figma.clientStorage._store[k] : undefined; },
+    setAsync: async (k, v) => { calls.csSet.push(k); figma.clientStorage._store[k] = v; },
+  },
   viewport: { scrollAndZoomIntoView: () => {} },
   closePlugin: () => { calls.closePlugin++; },
   showUI: () => {},
   ui: {
     _handler: null,
-    postMessage: () => {},
+    postMessage: m => { calls.uiPost.push(m); },
     set onmessage(fn) { this._handler = fn; },
     get onmessage() { return this._handler; },
   },
@@ -629,7 +635,7 @@ vm.runInContext(code, sandbox);
 
   // ---- 外部网页模式（2026-10-30 用户裁定：复制的网页链接不走本地组件）----
   // scene.ext=1 → 不拉库目录（getTeamLibraryAsync 不新增）、通知报「外部网页 · 纯图层」而非库/令牌段。
-  // 多 cell = build-scene --ext --site 多页转录（入口 + 同源子页，cells 纵向堆叠）→ 插件每 cell 落一帧
+  // 多 cell = build-scene --ext 三路多帧（--viewport 多视口 / 批量位置参数 / --site 自动发现），cells 纵向堆叠 → 插件每 cell 落一帧
   const teamLibBeforeExt = calls.teamLib;
   const combineBeforeExt = calls.combineAsVariants.length;
   const extCell = (label, y, text) => ({ label, x: 0, y, w: 800, h: 600,
@@ -638,7 +644,11 @@ vm.runInContext(code, sandbox);
   await handler({
     type: 'scene', json: {
       v: 2, name: 'ExtPage', ext: 1,
-      cells: [extCell('1. 首页 /', 0, 'Hello Web'), extCell('2. 关于 /about', 664, 'About Page')],
+      cells: [
+        extCell('1. 首页 /', 0, 'Hello Web'),
+        extCell('2. 首页 / ·390px', 664, 'Hello Web Mobile'),
+        extCell('3. 关于 /about', 1328, 'About Page'),
+      ],
     },
   });
   const extMsg = calls.notify.filter(t => t.indexOf('导入完成') === 0).pop();
@@ -649,11 +659,19 @@ vm.runInContext(code, sandbox);
   const extBoard = figma.currentPage.children.find(n => n.type === 'FRAME' && /ExtPage/.test(n.name));
   A('外部网页画板落图层', !!extBoard, figma.currentPage.children.map(n => n.name).join(','));
   const extFrames = extBoard ? extBoard.children.filter(n => n.type === 'FRAME') : [];
-  A('外部网页多页落多帧（每 cell 一帧带序号标签）',
-    extFrames.length === 2 && /1\./.test(extFrames[0].name) && /2\./.test(extFrames[1].name),
+  A('外部网页多页落多帧（每 cell 一帧带序号标签，含 ·390px 视口帧）',
+    extFrames.length === 3 && /1\./.test(extFrames[0].name) && /·390px/.test(extFrames[1].name) && /3\./.test(extFrames[2].name),
     extFrames.map(f => f.name).join(','));
-  A('外部网页多帧按 scene 堆叠定位', extFrames[1] && Math.abs(extFrames[1].y - 664) < 1,
-    'y=' + (extFrames[1] && extFrames[1].y));
+  A('外部网页多帧按 scene 堆叠定位', extFrames[1] && Math.abs(extFrames[1].y - 664) < 1 && extFrames[2] && Math.abs(extFrames[2].y - 1328) < 1,
+    'y=' + (extFrames[1] && extFrames[1].y) + ',' + (extFrames[2] && extFrames[2].y));
+
+  // ---- 历史一键重导（clientStorage 代理：save → get 回环）----
+  await handler({ type: 'history-save', list: [{ payload: { url: 'https://a.com' }, label: 'a.com/', time: '10-30 12:00' }] });
+  await handler({ type: 'history-get' });
+  const histMsg = calls.uiPost.filter(m => m && m.type === 'history').pop();
+  A('历史 clientStorage 读写回环（save→get→ui 收到）',
+    !!histMsg && Array.isArray(histMsg.list) && histMsg.list.length === 1 && histMsg.list[0].label === 'a.com/',
+    JSON.stringify(histMsg && histMsg.list));
 
   const doneMsg = calls.notify.find(t => t.indexOf('导入完成') === 0);
   A('完成通知', !!doneMsg, calls.notify.join(' | '));

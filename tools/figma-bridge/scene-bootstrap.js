@@ -243,10 +243,37 @@ const BOOTSTRAP = `(function(){
       if(icn){n.ic=icn;var icc=parseRgba(cs.color);if(icc){n.col=icc.c;if(icc.a>=1){var ctk=tokOf(icc.c,'icon');if(ctk)n.ctk=ctk}}}
       return n;
     }
+    // 高清图取源（PRO high-res images 对标）：srcset 取最大 w/x 候选替代 currentSrc（浏览器在 1440 视口
+    // 只选够用的小图），<picture> 的 <source> 一并参与；懒加载占位（data:/pixel/placeholder）回退 data-src
+    function bestImgSrc(el){
+      var sets=[];
+      var ss=(el.getAttribute&&el.getAttribute('srcset'))||'';
+      if(ss)sets.push(ss);
+      var par=el.parentElement;
+      if(par&&/^picture$/i.test(par.tagName)){
+        Array.prototype.forEach.call(par.querySelectorAll('source[srcset]'),function(so){sets.push(so.getAttribute('srcset'))});
+      }
+      var best='',bw=-1;
+      sets.forEach(function(one){
+        String(one).split(',').forEach(function(part){
+          var seg=part.trim().split(/\\s+/),u=seg[0];if(!u)return;
+          var d=seg[1]||'',mw=/(\\d+)w/i.exec(d),mx=/([\\d.]+)x/i.exec(d);
+          var score=mw?parseFloat(mw[1]):(mx?parseFloat(mx[1])*1000:0);
+          if(score>=0&&score>bw){bw=score;best=u}
+        });
+      });
+      if(best){try{return new URL(best,document.baseURI).href}catch(e4){return best}}
+      var cur=el.currentSrc||el.getAttribute('src')||'';
+      if(/^data:|pixel|placeholder|blank|loading|spinner/i.test(cur)){
+        var ds=(el.getAttribute&&el.getAttribute('data-src'))||el.getAttribute('data-original')||'';
+        if(ds){try{return new URL(ds,document.baseURI).href}catch(e5){return ds}}
+      }
+      return cur;
+    }
     if(tag==='img'||tag==='canvas'){
       if(w<0.01||h<0.01)return null;
       var src='';
-      if(tag==='img')src=el.currentSrc||el.getAttribute('src')||'';
+      if(tag==='img')src=bestImgSrc(el);
       else{try{src=el.toDataURL('image/png')}catch(e2){return null}}
       if(!src||/^\\s*$/.test(src))return null;
       var nimg={t:'img',src:src,x:x,y:y,w:w,h:h,o:isNaN(parseFloat(cs.opacity))?1:parseFloat(cs.opacity),r:radii(cs,w,h),fit:(cs.objectFit||'fill')};
@@ -396,10 +423,11 @@ const BOOTSTRAP = `(function(){
         document.documentElement.appendChild(lsc);
       }catch(e3){}
     }
-    var hook=window.MS_FIGMA_EXPORT||{rootSelector:'#app',states:[{name:'默认态',setup:function(){}}],columns:1,frameWidth:1440,settleMs:200};
+    var hook=window.MS_FIGMA_EXPORT||{rootSelector:'#app',states:[{name:'默认态',setup:function(){}}],columns:1,frameWidth:0,settleMs:200};
     var root=document.querySelector(hook.rootSelector||'#app')||document.body;
     var settle=hook.settleMs!=null?hook.settleMs:200;
-    var cols=hook.columns||1,W=hook.frameWidth||1440,GAP=64;
+    // 无契约页（外部网页）宽度取渲染视口（build-scene --viewport 注入），自家 demo 契约显式 frameWidth 优先
+    var cols=hook.columns||1,W=hook.frameWidth||window.__MS_VIEWPORT__||1440,GAP=64;
     if(typeof hook.ready==='function'){try{await hook.ready()}catch(e){}}
     var cells=[],colH=[];for(var c0=0;c0<cols;c0++)colH.push(0);
     // 原型连线素材：捕获 setup 真实派发的 click（capture，最多 3 个）+ DOM 路径（与节点 p 同一索引方案）

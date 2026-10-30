@@ -2,8 +2,10 @@
 // scene.json 生成器 —— html-to-figma-internal 插件（~/Desktop）的数据源。
 // 原理：向 demo 注入序列化脚本 → 无头 Chrome 真实渲染 → 逐态 walk DOM + computed style
 // → scene.json（插件 code.js 的消费格式）落桌面；无 MS_FIGMA_EXPORT 契约时回退单态。
-// 用法: node build-scene.js <demo.html> [--out-dir ~/Desktop] [--ext [--site <原始链接>] [--pages N]]
+// 用法: node build-scene.js <demo.html> [更多.html ...] [--out-dir ~/Desktop] [--ext [--site <原始链接>] [--pages N] [--viewport 1440,390]]
 //   --ext  外部网页纯图层转录（serve.py 链接导入）；--site 带原始链接时自动发现同源页面多页转录（--pages 子页上限，默认 8）
+//   多位置参数 = 批量导入（PRO bulk imports 对标）：显式页面清单，不做自动发现；--viewport 多视口（PRO multi-viewport，
+//   仅 --ext 生效，入口页按宽度列表补渲染，如 1440,390 出桌面+移动两帧）
 
 const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 const { buildExportPage } = require('./export-page');
@@ -11,12 +13,21 @@ const { buildExportPage } = require('./export-page');
 const { BOOTSTRAP } = require('./scene-bootstrap');
 
 const args = process.argv.slice(2);
-const demoPath = args.find(a => !a.startsWith('--'));
+// 位置参数 = 文件清单（首个为入口）；--site/--pages/--out-dir/--viewport 的取值不算文件
+const FLAG_VALS = new Set(['--site', '--pages', '--out-dir', '--viewport']);
+const skipNext = new Set();
+args.forEach((a, i) => { if (FLAG_VALS.has(a) && i + 1 < args.length) skipNext.add(i + 1); });
+const files = args.filter((a, i) => !a.startsWith('--') && !skipNext.has(i));
+const demoPath = files[0];
+const extras = files.slice(1); // 批量导入的显式后续页（EXT 模式下逐个转录成 cell）
 const EXT = args.includes('--ext'); // 外部网页模式（serve.py 链接导入传入）：纯图层转录，不走本地组件体系
 const siteIdx = args.indexOf('--site');
 const SITE = siteIdx >= 0 ? args[siteIdx + 1] : null; // 外部网页原始链接：补 <base> 相对资源解析 + 多页转录的同源基准
 const pagesIdx = args.indexOf('--pages');
 const PAGES_CAP = Math.min(20, Math.max(1, (pagesIdx >= 0 ? parseInt(args[pagesIdx + 1], 10) : 0) || 8)); // 子页上限
+const vpIdx = args.indexOf('--viewport');
+const VWS = EXT && vpIdx >= 0 ? String(args[vpIdx + 1] || '').split(',').map(s => parseInt(s, 10))
+  .filter(n => n >= 320 && n <= 2560) : []; // 多视口宽度列表（仅外部网页模式；入口页每个宽度出一帧）
 const outDirIdx = args.indexOf('--out-dir');
 const outDir = outDirIdx >= 0 ? args[outDirIdx + 1] : path.join(os.homedir(), 'Desktop');
 if (!demoPath || !fs.existsSync(demoPath)) {
@@ -39,9 +50,11 @@ const chrome = process.env.CHROME && fs.existsSync(process.env.CHROME) ? process
 if (!fs.existsSync(chrome)) { console.error('找不到 Chrome: ' + chrome + '（可用 CHROME 环境变量指定）'); process.exit(2); }
 
 // 单页渲染管线：注入 → 无头 Chrome → 抽取 scene（+ 外部网页链接发现标记）。
-// SITE 存在时在 <head> 顶部补 <base>（file:// 下相对 CSS/JS/图片按原始域名解析，外部网页还原度关键）
+// SITE 存在时在 <head> 顶部补 <base>（file:// 下相对 CSS/JS/图片按原始域名解析，外部网页还原度关键）。
+// width = 渲染视口宽（多视口用），同步注入 __MS_VIEWPORT__ 供 bootstrap 无契约页取 W。
 let pageSeq = 0;
-function renderPage(src) {
+function renderPage(src, width) {
+  const vw = width || 1440;
   let head = src;
   if (SITE && EXT && !/<base\b/i.test(head)) {
     const bt = '<base href="' + SITE.replace(/"/g, '&quot;') + '">';
@@ -50,13 +63,14 @@ function renderPage(src) {
   }
   const inject = (EXT && SITE ? '<script>window.__MS_EXT_CRAWL__=' + JSON.stringify(SITE) + '<\/script>\n' : '') +
     (tokNames.length && !EXT ? '\n<script>window.__MS_TOK_NAMES__=' + JSON.stringify(tokNames) + '<\/script>' : '') +
+    '\n<script>window.__MS_VIEWPORT__=' + vw + '<\/script>' +
     '\n<script>' + BOOTSTRAP + '<\/script>';
   const built = /<\/body>/i.test(head) ? head.replace(/<\/body>/i, inject + '\n</body>') : head + inject;
   const tmp = '/tmp/ms-scene-in-' + Date.now() + '-' + (++pageSeq) + '.html';
   fs.writeFileSync(tmp, built);
-  console.log('无头 Chrome 渲染中（' + (built.length / 1024).toFixed(0) + 'KB）…');
+  console.log('无头 Chrome 渲染中（' + vw + 'px · ' + (built.length / 1024).toFixed(0) + 'KB）…');
   const dump = cp.execFileSync(chrome,
-    ['--headless', '--disable-gpu', '--window-size=1440,900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
+    ['--headless', '--disable-gpu', '--window-size=' + vw + ',900', '--virtual-time-budget=20000', '--dump-dom', 'file://' + tmp],
     { maxBuffer: 256 * 1024 * 1024 }).toString('utf8');
   fs.unlinkSync(tmp);
   const m = dump.match(/<script id="ms-scene-json" type="application\/json">([\s\S]*?)<\/script>/);
@@ -65,8 +79,19 @@ function renderPage(src) {
   return { scene: JSON.parse(m[1]), links: lm ? JSON.parse(lm[1]) : null };
 }
 
+// 子页/子视口 stats 归并（al/img/bg 计数累加，完成通知口径不漏页）
+function mergeStats(rv) {
+  if (rv.scene && rv.scene.stats) ['al', 'img', 'bg'].forEach(k => {
+    if (rv.scene.stats[k]) scene.stats[k] = (scene.stats[k] || 0) + rv.scene.stats[k];
+  });
+}
+function titleOf(h) {
+  const t = String(h).match(/<title>([^<]*)<\/title>/i);
+  return (t && t[1].trim()) || '';
+}
+
 let scene, extLinks = null;
-try { ({ scene, links: extLinks } = renderPage(html)); }
+try { ({ scene, links: extLinks } = renderPage(html, VWS[0])); }
 catch (e) { console.error(e.message); process.exit(3); }
 
 // 命名规范：demo <title>（回退文件名）→ scene.name；插件侧主画板/组件画板/变体集按此命名——
@@ -75,10 +100,41 @@ const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
 
-// 外部网页多页转录（--ext --site）：入口页 DOM 里的同源链接（scene-bootstrap 收集，导航优先/去重）
-// 逐页抓取渲染，cells 依次为 1.入口 2..N 子页纵向堆叠，插件侧每 cell 落一帧——
-// 对齐 demo 侧 MS_FIGMA_EXPORT 多态铺开的思路（用户 2026-10-30：链接导入要自动转出全部页面）
-if (EXT && SITE && Array.isArray(extLinks) && extLinks.length) {
+// 外部网页多帧转录（--ext --site）三路来源，统一编入 cells：
+//   ① 多视口（--viewport，PRO multi-viewport）：入口页按宽度列表补渲染（首宽度即上面首次渲染），每宽一帧；
+//   ② 批量导入（多个位置参数，PRO bulk imports）：显式页面清单逐个转录，不做自动发现；
+//   ③ 自动发现（--site 单入口）：入口页 DOM 里的同源链接（scene-bootstrap 收集，导航优先/去重）逐页抓取——
+// 批量与自动发现互斥（显式清单优先）。对齐 demo 侧 MS_FIGMA_EXPORT 多态铺开的思路（用户 2026-10-30：链接导入要自动转出全部页面）。
+if (EXT && VWS.length > 1) {
+  VWS.slice(1).forEach(w => {
+    try {
+      console.log('  视口 ' + w + 'px 渲染中…');
+      const rv = renderPage(html, w);
+      const cell = (rv.scene.cells || [])[0];
+      if (cell) {
+        cell.label = String(scene.name).slice(0, 20) + ' ·' + w + 'px';
+        scene.cells.push(cell);
+        mergeStats(rv);
+      }
+    } catch (e) { console.warn('  视口 ' + w + 'px 跳过：' + e.message); }
+  });
+}
+if (EXT && extras.length) {
+  console.log('批量导入: ' + extras.length + ' 个显式页面（不做自动发现，上限 ' + Math.min(20, extras.length) + '）');
+  extras.slice(0, 20).forEach((fp, i) => {
+    try {
+      console.log('  批量页 ' + (i + 2) + '/' + (Math.min(20, extras.length) + 1) + ' · ' + path.basename(fp));
+      const subHtml = fs.readFileSync(fp, 'utf8');
+      const r2 = renderPage(subHtml);
+      const cell = (r2.scene.cells || [])[0];
+      if (cell) {
+        cell.label = (titleOf(subHtml) || path.basename(fp, '.html')).slice(0, 24);
+        scene.cells.push(cell);
+        mergeStats(r2);
+      }
+    } catch (e) { console.warn('  批量页跳过 ' + fp + '：' + e.message); }
+  });
+} else if (EXT && SITE && Array.isArray(extLinks) && extLinks.length) {
   let org = null; try { org = new URL(SITE); } catch (eO) {}
   if (org) {
     const normKey = k => String(k).replace(/\/(index|default)\.html?(?=\?|$)/i, '/'); // /index.html ≡ /，同页去重
@@ -100,21 +156,26 @@ if (EXT && SITE && Array.isArray(extLinks) && extLinks.length) {
           const r2 = renderPage(subHtml);
           const cell = (r2.scene.cells || [])[0];
           if (cell) {
-            cell.label = (i + 2) + '. ' + (String(L.t || L.u).trim().slice(0, 24) || L.u);
+            cell.label = (String(L.t || L.u).trim().slice(0, 24) || L.u);
             scene.cells.push(cell);
-            if (r2.scene.stats) ['al', 'img', 'bg'].forEach(k => {
-              if (r2.scene.stats[k]) scene.stats[k] = (scene.stats[k] || 0) + r2.scene.stats[k];
-            });
+            mergeStats(r2);
           }
         } catch (e) { console.warn('  子页跳过 ' + (L.u || '') + '：' + e.message); }
       });
     }
-    if (scene.cells.length > 1) {
-      scene.cells[0].label = '1. ' + String(scene.name).slice(0, 24);
-      let y = 0; scene.cells.forEach(c => { c.x = 0; c.y = y; y += (c.h || 600) + 64; });
-      console.log('多页转录: 共 ' + scene.cells.length + ' 帧（1 入口 + ' + (scene.cells.length - 1) + ' 子页）');
-    }
   }
+}
+if (EXT && scene.cells.length > 1) {
+  // 统一编序：入口 1.（视口帧跟其后带 ·宽度 标签，其余按序 2..N），全部纵向堆叠
+  let seq = 0;
+  scene.cells.forEach(c => {
+    seq++;
+    c.label = /^\d+\./.test(String(c.label || '')) ? c.label : seq + '. ' + String(c.label || '');
+  });
+  scene.cells[0].label = '1. ' + String(scene.name).slice(0, 24);
+  let y = 0; scene.cells.forEach(c => { c.x = 0; c.y = y; y += (c.h || 600) + 64; });
+  console.log('多帧转录: 共 ' + scene.cells.length + ' 帧' +
+    (VWS.length > 1 ? '（含 ' + VWS.length + ' 个视口）' : ''));
 }
 
 // 原型连线（R5）：scene.proto 记录 setup 真实派发的 click（{state, evs:[{path}]}）→

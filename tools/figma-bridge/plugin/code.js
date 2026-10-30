@@ -873,6 +873,18 @@ postLibs();
 figma.ui.onmessage = async msg => {
   if (!msg) return;
   if (msg.type === 'refresh-libs') { postLibs(); return; }
+  // 导入历史一键重导（PRO shortcut to re-import）：clientStorage 持久化（插件 iframe 无可靠 localStorage），ui.html 代理读写
+  if (msg.type === 'history-get') {
+    try {
+      const l = await figma.clientStorage.getAsync('h2d-history');
+      figma.ui.postMessage({ type: 'history', list: Array.isArray(l) ? l : [] });
+    } catch (e) { figma.ui.postMessage({ type: 'history', list: [] }); }
+    return;
+  }
+  if (msg.type === 'history-save') {
+    try { await figma.clientStorage.setAsync('h2d-history', Array.isArray(msg.list) ? msg.list.slice(0, 12) : []); } catch (e) {}
+    return;
+  }
   if (msg.type !== 'scene') return;
   const scene = msg.json;
   if (!scene || !scene.cells || !scene.cells.length) {
