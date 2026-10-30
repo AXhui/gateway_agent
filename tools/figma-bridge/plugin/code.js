@@ -928,6 +928,8 @@ figma.ui.onmessage = async msg => {
     try { await figma.clientStorage.setAsync('h2d-history', Array.isArray(msg.list) ? msg.list.slice(0, 12) : []); } catch (e) {}
     return;
   }
+  // 飞书任务链路收尾：ui.html 回写表格完成后关面板（回写在 iframe 里发，closePlugin 会连 iframe 一起销毁）
+  if (msg.type === 'feishu-close') { figma.closePlugin(); return; }
   if (msg.type !== 'scene') return;
   const scene = msg.json;
   if (!scene || !scene.cells || !scene.cells.length) {
@@ -1140,10 +1142,16 @@ figma.ui.onmessage = async msg => {
       : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
     figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + '｜变体集 ' + variantSetCount + '｜图标库实例 ' + iconInstCount + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
     importing = false; // 连续导入（多页面逐个导入）不被「导入进行中」挡住
+    // 飞书任务链路：转完不自动关面板——iframe 里的回写 fetch 需要活着；回写完 ui 发 feishu-close 再关
+    if (scene.feishu && scene.feishu.id) {
+      figma.ui.postMessage({ type: 'import-done', feishu: scene.feishu, ok: true });
+      return;
+    }
     figma.closePlugin();
   } catch (e) {
     figma.notify('导入失败：' + (e && e.message || e), { error: true, timeout: 12000 });
     postStatus('导入失败：' + (e && e.message || e) + '——已保留已生成部分，可重试');
+    if (scene.feishu && scene.feishu.id) figma.ui.postMessage({ type: 'import-done', feishu: scene.feishu, ok: false });
     importing = false;
   }
 };

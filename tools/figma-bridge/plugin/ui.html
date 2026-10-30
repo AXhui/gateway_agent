@@ -59,6 +59,13 @@
   .hbtn:hover:not(:disabled){background:var(--card);border-color:var(--acc);color:var(--txt)}
   .hbtn .hv{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .hbtn .ht2{flex:none;color:var(--dim);font-size:9.5px;font-weight:400}
+  .hbtn input{flex:1;min-width:0;padding:5px 8px;font:11px/1.3 inherit;border:1px solid var(--acc);border-radius:6px;background:var(--card2);color:var(--txt);outline:none}
+
+  /* 飞书任务状态徽标 */
+  .ftag{flex:none;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;letter-spacing:.3px}
+  .ft-warn{background:rgba(255,183,77,.16);color:var(--warn)}
+  .ft-ok{background:rgba(76,175,80,.16);color:var(--ok)}
+  .ft-err{background:rgba(239,83,80,.16);color:var(--err)}
 
   button{border:0;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:600;
     padding:8px 12px;background:var(--card2);color:var(--sub)}
@@ -115,6 +122,9 @@
 </header>
 
 <div class="wrap">
+
+  <div class="sec" id="ftSec" style="display:none"><span class="n">飞</span>飞书任务<span class="hint" id="ftHint"></span><button class="link" id="ftBtn">刷新</button></div>
+  <div class="hlist" id="ftList" style="display:none"></div>
 
   <div class="sec"><span class="n">1</span>选择 HTML<span class="hint">列表 / 链接 / 拖入文件</span></div>
   <div class="row">
@@ -191,6 +201,8 @@ var avail = [];       // getAvailableLibrariesAsync 结果 {id,name,enabled}（�
 var busy = false;     // 构建进行中（三个入口互斥，一次只跑一个）
 var serverOk = null;  // 后台连通性：null 未知 / true / false
 var hist = [];        // 导入历史（PRO 一键重导）：clientStorage 持久化，code.js 代理读写
+var feishuTasks = [];      // 飞书「点击转Figma」登记的任务（server.js → serve.py /api/feishu-tasks）
+var pendingFeishu = null;  // 本次构建来源的飞书任务：send() 时打进 scene.feishu，转完自动回写表格
 
 function $(id){return document.getElementById(id);}
 function status(m, cls){
@@ -200,6 +212,7 @@ function status(m, cls){
 }
 function nn(s){return String(s||'').toLowerCase().replace(/[\s（）()_-]+/g,'');}
 function send(json){
+  if (pendingFeishu && json) json.feishu = { id: String(pendingFeishu.id) };
   parent.postMessage({pluginMessage:{type:'scene', json:json}},'*');
 }
 window.onmessage = function(e){
@@ -211,6 +224,19 @@ window.onmessage = function(e){
     libsUnavailable = !!m.unavailable;
     avail = m.list || [];
     updateGate(); renderCard();
+  }
+  // code.js 导入结果透传（仅飞书任务链路）：成功 → 回写表格后关面板；失败 → 清挂起、任务保持待转可重点
+  if (m && m.type === 'import-done' && m.feishu) {
+    var t = pendingFeishu;
+    if (t && String(t.id) === String(m.feishu.id)) {
+      pendingFeishu = null;
+      if (m.ok === false) { status('导入失败——任务保持「待转」，修复后可重新点转', 'err'); return; }
+      feishuDonePost(t.id, null, '已转入画布，飞书表格已回写「已完成」').then(function(j){
+        if (j && j.ok) parent.postMessage({pluginMessage:{type:'feishu-close'}}, '*');
+        else status('转入成功但表格回写失败——展开「飞书任务」区点「重试回写」', 'err');
+        loadFeishuTasks();
+      });
+    }
   }
 };
 
@@ -296,11 +322,13 @@ async function loadList(){
   renderCard();
 }
 
-$('listBtn').onclick = function(){ loadList(); };
+$('listBtn').onclick = function(){ loadList(); loadFeishuTasks(); };
 
 // 统一构建入口：payload = {path} | {name, content} | {url} | {urls:[...]}（可选 {viewports}），serve.py 四分支
-async function runBuild(payload, label){
+// feishuTask：本次构建来自「飞书任务」区时传入——send() 时打进 scene.feishu，转完自动回写；手动构建则清挂起
+async function runBuild(payload, label, feishuTask){
   if (busy) return;
+  pendingFeishu = feishuTask || null;
   busy = true; updateGate();
   status(label + '（无头 Chrome 渲染，约 10–60s）…');
   try{
@@ -311,6 +339,7 @@ async function runBuild(payload, label){
     serverOk = true;
     var j = await r.json();
     if (!j.ok){
+      pendingFeishu = null;
       status('生成失败：' + ((j.error||'') + ' ' + (j.log||[]).join(' ⏎ ')).slice(0,280), 'err');
       return;
     }
@@ -318,6 +347,7 @@ async function runBuild(payload, label){
     await fetchScene(true);
   }catch(e){
     serverOk = false;
+    pendingFeishu = null;
     status('生成失败：' + e.message + ' —— 确认 serve.py 已跑（新版本含 /api/build）', 'err');
   }finally{ busy = false; updateGate(); renderCard(); }
 }
@@ -394,6 +424,91 @@ $('urlIn').addEventListener('input', function(){
   this.style.height = 'auto';
   this.style.height = Math.min(96, this.scrollHeight) + 'px';
 });
+
+// ===== 飞书任务区（飞书「点击转Figma」按钮 → server.js 登记 → 这里展示，点行即转，转完自动回写表格）=====
+async function loadFeishuTasks(){
+  try{
+    var r = await fetch('http://127.0.0.1:8124/api/feishu-tasks');
+    var j = await r.json();
+    feishuTasks = Array.isArray(j.tasks) ? j.tasks : [];
+  }catch(e){ feishuTasks = []; }
+  renderFeishuTasks();
+}
+function ftTag(status){
+  var cls = status === '待转' ? 'ft-warn' : (String(status).indexOf('失败') >= 0 ? 'ft-err' : 'ft-ok');
+  var tag = document.createElement('span');
+  tag.className = 'ftag ' + cls;
+  tag.textContent = status;
+  return tag;
+}
+async function feishuDonePost(taskId, figmaUrl, okMsg){
+  try{
+    var body = {taskId: String(taskId), ok: true};
+    if (figmaUrl) body.figmaUrl = figmaUrl;
+    var r = await fetch('http://127.0.0.1:8124/api/feishu-done', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    var j = await r.json();
+    if (j.ok) status(okMsg, 'ok');
+    else status('表格回写失败：' + (j.error || '') + '（可重试；确认 server.js 已启动）', 'err');
+    return j;
+  }catch(e){
+    status('表格回写失败：' + e.message, 'err');
+    return {ok:false};
+  }
+}
+function renderFeishuTasks(){
+  var sec = $('ftSec'), list = $('ftList');
+  sec.style.display = list.style.display = feishuTasks.length ? '' : 'none';
+  var pend = feishuTasks.filter(function(t){ return t.status === '待转'; }).length;
+  $('ftHint').textContent = pend ? (pend + ' 个待转 · 点击即转，转完自动回写表格')
+    : (feishuTasks.length ? '全部已转 · 可补填 Figma 链接' : '');
+  list.innerHTML = '';
+  feishuTasks.slice(0, 20).forEach(function(t){
+    var b = document.createElement('div');   // div 容器：已转行内还要放「补填链接」按钮，button 套 button 不可点
+    b.className = 'hbtn';
+    b.appendChild(ftTag(t.status));
+    var hv = document.createElement('span'); hv.className = 'hv';
+    hv.textContent = t.demoName || ('任务 ' + t.id);
+    hv.title = t.path || '';
+    var ht2 = document.createElement('span'); ht2.className = 'ht2';
+    ht2.textContent = t.time || '';
+    b.appendChild(hv); b.appendChild(ht2);
+    if (t.status === '待转') {
+      b.style.cursor = 'pointer';
+      b.onclick = function(){
+        if (busy || !t.path) return;
+        runBuild({path: t.path}, '转飞书任务 ' + (t.demoName || t.id), t);
+      };
+    } else {
+      b.style.opacity = String(t.status).indexOf('失败') >= 0 ? '' : '.6';
+      // 回写失败 → 重试回写；已转 → 补填 Figma 链接（插件 API 拿不到自身文件 URL，人工贴一次）
+      var retry = String(t.status).indexOf('失败') >= 0;
+      var bl = document.createElement('button'); bl.className = 'link';
+      bl.textContent = retry ? '重试回写' : '补填链接';
+      bl.onclick = function(ev){
+        ev.stopPropagation();
+        if (retry) { feishuDonePost(t.id, null, '重试回写成功').then(loadFeishuTasks); return; }
+        b.innerHTML = '';
+        var inp = document.createElement('input'); inp.type = 'text';
+        inp.placeholder = 'https://www.figma.com/design/…';
+        var ok = document.createElement('button'); ok.className = 'mini'; ok.textContent = '回写';
+        b.appendChild(inp); b.appendChild(ok); inp.focus();
+        function go(){
+          var u = (inp.value || '').trim();
+          if (!u) return;
+          if (!/^https:\/\/([\w-]+\.)?figma\.com\//.test(u)) { status('不是 Figma 链接：' + u, 'err'); return; }
+          feishuDonePost(t.id, u, 'Figma 链接已回写表格').then(loadFeishuTasks);
+        }
+        ok.onclick = go;
+        inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+      };
+      b.appendChild(bl);
+    }
+    list.appendChild(b);
+  });
+}
+$('ftBtn').onclick = function(){ loadFeishuTasks(); };
 
 // ===== 导入历史一键重导（PRO shortcut to re-import）：clientStorage 持久化，code.js 代理 =====
 function hostOf(u){ try{ return new URL(u).host + new URL(u).pathname; }catch(e){ return u; } }
@@ -475,6 +590,7 @@ $('codeBtn').onclick = function(){
 
 renderCard();
 loadList();
+loadFeishuTasks();
 // 库状态静默刷新：只喂下方状态卡「库」一行，面板不再设独立组件库区块
 clearTimeout(libRefreshTimer);
 parent.postMessage({pluginMessage:{type:'refresh-libs'}},'*');

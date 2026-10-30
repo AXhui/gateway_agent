@@ -1,8 +1,10 @@
-// 桥接服务 v3：飞书触发端(POST /task) → html.to.design MCP（Figma 插件中转落画布，零 LLM token）
-// 有 demo 源 → import-html 直连导入；无 demo 源 → 任务失败（LLM 自由设计兜底已删，2026-10-23）
+// 桥接服务 v4：飞书触发端(POST /task) → 登记任务 + 暂存 HTML → UED 在内部插件面板手动转设计稿
+// 默认 engine=local（本地插件链路）：/task 只登记到 feishu-tasks.json 并暂存 demo，等 UED 在
+//   Figma 内部插件「飞书任务」区点转；转完插件 → serve.py /api/feishu-done → 本服务 /done → lark-cli 回写表格。
+// engine=mcp（手动备用）：旧 mcp.to.design 自动导入链路原样保留——body 带 {"engine":"mcp"} 或环境变量 H2D_ENGINE=mcp 时走。
 // 用法：
 //   node server.js            启动桥接（:8080）
-//   node server.js --login    首次 OAuth 授权：浏览器点一次，自动铸 service account 长期凭据
+//   node server.js --login    首次 OAuth 授权（仅 mcp 备用链路需要）：浏览器点一次，自动铸 service account 长期凭据
 // 环境变量：H2D_PUBLIC_BASE=https://xxx.trycloudflare.com 时，import-html 失败自动改走 import-url（经公网隧道取页）
 const http = require('http')
 const crypto = require('crypto')
@@ -16,6 +18,34 @@ const REPO_ROOT = '/Users/youxh/Feishu-competition'
 const AUTH_FILE = path.join(__dirname, 'auth.json')          // 本机凭据，已 gitignore，绝不入库
 const MCP_BASE = 'https://mcp.to.design'
 const IMPORT_TIMEOUT_MS = 10 * 60 * 1000                      // 插件导入整页 demo 的安全垫
+
+// ---- 本地插件链路任务队列：feishu-tasks.json（单写者=本服务，tmp+rename 原子替换）----
+// serve.py GET /api/feishu-tasks 只读展示给插件面板；状态流：待转 → 已转 / 已转·回写失败
+const TASKS_FILE = path.join(__dirname, 'feishu-tasks.json')
+const STAGE_DIR = path.join(process.env.HOME || REPO_ROOT, 'Desktop', '_drops', 'feishu')
+
+function readTasks() {
+  try {
+    const a = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'))
+    return Array.isArray(a) ? a : []
+  } catch { return [] }
+}
+function writeTasks(tasks) {
+  const tmp = TASKS_FILE + '.tmp'
+  fs.writeFileSync(tmp, JSON.stringify(tasks, null, 2))
+  fs.renameSync(tmp, TASKS_FILE)
+}
+function saveTask(t) {
+  // 去重：同一触发记录（recordId 优先，无 recordId 用 demoName）还有「待转」任务 → 原地替换
+  const key = t.recordId || t.demoName
+  const tasks = readTasks().filter((x) => {
+    const xkey = x.recordId || x.demoName
+    return !(xkey && xkey === key && x.status === '待转')
+  })
+  tasks.push(t)
+  writeTasks(tasks.slice(-200))
+  return t
+}
 
 // 任务排队：一次只跑一个（Figma 插件同一时刻只接一个导入）
 const queue = []
@@ -47,6 +77,10 @@ function larkCli(args, cb) {
   child.stdout.on('data', (d) => (out += d))
   child.stderr.on('data', (d) => (out += d))
   child.on('close', (code) => cb(code, out))
+}
+
+function larkCliAsync(args) {
+  return new Promise((resolve) => larkCli(args, (code, out) => resolve({ code, out })))
 }
 
 function updateRecordField(recordId, url, jobId) {
@@ -346,7 +380,7 @@ function resolveDemoSource(task, jobId, cb) {
         console.log(`[demo:${jobId}] ${src} 下载失败: ${String(out).slice(0, 150)}`)
         return next()
       }
-      finish({ htmlPath }, src)
+      finish({ htmlPath, src }, src)
     })
   }
   const fromLocal = () => {
@@ -355,7 +389,7 @@ function resolveDemoSource(task, jobId, cb) {
       const p = `${REPO_ROOT}/05_release/REQ-${m[1]}/demo.html`
       if (fs.existsSync(p)) {
         console.log(`[demo:${jobId}] 用本地归档 ${p}`)
-        return finish({ htmlPath: p }, '本地归档')
+        return finish({ htmlPath: p, src: '本地归档' }, '本地归档')
       }
     }
     finish(null)
@@ -470,6 +504,99 @@ function runTask(task, jobId, done) {
   })
 }
 
+// ---- 本地链路：登记任务（取源 + 暂存 + 写队列），转完回写（/done）----
+
+function registerLocalTask(task, jobId, res) {
+  resolveDemoSource(task, jobId, (demo) => {
+    if (!demo) {
+      console.log(`[task:${jobId}] 三层取源均未命中，本地登记失败，标记表格行失败`)
+      writeBackToFeishu(task, jobId, null)
+      res.writeHead(502, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ ok: false, error: '三层取源均未命中（demoUrl / 表格预览URL / 本地归档）' }))
+    }
+    let staged = demo.htmlPath
+    try {
+      if (!staged.startsWith(REPO_ROOT)) {
+        // 云端下载落在 /tmp：挪进 serve.py 白名单（~/Desktop/_drops/feishu/），面板才可见可转
+        fs.mkdirSync(STAGE_DIR, { recursive: true })
+        const safe = String(task.demoName || 'demo').replace(/[^\w\-.]+/g, '_').slice(0, 60) || 'demo'
+        staged = path.join(STAGE_DIR, `${safe}-${jobId}.html`)
+        fs.copyFileSync(demo.htmlPath, staged)
+      }
+    } catch (e) {
+      console.log(`[task:${jobId}] 暂存失败:`, e.message)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ ok: false, error: '暂存 demo 失败：' + e.message }))
+    }
+    const now = new Date()
+    const pad = (x) => (x < 10 ? '0' : '') + x
+    const t = {
+      id: String(jobId), jobId,
+      demoName: task.demoName || '',
+      recordId: task.record_id || '',
+      time: `${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      status: '待转', src: demo.src || '',
+      path: staged,
+      figmaUrl: '',
+    }
+    saveTask(t)
+    console.log(`[task:${jobId}] 已登记本地任务: ${t.demoName || '(未命名)'} → ${staged}`)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, mode: 'local', jobId, staged, task: t }))
+  })
+}
+
+// /done 回写：转换已完成（UED 在插件里转的），把表格行置「已完成」，带 figmaUrl 时同时写「Figma 链接」列
+async function feishuApplyDone(task, taskId, url) {
+  let recordIds = []
+  if (task.recordId) {
+    recordIds = [task.recordId]
+  } else if (task.demoName) {
+    const conditions = [["Demo 名称", "Is", task.demoName]]
+    const body = {
+      keyword: task.demoName, search_fields: ["Demo 名称"],
+      select_fields: ["Demo 名称"],
+      filter: { logic: "and", conditions }, limit: 20,
+    }
+    const { code, out } = await larkCliAsync([
+      'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+      '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
+    ])
+    if (code !== 0) return { ok: false, error: '按名称反查失败 code=' + code + ' ' + String(out).slice(0, 200) }
+    try {
+      const data = JSON.parse(out).data
+      recordIds = (data.record_id_list || []).filter((_, i) => {
+        const row = data.data[i] || []
+        return row[0] === task.demoName
+      })
+    } catch (e) {
+      return { ok: false, error: '反查结果解析失败：' + e.message }
+    }
+  }
+  if (!recordIds.length) return { ok: false, error: '表里没找到对应记录（recordId 为空且按名称未反查到）' }
+  const fields = { [FEISHU.statusField]: ['已完成'] }
+  if (url) fields[FEISHU.linkField] = url
+  const payload = JSON.stringify({ update_records: Object.fromEntries(recordIds.map((id) => [id, fields])) })
+  const { code, out } = await larkCliAsync([
+    'base', '+record-batch-update',
+    '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+    '--json', payload, '--as', 'user',
+  ])
+  console.log(`[done:${taskId}] lark-cli 退出 code=${code} ${String(out).slice(0, 300)}`)
+  if (code !== 0) return { ok: false, error: 'lark-cli 更新失败：' + String(out).slice(0, 200) }
+  // lark-cli 对不存在的 record 退出码仍是 0（record_not_found 单列）：全落空 = 回写失败，可重试
+  try {
+    const o = JSON.parse(out)
+    const notFound = Array.isArray(o.data && o.data.record_not_found) ? o.data.record_not_found : []
+    if (notFound.length) {
+      const hit = recordIds.filter((id) => !notFound.includes(id))
+      if (!hit.length) return { ok: false, error: '记录不存在（表格行已删？）：' + notFound.join(',') }
+      console.log(`[done:${taskId}] 部分记录不存在，已跳过：${notFound.join(',')}`)
+    }
+  } catch { /* 输出非 JSON：按退出码判断 */ }
+  return { ok: true }
+}
+
 // ---- HTTP 服务 ----
 
 const server = http.createServer((req, res) => {
@@ -487,10 +614,48 @@ const server = http.createServer((req, res) => {
       try { task = JSON.parse(body) } catch { task = { raw: body } }
       console.log('[task]', JSON.stringify(task))
       const jobId = Date.now()
-      queue.push({ task, jobId })
-      pumpQueue()
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'h2d', jobId, queued: queue.length }))
+      // engine：local（默认）= 登记到插件面板等 UED 手动转；mcp = 手动备用，走旧自动导入链路
+      if ((task.engine || process.env.H2D_ENGINE || 'local') === 'mcp') {
+        queue.push({ task, jobId })
+        pumpQueue()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'h2d', jobId, queued: queue.length }))
+      }
+      registerLocalTask(task, jobId, res)
+    })
+    return
+  }
+
+  // UED 在内部插件转完回写：serve.py /api/feishu-done 转发到这里（lark-cli 收敛在本服务）
+  if (req.method === 'POST' && req.url === '/done') {
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', async () => {
+      let d
+      try { d = JSON.parse(body) } catch { d = {} }
+      const taskId = String(d.taskId || d.id || '')
+      const tasks = readTasks()
+      const t = tasks.find((x) => String(x.id) === taskId)
+      if (!t) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        return res.end(JSON.stringify({ ok: false, error: '任务不存在或已被清理：' + taskId }))
+      }
+      let url = null
+      if (d.figmaUrl) {
+        const u = extractFigmaUrl(d.figmaUrl)   // 校验格式：只认 figma.com/design|file 链接
+        if (!u) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          return res.end(JSON.stringify({ ok: false, error: '不是合法 Figma 链接：' + d.figmaUrl }))
+        }
+        url = u
+      }
+      const r = await feishuApplyDone(t, taskId, url)
+      t.status = r.ok ? '已转' : '已转·回写失败'
+      if (url) t.figmaUrl = url
+      writeTasks(tasks)
+      console.log(`[done:${taskId}] 回写${r.ok ? '成功' : '失败'}：${t.demoName} → ${url || '(无链接，仅置状态)'}`)
+      res.writeHead(r.ok ? 200 : 502, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(r))
     })
     return
   }
@@ -506,11 +671,14 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && req.url === '/health') {
     const auth = loadAuth()
+    const localPending = readTasks().filter((t) => t.status === '待转').length
     res.writeHead(200, { 'Content-Type': 'application/json' })
     return res.end(JSON.stringify({
       ok: true,
-      mode: 'h2d',
+      mode: 'local',   // 默认链路：登记 → UED 插件面板手动转；engine=mcp 走自动导入
+      engine: process.env.H2D_ENGINE || 'local',
       auth: auth ? (auth.svc ? 'service-account' : 'refresh-token') : 'none',
+      localPending,
       queued: queue.length,
       running,
     }))
@@ -522,5 +690,5 @@ if (process.argv.includes('--login')) {
   cmdLogin().catch((e) => { console.error('[login] 失败:', e.message); process.exit(1) })
 } else if (require.main === module) {
   if (!loadAuth()) console.log('[warn] 尚未授权：先跑 node server.js --login')
-  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=html.to.design 直连`))
+  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=本地插件登记（engine=mcp 走自动导入）`))
 }
