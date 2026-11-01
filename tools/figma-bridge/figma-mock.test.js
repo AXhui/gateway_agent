@@ -517,6 +517,93 @@ const MOCK_LIBS = new Map();
   inputRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
   MOCK_LIBS.set('lib:input-rl', inputRLSet);
 
+  // 十一轮靶子：库 steps-item（Milesight_IOT_Web 实测轴系：Layout 布局 × Small 小型 × Status 状态）。
+  // tail 连接线烤在 item 内（header.tail 内 line、88px 定宽）、步号数字是 icon 子实例内可覆写 TEXT——
+  // 整条 steps 集 Number 轴只有 3~6 → 逐项映射：done/active/裸类 token 裁决 Status，Small 走高度裁决
+  // （块 24 → true 胜 32 差 8），末步无 ms-step-line（lib.tail=0）→ 藏 tail、有线的拉宽填满余宽
+  const mkStepIcon = (variant) => {
+    const c = new FNode('COMPONENT', { name: 'steps-item-icon/' + variant, width: 24, height: 24 });
+    const d = mkText('2'); d.x = 7; d.y = 1;
+    c.appendChild(d);
+    return c;
+  };
+  const stepIcoOp = mkStepIcon('Operating'); MOCK_LIBS.set('icon:step-op', stepIcoOp);
+  const stepIcoWait = mkStepIcon('Wait'); MOCK_LIBS.set('icon:step-wait', stepIcoWait);
+  const mkStepV = (layout, small, status, h2) => {
+    const c = new FNode('COMPONENT', { name: 'Layout 布局=' + layout + ', Small 小型=' + small + ', Status 状态=' + status, width: 220, height: h2 });
+    c.variantProperties = { 'Layout 布局': layout, 'Small 小型': String(small), 'Status 状态': status };
+    c.componentPropertyDefinitions = {
+      'Layout 布局': { type: 'VARIANT', variantOptions: ['水平左对齐', '垂直'], defaultValue: '水平左对齐' },
+      'Small 小型': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+      'Status 状态': { type: 'VARIANT', variantOptions: ['完成', '进行中', '等待'], defaultValue: '等待' },
+    };
+    const header = new FNode('FRAME', { name: 'header', width: 210, height: h2 });
+    const ic = new FNode('INSTANCE', { name: 'steps-item-icon', width: 24, height: 24 });
+    ic.mainComponent = status === '等待' ? stepIcoWait : stepIcoOp;
+    header.appendChild(ic);
+    const title = mkText('Step Title'); title.x = 40; title.y = h2 === 24 ? 5 : 7;
+    header.appendChild(title);
+    const tail = new FNode('FRAME', { name: 'tail', x: 122, y: h2 === 24 ? 12 : 16, width: 88, height: 1,
+      fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }] });
+    const line = new FNode('VECTOR', { name: 'line', width: 88, height: 1,
+      fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }], strokes: [] });
+    tail.appendChild(line);
+    header.appendChild(tail);
+    c.appendChild(header);
+    return c;
+  };
+  const stepSet = new FNode('COMPONENT_SET', { name: 'components/steps-item', width: 220, height: 24 });
+  stepSet.appendChild(mkStepV('水平左对齐', true, '进行中', 24));
+  stepSet.appendChild(mkStepV('水平左对齐', true, '等待', 24));
+  stepSet.appendChild(mkStepV('水平左对齐', false, '进行中', 32));
+  stepSet.appendChild(mkStepV('水平左对齐', false, '等待', 32));
+  stepSet.componentPropertyDefinitions = {
+    'Layout 布局': { type: 'VARIANT', variantOptions: ['水平左对齐', '垂直'], defaultValue: '水平左对齐' },
+    'Small 小型': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    'Status 状态': { type: 'VARIANT', variantOptions: ['完成', '进行中', '等待'], defaultValue: '等待' },
+  };
+  MOCK_LIBS.set('lib:steps-item', stepSet);
+
+  // 十一轮续（审计启用）：库 components/Segmented（Milesight_IOT_Web 实测轴系：尺寸 × 选中 × 悬停 × 禁用
+  // ——选中/悬停/禁用同为 true/false 值域）。token 必须「轴名=值」显式寻址：裸 'true' 会让每个未决
+  // 布尔轴都吃到同一值——故 fixture 特意含「选中+悬停+禁用全开」变体，红态（轴名门禁缺失）会选中它，
+  // 悬停/禁用串开可见。尺寸轴块高 28 vs 大30/中26 双差 2px 平局不判 → 默认大 + resize 吸收
+  const mkSegV = (size, sel, hov, dis) => {
+    const c = new FNode('COMPONENT', { name: '尺寸=' + size + ', 选中=' + sel + ', 悬停=' + hov + ', 禁用=' + dis, width: 70, height: size === '大' ? 30 : 26 });
+    c.variantProperties = { '尺寸': size, '选中': sel, '悬停': hov, '禁用': dis };
+    const t = mkText('Segment'); t.x = 12; t.y = 6;
+    c.appendChild(t);
+    return c;
+  };
+  const segSet = new FNode('COMPONENT_SET', { name: 'components/Segmented', width: 70, height: 30 });
+  segSet.appendChild(mkSegV('大', 'true', 'false', 'false'));
+  segSet.appendChild(mkSegV('大', 'false', 'false', 'false'));
+  segSet.appendChild(mkSegV('中', 'false', 'false', 'false'));
+  segSet.appendChild(mkSegV('大', 'true', 'true', 'true'));
+  segSet.componentPropertyDefinitions = {
+    '尺寸': { type: 'VARIANT', variantOptions: ['大', '中', '小', '迷你'], defaultValue: '大' },
+    '选中': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    '悬停': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    '禁用': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+  };
+  MOCK_LIBS.set('lib:seg-item', segSet);
+
+  // 十一轮续：库 time-dot（Timeline 页实测：单轴 status 状态=进行中/完成/失败/等待，8×8）。
+  // 单轴裸值无碰撞（与 Segmented 布尔家族相反）；warm 修饰库无档 → 等待 + repaintLibInstance 按 HTML 色兜正
+  const mkDotV = (st, col) => {
+    const c = new FNode('COMPONENT', { name: 'status 状态=' + st, width: 8, height: 8,
+      fills: [{ type: 'SOLID', color: { r: col[0], g: col[1], b: col[2] } }] });
+    c.variantProperties = { 'status 状态': st };
+    return c;
+  };
+  const dotSet = new FNode('COMPONENT_SET', { name: 'time-dot', width: 8, height: 8 });
+  dotSet.appendChild(mkDotV('进行中', [0.2, 0.4, 0.9]));
+  dotSet.appendChild(mkDotV('完成', [0.1, 0.7, 0.3]));
+  dotSet.appendChild(mkDotV('失败', [0.9, 0.2, 0.2]));
+  dotSet.appendChild(mkDotV('等待', [0.6, 0.6, 0.6]));
+  dotSet.componentPropertyDefinitions = { 'status 状态': { type: 'VARIANT', variantOptions: ['进行中', '完成', '失败', '等待'], defaultValue: '进行中' } };
+  MOCK_LIBS.set('lib:time-dot', dotSet);
+
   // 十轮靶子：真库 Checkbox——tag BOOLEAN 默认 true 控标签 <p>{text}</p>、text TEXT 默认 "Checkbox"。
   // 轴名 tag 此前无规则管辖恒落默认 true → 裸表格勾选框（无文本证据）泄漏 "Checkbox" 文案；
   // 用户裁定：标题场景（块内有文本）才带文本，表格列只有勾选框。
@@ -733,6 +820,28 @@ const SCENE = {
         { t: 'f', n: 'ms-under', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 840, y: 700, w: 100, h: 20, o: 1,
           lib: { k: 'lib:tiny', f: 'Tiny', cls: 'ms-under', tok: [], texts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'] },
           ch: [T('M1'), T('M2'), T('M3'), T('M4'), T('M5'), T('M6')] },
+        // 十一轮（步骤条组件化，REQ-019 向导条两步形态）：active 步（步号 1 + 标题 + 连线 tail:1）+
+        // 末步 wait（步号 2 + 标题、无连线 tail:0）——tok 含裸类兜底「等待」排在修饰 token 之后
+        { t: 'f', n: 'ms-step ms-step--active', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 40, y: 1240, w: 560, h: 24, o: 1,
+          lib: { k: 'lib:steps-item', f: 'components/steps-item', cls: 'ms-step ms-step--active', tok: ['水平左对齐', '进行中', '等待'], texts: ['1', '设备信息'], tcols: [[0.2, 0.4, 0.9], [0.1, 0.1, 0.1]], ic: false, tail: 1 },
+          ch: [T('1', { x: 8, fs: 12, fw: 600, w: 12, h: 20 }), T('设备信息', { x: 36, y: 1, w: 64, h: 22 }),
+            { t: 'f', n: 'ms-step-line', f: [{ c: [0.9, 0.9, 0.9], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 120, y: 12, w: 430, h: 1, o: 1, ch: [] }] },
+        { t: 'f', n: 'ms-step', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 620, y: 1240, w: 560, h: 24, o: 1,
+          lib: { k: 'lib:steps-item', f: 'components/steps-item', cls: 'ms-step', tok: ['水平左对齐', '等待'], texts: ['2', '对象配置'], tcols: [[0.1, 0.1, 0.1], [0.1, 0.1, 0.1]], ic: false, tail: 0 },
+          ch: [T('2', { x: 8, fs: 12, fw: 600, w: 12, h: 20 }), T('对象配置', { x: 36, y: 1, w: 64, h: 22 })] },
+        // 十一轮续（审计启用）：分段控制器逐项换库——active 项「选中=true」显式轴 token + 裸项兜底「选中=false」。
+        // 悬停/禁用与选中同值域（true/false）：红态（轴名门禁缺失）裸值把三轴全串开 → 选「全开」变体
+        { t: 'f', n: 'ms-segmented-item ms-segmented-item--active', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 6, tr: 6, br: 6, bl: 6 }, clip: false, x: 40, y: 1300, w: 62, h: 28, o: 1,
+          lib: { k: 'lib:seg-item', f: 'components/Segmented', cls: 'ms-segmented-item ms-segmented-item--active', tok: ['选中=true'], col: [1, 1, 1, 1], texts: ['列表'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('列表')] },
+        { t: 'f', n: 'ms-segmented-item', f: [], e: [], r: { tl: 6, tr: 6, br: 6, bl: 6 }, clip: false, x: 110, y: 1300, w: 62, h: 28, o: 1,
+          lib: { k: 'lib:seg-item', f: 'components/Segmented', cls: 'ms-segmented-item', tok: ['选中=false'], texts: ['卡片'], tcols: [[0.4, 0.4, 0.4]], ic: false },
+          ch: [T('卡片')] },
+        // 十一轮续：时间轴点逐项换库——warm 修饰（库无 warm 档 → 等待 + repaint 按 demo 橙色兜正）+ 裸点（进行中）
+        { t: 'f', n: 'ms-timeline-dot ms-timeline-dot--warm', f: [{ c: [0.95, 0.6, 0.1], a: 1 }], e: [], r: { tl: 5, tr: 5, br: 5, bl: 5 }, clip: false, x: 40, y: 1340, w: 9, h: 9, o: 1,
+          lib: { k: 'lib:time-dot', f: 'time-dot', cls: 'ms-timeline-dot ms-timeline-dot--warm', tok: ['等待'], col: [0.95, 0.6, 0.1, 1], ic: false }, ch: [] },
+        { t: 'f', n: 'ms-timeline-dot', f: [{ c: [0.2, 0.4, 0.9], a: 1 }], e: [], r: { tl: 5, tr: 5, br: 5, bl: 5 }, clip: false, x: 60, y: 1340, w: 9, h: 9, o: 1,
+          lib: { k: 'lib:time-dot', f: 'time-dot', cls: 'ms-timeline-dot', tok: ['进行中'], col: [0.2, 0.4, 0.9, 1], ic: false }, ch: [] },
         { t: 'inst', d: 'c1', x: 0, y: 400, w: 60, h: 24, o: 1, texts: ['在线'], tcols: [[0.1, 0.6, 0.3]] },
         { t: 's', svg: '<svg viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>', x: 0, y: 440, w: 20, h: 20, o: 1 },
         // 图标槽换装 + 视觉复核重选（2026-10-31）：轴裁决全不判 → 默认 Ghost 落图背离蓝底 → 换 Filled 重建 + 图标槽换 trash
@@ -1259,6 +1368,54 @@ vm.runInContext(code, sandbox);
     rclTxt && String(rclTxt.characters) + '/' + rclTxt.visible);
   A('十轮计数入通知（附加结构隐藏/图标槽隐藏）',
     doneMsg0 && /附加结构隐藏 [1-9]/.test(doneMsg0) && /图标槽隐藏 [1-9]/.test(doneMsg0), doneMsg0);
+
+  // ---- 十一轮：步骤条逐项换库 steps-item（REQ-019 向导条；Status token 裁决 + Small 高度裁决 + tail 证据）----
+  const stpA = iconInsts.find(i => i.name === 'ms-step ms-step--active');
+  const stpB = iconInsts.find(i => i.name === 'ms-step');
+  A('active 步骤落库实例（逐项映射，非本地重绘）', !!stpA);
+  A('末步（wait）落库实例', !!stpB);
+  const stpAvp = (stpA && stpA.variantProperties) || {};
+  A('Status 修饰 token 裁决（进行中压过兜底等待）', stpAvp['Status 状态'] === '进行中', JSON.stringify(stpAvp));
+  A('Layout 烤入 token（水平左对齐）', stpAvp['Layout 布局'] === '水平左对齐', JSON.stringify(stpAvp));
+  const stpAsp = stpA && Object.assign({}, ...(stpA.setProps || []));
+  A('Small 小型高度裁决（块 24 → true，步进 payload）', !!stpAsp && stpAsp['Small 小型'] === 'true', JSON.stringify(stpAsp));
+  const stpBvp = (stpB && stpB.variantProperties) || {};
+  A('末步裸类兜底 token（Status=等待）', stpBvp['Status 状态'] === '等待', JSON.stringify(stpBvp));
+  const stpTexts = (inst) => inst ? (function ft6(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft6(c)); }); return o; })(inst).filter(t => t.visible !== false).map(t => t.characters).join('|') : '';
+  const ta = stpTexts(stpA), tb = stpTexts(stpB);
+  A('步号数字 + 标题按 demo 改写（icon 子实例内 TEXT 覆写）', ta === '1|设备信息', ta);
+  A('末步步号 + 标题改写', tb === '2|对象配置', tb);
+  const stepTail = (inst) => { let o = null; (function w9(nd) { (nd.children || []).forEach(c => { if (!o && /^tail$/i.test(String(c.name || ''))) o = c; else w9(c); }); })(inst); return o; };
+  const tailA = stpA && stepTail(stpA), tailB = stpB && stepTail(stpB);
+  A('active 步 tail 拉宽填满余宽（560-122=438）', !!tailA && Math.abs(tailA.width - 438) < 1, tailA && ('w=' + tailA.width));
+  A('末步 tail 隐藏（demo 无连线，不再残留库定宽尾线）', !!tailB && tailB.visible === false, tailB && String(tailB.visible));
+  A('步骤尾线计数入通知（1 藏/1 拉宽）', doneMsg0 && /步骤尾线 1 藏\/1 拉宽/.test(doneMsg0), doneMsg0);
+  A('steps Small 轴走高度裁决计入通知（高度择尺寸 6，红态被 shape 兜底遮成 4）',
+    doneMsg0 && /高度择尺寸 6/.test(doneMsg0), doneMsg0);
+
+  // ---- 十一轮续（审计启用）：segmented/time-dot 逐项换库（「轴名=值」显式 token 防布尔轴串轴）----
+  const segA = iconInsts.find(i => i.name === 'ms-segmented-item ms-segmented-item--active');
+  const segB = iconInsts.find(i => i.name === 'ms-segmented-item');
+  A('分段控制器 active 项落库实例（逐项映射，组轨道本地）', !!segA);
+  A('分段控制器裸项落库实例', !!segB);
+  const segAvp = (segA && segA.variantProperties) || {};
+  A('「选中=true」显式轴 token 裁决', segAvp['选中'] === 'true', JSON.stringify(segAvp));
+  A('布尔轴不串轴（悬停/禁用保持 false——红态裸值串开选「全开」变体）',
+    segAvp['悬停'] === 'false' && segAvp['禁用'] === 'false', JSON.stringify(segAvp));
+  A('尺寸轴 28 vs 大30/中26 平局不判（默认大，resize 吸收 2px）', segAvp['尺寸'] === '大', JSON.stringify(segAvp));
+  const segBvp = (segB && segB.variantProperties) || {};
+  A('裸项兜底（选中=false）', segBvp['选中'] === 'false', JSON.stringify(segBvp));
+  const segTxt = segA ? (function ft7(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft7(c)); }); return o; })(segA).filter(t => t.visible !== false).map(t => t.characters).join('|') : '';
+  A('分段项文案改写（Segment → 列表）', segTxt === '列表', segTxt);
+  const dotW = iconInsts.find(i => i.name === 'ms-timeline-dot ms-timeline-dot--warm');
+  const dotP = iconInsts.find(i => i.name === 'ms-timeline-dot');
+  A('时间轴点落库实例（warm + 裸）', !!dotW && !!dotP);
+  const dotWvp = (dotW && dotW.variantProperties) || {};
+  const dotPvp = (dotP && dotP.variantProperties) || {};
+  A('warm 修饰 → 等待档（库无 warm 档）', dotWvp['status 状态'] === '等待', JSON.stringify(dotWvp));
+  A('裸点 → 进行中档', dotPvp['status 状态'] === '进行中', JSON.stringify(dotPvp));
+  const wf = dotW ? (dotW.fills || []).map(p => p && p.color ? [p.color.r, p.color.g, p.color.b].map(x => Math.round(x * 100) / 100).join(',') : '?').join(';') : '';
+  A('warm 点颜色按 HTML 覆写（等待档灰 → demo 橙，硬性颜色规则）', /0\.95,0\.6,0\.1/.test(String(wf)), String(wf));
 
   // ---- 对位-校验-自愈（2026-10-31 强化）：文字/内容错位 + 缺失三根因收口 ----
   const ordInst = iconInsts.find(i => i.name === 'ms-ord');

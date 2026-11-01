@@ -187,3 +187,13 @@
 - **hideLeftoverTexts（残余文本收口）**：实例内可见 TEXT 层多于 demo 文本段数时，超出段 visible=false（排序与 rewriteInstanceText 同款防错位）。仅 input/select/checkbox/radio 载体。
 - **计数可见性**：通知新增「附加结构隐藏 N / 图标槽隐藏 N / 残余文本隐藏 N」。
 - **坑**：①红态靶必须能** discriminate**——「值落值层」用 visText 断言在红态（addon 可见、值错落 addon 层）仍绿，须补「addon 内层 http:// 保持原样」断言才能抓住错位；②靶 fixture 的 icon 槽若是**直发子**（七轮轴模型），addon 隐藏不能一刀切直发子 INSTANCE——按 >24px 尺寸排除槽位，两代库结构（轴式/烤入式）同一插件路径兼容。
+
+### 4.15 十一轮：步骤条组件化 + 存量映射全量审计（2026-11-01 REQ-019 板 184:12825）
+
+> 来源：用户令「步骤条也要组件，一般 html 出现的内容都有」——两条产出：①步骤条逐项换库；②对 component-keys 全部 disabled 条目按「html 出现的都该有映射」原则做使用量审计，能套现有裁决机的启用、需新机制的记录启用条件。修后 mock **224/224**（+11 靶，红态 1 失败正中串轴靶）、verify-scene 七页 100%、构建号两侧 r11→**r11b**。
+
+- **步骤条逐项映射（ms-step → components/steps-item）**：整条 steps 集（Number 轴仅 3~6 变体）弃用，走**逐项**——任意步数可表达。Status 经修饰类 token（done→完成 / active→进行中 / 裸类兜底→等待）；Layout=水平左对齐烤入全部 token 值；Small 小型走高度裁决（高度轴 regex 扩 `/size|尺寸|small|小型/`，块 24 → true 胜 32 差 8px）。**tail 连接线证据**：build-scene 采 `lib.tail`（后代有无 `ms-step-line`）——末步 tail:0 藏 tail 帧；有线的把 tail/line 拉宽到实例余宽（插件 `fixStepsTail`，计数「步骤尾线 N 藏/N 拉宽」）。步号数字是 icon 子实例内可覆写 TEXT，随 rewriteInstanceText 阅读序对位。**stepItem 守卫**：含 `ms-step-desc` 的形态（升级弹窗）拒收——desc 的 tip 帧烤在库 item 内且高度证据被拉高 muddy，本地绘制保内容。
+- **「轴名=值」显式 token（布尔轴串轴防线，pickVariantValue 扩展）**：Segmented 实测四轴 尺寸×选中×悬停×禁用——后三条同为 `true/false` 值域，而每个未决 VARIANT 轴都拿**同一份 token 列表**独立询问：裸值 `true`（或子串通道的 `选中=true`）会把悬停/禁用一并判 true。修法双闸：①token 支持 `轴名=值` 形态，**轴名 norm 命中才取值**；②纯布尔值轴（选项全 true/false）不再吃裸值 token，只有轴名门禁能寻址。红态实证：旧代码选中「选中+悬停+禁用全开」变体（fixture 必须故意含该变体，否则红态不可见——pickVariantChild 打分会退回正确变体，绿灯掩盖串轴）。
+- **审计启用（能套现有裁决机的才开）**：`ms-segmented-item → components/Segmented`（选中轴显式 token；尺寸轴 28.8 vs 大30/中26 平局不判走默认+resize；组级 Segmented-group 弃用——数量/选中位是结构事实非类名，token 表达不了且组宽烤死）、`ms-timeline-dot → time-dot`（单轴 status 裸值无碰撞：裸→进行中 / success→完成 / error→失败 / muted·warm→等待，warm 色差由 repaintLibInstance 按 HTML 兜正；Timeline 整条与 components/time 项集内容烤死弃用）。
+- **勘验后维持 disabled（记录启用条件）**：`ms-progress`——Progress-Line/Status-Normal 集 Value 值轴仅 5%~95% 的 5% 离散档、宽度烤死（large 400 / Small 174），HTML 任意 % 内层填充无法表达（实例 resize 只缩根、内层不随比例重排，statCard 同族判例）；状态集（Success/Error/Warn/Waiting × Small）同因。启用条件 = 库出填充条独立子组件或内层比例 resize 可靠化。其余 13 条 disabled（表格数据行/表单项/卡片内容等动态内容、文本节点无类名）维持诚实原则。
+- **端到端验证载体坑**：REQ-019 九个导出状态无一打开含 segmented/timeline 的视图（元素在内联 runtime 的 JS 模板串里）——grep `class="` 计数会误判「已渲染」；用 /tmp 可见页验 walkLib 证据（修饰 token 在前、裸类兜底 appended 在后、col/高度证据齐）后再重建 REQ scene 交还面板。

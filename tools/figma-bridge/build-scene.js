@@ -118,7 +118,7 @@ const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 // 构建号（与插件 PLUGIN_BUILD 同步 bump）：面板开着时 JS 上下文不随磁盘更新重载，旧面板导入新 scene
 // 只会产出旧缺陷板——插件侧 build ≠ PLUGIN_BUILD 拒导并提示重开面板（figma-mock 有红绿靶）
-scene.build = 'r10';
+scene.build = 'r11b';
 if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
 // 入口页 URL 归一记录（cell.u）：原型连线——入口内链接 lk 命中其它 cell.u 即挂 ON_CLICK 跳转
 if (EXT && scene.cells[0]) scene.cells[0].u = SITE ? pathKey(SITE) : path.basename(demoPath);
@@ -413,6 +413,14 @@ if (!EXT) try {
       if (items.length < 2) return null;
       return { tabs: items, sw: false, aux: ent.aux };
     }
+    if (ent.guard === 'stepItem') {
+      // 十一轮（用户令「步骤条也要组件」）：含 desc 的步骤条（升级弹窗形态 ms-step-desc）不收——
+      // desc 的 tip 帧烤在库 item 内、且 desc 把块高拉高（Small 小型轴的高度证据 muddy），
+      // 守卫不过走本地绘制保内容；纯「步号+标题+连线」形态（向导条）才换库实例
+      const hasDesc = (function wd(m) { return (m.ch || []).some(c => (c.t === 'f' && /(^|\s)ms-step-desc(\s|$)/.test(String(c.n || ''))) || wd(c)); })(n);
+      if (hasDesc) return null;
+      return {};
+    }
     return {};
   }
   function walkLib(n) {
@@ -491,6 +499,12 @@ if (!EXT) try {
         lib.tcols = tp.map(p => p.c || undefined);
         lib.tfs = tp.map(p => p.fs || undefined);
         lib.tfw = tp.map(p => p.fw || undefined);
+        // 十一轮（步骤条组件化）：tail 连接线证据——库 steps-item 把连接线烤在 item 内（header.tail 内
+        // line 矢量，主档 88px 定宽），demo 的连线是 .ms-step-line 子元素（flex:1 填满余宽、末步无）。
+        // lib.tail=1 → 插件把 tail/line 拉宽到实例余宽；0 → 藏 tail（末步无连线）
+        if (ent.cls === 'ms-step') {
+          lib.tail = (function hasLine(m) { return (m.ch || []).some(c => (c.t === 'f' && /(^|\s)ms-step-line(\s|$)/.test(String(c.n || ''))) || hasLine(c)); })(n) ? 1 : 0;
+        }
         if (ent.guard) {
           const g = evalGuard(ent, n);
           if (g) {
