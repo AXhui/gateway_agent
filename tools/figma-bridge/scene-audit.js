@@ -26,6 +26,8 @@ const AUDIT_MAIN = function (cell, idx) {
   (function collect(n) { if (n.p) byPath[n.p] = n; (n.ch || []).forEach(collect); })(cell.root);
   var hook = window.MS_FIGMA_EXPORT || {};
   var rootEl = document.querySelector(hook.rootSelector || '#app') || document.body;
+  // 根提升（对齐 scene-bootstrap 2026-10-31 缺陷 A 修复）：审计根与序列化根必须一致
+  try { var sh = (rootEl && rootEl.closest) ? rootEl.closest('.ms-shell') : null; if (sh && sh !== rootEl) rootEl = sh } catch (e8) {}
   var rootRect = rootEl.getBoundingClientRect();
 
   function directText(el) {
@@ -40,11 +42,20 @@ const AUDIT_MAIN = function (cell, idx) {
     return txt;
   }
   function anyDescVisible(el) {
+    // 空壳容器不算可见（2026-10-31：空 <td><span class=bc-num></span> 曾误报覆盖缺口）——
+    // 后代须自带视觉（文本/底色/边框/阴影/背景图/img/svg）或自身非空子树，才证明父容器该进 scene
     for (var q = 0; q < el.children.length; q++) {
       var c2 = el.children[q], s2 = getComputedStyle(c2);
       if (s2.display === 'none' || s2.visibility === 'hidden') continue;
       if (/^(script|style|link|meta)$/i.test(c2.tagName)) continue;
-      return true;
+      var bg2 = parseRgba(s2.backgroundColor);
+      var bw2 = [s2.borderTopWidth, s2.borderRightWidth, s2.borderBottomWidth, s2.borderLeftWidth];
+      var bc2 = [s2.borderTopColor, s2.borderRightColor, s2.borderBottomColor, s2.borderLeftColor];
+      var vb2 = false;
+      for (var b2 = 0; b2 < 4; b2++) { var w2 = parseFloat(bw2[b2]) || 0, cl2 = parseRgba(bc2[b2]); if (w2 > 0 && cl2 && cl2.a > 0) vb2 = true; }
+      if (directText(c2) || (bg2 && bg2.a > 0) || vb2 || (s2.boxShadow && s2.boxShadow !== 'none')
+        || (s2.backgroundImage && s2.backgroundImage !== 'none') || /^(img|svg|canvas)$/i.test(c2.tagName)) return true;
+      if (anyDescVisible(c2)) return true;
     }
     return false;
   }
@@ -87,37 +98,101 @@ const AUDIT_MAIN = function (cell, idx) {
     // 文本（svg/img/canvas 无可渲染文本；pseudo-* 文本是伪元素产物，不算元素正文）
     if (txt && tag !== 'svg' && tag !== 'img' && tag !== 'canvas') {
       var want = applyTT(txt, cs.textTransform || 'none');
-      var tn = (n.ch || []).filter(function (c) { return c.t === 't' && c.n !== 'pseudo-before' && c.n !== 'pseudo-after' })[0];
-      if (!tn) fail('text', path, '有直接文本但无文本节点: "' + want.slice(0, 24) + '"');
-      else {
-        if (tn.text !== want) fail('text', path, '文本不符: "' + tn.text.slice(0, 24) + '" vs "' + want.slice(0, 24) + '"');
+      var tns = (n.ch || []).filter(function (c) { return c.t === 't' && c.n !== 'pseudo-before' && c.n !== 'pseudo-after' });
+      // 直接文本 run 分组（2026-10-31 八轮镜像）：只测文本节点、按连续段分组，元素子节点不进 run——
+      // 序列化侧同款（selectNodeContents 整 union 会把 svg 图标并进来：w 撑大误判 right/文本盒压图标；
+      // 混排行「已选<b>2</b>项」整盒与 b 子层重叠）。单段走 run 对齐裁决，多段逐段盒精确比对
+      var runsA = [];
+      try {
+        var grpA = [];
+        for (var ciA = 0; ciA < el.childNodes.length; ciA++) {
+          var cnA = el.childNodes[ciA];
+          if (cnA.nodeType === 3 && cnA.data.replace(/\s+/g, '')) grpA.push(cnA);
+          else if (grpA.length) { runsA.push(grpA); grpA = []; }
+        }
+        if (grpA.length) runsA.push(grpA);
+        runsA = runsA.map(function (g) {
+          var rA = document.createRange();
+          rA.setStart(g[0], 0); rA.setEnd(g[g.length - 1], g[g.length - 1].data.length);
+          var bA = rA.getBoundingClientRect();
+          if (bA.height <= 0) return null;
+          var tA = ''; g.forEach(function (x) { tA += x.data; });
+          return { txt: applyTT(tA.replace(/\s+/g, ' ').trim(), cs.textTransform || 'none'), r: { tx: bA.left - rect.left, ty: bA.top - rect.top, w: bA.width, h: bA.height } };
+        }).filter(Boolean);
+      } catch (eR) { runsA = []; }
+      var fs = parseFloat(cs.fontSize) || 14;
+      var lh = cs.lineHeight === 'normal' ? fs * 1.4 : (parseFloat(cs.lineHeight) || fs * 1.4);
+      var fw = parseInt(cs.fontWeight) || 400;
+      var col = parseRgba(cs.color) || { c: [0, 0, 0] };
+      function styleChecks(tn) {
+        if (!near(tn.fs, fs, 0.6)) fail('text', path, 'fontSize ' + tn.fs + ' vs ' + fs);
+        else if (tn.fw !== fw) fail('text', path, 'fontWeight ' + tn.fw + ' vs ' + fw);
+        else if (!near(tn.lh, lh, 1.5)) fail('text', path, 'lineHeight ' + tn.lh + ' vs ' + lh);
         else {
           ok();
-          var fs = parseFloat(cs.fontSize) || 14;
-          var lh = cs.lineHeight === 'normal' ? fs * 1.4 : (parseFloat(cs.lineHeight) || fs * 1.4);
-          var fw = parseInt(cs.fontWeight) || 400;
-          var col = parseRgba(cs.color) || { c: [0, 0, 0] };
-          if (!near(tn.fs, fs, 0.6)) fail('text', path, 'fontSize ' + tn.fs + ' vs ' + fs);
-          else if (tn.fw !== fw) fail('text', path, 'fontWeight ' + tn.fw + ' vs ' + fw);
-          else if (!near(tn.lh, lh, 1.5)) fail('text', path, 'lineHeight ' + tn.lh + ' vs ' + lh);
-          else {
-            ok();
-            if (!near(tn.col[0] * 255, col.c[0] * 255, 2) || !near(tn.col[1] * 255, col.c[1] * 255, 2) || !near(tn.col[2] * 255, col.c[2] * 255, 2)) fail('text', path, '字色 ' + tn.col.join(',') + ' vs ' + col.c.join(','));
-            else ok();
+          if (!near(tn.col[0] * 255, col.c[0] * 255, 2) || !near(tn.col[1] * 255, col.c[1] * 255, 2) || !near(tn.col[2] * 255, col.c[2] * 255, 2)) fail('text', path, '字色 ' + tn.col.join(',') + ' vs ' + col.c.join(','));
+          else ok();
+        }
+        var lsp = parseFloat(cs.letterSpacing) || 0;
+        if (!near(tn.ls || 0, lsp, 0.15)) fail('text', path, '字距 ' + (tn.ls || 0) + ' vs ' + lsp); else ok();
+        var dl2 = cs.textDecorationLine || 'none';
+        var wantTd = /underline/.test(dl2) ? 'u' : (/line-through/.test(dl2) ? 's' : null);
+        if ((tn.td || null) !== wantTd) fail('text', path, '装饰线 ' + (tn.td || '无') + ' vs ' + (wantTd || '无')); else ok();
+        var wantTr = (cs.textOverflow === 'ellipsis' && cs.overflowX !== 'visible' && cs.whiteSpace === 'nowrap') ? 1 : null;
+        if ((tn.tr || null) !== wantTr) fail('text', path, '截断标记 ' + (tn.tr ? '有' : '无') + ' vs ' + (wantTr ? '应有' : '无')); else ok();
+        if (cs.fontStyle === 'italic' || cs.fontStyle === 'oblique') { if (!tn.it) fail('text', path, '斜体未标记 it'); else ok(); }
+      }
+      if (!tns.length) fail('text', path, '有直接文本但无文本节点: "' + want.slice(0, 24) + '"');
+      else if (runsA.length > 1) {
+        // 混排行：序列化侧应逐段落位（段数一致、每段盒 = run 盒、对齐 left——盒已精确无需裁决）
+        if (tns.length !== runsA.length) fail('text', path, '混排行文本段数 ' + tns.length + ' vs DOM ' + runsA.length + ': "' + want.slice(0, 24) + '"');
+        else runsA.forEach(function (rn, i2) {
+          var tn = tns[i2];
+          if (tn.text !== rn.txt) fail('text', path, '段' + i2 + ' 文本不符: "' + String(tn.text).slice(0, 16) + '" vs "' + rn.txt.slice(0, 16) + '"');
+          else ok();
+          if (!near(tn.x, rn.r.tx, 1) || !near(tn.w, rn.r.w, 1)) fail('geometry', path, '段' + i2 + ' 盒 x/w (' + tn.x.toFixed(1) + ',' + tn.w.toFixed(1) + ') vs run (' + rn.r.tx.toFixed(1) + ',' + rn.r.w.toFixed(1) + ')');
+          else ok();
+          if ((tn.al || 'left') !== 'left') fail('text', path, '段' + i2 + ' 混排盒已精确，对齐应为 left 而非 ' + (tn.al || 'left'));
+          else ok();
+        });
+        styleChecks(tns[0]);
+      } else {
+        var tn = tns[0];
+        if (tn.text !== want) fail('text', path, '文本不符: "' + tn.text.slice(0, 24) + '" vs "' + want.slice(0, 24) + '"');
+        else ok();
+        styleChecks(tn);
+        // R6 硬化：对齐——几何对齐镜像（四轮）+ 八轮纯文本 run：computed 是书写意图（button UA 默认
+        // center），视觉对齐以单行字形 run 实测为准；run 只测直接文本节点，元素子节点不进
+        var als = cs.textAlign === 'center' ? 'center' : (cs.textAlign === 'right' || cs.textAlign === 'end') ? 'right' : 'left';
+        if (runsA.length === 1) {
+          var rA0 = runsA[0].r;
+          if (rA0.h <= lh * 1.7 && rA0.w < w - 1) {
+            var glA = rA0.tx, grA = w - rA0.tx - rA0.w;
+            if (Math.abs(glA - grA) <= 1.5) als = 'center';
+            else if (grA <= 1.5) als = 'right';
+            else als = 'left';
           }
-          // R6 硬化：字距/对齐/装饰线/截断逐一核对
-          var als = cs.textAlign === 'center' ? 'center' : (cs.textAlign === 'right' || cs.textAlign === 'end') ? 'right' : 'left';
-          if ((tn.al || 'left') !== als) fail('text', path, '对齐 ' + (tn.al || 'left') + ' vs ' + als); else ok();
-          var lsp = parseFloat(cs.letterSpacing) || 0;
-          if (!near(tn.ls || 0, lsp, 0.15)) fail('text', path, '字距 ' + (tn.ls || 0) + ' vs ' + lsp); else ok();
-          var dl2 = cs.textDecorationLine || 'none';
-          var wantTd = /underline/.test(dl2) ? 'u' : (/line-through/.test(dl2) ? 's' : null);
-          if ((tn.td || null) !== wantTd) fail('text', path, '装饰线 ' + (tn.td || '无') + ' vs ' + (wantTd || '无')); else ok();
-          var wantTr = (cs.textOverflow === 'ellipsis' && cs.overflowX !== 'visible' && cs.whiteSpace === 'nowrap') ? 1 : null;
-          if ((tn.tr || null) !== wantTr) fail('text', path, '截断标记 ' + (tn.tr ? '有' : '无') + ' vs ' + (wantTr ? '应有' : '无')); else ok();
+        }
+        if ((tn.al || 'left') !== als) fail('text', path, '对齐 ' + (tn.al || 'left') + ' vs ' + als); else ok();
+      }
+    }
+
+    // 表单值/占位镜像（2026-10-31 七轮，input 转化根因）：序列化侧从 value/placeholder 属性合成 t:'t'
+    // 节点（DOM 无文本节点，上方正文检查永远跳过 input）——此处单独核对合成节点存在性与字符一致，
+    // 防合成逻辑回归丢失（库 Input 实例会退回主档 Example）。空输入无合成节点合法。
+    if (tag === 'input' || tag === 'textarea') {
+      var itypA = (el.getAttribute && el.getAttribute('type')) || 'text';
+      if (!/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(itypA)) {
+        var avv = String(el.value || '').replace(/\s+/g, ' ').trim();
+        var app = String((el.getAttribute && el.getAttribute('placeholder')) || '').replace(/\s+/g, ' ').trim();
+        var ashow = avv || app;
+        if (ashow) {
+          var atn = (n.ch || []).filter(function (c) { return c.t === 't'; })[0];
+          if (!atn) fail('text', path, 'input 值/占位未入 scene: "' + ashow.slice(0, 24) + '"');
+          else if (atn.text !== ashow) fail('text', path, 'input 文本不符: "' + String(atn.text).slice(0, 24) + '" vs "' + ashow.slice(0, 24) + '"');
+          else ok();
         }
       }
-      if (cs.fontStyle === 'italic' || cs.fontStyle === 'oblique') { if (!tn || !tn.it) fail('text', path, '斜体未标记 it'); else ok(); }
     }
 
     // 填充

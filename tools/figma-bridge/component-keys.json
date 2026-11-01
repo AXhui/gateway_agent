@@ -21,16 +21,17 @@
    "kind": "set",
    "enabled": true,
    "tokens": {
+    "": "strock",
     "primary": "primary",
     "danger": "danger",
     "success": "success",
-    "dashed": "dashed",
-    "link": "link",
+    "dashed": "dash",
+    "link": "text",
     "text": "text",
-    "filled": "filled",
+    "filled": "primary",
     "xs": "xs",
-    "sm": "small",
-    "lg": "large",
+    "sm": "s",
+    "lg": "l",
     "loading": "loading",
     "disabled": "disabled"
    }
@@ -113,12 +114,13 @@
    "kind": "set",
    "enabled": true,
    "tokens": {
-    "primary": "primary",
-    "success": "success",
-    "error": "error",
-    "warn": "warning",
-    "warm": "warning",
-    "remind": "remind",
+    "": "light background,default",
+    "primary": "light background,primary",
+    "success": "light background,success",
+    "error": "light background,danger",
+    "warn": "light background,warning",
+    "warm": "light background,warning",
+    "remind": "light background,warning",
     "outline": "outline",
     "round": "round"
    }
@@ -252,11 +254,11 @@
   {
    "cls": "bc-eg71-sidenav",
    "lib": "biz",
-   "key": "b0a2f0467524c5ed13e8a9303354f5b059690067",
-   "figmaName": "侧边栏-账户",
+   "key": "53afdc24e9a6bdc6deeb48e3102b37114c519bf0",
+   "figmaName": "侧边栏",
    "kind": "set",
    "enabled": true,
-   "note": "壳侧边栏整块直调业务库实例（用户 2026-10-24 指示：库里已做好，直接调用去改造）；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
+   "note": "壳侧边栏整块直调业务库**完整侧边栏**（2026-10-31 用户指示：改引用完整侧边栏，原「侧边栏- 账户」只是账户局部段）；实例文案按 demo 逐段改写（rewriteInstanceText 对位-校验-自愈），demo 段数超实例容量时表达力守卫回退本地重绘保内容；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
   },
   {
    "cls": "ms-header",
@@ -372,7 +374,8 @@
    "figmaName": "Statistic",
    "kind": "set",
    "enabled": true,
-   "note": "统计数值——demo 无 ms-stat 块级锚点（仅 stat-title/value/suffix/trend 子件类）；待统计卡形态守卫；Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
+   "guard": "statCard",
+   "note": "统计数值——statCard 守卫（2026-10-31 像素审计缺陷 B）：库 Statistic 为横排（图标+数值+后缀）；HTML 竖排统计瓦片（小标题在上、大数值在下）表达不了 → 守卫不过本地绘制。Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
   },
   {
    "cls": "ms-step",

@@ -20,6 +20,8 @@ const BOOTSTRAP_JS = `(function () {
     var hook = window.MS_FIGMA_EXPORT
     if (!hook || !Array.isArray(hook.states) || !hook.states.length) return
     var root = document.querySelector(hook.rootSelector || '#app') || document.body
+    // 根提升（对齐 scene-bootstrap 2026-10-31 缺陷 A 修复）：壳内子树提升到整壳，参考页含侧边栏
+    try { var sh = (root && root.closest) ? root.closest('.ms-shell') : null; if (sh && sh !== root) root = sh } catch (e) {}
     var settle = hook.settleMs != null ? hook.settleMs : 200
     var cols = hook.columns || 1
     var W = hook.frameWidth || 1440

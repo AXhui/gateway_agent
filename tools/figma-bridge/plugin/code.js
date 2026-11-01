@@ -23,6 +23,12 @@
 
 // 与组件库 tokens.css 的 --font-family 对齐（'PingFang SC',-apple-system,...）
 // PingFang SC 只有 Ultralight/Thin/Light/Regular/Medium/Semibold——无 Bold，700+ 统一退化 Semibold
+// 构建号护栏（2026-10-31 八轮后）：Figma 插件面板开着时 JS 上下文不随磁盘 code.js 更新重载——
+// 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
+// build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
+// 不再静默产出旧缺陷板。两侧同步 bump。
+const PLUGIN_BUILD = 'r9';
+
 const FONT_FAMILY = 'PingFang SC';
 const STYLE_MAP = {
   300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold'
@@ -117,8 +123,8 @@ async function ensureFonts(scene) {
 }
 
 let ICON_MAP = new Map();
-let iconInstCount = 0, iconFallbackCount = 0;
-let libInstCount = 0, libFallbackCount = 0, libPropCount = 0, libImportFailCount = 0, libColorPickCount = 0, libShapePickCount = 0, libSwapCount = 0;
+let iconInstCount = 0, iconFallbackCount = 0, iconDynCount = 0;
+let libInstCount = 0, libFallbackCount = 0, libPropCount = 0, libImportFailCount = 0, libColorPickCount = 0, libShapePickCount = 0, libSwapCount = 0, libTextDoneCount = 0, libColDoneCount = 0, libUnderflowCount = 0, libIconSwapCount = 0, libVisualRepickCount = 0, libSizePickCount = 0, libFontDoneCount = 0, libFontFailCount = 0, libIconOnlyCount = 0, libIconOnlyHiddenCount = 0, libEmptyInputHiddenCount = 0, libColorRepaintCount = 0, instTextCount = 0, instUnderCount = 0, instanceFitFailCount = 0;
 
 // —— 动态找库组件（2026-10-29 用户指令：不要自己生产，去团队库找组件引用）——
 // getTeamLibraryAsync 拉每份可访问库的组件目录（key+name），两类命中：
@@ -193,7 +199,7 @@ function dynLibFor(n) {
   // 动态命中同样带深层文本清单（与 build-scene walkLib 对齐）：实例文案按 HTML 全量改写
   const pairs = [];
   (function wpt(x) {
-    if (pairs.length >= 8) return;
+    if (pairs.length >= 12) return;
     if (x.t === 't' && x.text && String(x.text).trim()) pairs.push({ s: String(x.text).trim(), c: x.col });
     (x.ch || []).forEach(wpt);
   })(n);
@@ -269,9 +275,25 @@ async function paintIconStrokes(inst, col, tok) {
   })(inst);
 }
 
+// 图标按名兜底（icon-keys 未映射）：库目录按名找回图标组件实例化，兜不中记缓存回退 svg——
+// 引用优先（用户令：组件库都有 icon 组件，引用就好），不建本地图标组件
+async function ensureIconByName(name) {
+  const ck = 'icn:' + name;
+  let c = ICON_MAP.get(ck);
+  if (c) return c;
+  const alt = catalogFind(name);
+  if (alt) {
+    try { c = await figma.importComponentByKeyAsync(alt.key); } catch (e) {}
+    if (!c) { try { c = await figma.importComponentSetByKeyAsync(alt.key); } catch (e2) {} }
+    if (c && c.type === 'COMPONENT') { ICON_MAP.set(ck, c); iconDynCount++; return c; }
+  }
+  ICON_MAP.set(ck, null);
+  return null;
+}
+
 async function materializeIcon(n) {
-  const comp = n.k && ICON_MAP.get(n.k);
-  if (!comp) { iconFallbackCount++; return null; }
+  const comp = n.k ? (ICON_MAP.get(n.k) || await ensureLibComp(n.k, n.f)) : (n.f ? await ensureIconByName(n.f) : null);
+  if (!comp || comp.type !== 'COMPONENT') { iconFallbackCount++; return null; }
   try {
     const inst = comp.createInstance();
     try { inst.resize(Math.max(n.w, 0.01), Math.max(n.h, 0.01)); }
@@ -417,15 +439,33 @@ function applyFrameProps(node, n) {
 }
 // 自动布局：序列化侧置信判定的 flex 容器（scene n.al）→ Figma layoutMode；调用时机=子节点落齐之后，
 // Figma 会把现有子节点按 AL 重排；主/次轴 FIXED 保几何，padding/gap/对齐一一对应，统一边框转 INSIDE 描边
-function applyAutoLayout(node, a) {
+// 枚举消毒（官方手册 2026-10-31 核对，developers.figma.com）：
+// counterAxisAlignItems 只收 MIN|MAX|CENTER|BASELINE——无 STRETCH，赋值必抛；
+// CSS align-items:stretch 的 Figma 表达 = 容器 MIN + 子节点 layoutAlign='STRETCH'（该属性枚举含 STRETCH）；
+// primaryAxisAlignItems 收 MIN|MAX|CENTER|SPACE_BETWEEN|SPACE_EVENLY|SPACE_AROUND。
+// 逐 setter 隔离：任一抛错不再连带跳过 padding/终态 resize（footer 71.48 塌缩根因——STRETCH 抛错曾把
+// resize 一起吞掉，AL-hug 冻结在内容高度）。
+const AL_PRI = { MIN: 1, MAX: 1, CENTER: 1, SPACE_BETWEEN: 1, SPACE_EVENLY: 1, SPACE_AROUND: 1 };
+const AL_CNT = { MIN: 1, MAX: 1, CENTER: 1, BASELINE: 1 };
+function applyAutoLayout(node, a, n) {
   try {
     node.layoutMode = a.dir === 'row' ? 'HORIZONTAL' : 'VERTICAL';
-    node.itemSpacing = Math.max(0, a.gap || 0);
-    node.primaryAxisAlignItems = a.just;
-    node.counterAxisAlignItems = a.align;
-    node.paddingTop = a.pt || 0; node.paddingRight = a.pr || 0; node.paddingBottom = a.pb || 0; node.paddingLeft = a.pl || 0;
-    node.primaryAxisSizingMode = 'FIXED';
-    node.counterAxisSizingMode = 'FIXED';
+    // 开 AL 后真实 API 会把主轴落 hug（REQ-020 实测：蒙版 1440→468、弹窗 foot 372→71）
+    // ——sizing 紧跟 layoutMode 先钉死，别让中间 setter 抛错留下 hug 态
+    try { node.primaryAxisSizingMode = 'FIXED'; node.counterAxisSizingMode = 'FIXED'; } catch (e0) {}
+    try { node.itemSpacing = Math.max(0, a.gap || 0); } catch (e1) {}
+    try { node.primaryAxisAlignItems = AL_PRI[a.just] ? a.just : 'MIN'; } catch (e2) {}
+    try {
+      if (a.align === 'STRETCH') {
+        node.counterAxisAlignItems = 'MIN';
+        // stretch 语义下沉到子节点（layoutAlign 才有 STRETCH）；子节点已有 HTML 实测尺寸，设了也是保持填充
+        (node.children || []).forEach(c => { try { c.layoutAlign = 'STRETCH'; } catch (eS) {} });
+      } else node.counterAxisAlignItems = AL_CNT[a.align] ? a.align : 'MIN';
+    } catch (e3) {}
+    try { node.paddingTop = a.pt || 0; node.paddingRight = a.pr || 0; node.paddingBottom = a.pb || 0; node.paddingLeft = a.pl || 0; } catch (e4) {}
+    try { node.primaryAxisSizingMode = 'FIXED'; node.counterAxisSizingMode = 'FIXED'; } catch (e5) {}
+    // 终态复位：无论上面哪一步被真 API 拒绝，按 scene 原值 resize 兜底（蒙版全幅/foot 全宽的保证）
+    if (n && n.w && n.h) { try { node.resize(Math.max(n.w, 0.01), Math.max(n.h, 0.01)); } catch (e6) {} }
     if (a.bw) {
       const bp = solid(a.bc, a.ba == null ? 1 : a.ba);
       node.strokes = [bp]; node.strokeWeight = a.bw; node.strokeAlign = 'INSIDE';
@@ -449,10 +489,16 @@ function norm(s) { return String(s).toLowerCase().replace(/[\s_-]+/g, ''); }
 function pickVariantValue(def, toks) {
   const opts = def.variantOptions || [];
   const nt = (toks || []).map(norm);
-  for (const o of opts) if (nt.includes(norm(o))) return o;
-  for (const o of opts) {
-    const no = norm(o);
-    if (nt.some(t => t.length >= 3 && (no.includes(t) || t.includes(no)))) return o;
+  // token 序即优先级（2026-10-31 四轮）：修饰类 token 在前、裸类兜底在后（walkLib 排序）——
+  // 此前按选项序遍历，兜底 token 会压过修饰类语义（outline tag 被兜底判成 Light background）
+  for (const t of nt) {
+    const o = opts.find(x => norm(x) === t);
+    if (o) return o;
+  }
+  for (const t of nt) {
+    if (t.length < 3) continue;
+    const o = opts.find(x => { const no = norm(x); return no.includes(t) || t.includes(no); });
+    if (o) return o;
   }
   return null;
 }
@@ -584,29 +630,56 @@ async function overrideText(t, s) {
 }
 // 页签栏三层嵌套 swap：Tabs/Top 实例 → 内部 Components/Tabs-Top 换 Item 数量=页签数的变体
 // → 逐个 Tab 换 Selecte 选择=active 变体 + 文案覆写（InstanceNode 不能 appendChild，靠 mainComponent 换）
+// 2026-10-31 三轮：库重发布后内部嵌套实例图层名不再是 "Tabs-Top"（实测无名）——按名查找落空 →
+// 整个 swap 静默退出 → Tab 文案全 "Tab"、more 按钮/选中 chevron 泄漏。改为按 mainComponent
+// 所属集合的成员关系识别（set 对象身份 + 名字兜底），不依赖图层名。
 async function swapNestedTabs(inst, lib) {
-  const topSet = lib.aux && lib.aux.top && ICON_MAP.get(lib.aux.top.key);
-  const tabSet = lib.aux && lib.aux.tab && ICON_MAP.get(lib.aux.tab.key);
-  if (!topSet || !tabSet) return;
-  const inner = findByName(inst, /tabs-top/i);
-  if (!inner) return;
+  const topSet = (lib.aux && lib.aux.top && (ICON_MAP.get(lib.aux.top.key) || await ensureLibComp(lib.aux.top.key, lib.aux.top.figmaName))) || null;
+  const tabSet = lib.aux && lib.aux.tab && (ICON_MAP.get(lib.aux.tab.key) || await ensureLibComp(lib.aux.tab.key, lib.aux.tab.figmaName));
+  if (!tabSet) return;
+  const ofSet = (nd, set) => {
+    if (!nd || nd.type !== 'INSTANCE' || !nd.mainComponent || !nd.mainComponent.parent || !set) return false;
+    if (nd.mainComponent.parent === set) return true;
+    const a = String(nd.mainComponent.parent.name || '').toLowerCase();
+    const b = String(set.name || '').toLowerCase();
+    return !!a && !!b && a.split('/').pop() === b.split('/').pop();
+  };
   const cnt = lib.tabs.length;
-  const topChild = childByWants(topSet, [[/item|数量/, new RegExp('^' + cnt + '$')], [/icon|图标/, /false|无|off|0/]])
-    || childByWants(topSet, [[/item|数量/, new RegExp('^' + cnt + '$')]]);
-  if (!topChild) return;
-  try { inner.mainComponent = topChild; libSwapCount++; } catch (e) { console.warn('tabs-top swap fail', e); return; }
+  const OFF = /false|无|off|none|^0$/i;
+  // 证据裁决（2026-10-31 缺陷 D）：HTML Tab 契约无图标/无下拉/无 more 按钮（AGENTS.md Tab 契约），
+  // 数量轴之外同时约束 icon / showSelect / more 类轴为关态
+  let inner = null;
+  if (topSet) {
+    (function wInner(nd) { if (inner) return; (nd.children || []).forEach(c => { if (!inner && ofSet(c, topSet)) inner = c; else wInner(c); }); })(inst);
+  }
+  if (inner) {
+    const topChild = childByWants(topSet, [[/item|数量/, new RegExp('^' + cnt + '$')], [/icon|图标/, OFF], [/more|menu|更多|菜单/, OFF]])
+      || childByWants(topSet, [[/item|数量/, new RegExp('^' + cnt + '$')], [/icon|图标/, OFF]])
+      || childByWants(topSet, [[/item|数量/, new RegExp('^' + cnt + '$')]]);
+    if (topChild) { try { inner.mainComponent = topChild; libSwapCount++; } catch (e) { console.warn('tabs-top swap fail', e); } }
+  }
+  // tab 项收集：全树找 Components/Tab 集合成员实例（换完 inner 再收——换 mainComponent 会重建内层），
+  // 不再依赖图层名 'tab'（库里叫 'Components/Tab' 或被重命名）；收集完按 x 排序对齐视觉序
   const tabKids = [];
   (function w8(nd) {
+    (nd.children || []).forEach(c => { if (ofSet(c, tabSet)) tabKids.push(c); else w8(c); });
+  })(inst);
+  try { tabKids.sort((a, b) => a.x - b.x); } catch (e) {}
+  // more 按钮残影收口：整树隐藏 more/menu 命名装饰层（more 是 wrapper 级节点，不在 inner 内）
+  (function hideMore(nd) {
     (nd.children || []).forEach(c => {
-      const nm = String(c.name || '').split('/').pop();
-      if (/^tab$/i.test(nm)) tabKids.push(c);
-      else if (!/tabs/i.test(String(c.name || ''))) w8(c);
+      if (/more|menu|更多|菜单|dropdown/i.test(String(c.name || ''))) { try { c.visible = false; } catch (e) {} }
+      hideMore(c);
     });
-  })(inner);
+  })(inst);
   const act = /true|选中|on|^1$/i;
   for (let i = 0; i < Math.min(tabKids.length, lib.tabs.length); i++) {
     const it = lib.tabs[i];
-    let pick = childByWants(tabSet, [[/selecte|选中|选择/, it.active ? act : /false|未选|off|^0$/]]);
+    let pick = childByWants(tabSet, [
+      [/selecte|选中|选择/, it.active ? act : /false|未选|off|^0$/],
+      [/icon|图标/i, OFF],
+      [/showselect|show-select|下拉|chevron|箭头/i, OFF]
+    ]);
     if (!pick && !it.active) {
       const actKids = (tabSet.children || []).filter(c => {
         const vp = c.variantProperties || {};
@@ -617,6 +690,14 @@ async function swapNestedTabs(inst, lib) {
     if (!pick) pick = (tabSet.children || []).filter(c => c.type === 'COMPONENT')[0];
     if (!pick) continue;
     try { tabKids[i].mainComponent = pick; libSwapCount++; } catch (e) { console.warn('tab swap fail', e); continue; }
+    // BOOLEAN 轴关态（ShowSelect/Icon 类——childByWants 只裁 VARIANT 轴，选中 tab 的 chevron 泄漏由此收口）
+    try {
+      const offProps = {};
+      Object.entries(tabKids[i].componentPropertyDefinitions || {}).forEach(([pn, pd]) => {
+        if (pd.type === 'BOOLEAN' && /showselect|show-select|下拉|chevron|箭头|icon|图标/i.test(norm(pn)) && pd.defaultValue !== false) offProps[pn] = false;
+      });
+      if (Object.keys(offProps).length) { await tabKids[i].setProperties(offProps); libPropCount += Object.keys(offProps).length; }
+    } catch (e) {}
     const t2 = findFirstText(tabKids[i]);
     if (t2 && t2.characters !== it.text) await overrideText(t2, it.text);
   }
@@ -649,6 +730,191 @@ function forceDialogFullPage(inst, n) {
   dialogFullPageCount++;
 }
 
+// 实例文案/文字色统一改写（2026-10-31 强化：对位-校验-自愈；此前 TEXT 属性按定义序吃 texts、
+// 与视觉阅读序错位时文案互换，setProperties 部分失败无自愈，tcols 只覆盖回填层）：
+// ①实例内全部文本层按视觉序 (y,x) 排列 ②TEXT 属性 defaultValue 反查它控制的层
+// ③html texts（阅读序）逐段对位：属性层经 setProperties 写、裸层直接 overrideText
+// ④写后回读校验：没落上的段降级 overrideText 自愈 ⑤tcols 按段覆盖全部承载层（含属性层）
+// 表达力守卫（2026-10-31「缺失很严重」根因）：demo 文案段数远超实例文本层数（如 EG71 侧边栏
+// 整块直调）时硬替换会丢内容 → 返回 false，materializeLib 回退整块本地重绘（保内容一致优先）
+async function rewriteInstanceText(inst, target, lib) {
+  const libTexts = lib.texts && lib.texts.length ? lib.texts : (lib.text ? [lib.text] : []);
+  if (!libTexts.length) return true;
+  const layers = [];
+  const origLen = new Map(); // 改写前每层字符数（超长省略号判定基准）
+  const origW = new Map();   // 改写前每层宽（截断定回原宽，防 hug 层已被长文案撑开）
+  (function df(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') layers.push(c); df(c); }); })(inst);
+  if (!layers.length) return libTexts.length <= 1;
+  if (libTexts.length > layers.length + 4) return false;
+  // 视觉阅读序：y 主序（2px 容差）、x 次序；无几何信息的层保持 DOM 序
+  if (layers.every(l => typeof l.x === 'number' && typeof l.y === 'number')) {
+    layers.sort((a, b) => (Math.abs(a.y - b.y) > 2 ? a.y - b.y : a.x - b.x));
+  }
+  layers.forEach(l => { origLen.set(l, l.characters.length); origW.set(l, l.width); });
+  // 层 → TEXT 属性名：优先按 componentPropertyReferences.characters 绑定（真 API 解析路径），
+  // 未绑定的按 defaultValue 反查（手搭 mock 组件 / 库重发布漂移场景），同默认文案多属性按层序一对一领取
+  const propOf = new Map();
+  try {
+    const defs = target.componentPropertyDefinitions || {};
+    layers.forEach(l => {
+      const r = l.componentPropertyReferences;
+      if (r && r.characters && defs[r.characters] && defs[r.characters].type === 'TEXT') propOf.set(l, r.characters);
+    });
+    if (propOf.size < layers.length) {
+      const dvMap = [];
+      Object.entries(defs).forEach(([name, d]) => {
+        if (d.type === 'TEXT' && d.defaultValue != null && String(d.defaultValue) !== '') dvMap.push([name, String(d.defaultValue)]);
+      });
+      const taken = new Set([...propOf.values()]);
+      layers.forEach(l => {
+        if (propOf.has(l)) return;
+        const hit = dvMap.find(([nm, dv]) => !taken.has(nm) && dv === l.characters);
+        if (hit) { taken.add(hit[0]); propOf.set(l, hit[0]); }
+      });
+    }
+  } catch (e) {}
+  const tcols = lib.tcols || [], ttoks = lib.ttoks || [];
+  const n2 = Math.min(layers.length, libTexts.length);
+  const pendingProps = {};
+  for (let i = 0; i < n2; i++) {
+    const want = libTexts[i], layer = layers[i], pname = propOf.get(layer);
+    if (pname) { if (want !== layer.characters) pendingProps[pname] = want; }
+    else { try { if (layer.characters !== want) await overrideText(layer, want); } catch (e) {} }
+  }
+  const propKeys = Object.keys(pendingProps);
+  if (propKeys.length) {
+    try { await inst.setProperties(pendingProps); libPropCount += propKeys.length; }
+    catch (e) { console.warn('setProperties(text) skip', lib.cls, e); }
+    for (let i = 0; i < n2; i++) { // 写后回读自愈：真库上属性没生效的段直接改层
+      const layer = layers[i], pname = propOf.get(layer);
+      if (pname && pendingProps[pname] != null && layer.characters !== pendingProps[pname]) {
+        try { await overrideText(layer, pendingProps[pname]); } catch (e) {}
+      }
+    }
+  }
+  for (let i = 0; i < n2; i++) { // 文字色全覆盖（属性层此前残留库默认灰/白）
+    const col = tcols[i];
+    if (!col) continue;
+    try { layers[i].fills = [await tokPaint(solid(col, 1), ttoks[i], 'TEXT_FILL')]; libColDoneCount++; } catch (e) {}
+  }
+  // 字样覆写（2026-10-31 五轮）：实例主档默认文字样式（12/Regular）不随 demo——字号/字重按 HTML 逐段覆写
+  //（REQ-020 实测 Cancel 14/500 落成 12/400）；fontSize/fontName 是实例内层合法 override，失败仅计数
+  const tfsA = lib.tfs || [], tfwA = lib.tfw || [];
+  for (let i = 0; i < n2; i++) {
+    const l = layers[i], fs = tfsA[i], fw = tfwA[i];
+    if (!l || (!fs && !fw)) continue;
+    try { if (fs && Math.abs((l.fontSize || 0) - fs) > 0.5) { l.fontSize = fs; libFontDoneCount++; } } catch (e) { libFontFailCount++; }
+    if (fw) {
+      try {
+        const want = styleFor(fw);
+        const cur = l.fontName && l.fontName !== figma.mixed ? l.fontName : null;
+        const fam = cur ? cur.family : fontFamilyFor();
+        if (!cur || cur.style !== want) {
+          await figma.loadFontAsync({ family: fam, style: want });
+          l.fontName = { family: fam, style: want }; libFontDoneCount++;
+        }
+      } catch (e) { libFontFailCount++; }
+    }
+  }
+  for (let i = 0; i < n2; i++) if (layers[i].characters === libTexts[i]) libTextDoneCount++;
+  // 文本宽度适配（2026-10-31 三轮用户令，反转省略号默认）：超长文本**默认完整展示**——超出原容量
+  // 的层改 hug 自动扩宽（WIDTH_AND_HEIGHT + 按层中心回移）；只有「特别长」（>24 字符）才定宽回填 +
+  // ENDING 省略号。注意：实例内层 resize 被 Figma 实例模型拒绝（真 API 抛错，mock 允许——勿以 mock
+  // 绿灯为准），textAutoResize 是唯一可能的就地扩宽通道，写后读回验证，失败计数在完成通知里暴露
+  for (let i = 0; i < n2; i++) {
+    const l = layers[i];
+    if (!l) continue;
+    const s = String(libTexts[i] || '');
+    const ol = origLen.get(l) || 0;
+    if (s.length <= ol) continue; // 容量内：hug 层随 characters 自动加宽，定宽层也够放，不动
+    if (s.length > 24) {
+      // 特别长：定宽回填 + 省略号（与 demo CSS text-overflow 行为一致）
+      try { l.textAutoResize = 'NONE'; } catch (e) {}
+      const pw = l.parent ? l.parent.width : 0;
+      const w = pw ? Math.max(8, pw - l.x * 2) : (origW.get(l) || l.width);
+      if (Math.abs(w - l.width) > 0.5) { try { l.resize(w, l.height); } catch (e) {} }
+      try { l.textTruncation = 'ENDING'; } catch (e) {}
+    } else {
+      // 完整展示：改 hug 扩宽，按层中心回移防错位；扩宽失败（实例内层拒绝）计入 fitFail
+      const cx = l.x + l.width / 2, cy = l.y + l.height / 2;
+      let ok = false;
+      try { l.textAutoResize = 'WIDTH_AND_HEIGHT'; ok = l.textAutoResize === 'WIDTH_AND_HEIGHT'; } catch (e) {}
+      if (ok) { try { l.x = Math.round(cx - l.width / 2); l.y = Math.round(cy - l.height / 2); } catch (e) {} }
+      else instanceFitFailCount++;
+    }
+  }
+  return true;
+}
+
+// 图标槽换装（2026-10-31 按钮输入框转化修复）：walkLib 新采 lib.icnk（块内真实图标的库 key），
+// 实例内层图标槽 mainComponent 换成 demo 图标——此前图标名/key 在序列化侧丢失，Delete 永远挂库默认 Add。
+// 守卫：btn/input/select/stat 类控件；只换首个 ≤24px 小实例槽；checkbox/radio/switch 载体豁免（形态即语义）
+async function swapIconSlot(inst, lib) {
+  if (!lib.icnk && !lib.icnf) return false;
+  if (!/ms-(btn|input|select|stat)/.test(String(lib.cls || ''))) return false;
+  let comp = lib.icnk ? (ICON_MAP.get(lib.icnk) || await ensureLibComp(lib.icnk)) : await ensureIconByName(lib.icnf);
+  if (!comp || comp.type !== 'COMPONENT') return false;
+  let slot = null;
+  (function walk(x) {
+    if (slot) return;
+    for (const c of x.children || []) {
+      if (slot) return;
+      if (c.type === 'INSTANCE' && c.mainComponent && c.width <= 24 && c.height <= 24
+        && !/check|radio|switch|滑|勾选|开关/i.test(String(c.mainComponent.name || ''))) {
+        try { c.mainComponent = comp; slot = c; return; } catch (e) {}
+      }
+      walk(c);
+    }
+  })(inst);
+  // 换装后按 HTML 涂色（含 token 绑定）——库变体自带的图标色不随 HTML，颜色对应关系以 demo 为准
+  if (slot && lib.icnc) { try { await paintIconStrokes(slot, lib.icnc, lib.ictk); } catch (e) {} }
+  return !!slot;
+}
+// 落图后视觉复核（自愈，2026-10-31 按钮输入框转化修复）：payload 轴名失配 / setProperties 静默失败
+// 时实例根呈现背离 demo 证据（lib.col 底色）——直接比色在兄弟变体里找明显更贴的一个。保守门限：
+// 当前背离 >0.2、候选 <0.08 且领先 >0.2 才动；轴名无关，不依赖裁决逻辑自身正确
+function pickVariantByVisual(set, curTarget, curInst, lib) {
+  try {
+    if (!lib.col || lib.col[3] === 0 || !set || set.type !== 'COMPONENT_SET') return null;
+    const kids = set.children || [];
+    if (!kids.length || kids.length > 80) return null;
+    const dist = (ev, c) => (ev && c) ? Math.max(Math.abs(ev[0] - c.r), Math.abs(ev[1] - c.g), Math.abs(ev[2] - c.b)) : Infinity;
+    const solid = ps => { if (!ps || ps === 'MIXED') return null; for (const p of ps) if (p && p.type === 'SOLID' && p.visible !== false) return p.color; return null; };
+    const curD = dist(lib.col, solid(curInst.fills) || solid(curInst.strokes));
+    if (curD <= 0.2) return null;
+    let best = null, bestD = Infinity;
+    for (const k of kids) {
+      if (k === curTarget) continue;
+      const kd = dist(lib.col, solid(k.fills) || solid(k.strokes));
+      if (kd < bestD) { bestD = kd; best = k; }
+    }
+    return (best && bestD < 0.08 && curD - bestD > 0.2) ? best : null;
+  } catch (e) { return null; }
+}
+// 实例颜色无条件覆写（九轮，用户硬性要求「html 的颜色怎样，即便调取的组件颜色不一样，
+// 都要按 html 的颜色去改」）：库变体默认色与 demo 不一致时（bare/sm 按钮库默认蓝描边 vs
+// demo 灰边根因），实例根按 HTML 证据重涂——fills 用 lib.col（块背景实色）+ n.ftk 令牌绑定
+// 优先、strokes 用 lib.stk（实线边框证据，九轮起从 border-* 色条反推）。令牌绑定读回漂移
+// 自动回退裸色（tokPaint 内建）；ms-mask 弹窗跳过（蒙版全页形态由 forceDialogFullPage 管辖）。
+async function repaintLibInstance(inst, n) {
+  const lib = n.lib || {};
+  if (/ms-mask/.test(String(lib.cls || ''))) return;
+  let did = 0;
+  if (lib.col) {
+    try { inst.fills = [await tokPaint(solid(lib.col, 1), n.ftk, 'FRAME_FILL')]; did++; }
+    catch (e) { console.warn('repaint fills skip', lib.cls, e); }
+  }
+  if (lib.stk && lib.stk.c) {
+    try {
+      inst.strokes = [await tokPaint(solid(lib.stk.c, 1), lib.stk.tk, 'STROKE')];
+      inst.strokeWeight = Math.max(1, Math.round(lib.stk.w || 1));
+      inst.strokeAlign = 'INSIDE';
+      did++;
+    } catch (e) { console.warn('repaint strokes skip', lib.cls, e); }
+  }
+  if (did) libColorRepaintCount++;
+}
+
 async function materializeLib(n) {
   let comp = ICON_MAP.get(n.lib.k);
   if (!comp) comp = await ensureLibComp(n.lib.k, n.lib.f); // 动态命中的 key 不在预载集 → 就地导入
@@ -663,18 +929,66 @@ async function materializeLib(n) {
         const v = pickVariantValue(d, n.lib.tok);
         if (v != null) want[name] = v;
       });
+      // 证据裁决（2026-10-31 像素审计缺陷 D/E/F）：块内无图标/矢量子节点（lib.ic=false）时，
+      // icon/箭头/chevron/更多 类 VARIANT 轴强制关态——库默认装饰（Button 的 Add 图标 / Tag 下拉箭头 /
+      // Tabs 的 chevron 与 more 按钮）不随默认变体泄漏
+      if (!n.lib.ic) {
+        Object.entries(setDefs).forEach(([name, d]) => {
+          if (d.type !== 'VARIANT' || want[name] != null) return;
+          if (!/icon|图标|arrow|箭头|chevron|下拉|more|菜单|menu/.test(norm(name))) return;
+          const off = (d.variantOptions || []).find(o => /^(false|无|off|none|no|0)$/i.test(String(o).trim()));
+          if (off != null) want[name] = off;
+        });
+      }
       if (n.lib.col) pickVariantByColor(comp, setDefs, want, n.lib.col);
-      if (n.lib.texts || n.lib.sw != null || n.lib.tabs) shapeMergeVariant(comp, want, n.lib, n);
+      // 尺寸轴按高度裁决（2026-10-31 四轮「高度间距不一致」根因）：高度是 px 真值却从未参与
+      // 裁决，Size 轴全靠默认序落 L/M 混档。取各选项变体子组件高度与块高最近者；最近距 ≤3px
+      // 且领先次近 ≥2px 才判（平局不判——颜色轴平局纪律同源）
+      if (n.h) {
+        Object.entries(setDefs).forEach(([name, d]) => {
+          if (d.type !== 'VARIANT' || want[name] != null) return;
+          if (!/size|尺寸/.test(norm(name))) return;
+          const kids0 = (comp.children || []).filter(c => c.type === 'COMPONENT');
+          const dists = [];
+          (d.variantOptions || []).forEach(o => {
+            let best = null;
+            kids0.forEach(k => {
+              let vp = {}; try { vp = k.variantProperties || {}; } catch (e) {}
+              if (vp[name] !== o) return;
+              const dh = Math.abs((k.height || 0) - n.h);
+              if (best == null || dh < best) best = dh;
+            });
+            if (best != null) dists.push({ o, d: best });
+          });
+          if (dists.length < 2) return;
+          dists.sort((a, b) => a.d - b.d);
+          if (dists[0].d <= 3 && dists[1].d - dists[0].d >= 2) { want[name] = dists[0].o; libSizePickCount++; }
+        });
+      }
+      // shape 收口（2026-10-31「Delete 文字 12px」根因）：texts=[] 在 JS 恒为真值导致每个普通
+      // 控件都跑形状打分、误裁 Size 轴——形状证据只对复合块（多段文本/开关/页签）有意义
+      if ((n.lib.texts && n.lib.texts.length > 1) || n.lib.sw != null || n.lib.tabs) shapeMergeVariant(comp, want, n.lib, n);
       target = pickVariantChild(comp, want);
       if (!target) throw new Error('set 无变体: ' + n.lib.f);
       setWant = want; // payload 继承 set 级裁决（含颜色择变体），右侧面板所见即所判
     }
+    // 纯图标按钮（demo 有图标无文字，REQ-020 操作列实测）：label-only 变体会泄漏主档默认 "Label"
+    // 文案且图标没槽可换——严格按已裁决轴选「带图标槽」的变体；本主题无图标槽变体 → 整块回退
+    // 本地重绘（边框/热区本地 + 图标仍走库实例，能引用则引用、不能表达不硬凑）
+    const iconOnly = !!n.lib.ic && !(n.lib.texts && n.lib.texts.length) && !n.lib.text;
+    if (iconOnly && /(^|\s)ms-btn(\s|$)/.test(String(n.lib.cls || ''))) {
+      const hasSlot = k => { let hit = null; (function w3(x) { (x.children || []).forEach(ch => { if (ch.type === 'INSTANCE' && ch.width <= 24 && ch.height <= 24) hit = ch; w3(ch); }); })(k); return !!hit; };
+      const kidsAll = (comp.children || []).filter(c => c.type === 'COMPONENT');
+      const scored = kidsAll.filter(k => { try { const vp = k.variantProperties || {}; return Object.entries(setWant || {}).every(([p, v]) => vp[p] === v); } catch (e) { return false; } });
+      const withIcon = scored.find(hasSlot);
+      if (withIcon) { target = withIcon; libIconOnlyCount++; }
+      else { libFallbackCount++; return null; }
+    }
     if (target.type !== 'COMPONENT') throw new Error('非组件: ' + n.lib.f);
-    // setProperties payload：VARIANT/BOOLEAN/TEXT 按属性定义逐个映射，SLOT/INSTANCE_SWAP 保持默认
+    // setProperties payload：VARIANT/BOOLEAN 按属性定义逐个映射；TEXT 统一走 rewriteInstanceText
+    // （按视觉序对位 + 写后自愈，不在此按定义序消费 texts）
     const payload = {};
-    let textPropSet = false, ti = 0;
     const SEM_AXES = { info: 1, error: 1, waiting: 1, warn: 1, success: 1 }; // 业务库「弹窗」语义布尔轴
-    const libTexts = n.lib.texts && n.lib.texts.length ? n.lib.texts : (n.lib.text ? [n.lib.text] : []);
     try {
       const tDefs = target.componentPropertyDefinitions || {};
       const toks = (n.lib.tok || []).map(t => t.toLowerCase());
@@ -685,53 +999,70 @@ async function materializeLib(n) {
         } else if (d.type === 'BOOLEAN') {
           const nn = norm(name);
           let val = null;
-          if (/icon/.test(nn)) val = !!n.lib.ic;
+          if (/addon|prefix|suffix|前缀|后缀|附加/.test(nn)) {
+            // 结构型附加轴（库 Input 的 addonBefore/addonAfter 等）：HTML 块没有前置/后置
+            // 附加结构（demo 输入框无 addon 容器）——一律关态。库默认 true 会泄漏 http://
+            // 前缀文本与 44px 设置图标附加块（REQ-018 input 审计根因之一）
+            val = false;
+          } else if (/icon|arrow|箭头|chevron|下拉/.test(nn)) {
+            // 图标类轴按位置裁决（REQ-018 根因之二）：库 Input 的 preIcon/afterIcon 是独立
+            // BOOLEAN，旧逻辑布尔 ic 让左置 search 图标把 afterIcon 也误开（右侧 44px 设置图标
+            // 泄漏）。scene 侧 icL/icR 给首个图标的左右位置；after/suffix 类轴吃 icR，其余吃 icL
+            const isAfter = /after|suffix|后|尾|trailing/.test(nn);
+            val = isAfter ? !!n.lib.icR : !!n.lib.icL;
+          }
           else if (/disable/.test(nn)) val = toks.includes('disabled');
           else if (SEM_AXES[nn]) val = toks.includes(nn) || (nn === 'warn' && toks.includes('warning'));
           if (val != null && val !== d.defaultValue) payload[name] = val;
-        } else if (d.type === 'TEXT') {
-          // 多文本覆写：守卫复合块带 texts 清单，按属性顺序逐段写入（标题/弹窗正文/按钮组）
-          if (ti < libTexts.length) {
-            const tv = libTexts[ti++];
-            if (tv !== d.defaultValue) payload[name] = tv;
-            textPropSet = true;
-          }
         }
       });
     } catch (e) { console.warn('defs read fail:', n.lib.f, e); }
-    const inst = target.createInstance();
-    try { inst.resize(Math.max(n.w, 0.01), Math.max(n.h, 0.01)); }
-    catch (e) {
-      // 非弹窗：等比缩放兜底；弹窗走 forceDialogFullPage 统一收口
-      if (!/ms-mask/.test(String(n.lib.cls || ''))) { try { inst.rescale(Math.max(n.w, 0.01) / (target.width || n.w)); } catch (e2) {} }
-    }
-    if (/ms-mask/.test(String(n.lib.cls || ''))) forceDialogFullPage(inst, n);
-    if (Object.keys(payload).length) {
-      try { inst.setProperties(payload); libPropCount += Object.keys(payload).length; }
-      catch (e) { console.warn('setProperties skip', n.lib.cls, JSON.stringify(payload), e); }
-    }
-    if (libTexts.length && !n.lib.tabs) {
-      // 实例文案按 HTML 全量改写（2026-10-29 用户规则）：TEXT 属性吃剩的文本按阅读顺序
-      // 逐层回填到嵌套文本层（不再只改首层）；已由 TEXT 属性写对的层（characters 命中已用文本）跳过；
-      // 携带 tcols 时同步把 HTML 文字色覆盖到对应层——库默认文案/灰色不残留在页面上
-      const layers = [];
-      (function df(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') layers.push(c); df(c); }); })(inst);
-      const used = textPropSet ? libTexts.slice(0, ti) : [];
-      const rest = libTexts.slice(used.length);
-      const free = layers.filter(l => !used.some(u => u === l.characters));
-      const tcols = n.lib.tcols || [];
-      const ttoks = n.lib.ttoks || [];
-      const n2 = Math.min(rest.length, free.length);
-      for (let i2 = 0; i2 < n2; i2++) {
-        if (free[i2].characters !== rest[i2]) await overrideText(free[i2], rest[i2]);
-        const col = tcols[used.length + i2];
-        if (col) { try { free[i2].fills = [await tokPaint(solid(col, 1), ttoks[used.length + i2], 'TEXT_FILL')]; } catch (e) {} }
+    // 实例化收口为 buildInstance：视觉复核重选要换兄弟变体重建，同一管线跑两遍
+    const buildInstance = async (tgt) => {
+      const inst = tgt.createInstance();
+      try { inst.resize(Math.max(n.w, 0.01), Math.max(n.h, 0.01)); }
+      catch (e) {
+        // 非弹窗：等比缩放兜底；弹窗走 forceDialogFullPage 统一收口
+        if (!/ms-mask/.test(String(n.lib.cls || ''))) { try { inst.rescale(Math.max(n.w, 0.01) / (tgt.width || n.w)); } catch (e2) {} }
+      }
+      if (/ms-mask/.test(String(n.lib.cls || ''))) forceDialogFullPage(inst, n);
+      if (Object.keys(payload).length) {
+        try { inst.setProperties(payload); libPropCount += Object.keys(payload).length; }
+        catch (e) { console.warn('setProperties skip', n.lib.cls, JSON.stringify(payload), e); }
+      }
+      // 实例文案 + 文字色按 HTML 统一改写（对位-校验-自愈；tabs 走 swapNestedTabs 自带文案覆写）；
+      // 表达力守卫不过（demo 段数 > 实例层数+4）→ 回退整块本地重绘，不硬替换丢内容
+      if ((n.lib.texts && n.lib.texts.length || n.lib.text) && !n.lib.tabs) {
+        const ok = await rewriteInstanceText(inst, tgt, n.lib);
+        if (!ok) { try { inst.remove(); } catch (e0) {} return { inst: null, underflow: true }; }
+      }
+      if (n.lib.tabs && n.lib.tabs.length) await swapNestedTabs(inst, n.lib);
+      if (await swapIconSlot(inst, n.lib)) libIconSwapCount++;
+      return { inst, underflow: false };
+    };
+    let built = await buildInstance(target);
+    if (built.underflow) { libUnderflowCount++; return null; }
+    if (iconOnly) {
+      // 纯图标钮：比色重选会按底色丢掉图标槽变体，跳过；残留的主档 Label 文本层藏掉
+      //（实例内层 visible 是合法 override；REQ-020 操作列实测变体自带 "Label" 泄漏）
+      (function dfx(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') { try { c.visible = false; libIconOnlyHiddenCount++; } catch (e0) {} } dfx(c); }); })(built.inst);
+    } else if (/(^|\s)ms-(input|select)(\s|$)/.test(String(n.lib.cls || '')) && !(n.lib.texts && n.lib.texts.length) && !n.lib.text) {
+      // 空输入兜底（REQ-018 根因之三）：demo 输入框无 value/placeholder 时 rewriteInstanceText
+      // 整段跳过，库主档默认 value="Example" 泄漏——空输入本就不该有可见文案，实例内层 TEXT 层
+      // 全部 visible=false（带 placeholder/value 的输入走改写路径，不进此分支）
+      (function htx(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') { try { c.visible = false; libEmptyInputHiddenCount++; } catch (e0) {} } htx(c); }); })(built.inst);
+    } else {
+      const alt = pickVariantByVisual(comp, target, built.inst, n.lib);
+      if (alt) {
+        const again = await buildInstance(alt);
+        if (again.inst) { try { built.inst.remove(); } catch (e0) {} built = again; libVisualRepickCount++; }
       }
     }
-    if (n.lib.tabs && n.lib.tabs.length) await swapNestedTabs(inst, n.lib);
-    inst.name = n.lib.cls || n.lib.f;
+    // 九轮：变体裁决/视觉复核重选定型后，实例根颜色按 HTML 证据无条件覆写（用户硬性要求）
+    await repaintLibInstance(built.inst, n);
+    built.inst.name = n.lib.cls || n.lib.f;
     libInstCount++;
-    return inst;
+    return built.inst;
   } catch (e) {
     libFallbackCount++;
     console.warn('lib instance fail:', n.lib.f, e);
@@ -788,6 +1119,25 @@ async function materialize(n, parent) {
     const comp = DEF_COMPS.get(n.d);
     if (!comp) { console.warn('def not found:', n.d); return null; }
     node = comp.createInstance();
+    // 同组件多实例按本块文案逐段改写（2026-10-31 用户指令：可复用块只建一个组件，实例改文字）——
+    // inst.texts 是本块深层文本清单（build-scene 采集），复用 rewriteInstanceText 的对位-校验-自愈管线；
+    // 复用的既有组件结构漂移装不下本块文案 → 本地重绘 def 子树后再改写，不丢内容
+    if (n.texts && n.texts.length) {
+      const ok = await rewriteInstanceText(node, node, { texts: n.texts, tcols: n.tcols, tfs: n.tfs, tfw: n.tfw });
+      if (!ok) {
+        instUnderCount++;
+        try { node.remove(); } catch (e) {}
+        node = figma.createFrame();
+        const dr = DEF_ROOTS.get(n.d);
+        if (dr) { applyFrameProps(node, dr); node.fills = await buildFills(dr); }
+        for (const c of ((dr && dr.ch) || [])) await materialize(c, node);
+        const lay = [];
+        (function df2(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') lay.push(c); df2(c); }); })(node);
+        const nn = Math.min(lay.length, n.texts.length);
+        for (let i = 0; i < nn; i++) { try { await overrideText(lay[i], n.texts[i]); } catch (e) {} }
+        for (let i = 0; i < nn; i++) { const col = (n.tcols || [])[i]; if (col) { try { lay[i].fills = [solid(col, 1)]; } catch (e) {} } }
+      } else instTextCount++;
+    }
   } else {
     if (n.lib) { node = await materializeLib(n); if (node) skipChildren = true; }
     if (!node && !n.lib && n.n && /(^|\s)(ms|bc)-/.test(String(n.n))) {
@@ -801,10 +1151,26 @@ async function materialize(n, parent) {
     if (!node) { node = figma.createFrame(); applyFrameProps(node, n); node.fills = await buildFills(n); }
   }
   if (node.type !== 'INSTANCE') {
-    node.name = n.n || (n.t === 't' ? n.text.slice(0, 20) : n.t);
+    node.name = n.t === 't' ? n.text.slice(0, 20) : (n.n || n.t);
   }
   node.x = n.x; node.y = n.y;
   try { node.resize(Math.max(n.w, 0.01), Math.max(n.h, 0.01)); } catch (e) {}
+  // 单行文本防换行（九轮，用户令「大文字不要换行」）：浏览器量盒可能窄于 Figma 字形排宽
+  //（同字号不同 hinting），NONE+定宽遇宽字形即折行——单行文本（无省略号、无换行、高≈单行）
+  // 改 hug（WIDTH_AND_HEIGHT）自适应展开，x 按对齐锚定（left 不动 / center 保中心 / right 保右缘）；
+  // CSS 省略号（n.tr）与多行文本不进此分支（保持 NONE + 定宽盒）
+  if (n.t === 't' && !n.tr && !String(n.text).includes('\n') && node.type === 'TEXT'
+    && n.h <= Math.max(n.lh || 0, n.fs || 0) * 1.6 + 0.5) {
+    try {
+      node.textAutoResize = 'WIDTH_AND_HEIGHT';
+      const nw = node.width;
+      if (Math.abs(nw - n.w) > 0.5) {
+        const al = n.al || 'left';
+        if (al === 'center') node.x = n.x + (n.w - nw) / 2;
+        else if (al === 'right') node.x = n.x + (n.w - nw);
+      }
+    } catch (e) { /* hug 写入被拒（实例内层等）：保持定宽盒，回退原行为 */ }
+  }
   node.opacity = n.o == null ? 1 : n.o;
   if (n.rot) { try { node.rotation = n.rot; } catch (e) { console.warn('rotation skip', n.n, e); } }
   if (n.rct) RCT_NODES.push({ node, rct: n.rct });
@@ -812,7 +1178,7 @@ async function materialize(n, parent) {
   if (n.fix) FIX_NODES.push(node);
   parent.appendChild(node);
   if (!skipChildren) for (const c of (n.ch || [])) { await materialize(c, node); }
-  if (n.al && (node.type === 'FRAME' || node.type === 'COMPONENT')) applyAutoLayout(node, n.al);
+  if (n.al && (node.type === 'FRAME' || node.type === 'COMPONENT')) applyAutoLayout(node, n.al, n);
   return node;
 }
 
@@ -821,15 +1187,19 @@ let DEF_FAMILY = new Map(); // def id → 家族名（同家族 ≥2 个 → com
 let DEF_REUSED = new Set(); // 跨导入复用的 def id（引用既有组件，不重复创建）
 let defReuseCount = 0;
 let EXISTING_COMPS = new Map(); // norm(名) → [ComponentNode] 本文件既有组件索引（重复块引用源）
+let EXISTING_BY_SIG = new Map(); // h2d 结构哈希 → [ComponentNode]（组件 description 'h2d-sig:' 指纹，跨导入先判断再建）
+let DEF_ROOTS = new Map(); // def id → scene root（复用的既有组件结构漂移时，本地重绘子树的源）
 let RCT_NODES = []; // 原型连线：带 rct 的 scene 节点 → 已落图 figma 节点（所有屏建完后统一挂 reactions）
 let LK_NODES = []; // 外部网页原型连线（free 层 automatic linking 对标）：带 lk（同源链接目标）的节点 → reactions 跳对应页帧
 let FIX_NODES = []; // position:fixed/sticky 节点（吸顶）→ 提升为 cell 帧直接子节点（不被 overflow 滚走）
 let lkCount = 0, scrollCount = 0, extStyleCount = 0, fixLiftCount = 0;
 
 // 跨导入复用索引（2026-10-29 用户指令：多页面重复块引用既有组件，不要一直新建）：
-// 导入前扫全文件组件按名归一建索引；def 同名且尺寸一致（±3px）即引用既有件，不 createComponent
+// 导入前扫全文件组件按名归一建索引；2026-10-31 强化——同时索引组件 description 里的 'h2d-sig:'
+// 结构哈希指纹（build-scene 按「去文案结构签名」产出），匹配顺序：结构哈希+尺寸 → 同名+尺寸 → 新建
 function indexExistingComponents() {
   EXISTING_COMPS = new Map();
+  EXISTING_BY_SIG = new Map();
   const pages = (figma.root && figma.root.children) ? figma.root.children : [figma.currentPage];
   let visited = 0;
   pages.forEach(pg => {
@@ -840,6 +1210,11 @@ function indexExistingComponents() {
         const k = norm(nd.name);
         if (!EXISTING_COMPS.has(k)) EXISTING_COMPS.set(k, []);
         EXISTING_COMPS.get(k).push(nd);
+        const m = /h2d-sig:([0-9a-f]+)/.exec(String(nd.description || ''));
+        if (m) {
+          if (!EXISTING_BY_SIG.has(m[1])) EXISTING_BY_SIG.set(m[1], []);
+          EXISTING_BY_SIG.get(m[1]).push(nd);
+        }
       }
       (nd.children || []).forEach(w);
     })(pg);
@@ -859,10 +1234,14 @@ async function buildDefs(scene) {
       deps.forEach(d => { if (!DEF_COMPS.has(d)) ready = false; });
       if (!ready) continue;
       const d = scene.defs[id];
-      // 重复块引用优先：同名（vname）且同尺寸的既有组件直接复用，不重复创建
+      DEF_ROOTS.set(id, d.root);
+      // 先判断再建（2026-10-31 用户指令：可多页面复用的内容块只留一个组件，不重复创建）：
+      // ① 结构哈希（d.sig ↔ 既有组件 description 'h2d-sig:' 指纹）+ 尺寸一致 → 复用——同构不同文案的块
+      //   vname 必然不同，靠名字匹配必然漏，结构指纹才命中；② 退同名（vname）+ 尺寸；③ 都无才新建并写入指纹
+      const sizeOk = c => Math.abs(c.width - d.root.w) <= 3 && Math.abs(c.height - d.root.h) <= 3;
       const wantName = String(d.vname || d.name || id).replace(/[=,]/g, ' ');
-      const hit = (EXISTING_COMPS.get(norm(wantName)) || [])
-        .find(c => Math.abs(c.width - d.root.w) <= 3 && Math.abs(c.height - d.root.h) <= 3);
+      const hit = ((d.sig ? EXISTING_BY_SIG.get(d.sig) : null) || []).find(sizeOk)
+        || (EXISTING_COMPS.get(norm(wantName)) || []).find(sizeOk);
       if (hit) {
         DEF_COMPS.set(id, hit); DEF_FAMILY.set(id, d.name || id); DEF_REUSED.add(id);
         defReuseCount++; pending.delete(id);
@@ -873,11 +1252,29 @@ async function buildDefs(scene) {
       // 变体命名：同家族变体 def 用 vname（块内首段文本）做变体名，合成集后家族名归集；
       // '='/',' 是 Figma 变体属性语法保留字，出现即替换为空格防误解析
       comp.name = String(d.vname || d.name || id).replace(/[=,]/g, ' ');
+      if (d.sig) { try { comp.description = (comp.description ? comp.description + ' ' : '') + 'h2d-sig:' + d.sig; } catch (e) {} }
       applyFrameProps(comp, d.root);
       comp.fills = await buildFills(d.root);
       try { comp.resize(Math.max(d.root.w, 0.01), Math.max(d.root.h, 0.01)); } catch (e) {}
       for (const c of (d.root.ch || [])) await materialize(c, comp);
-      if (d.root.al) applyAutoLayout(comp, d.root.al);
+      if (d.root.al) applyAutoLayout(comp, d.root.al, d.root);
+      // TEXT 属性化（2026-10-31，对标 code.to.design 组件集再生）：把组件内文本层暴露为 TEXT 组件属性——
+      // 实例改文字走右侧面板 string 字段（setProperties 所见即所得），比裸改 characters 抗漂移、设计师可直接编辑；
+      // 嵌套实例（组件内库实例等）内部文本不暴露（真 API 禁止改嵌套实例内层）
+      try {
+        const lays = [];
+        (function df3(nd, inInst) { (nd.children || []).forEach(c => {
+          const ins = inInst || c.type === 'INSTANCE';
+          if (c.type === 'TEXT' && !ins && !(c.componentPropertyReferences && c.componentPropertyReferences.characters)) lays.push(c);
+          df3(c, ins);
+        }); })(comp, false);
+        lays.forEach((l, i) => {
+          if (typeof comp.addComponentProperty !== 'function') return;
+          const nm = String(l.characters || '').replace(/\s+/g, ' ').trim().slice(0, 16) || ('text' + (i + 1));
+          const pname = comp.addComponentProperty(nm.replace(/[=,]/g, ' '), 'TEXT', String(l.characters || ''));
+          l.componentPropertyReferences = { characters: pname };
+        });
+      } catch (e) { console.warn('TEXT 属性暴露跳过', e.message); }
       DEF_COMPS.set(id, comp);
       DEF_FAMILY.set(id, d.name || id);
       pending.delete(id);
@@ -936,6 +1333,14 @@ figma.ui.onmessage = async msg => {
     figma.notify('scene.json 无效', { error: true });
     return;
   }
+  // 构建号护栏：scene 由当前仓库 build-scene 产出（带 build 号）；面板代码旧于它 = 面板没重开（JS 上下文
+  // 是改代码前加载的），继续导只会产出旧缺陷板——直接拒导，提示完全关闭面板再重开。无 build 号的 scene
+  // （旧 scene 文件/mock）不拦。
+  if (scene.build && scene.build !== PLUGIN_BUILD) {
+    figma.notify('⚠️ 面板插件是旧版代码（scene ' + scene.build + ' / 插件 ' + PLUGIN_BUILD +
+      '）——请完全关闭本面板再重新打开，然后重新导入', { error: true, timeout: 15000 });
+    return;
+  }
   if (importing) { postStatus('导入进行中，忽略重复触发'); return; }
   // 自动匹配：不设门禁——库组件按 key 直载，失败自动回退重绘；
   // 需求库未在文件启用时仅提示（组件集 importSet 多数会回退，启用可提升实例化成功率）
@@ -952,15 +1357,15 @@ figma.ui.onmessage = async msg => {
   // 外部网页模式（serve.py 链接导入 → build-scene --ext）：纯图层转录，不拉库目录/不做库匹配（2026-10-30 用户裁定：复制的网页链接不走本地组件）
   const EXT_SCENE = !!(scene && scene.ext);
   nodeCount = 0; doneCells = 0; totalCells = scene.cells.length;
-  iconInstCount = 0; iconFallbackCount = 0;
-  libInstCount = 0; libFallbackCount = 0; libPropCount = 0; libImportFailCount = 0; libColorPickCount = 0; libShapePickCount = 0; libSwapCount = 0;
+  iconInstCount = 0; iconFallbackCount = 0; iconDynCount = 0;
+  libInstCount = 0; libFallbackCount = 0; libPropCount = 0; libImportFailCount = 0; libColorPickCount = 0; libShapePickCount = 0; libSwapCount = 0; libTextDoneCount = 0; libColDoneCount = 0; libUnderflowCount = 0; libIconSwapCount = 0; libVisualRepickCount = 0; libSizePickCount = 0; libFontDoneCount = 0; libFontFailCount = 0; libIconOnlyCount = 0; libIconOnlyHiddenCount = 0; libEmptyInputHiddenCount = 0; libColorRepaintCount = 0; instTextCount = 0; instUnderCount = 0; instanceFitFailCount = 0;
   libDynHitCount = 0; CATALOG_CACHE.clear(); dialogFullPageCount = 0;
   imgFillCount = 0; gradFillCount = 0; alApplyCount = 0;
   rctCount = 0; RCT_NODES = []; cellFrames = [];
   LK_NODES = []; FIX_NODES = []; lkCount = 0; scrollCount = 0; extStyleCount = 0; fixLiftCount = 0; famHitCount = 0;
   CUR_SCENE = scene; tokBindCount = 0; TOK_BIND_QUEUE.length = 0;
   IMG_CACHE.clear();
-  DEF_COMPS = new Map(); DEF_FAMILY = new Map(); DEF_REUSED = new Set(); defReuseCount = 0;
+  DEF_COMPS = new Map(); DEF_FAMILY = new Map(); DEF_REUSED = new Set(); DEF_ROOTS = new Map(); defReuseCount = 0;
   try {
     postStatus('加载字体…');
     await ensureFonts(scene);
@@ -1001,7 +1406,9 @@ figma.ui.onmessage = async msg => {
         try {
           const pa = fn.absoluteTransform, fa = cellF.absoluteTransform;
           cellF.appendChild(fn);
-          fn.x = pa[0][2] - fa[0][2]; fn.y = pa[1][2] - fa[1][2] + 24;
+          // absoluteTransform 已含上一行 children +=24 的整体下移——再 +24 会双重补偿
+          //（REQ-020 实测蒙版落 y=48 而非 24）
+          fn.x = pa[0][2] - fa[0][2]; fn.y = pa[1][2] - fa[1][2];
           fixLiftCount++;
         } catch (e) { console.warn('fix lift skip', fn.name, e); }
       }
@@ -1088,6 +1495,7 @@ figma.ui.onmessage = async msg => {
     // 组件定义收进一个画板（设计师习惯：组件库画板分节收纳，不散落长龙）：
     // 按家族分节 → 同家族 ≥2 个 combineAsVariants 合成变体组件集 → 节内网格换行
     let variantSetCount = 0;
+    let defSetReattach = 0;
     if (DEF_COMPS.size - DEF_REUSED.size > 0) {
       const defBoard = figma.createFrame();
       defBoard.name = '组件定义' + (scene.name ? ' · ' + scene.name : '');
@@ -1116,6 +1524,16 @@ figma.ui.onmessage = async msg => {
           try {
             const set = figma.combineAsVariants(comps, figma.currentPage);
             set.name = fam;
+            // 八轮（2026-10-31 REQ-018 实测）：真 API combine 不自动排布变体（全部叠 0,0、集框塌成
+            // 单变体尺寸），且实测吞变体——第 11 个 Energy-Analyser- 被改名 family/variant 游离集外。
+            // 先对账补挂（parent 不是 set 的一律 appendChild 回集），再网格排布 + 集框收缩到内容
+            for (const cm of comps) { if (cm.parent !== set) { try { set.appendChild(cm); defSetReattach++; } catch (e2) { console.warn('变体补挂失败', fam, cm.name, e2); } } }
+            const kids = comps.filter(cm => cm.parent === set);
+            let mw = 0, mh = 0;
+            kids.forEach(cm => { mw = Math.max(mw, cm.width); mh = Math.max(mh, cm.height); });
+            const cols = Math.max(2, Math.ceil(Math.sqrt(kids.length))), GP = 24;
+            kids.forEach((cm, i) => { try { cm.x = (i % cols) * (mw + GP); cm.y = Math.floor(i / cols) * (mh + GP); } catch (e3) {} });
+            try { set.resizeWithoutConstraints(Math.max(1, cols * (mw + GP) - GP), Math.max(1, Math.ceil(kids.length / cols) * (mh + GP) - GP)); } catch (e4) { console.warn('变体集框收缩失败', fam, e4); }
             units = [set];
             variantSetCount++;
           } catch (e) { console.warn('combineAsVariants fail:', fam, e); units = comps; }
@@ -1135,12 +1553,16 @@ figma.ui.onmessage = async msg => {
       defBoard.resize(BW, Math.max(cy, PAD * 2));
     }
     await flushTokBinds(); // 同步路径落裸色入队的描边绑定（scope 门禁 + 读回校验，失败保持裸色）
+    // svgCache 原型清场（2026-10-31 像素审计缺陷 G）：缓存的原型节点从未挂父，导入结束会以
+    // 游离空 Frame 形态残留在页面根（如 24×24 "Frame"）——统一 remove 清掉
+    svgCache.forEach(p => { if (p && p.remove) { try { p.remove(); } catch (e) {} } });
+    svgCache.clear();
     figma.viewport.scrollAndZoomIntoView([board]);
     // 外部网页（scene.ext）不进本地组件体系——库/令牌段整体替换为模式标记，不报「库实例 0 异常」误导
     const libSeg = EXT_SCENE
       ? '｜外部网页 · 纯图层（不走本地组件库）'
-      : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
-    figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + '｜变体集 ' + variantSetCount + '｜图标库实例 ' + iconInstCount + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
+      : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，文案改写 ' + libTextDoneCount + '，文字色 ' + libColDoneCount + '，字样覆写 ' + libFontDoneCount + (libFontFailCount ? '（失败 ' + libFontFailCount + '）' : '') + '，图标槽换装 ' + libIconSwapCount + (libIconOnlyCount ? '，纯图标钮 ' + libIconOnlyCount + (libIconOnlyHiddenCount ? '（藏 Label ' + libIconOnlyHiddenCount + ' 层）' : '') : '') + (libEmptyInputHiddenCount ? '，空输入藏文案 ' + libEmptyInputHiddenCount + ' 层' : '') + '，视觉复核重选 ' + libVisualRepickCount + '，颜色覆写 ' + libColorRepaintCount + '，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (libSizePickCount ? '，高度择尺寸 ' + libSizePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (instanceFitFailCount ? '，实例内层扩宽失败 ' + instanceFitFailCount + '（Figma 实例模型限制，定宽槽装不下长文案——该块建议守卫拒收本地绘制）' : '') + (libUnderflowCount ? '，内容不齐回退 ' + libUnderflowCount + '（demo 段数超实例容量，整块本地重绘保内容）' : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
+    figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + (instTextCount ? '｜实例文案改写 ' + instTextCount : '') + (instUnderCount ? '｜实例内容回退 ' + instUnderCount : '') + '｜变体集 ' + variantSetCount + (defSetReattach ? '（补挂被吞变体 ' + defSetReattach + '）' : '') + '｜图标库实例 ' + iconInstCount + (iconDynCount ? '（按名动态兜底 ' + iconDynCount + '）' : '') + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
     importing = false; // 连续导入（多页面逐个导入）不被「导入进行中」挡住
     // 飞书任务链路：转完不自动关面板——iframe 里的回写 fetch 需要活着；回写完 ui 发 feishu-close 再关
     if (scene.feishu && scene.feishu.id) {

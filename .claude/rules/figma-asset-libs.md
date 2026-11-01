@@ -43,10 +43,15 @@
 - **错配必抛错**：拿 set key 调 component API 直接抛异常——2026-10-25 事故根因（插件只用 component API，19/20 条映射是 set，全部静默回退重绘）。
 - 实现上**先试 component API、失败回退 set API**（component-keys.json 的 `kind` 元数据不可信，ms-empty 曾标 single 实为 set）。
 
-### 4.2 变体裁决顺序（token → 颜色 → 形状）
+### 4.2 变体裁决顺序（证据 → token → 颜色 → 形状）
 
-1. **修饰类 token 优先**：`ms-btn--primary` 等修饰类经 component-keys.json `tokens` 映射 → VARIANT 选项。
+0. **证据裁决（2026-10-31 像素审计固化，最高优先）**：HTML 块内**无图标/矢量子节点**（`lib.ic=false`）时，icon/箭头/chevron/下拉/more 类 VARIANT 轴与 BOOLEAN 轴**强制关态**——库默认装饰不随默认变体泄漏（实测泄漏形态：Button 默认 Add 图标、Tag 自带 chevron-down-big、Tabs 选中态 chevron + 右侧 more 按钮）。tabs 嵌套 swap 的 topSet/tabSet 择变体同样受此约束；被选变体仍自带 more 按钮结构时以 `visible=false` 覆写藏掉。
+1. **修饰类 token 优先**：`ms-btn--primary` 等修饰类经 component-keys.json `tokens` 映射 → VARIANT 选项。三个补强（2026-10-31 四轮「颜色不匹配/文字看不到/高度间距不一致」根因）：
+   - **裸类兜底 token**：`tokens['']` 给无修饰类提供基态（bare ms-btn=`strock` 白底描边、bare ms-tag=`light background,default`）——此前 bare 按钮零 token 落默认变体 Primary 蓝底、蓝底配蓝字不可见；
+   - **逗号多值**：一个修饰类裁决多轴（tag tinted=`light background,primary`——种类+theme 双轴，单值只判 theme、种类落默认 deep background 成深底同色字）；
+   - **token 序即优先级**：walkLib 修饰 token 在前、裸类兜底在后，插件 `pickVariantValue` 按 token 序消费（此前按选项序遍历，兜底会压过修饰语义——outline tag 被兜底判成 Light background）。
 2. **颜色匹配兜底**：token 未决的 VARIANT 轴，用「变体子组件主导填充色」对比「HTML 块背景色」（build-scene 采集 `n.lib.col`）：胜出距离 < 0.12 且领先第二名 > 0.12 才裁决（平局不判——尺寸轴颜色相同天然不参与）。典型：filled 按钮主题蓝 → `Type=Primary`。
+2b. **高度裁决尺寸轴（2026-10-31 四轮）**：`/size|尺寸/i` 的 VARIANT 轴取各选项变体子组件高度与块高最近者，最近距 ≤3px 且领先次近 ≥2px 才判（平局不判）——高度是 px 真值，不再让默认序定 L/M 混档（「下一步 16px 大字 / 取消 14px」不一致根因）；计数入通知「高度择尺寸 N」。
 3. **形状匹配第三裁决（First Draft 逻辑，2026-10-25）**：token/颜色都未决、且块携带形状证据（texts 清单/字号/有无开关）时，按「字号差 + 文本数差 + 开关有无 + 宽高比差」对变体子组件打分，胜出变体的 variantProperties 并入 payload。典型：纯文本标题贴「标题」plain 变体、带 ms-switch 的标题贴 with-switch 变体。
 4. set 级裁决结果（含颜色/形状）必须进 `setProperties` payload——右侧面板所见即所判。
 
@@ -58,7 +63,8 @@
 |---|---|---|
 | `plainTitle` | 仅 1 段 16px 纯文本、无图标/控件子树 | 业务库「标题」plain 变体 |
 | `simpleDialog` | 单一 ms-modal 卡 ≤560px、2-8 段文本、子树无进度条/上传/拖拽/表格/统计等富体；`ms-spin` → Waiting、`--danger/--error` → Error 等语义布尔 | 业务库「弹窗」（自带全页蒙版，语义布尔轴 Info/Error/Waiting/Warn/Success） |
-| `pageTabs` | bc-eg71-page-tabs 锚点 + ≥2 个 tab 子帧（`--active` 定选中态）→ 三层嵌套 swap：Tabs/Top → Components/Tabs-Top（Item 数量）→ 逐 Tab（Selecte 选择）+ 文案覆写 | web 库 Tabs/Top 组件族 |
+| `pageTabs` | bc-eg71-page-tabs 锚点 + ≥2 个 tab 子帧（`--active` 定选中态）→ 三层嵌套 swap：Tabs/Top → Components/Tabs-Top（Item 数量 + Icon/More 关态）→ 逐 Tab（Selecte 选择 + Icon/ShowSelect 关态）+ 文案覆写；**tab 子帧包在 'tabs group' 等命名容器内也要深收集**（曾因跳过名字含 tabs 的子树，tabKids 收空 → Tab 文案全 "Tab"）；**inner/tab 识别按 `mainComponent.parent === set` 集合成员判定**（2026-10-31 三轮：库重发布后嵌套实例图层名不再是 'Tabs-Top'，按名查找落空 → swap 静默退出；名称只作兜底）；BOOLEAN 轴（ShowSelect/Icon 类）childByWants 不裁，须逐实例 setProperties 关态 | web 库 Tabs/Top 组件族 |
+| `statCard`（2026-10-31） | 库 Statistic = 横排（图标+数值+后缀）；HTML **竖排统计瓦片**（小标题 fs≤big-5 压在大数值上方）→ 守卫不过本地绘制；横排大数值（fs≥18、无上方小标题）才换库实例；**标题级 label 拒收（同日二轮）**：库 suffix 槽是主档定宽（≈36px @ 24px 字号），装单位（个/%/bps）可以、装标题（「接入设备总数」6 字）必折行重叠（实例内层 resize 被 Figma 模型拒绝，无就地加宽通道）——小字号文本 CJK 计权长度（CJK=2/latin=1）>3 一律本地绘制 | web 库 Statistic |
 
 富弹窗（进度条/上传/结果统计）守卫不过 → 本地重绘 + 内部原子件库实例——**能引用则引用，不能表达不硬凑**。
 
@@ -80,6 +86,14 @@
 > 来源：2026-10-29 用户指令「引用了组件要做改写，文本要按照 html 去填写。内容视觉要按照 html 去拼凑」——库实例落画布后**不得残留库默认文案**，内容呈现以 HTML demo 为准。
 
 - **文本**：build-scene 给每个 lib 命中节点采集**深层文本清单 `texts`（阅读顺序，≤8 段）+ 逐段颜色 `tcols`**；插件侧按序消费——组件 TEXT 属性逐段写入（setProperties），剩余文本**全部**按阅读顺序回填到嵌套文本层（`characters` 覆写，非只改首层）；已由 TEXT 属性写对的层跳过。
+- **图标槽换装（2026-10-31 按钮输入框转化修复）**：walkLib 采 `lib.icnk`（块内首个图标的库 key）/`lib.icnf`（名字）+ `lib.icnc`·`lib.ictk`（图标颜色与令牌）→ 插件把实例内层首个 ≤24px 图标槽 INSTANCE 的 `mainComponent` 换成 demo 真实图标（Delete 不再挂库默认 Add，统计卡不再挂 folder），**换装后按 HTML 颜色涂装（含 token 绑定）**——库变体自带图标色不随 demo，颜色对应以 HTML 为准。守卫：仅 `ms-(btn|input|select|stat)` 类控件；checkbox/radio/switch 载体豁免。
+- **图标不做本地组件（2026-10-31 用户令「图标引用库 icon 组件就好」）**：图标一律引用库组件——icon-keys.json 命中直取 key 实例化；未命中**保留图标名与颜色**（`t:'ic'` 无 k），插件按名走库目录动态兜底（`ensureIconByName`），兜不中回退 svg 绘制（颜色仍按 demo 涂装，此前未映射图标颜色被删画成黑色）；组件化门槛排除 `t:'ic'` 与 `ms-ico` 类 svg，不产本地散组件。通知报「按名动态兜底 N」。
+- **库内容不做包装组件（2026-10-31 二轮，用户令「都引用了组件库元素就不需要再做组件」，适配所有内容）**：块内任一后代是库实例（`lib` 标记）或图标实例（`t:'ic'`）→ 不组件化，直接铺库实例子节点（子实例各自走改写）。双重理由：①库实例已是复用单元，包装层不增益；②嵌套库实例内层文本真 API 不可改，包进主档后复用会把其他块内容冻死在首个主档（实测 173:24957 错位/字体重叠根源）。图标包装（`ms-ico` 组件）同禁。
+- **组件化签名必须含几何（2026-10-31 二轮打回）**：根宽高与子节点 x/y 入签名——去几何复用让异构块共用主档，实例只缩放根、内部子节点不重排 → 错位/位置乱；仍不入签名的只有文案内容与文本层自身宽高（文本改写时填充适配父容器宽 + 超长 ENDING）。
+- **超长文案规则（2026-10-31 三轮用户令反转：默认完整展示）**：实例改写**默认把文本全量展示**——超出主档原字符数且 **≤24 字符**的层设 `textAutoResize='WIDTH_AND_HEIGHT'` 按层中心回移自适应展开（尽量文本都展示出来）；**>24 字符（特别长）才省略号**：定回父容器宽 + `textTruncation='ENDING'`。本地绘制文本 CSS ellipsis 命中（`n.tr`）照旧 ENDING。宽度适配失败（Figma 实例模型拒绝定宽槽内改 autoResize）计入通知「实例内层扩宽失败 N」，N>0 的块建议守卫拒收改本地绘制。
+- **视觉复核重选（自愈兜底）**：变体裁决三级（§4.2）全部不判、默认变体落图后与 demo 底色证据（`lib.col`）背离 >0.2 时，直接比色在兄弟变体找 <0.08 且领先 >0.2 的一 个换装重建——轴名无关，兜住 setProperties 轴失配静默失败类缺陷；形状打分只对复合块（多段文本/开关/页签）开闸，单段文本控件不跑（曾按宽高比误裁 Size 轴）。
+- **长文案防折行**：改写超出主档原字符数且未过省略号阈值的文本层设 `textAutoResize='WIDTH_AND_HEIGHT'` 并按层中心回移（短文案主档被长文案实例复用是常态）——已并入上条「默认完整展示」路径的机制描述。
+- **几何对齐（2026-10-31 四轮，序列化侧）**：单行文本的对齐与盒子以**字形 run 实测**裁决（Range union rect vs 元素盒），不信 computed textAlign——它是书写意图（button UA 默认 center、flex 居中不反映在 textAlign）。run 窄于盒子才判：对称=center、右贴边=right、其余=left；文本层盒收缩到 run 宽（全宽文本层会漂移居中、与兄弟图标重叠——「高级」标题 chevron 重叠 / radio 段标签不居中根因）。多行段落保持全宽防 Figma 重排换行；scene-audit 同款镜像保基线。
 - **视觉**：文字色按 `tcols` 覆盖对应文本层 fills；图标色按 HTML `currentColor` 覆盖描边/填充；变体（颜色/形状）按 HTML 证据裁决（§4.2）——右侧面板所见即 demo 内容。
 - **蒙版铺满（弹窗实例收口，2026-10-29「蒙版只有一半」实测）**：蒙版只盖半页有三个根因，两侧收口——①库「弹窗」实例内部蒙版子帧默认约束固定、不随根 resize 长高：插件侧强制 根尺寸到帧宽高 → 蒙版子帧铺满 0,0 → 卡片重居中，通知报「蒙版铺满 N」；②蒙版子帧透明度做在**图层**上（fill 不透明 + layer opacity）而非 FILL paint 上：识别必须双通道（fill 级 + 图层级），只查 FILL 会漏判；③DOM 层 ms-mask 嵌在**有裁切的容器**（右列/卡片）内：序列化侧把非根级 ms-mask **提升为状态帧直接子节点**（顶层）再强制全幅，只改宽高不提升会被父容器裁掉一半。
 - **边界**：实例内部结构不可重构是 Figma 实例模型限制——表达不了的形态走守卫不过 → 本地编排 + 内层原子件实例（§4.3），不属于「残留库默认内容」。
@@ -100,3 +114,62 @@
 - **允许裸色的例外**：半透明色（库变量不含 alpha）、注册表无名命中（gray/green 等色阶库未发布）、scope 错配、读回漂移——回退裸色保视觉，不算违规。
 - **别名保护**：tokens.css `color-blue-01..10` 对应库 `color-primary-1..10`，key 已直录注册表；库值≠demo 色由读回校验兜底回退。
 - **重建**：key 失效时 get_libraries 反查 libraryKey → search_design_system `includeLibraryKeys` 定向检索，同名变量在 Color Token（a5396ce6…）与 UINK 专用（f431adcf…）两集合发布，**只收前者**；变量全名带分组前缀（'3 Text/color-text-primary'）取末段对齐 tokens.css。
+
+### 4.8 1:1 还原三铁律（2026-10-31 像素审计固化）
+
+> 来源：REQ-019 M-Bus 导入稿九维偏差审计（字体/间距/位置/布局/适配/宽度/高度/文字/颜色），七缺陷根因修复后 mock 124/124、verify-scene 五页 100%。
+
+- **根提升（序列化范围铁律）**：demo 契约 `rootSelector` 写成壳内子树（如 `.ms-shell .ms-main`）时，序列化/参考页/审计三侧一律**提升到整壳 `.ms-shell`**——侧边栏与顶栏一并入 scene（帧宽回视口 1440），业务库「完整侧边栏」映射才有机会命中；曾因只序列化右列，侧边栏整列缺失、`bc-eg71-sidenav → 侧边栏` 映射永不触发。
+- **svgCache 原型清场**：`figma.createNodeFromSvg` 的缓存原型节点从未挂父，导入结束若不 `remove()` 会以游离空 Frame（如 24×24 "Frame"）残留在页面根——导入收尾统一清空缓存并 remove。
+- **审计方法论**：大画板**截图不可作判据**（服务端异步渐进渲染，同节点两次截图完整度不同）——像素审计以 `get_design_context` 的节点属性（fills/字体/坐标/尺寸）为证据；「缺陷对不上」先怀疑截图时序，再查链路。
+
+### 4.9 五轮修复 + 五视角验收仪（2026-10-31 REQ-020 蒙版/弹窗/按钮/图标钮审计固化）
+
+> 来源：REQ-020 导入稿蒙版缩水（468/568/1060 ≠ 1440）、蒙版 y=48、弹窗 footer 71.48、实例字样不随 demo、纯图标钮泄漏 "Label"。四修后 mock 152/152（四靶红实测值复现）、verify-scene 六页 100%（+REQ-020 27213 断言）、verify-import 红态点名全部真缺陷零误报。
+
+- **AL-hug 根因（真 API 语义）**：对既有 frame 设 `layoutMode` 时，主轴 sizing 直接落 AUTO（hug）并收缩到内容+padding；之后再写 FIXED **不恢复尺寸**，只有 `resize()` 恢复——蒙版 1440→468（420 卡片+24×2 padding）、footer 372→71.48 同族。修法：设 FIXED 后立即 + 收尾 + 最终 `node.resize(w,h)` 三重断言；mock 必须仿真该语义（layoutMode 从 NONE 切入即 hug、间距/内边距变更再 hug），否则绿灯掩盖塌缩。
+- **蒙版提升不做双重补偿**：提升用 transform 增量（`fn.x = pa[0][2]-fa[0][2]`），子节点已含 +24 位移时再手动 +24 = 双重计数（y=48 根因）。
+- **实例文字字样覆写**：实例内层 TEXT 层接受 fontSize/fontName override——build-scene 逐段采集 `lib.tfs/tfw`，插件 rewriteInstanceText 按 demo 字号/字重覆写（400 Regular/500 Medium/600 Semibold，先 loadFontAsync）；主档默认 12/Regular 不再泄漏到「取消 14/500」。
+- **纯图标按钮变体裁决**：demo 有图标无文字的 `ms-btn`——严格按已裁决轴选「带图标槽（≤24px INSTANCE 子节点）」变体；本主题无图标槽变体 → 整块回退本地重绘（图标仍走库实例）；被选变体残留的主档 Label 文本层 `visible=false` 藏掉；跳过比色重选（会按底色丢图标槽）。
+- **五视角验收仪 `verify-import.js`（导入后必跑）**：`node tools/figma-bridge/verify-import.js --scene <scene.json> --board <get_metadata 落盘>` 五轮——P1 设计师·库引用（实例落图率/壳映射）｜P2 设计师·文案卫生（主档默认文案泄漏）｜P3 HTML·几何（具名帧宽高 ±2px + 蒙版提升位 y=24，库实例内部帧豁免）｜P4 HTML·文本（scene 文本 ⊆ board 文本，≤5%）｜P5 用户场景（蒙版全幅盖 cell、按钮塌缩 <20、300×300 失管 svg、同级文本重叠）。**取证坑两条**：get_metadata 对 TEXT 节点名硬截 20 字符（907 节点实测 max=20，frame 到 59）——文本比对必须截断感知；instance 是叶子，库实例内部帧/文本不可见——scene 侧按「祖先带 lib 标记」豁免，实例内层由 mock 靶覆盖。**按钮塌缩判定以 scene 实测高度为准**（2026-10-31 REQ-015 泛化）：demo 原生矮链钮（REQ-015 表格链钮 16px、REQ-020 链钮 22px）不算塌缩——板高 <20 且与同名 scene 高度对不上（±tol）才报，写死绝对阈值会误报原生矮钮。
+
+### 4.10 六轮修复（2026-10-31 button/文本二审：枚举抛错连带 + MS_ICONS 资产损坏）
+
+> 来源：用户令「先理解调用的业务组件实例变体、去 Figma 官方手册了解功能再改脚本」。官方手册核对（developers.figma.com）+ 全链根因：footer/结果区 hug 冻结与 ops 钮图标泄漏各有一层更深的根因。mock 156/156（+4 靶，3 红态实证）、verify-scene 六页 100%、REQ-020 重建 223/223 按钮带图标身份。
+
+- **AL 对齐枚举消毒（官方手册证据）**：`counterAxisAlignItems` 只收 MIN|MAX|CENTER|**BASELINE**——**无 STRETCH**；`stretch` 的 Figma 表达 = 容器 MIN + **子节点 `layoutAlign='STRETCH'`**（该属性枚举才含 STRETCH）；`primaryAxisAlignItems` 收 MIN|MAX|CENTER|SPACE_BETWEEN|SPACE_EVENLY|SPACE_AROUND。序列化侧 CSS `align-items:normal/stretch`（默认值）→ `align:'STRETCH'` → 旧代码原样赋值必抛 → **外层 catch 一口吞掉 padding/终态 resize → AL-hug 冻结**（footer 71.48/结果区 44.78 的第二层根因）。修法：枚举白名单消毒 + **逐 setter 各自 try**（一处抛错不连带）+ 终态 resize 不可跳；`buildDefs` 对组件主档根的 `applyAutoLayout` 调用必须传第三参（缺 n 时主档根无终态 resize）。
+- **mock 枚举校准（§4.4 纪律再证）**：mock FNode 补 counterAxisAlignItems/primaryAxisAlignItems/layoutAlign 枚举 setter——非法值必抛。此前 mock 宽松收下 STRETCH，plugin 抛错被吞 + resize 跳过 = 全链失真而绿灯（红态实证：旧插件代码 + 新 mock → 宽塌 120×40 三靶全红）。
+- **MS_ICONS 资产损坏（134 处）**：`assets/js/registry-business.js` 的 MS_ICONS 字面量内 134 处元素间丢 `<`（`" />path d=`）——浏览器把后续内容解析成 svg 内**文本节点**，① demo 里多路径图标渲染半损（chevrons-left 只剩一支、square-pen 没笔尖）；② DOM innerHTML 序列化文本 `>` 成 `&gt;`，iconSig 归一化后与原始条目 sig 永不相等 → **图标名反查 0/11 命中** → lib.icnk/icnf 全空 → swapIconSlot 守卫 return → 库默认 Add 图标泄漏。修法双管：①资产机械修复（`/>字母`→`/><字母`，134 处全在字面量内、node --check + 逐条目剥标签零残留文本双校验，REQ-020 demo 内联副本未动、容忍链路可复原）；②桥接容错——`iconSig` 先实体还原（&gt;/&lt;/&quot;/&amp;，&amp; 最后）再归一，损坏 demo 无需重生成即可反查；`firstIcon` 同时收 `t:'s'` 裸 svg（icnf=n.ic、icnc=n.col、ictk=n.ctk）。重建实证：477/477 图标带名、223/223 ms-btn lib 块图标身份齐备。
+- **坑**：模板字符串包的 scene-bootstrap.js 里写注释**禁止反引号**（会把 BOOTSTRAP 字面量提前终止，require 即炸）；zsh `echo ====` 会被当命令。
+
+### 4.11 七轮修复（2026-10-31 input 审计：表单值序列化 + addon/图标位置证据）
+
+> 来源：REQ-018 板（179:45057）用户令「input 还是有问题，你没打到我的标准」——Input 实例整块保留库主档默认（value="Example"、addonBefore http:// 前缀文本、afterIcon 44px 设置图标附加块），实例零 override。根因三层，全链收口后 mock 169/169（+13 靶，5 红态实证）、verify-scene 六页 100%、REQ-018 scene 重建 14 个 input 块证据齐备。
+
+- **表单值序列化（序列化侧根因）**：`<input>/<textarea>` 的内容在 `value/placeholder` **属性**里、不是 DOM 文本节点——scene-bootstrap 此前采集不到，`lib.texts` 恒空 → 插件 rewriteInstanceText 整段跳过。修法：serEl 为 text-like input/textarea（排除 checkbox/radio/button/file 等非文本型——它们的 value 是表单语义值不是可见文案）**合成 t:'t' 节点**：value 优先（值色 = cs.color），否则 placeholder（`getComputedStyle(el,'::placeholder')` 计算色，标 `ph:1`）；宽度 canvas measureText 量测、左内边距 + 行高垂直居中定位。scene-audit 补同款镜像（input 值/占位必须入 scene，防合成回归）。
+- **addon 轴证据（插件侧根因一）**：库 Input 的 `addonBefore/addonAfter` 等**结构型附加轴**默认 true——HTML 块没有 addon 容器结构，一律关态；旧映射只认 icon 类轴，addon 轴永无裁决 → 主档 http:// 前缀与附加块泄漏。
+- **图标位置证据（插件侧根因二）**：库 Input 的 `preIcon/afterIcon` 是**两条独立 BOOLEAN**——旧逻辑「块内有图标」的布尔 ic 让左置 search 图标把 afterIcon 也误开。build-scene firstIcon 改累计偏移采 `lib.icL/icR`（首个图标中心 vs 块中心的左右关系）；插件图标类 BOOLEAN 轴按位置裁决：after/suffix 类轴吃 icR、其余吃 icL，无图标两侧全关（图标零泄漏）。
+- **空输入兜底（插件侧根因三）**：demo 输入框无 value/placeholder 时合成节点也没有 → 主档 value="Example" 泄漏。`ms-input/ms-select` 块无任何文本证据 → 实例内层 TEXT 层全部 `visible=false`（空输入本就不该有可见文案），计数「空输入藏文案 N 层」入通知。
+- **边界认知**：demo 原文可能自带 "Example"（REQ-018 模板 `placeholder || 'Example'` 兜底）——此时 Example 是**忠实转录**不是泄漏，判泄漏须看证据链（scene lib.texts 是否含该串），不能只看板上文字。
+
+### 4.12 八轮修复（2026-10-31 REQ-018 二审：文本 run 分组 + 伪元素冒号 + 变体集对账）
+
+> 来源：REQ-018 新板（179:51357）细节审计——表单 label 文字右对齐压图标、必填 `*` 落块右缘、footer 混排行 `已选 <b>2</b> 项` 文本重叠 ×5、defs 变体集不排布 + 吞变体。四修后 mock 173/173（+4 靶，红态 4 红实证）、verify-scene 七页 100%（014/015/016/017/018/019/020，REQ-018 18904 断言零缺陷）、scene 重建证据：星号 x=4/w=7.1、混排三段逐段盒 28+7.2 贴合。
+
+- **文本 run 分组（run-union 污染根因，序列化侧）**：`Range.selectNodeContents(el)` 的 union 会把**元素子节点**（svg 图标等）并进文本盒 → w 撑大误判 right + 文本盒压兄弟图标（「高级」chevron 重叠同族）；混排行「已选 <b>2</b> 项」整 union 盒与单独序列化的 b 子层重叠。修法：**直接文本节点按连续段分组**（空白段剔除）逐段 Range 量盒——单段走 run 对齐裁决（盒收缩到 run 宽）；**多段（混排行）逐段产 t:'t' 节点**：盒 = run 精确盒、al='left'（盒已精确无需裁决）、与元素子节点按 DOM 序交错落层（阅读顺序/图层顺序两保）；scene-audit 同款镜像（段数/段盒/逐段文本/al 全断言）。
+- **伪元素冒号 bug（位置根因）**：pseudoNode 调用传 `which=':before'` **带冒号**，旧定位分支比 `which==='before'` 恒 false → 一切静态伪元素全落 **after 公式**（必填 `*` 被推到块右缘 x=101）。修法：判定用既有的 `short` 归一值；锚点取首/末文本段（元素子节点不进 run，图标不再把锚点推到块右缘）。
+- **伪元素文本宽 canvas 实测**：旧 `0.6*fs` 估宽对 `*` 等窄字符偏差大（8.4 vs 实测 7.1）——`measureText` 实测替换，星号紧贴 run 边界落位。
+- **变体集 combine 真 API 行为（defs 板 179:57095 实测）**：`combineAsVariants` **不自动排布**（变体全叠 0,0、集框塌成单变体尺寸 w=124）且**实测吞变体**（11 个变体只见 10，末个被改名 `family/variant` 游离集外，静态分析未定位吞点）。修法（防御性收口）：combine 后**对账补挂**（`parent !== set` 一律 `appendChild` 回集，计数「补挂被吞变体 N」入通知）+ **网格排布**（cols=ceil(√n) 下限 2、GP=24）+ `resizeWithoutConstraints` 集框收缩到内容。mock 必须复刻吞末个形态（§4.4 纪律三证：mock 宽松一次绿灯掩盖全灭）。
+- **伪元素文本层按字符命名（插件侧）**：落图 TEXT 层命名一律 `n.text.slice(0,20)`（旧 pseudo 节点叫 'pseudo-before'）——get_metadata 以图层名做文本比对，叫 pseudo-before 时 verify-import P4 必漏报该段文本。
+- **verify-import P3 匹配器加 `$` 锚**：旧 `new RegExp('^'+escaped)` 前缀匹配把 scene 'ms-modal' 误命中 board 'ms-modal-xxx' 类长名帧；加 `(?:\s+\d+)?$`（容忍 Figma 同名去重后缀 " 2"）精确收口。
+- **构建号护栏（八轮后固化，防「旧面板产缺陷板」）**：Figma 插件面板开着时 JS 上下文**不随磁盘 code.js 更新重载**——用户改完代码不重开面板直接重导，跑的仍是旧代码，静默产出「颜色又错/主档默认又泄漏」的缺陷板（REQ-018 板 182:63565 实证：input 实例五处七轮前主档默认全在场，Desktop code.js 却已是新码）。修法：build-scene 写 `scene.build`、插件声明 `PLUGIN_BUILD`，`msg.type==='scene'` 时两者不匹配 → **拒导**并提示「完全关闭面板再重新打开」；无 build 号的旧 scene/mock 不拦。**两侧改任一侧必须同步 bump**；mock 有红绿靶（旧插件×新 scene → 拒导）。
+
+### 4.13 九轮修复（2026-11-01 REQ-015 板 183:2088：实例颜色无条件覆写 + 单行 hug 防换行）
+
+> 来源：用户令「大文字不要换行，按钮颜色要和html统一」+ 硬性要求「**html 的颜色怎样，即便调取的组件颜色不一样，都要根据 html 的颜色去改**」。修后 mock 185/185（+9 靶，红态 6 红实证：关闭两修 → 4 覆写靶 + 2 hug 靶全红）、verify-scene 七页 100%、REQ-015 重建 11 个 lib.stk 证据 + 91 条色条带 ftk。
+
+- **实线边框序列化为色条、非 node.stk（根因链）**：CSS solid border 拆成 4 条 `border-*` 色条子帧（scene-bootstrap 边框分支）——只有 dashed 才产 `node.stk`。walkLib 旧逻辑只读 `n.stk` → solid 边框证据恒空 → bare/sm 按钮落库 Strock 变体后边框是**库默认蓝**，demo 灰边 #E5E6EB 被丢。修法双侧：①色条带 `ftk`（tokOf stroke 家族，进 scene.tokVars）；②walkLib 在 `n.stk` 缺失时从**≥2 条不透明同色 border-\* 条**反推 `lib.stk={w,c,tk}`（w 取横条高/竖条宽；单条分隔线 <2 不触发，表格行底边/Tab 下划线不受影响）。
+- **实例颜色无条件覆写（repaintLibInstance，插件侧）**：变体裁决/视觉复核重选定型后，实例根按 HTML 证据重涂——`fills=[tokPaint(lib.col, n.ftk)]`、`strokes=[tokPaint(lib.stk.c, lib.stk.tk)]`+strokeWeight+INSIDE；令牌绑定读回漂移自动回退裸色（§4.7 内建）；`ms-mask` 弹窗跳过（蒙版全页归 forceDialogFullPage）。计数「颜色覆写 N」入通知；**col/stk 证据缺失不覆写**（无证据 ≠ 透明）。现有 filled/link/文本按钮核验本就正确，覆写后不回归。
+- **单行文本 hug 防换行（materialize）**：浏览器量盒可能窄于 Figma 字形排宽（同字号不同 hinting，host 标题自然 ≈212px vs 盒 208px），`NONE`+定宽遇宽字形即折行。单行文本（无 `n.tr` 省略号、无 `\n`、高 ≤1.6×行高）落图后改 `textAutoResize='WIDTH_AND_HEIGHT'`，x 按对齐锚定（left 不动 / center 保盒中心 / right 保右缘）；`n.tr` 与多行文本保持 NONE+定宽盒。**当前板实测所有文本均单行未折**——本条是系统性预防（旧 scene 定宽盒 + Figma 宽字形必折）。
+- **mock 校准**：FNode 的 TEXT `width` getter 模拟自然宽（chars×fs×0.6）——hug 重锚靶靠它驱动（居中 744→755 / 300→333.2，真 Figma 同字体漂移亚像素级）；**靶 fixture 类名必须避开既有同名靶**（ms-btn--sm 与五轮纯图标钮同名会让 find 串靶，新靶用 ms-btnt--sm）。
+

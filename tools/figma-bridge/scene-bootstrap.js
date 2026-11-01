@@ -59,7 +59,9 @@ const BOOTSTRAP = `(function(){
     });
     return out;
   }
-  function iconSig(s){return s.replace(/\\s+/g,'').replace(/<\\/[a-zA-Z]+>/g,'').replace(/\\/>/g,'>')}
+  // 实体容忍（2026-10-31）：MS_ICONS 历史损坏条目（元素间丢 '<'）被浏览器解析成 svg 内文本节点，
+  // innerHTML 序列化时 '>' 变 '&gt;'；先实体还原再归一，DOM 侧 sig 才能与原始条目 sig 对上（图标名反查 0/11 命中的根因）。
+  function iconSig(s){return String(s).replace(/&gt;/g,'>').replace(/&lt;/g,'<').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/\\s+/g,'').replace(/<\\/[a-zA-Z]+>/g,'').replace(/\\/>/g,'>')}
   // 颜色令牌反查（build-scene 注入 __MS_TOK_NAMES__=tokens.css 全量色令牌名；verify 注入 absent 时整体关闭，输出与基线一致）。
   // 值->名映射走 getComputedStyle(:root)：自动跟随页面主题（暗色块/级联覆写）；同值多候选按站点家族优先（文本/填充/图标/描边），
   // 家族内语义名再压色阶名（primary-normal > blue-06）；仅不透明色参与（透明令牌库变量不含）。
@@ -114,7 +116,7 @@ const BOOTSTRAP = `(function(){
   // 不提取则 Figma 缺件。定位两类：绝对定位（left/top/right/bottom + translate 精确解）与
   // 流内（文本前缀/后缀按文本框定位；块级装饰按内容起终点近似，flex:1 分隔线宽度 Chrome 已解析为 px）。
   function lenPx(v,base){var m=/^(-?[\\d.]+)(%|px)?$/.exec((v||'').trim());if(!m)return 0;var n=parseFloat(m[1]);return m[2]==='%'?n*base/100:n}
-  function pseudoNode(el,which,elW,elH,textRect,elRect){
+  function pseudoNode(el,which,elW,elH,textRuns,elRect){
     var pcs=getComputedStyle(el,which);
     if(!pcs||pcs.display==='none'||pcs.visibility==='hidden')return null;
     var c=pcs.content;
@@ -125,7 +127,11 @@ const BOOTSTRAP = `(function(){
     var w=parseFloat(pcs.width)||0,h=parseFloat(pcs.height)||0;
     var fs=parseFloat(pcs.fontSize)||14;
     var lh=pcs.lineHeight==='normal'?fs*1.4:(parseFloat(pcs.lineHeight)||fs*1.4);
-    if(isTxt&&(!w||!h)){w=Math.max(1,rawTxt.length*fs*0.6);h=lh}
+    if(isTxt&&(!w||!h)){
+      // 八轮：伪元素文本宽用 canvas 实测（旧 0.6*fs 估宽偏差大），星号等窄字符落位更准
+      try{var cvp=document.createElement('canvas').getContext('2d');cvp.font=(parseInt(pcs.fontWeight)||400)+' '+fs+'px '+(pcs.fontFamily||'sans-serif');w=Math.max(1,Math.ceil(cvp.measureText(rawTxt).width))}catch(e9b){w=Math.max(1,rawTxt.length*fs*0.6)}
+      h=lh;
+    }
     var bg=parseRgba(pcs.backgroundColor),bgL=bgLayers(pcs,(pcs.backgroundSize||'').split(',')[0]||'');
     var eff=shadows(pcs.boxShadow);
     // 仅边框伪元素：等宽单边 → CSS 三角 polygon；其余（双边 L 形下拉箭头等）→ 逐边线条 SVG，纯旋转矩阵折进 SVG 绕中心旋转
@@ -190,12 +196,16 @@ const BOOTSTRAP = `(function(){
       x=lenPx(pcs.left,elW);y=lenPx(pcs.top,elH);
       var tmf=(pcs.transform||'none').match(/matrix\\(([^)]+)\\)/);
       if(tmf){var tf=tmf[1].split(',').map(parseFloat);x+=tf[4]||0;y+=tf[5]||0}
-    } else if(isTxt&&textRect){
-      if(which==='before')x=textRect.tx-Math.max(1,rawTxt.length*fs*0.6)-lenPx(pcs.marginRight,1);
-      else x=textRect.tx+textRect.w+lenPx(pcs.marginLeft,1);
-      y=textRect.ty;
+    } else if(isTxt&&textRuns&&textRuns.length){
+      // 八轮冒号修复：判 before/after 用 short（调用传 ':before' 带冒号，旧比较 which==='before' 恒
+      // false → 全落 after 公式，必填星号被放到文字右侧）；锚点取首/末文本段（元素子节点不进 run，
+      // 图标不再把锚点推到块右缘）；伪元素宽已 canvas 实测，紧贴 run 边界落位
+      var anch=short==='before'?textRuns[0].r:textRuns[textRuns.length-1].r;
+      if(short==='before')x=anch.tx-w-lenPx(pcs.marginRight,1);
+      else x=anch.tx+anch.w+lenPx(pcs.marginLeft,1);
+      y=anch.ty;
     } else {
-      x=which==='before'?lenPx(pcs.marginLeft,1):elW-w-lenPx(pcs.marginRight,1);
+      x=short==='before'?lenPx(pcs.marginLeft,1):elW-w-lenPx(pcs.marginRight,1);
       y=(elH-h)/2;
     }
     if(tri){tri.x=x;tri.y=y;tri.o=1;return tri}
@@ -326,23 +336,96 @@ const BOOTSTRAP = `(function(){
     if(tt==='uppercase')txt=txt.toUpperCase();
     else if(tt==='lowercase')txt=txt.toLowerCase();
     else if(tt==='capitalize')txt=txt.toLowerCase().replace(/(^|\\s)([a-z])/g,function(m0,s1,s2){return s1+s2.toUpperCase()});
+    // 表单值/占位序列化（2026-10-31 input 转化根因）：input/textarea 的内容在 value/placeholder
+    // 属性里、不是 DOM 文本节点，此前序列化采集不到 → 库 Input 实例保留主档默认文案（Example 泄漏）。
+    // 这里合成同款 t:'t' 节点：value 优先（值色 = cs.color），否则 placeholder（::placeholder 计算色）；
+    // 几何取内容盒（左内边距 + 行高垂直居中），宽度 canvas 量测（无 DOM 文本节点，Range 不可用）。
+    // 排除非文本型 input（checkbox/radio 的 value 是表单语义值，不是可见文案）。
+    var phNode=null;
+    if(!txt&&(tag==='input'||tag==='textarea')){
+      var ityp=(el.getAttribute&&el.getAttribute('type'))||'text';
+      if(!/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(ityp)){
+        var rv=String(el.value||'').replace(/\\s+/g,' ').trim();
+        var rph=String((el.getAttribute&&el.getAttribute('placeholder'))||'').replace(/\\s+/g,' ').trim();
+        var showT=rv||rph,isPh=!rv;
+        if(showT){
+          var pcs2=isPh?getComputedStyle(el,'::placeholder'):cs;
+          var pcol2=parseRgba(pcs2.color)||{c:[0,0,0],a:1};
+          var pfs=px(cs.fontSize)||14;
+          var plh=cs.lineHeight==='normal'?pfs*1.4:(px(cs.lineHeight)||pfs*1.4);
+          var ptx=px(cs.paddingLeft)||0;
+          var pw=Math.max(10,w-ptx*2);
+          try{
+            var cvx=document.createElement('canvas').getContext('2d');
+            cvx.font=(cs.fontStyle==='italic'||cs.fontStyle==='oblique'?'italic ':'')+(parseInt(cs.fontWeight)||400)+' '+pfs+'px '+(cs.fontFamily||'sans-serif');
+            pw=Math.min(pw,Math.ceil(cvx.measureText(showT).width)+2);
+          }catch(e9){}
+          phNode={t:'t',text:showT,fs:pfs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(plh,pfs),ls:px(cs.letterSpacing)||0,col:pcol2.c,al:'left',x:ptx,y:Math.max(0,(h-plh)/2),w:pw,h:plh,o:1};
+          if(isPh)phNode.ph=1;
+          var pff=(cs.fontFamily||'').split(',')[0].replace(/["']/g,'').trim();
+          if(pff)phNode.ff=pff.slice(0,40);
+          if(!isPh&&pcol2.a>=1){var ptk=tokOf(pcol2.c,'text');if(ptk)phNode.tk=ptk}
+        }
+      }
+    }
+    // 直接文本 run 分组（2026-10-31 八轮）：Range.selectNodeContents(el) 的整 union 会把元素子节点
+    // （svg 图标等）并进测量——w 被撑大 → gr≈0 误判 right + 文本盒压到图标上（表单标签根因）；
+    // 混排行（已选 <b>2</b> 项）整盒还会与 b 子层重叠（页脚「已选 N 项」×5 根因）。
+    // 改为只测直接文本节点、按连续段分组：单段走原对齐裁决（盒收缩到纯文本 run），
+    // 多段逐段精确落位（盒即 run 盒，al=left——已精确无需裁决），子节点循环按 DOM 顺序交错铺开。
+    var textRuns=[],runNodes=[],runByFirstNode=new Map();
     if(txt){
       var fs=px(cs.fontSize)||14;
       var lh=cs.lineHeight==='normal'?fs*1.4:(px(cs.lineHeight)||fs*1.4);
       var col=parseRgba(cs.color)||{c:[0,0,0],a:1};
-      var al=cs.textAlign==='center'?'center':(cs.textAlign==='right'||cs.textAlign==='end')?'right':'left';
-      var ty=0,th=lh,trInfo=null;
-      try{var rg=document.createRange();rg.selectNodeContents(el);var tr=rg.getBoundingClientRect();if(tr.height>0){ty=tr.top-rect.top;th=tr.height;trInfo={tx:tr.left-rect.left,ty:tr.top-rect.top,w:tr.width}}}catch(e){}
-      var tn={t:'t',text:txt,fs:fs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(lh,fs),ls:px(cs.letterSpacing)||0,col:col.c,al:al,x:0,y:ty,w:w,h:th,o:1};
-      var ffam=(cs.fontFamily||'').split(',')[0].replace(/["']/g,'').trim();
-      if(ffam)tn.ff=ffam.slice(0,40);
-      if(col.a>=1){var ttk=tokOf(col.c,'text');if(ttk)tn.tk=ttk}
-      if(cs.fontStyle==='italic'||cs.fontStyle==='oblique')tn.it=1;
-      if(cs.textOverflow==='ellipsis'&&cs.overflowX!=='visible'&&cs.whiteSpace==='nowrap')tn.tr=1;
-      var dl=cs.textDecorationLine||'none';
-      if(/underline/.test(dl))tn.td='u';else if(/line-through/.test(dl))tn.td='s';
-      node.ch.push(tn);
+      try{
+        var mgrp=[];
+        for(var mci=0;mci<el.childNodes.length;mci++){
+          var mcn=el.childNodes[mci];
+          if(mcn.nodeType===3&&mcn.data.replace(/\s+/g,'')){mgrp.push(mcn)}
+          else if(mgrp.length){textRuns.push(mgrp);mgrp=[]}
+        }
+        if(mgrp.length)textRuns.push(mgrp);
+        textRuns=textRuns.map(function(g){
+          var mr=document.createRange();
+          mr.setStart(g[0],0);mr.setEnd(g[g.length-1],g[g.length-1].data.length);
+          var mb=mr.getBoundingClientRect();
+          if(mb.height<=0)return null;
+          var mt='';for(var mi=0;mi<g.length;mi++)mt+=g[mi].data;
+          return{first:g[0],txt:mt.replace(/\s+/g,' ').trim(),r:{tx:mb.left-rect.left,ty:mb.top-rect.top,w:mb.width,h:mb.height}};
+        }).filter(Boolean);
+      }catch(e10){textRuns=[]}
+      function mkTN(t2,al2,x2,y2,w2,h2){
+        var tn={t:'t',text:t2,fs:fs,fw:(parseInt(cs.fontWeight)||400),lh:Math.max(lh,fs),ls:px(cs.letterSpacing)||0,col:col.c,al:al2,x:x2,y:y2,w:w2,h:h2,o:1};
+        var ffam=(cs.fontFamily||'').split(',')[0].replace(/["']/g,'').trim();
+        if(ffam)tn.ff=ffam.slice(0,40);
+        if(col.a>=1){var ttk=tokOf(col.c,'text');if(ttk)tn.tk=ttk}
+        if(cs.fontStyle==='italic'||cs.fontStyle==='oblique')tn.it=1;
+        if(cs.textOverflow==='ellipsis'&&cs.overflowX!=='visible'&&cs.whiteSpace==='nowrap')tn.tr=1;
+        var dl=cs.textDecorationLine||'none';
+        if(/underline/.test(dl))tn.td='u';else if(/line-through/.test(dl))tn.td='s';
+        return tn;
+      }
+      if(textRuns.length>1){
+        textRuns.forEach(function(mr2){runNodes.push(mkTN(mr2.txt,'left',mr2.r.tx,mr2.r.ty,mr2.r.w,mr2.r.h))});
+      } else {
+        var al=cs.textAlign==='center'?'center':(cs.textAlign==='right'||cs.textAlign==='end')?'right':'left';
+        var ri=textRuns.length?textRuns[0].r:null;
+        var tx=0,tw=w,ty=0,th=lh;
+        // 几何对齐裁决（2026-10-31 四轮，scene-audit 同款镜像）：单行文本的视觉对齐/盒子以字形 run
+        // 实测为准——computed textAlign 是书写意图（button UA 默认 center、flex 居中不反映），
+        // 视觉常由 flex/gap 决定；全宽文本层会居中漂移、与兄弟图标重叠（「高级」标题/radio 段标签根因）。
+        // run 只测直接文本节点；run 窄于盒子才可判；多行段落保持全宽防 Figma 重排换行
+        if(ri&&ri.h<=lh*1.7&&ri.w<w-1){
+          var gl=ri.tx,gr=w-ri.tx-ri.w;
+          if(Math.abs(gl-gr)<=1.5)al='center';else if(gr<=1.5)al='right';else al='left';
+          tx=ri.tx;tw=ri.w;ty=ri.ty;th=ri.h;
+        }
+        runNodes.push(mkTN(txt,al,tx,ty,tw,th));
+      }
+      textRuns.forEach(function(rr,i2){if(runNodes[i2])runByFirstNode.set(rr.first,runNodes[i2])});
     }
+    if(phNode)node.ch.push(phNode);
     var sides=['Top','Right','Bottom','Left'];
     var bws=[px(cs.borderTopWidth),px(cs.borderRightWidth),px(cs.borderBottomWidth),px(cs.borderLeftWidth)];
     var bcx=[parseRgba(cs.borderTopColor),parseRgba(cs.borderRightColor),parseRgba(cs.borderBottomColor),parseRgba(cs.borderLeftColor)];
@@ -359,15 +442,27 @@ const BOOTSTRAP = `(function(){
       var bc=bcx[k],bwid=bws[k];
       if(bwid>0&&bc&&bc.a>0){
         var geo=k===0?{x:0,y:0,w:w,h:bwid}:k===1?{x:w-bwid,y:0,w:bwid,h:h}:k===2?{x:0,y:h-bwid,w:w,h:bwid}:{x:0,y:0,w:bwid,h:h};
-        node.ch.push({t:'f',f:[{c:bc.c,a:bc.a}],e:[],r:{tl:0,tr:0,br:0,bl:0},clip:false,x:geo.x,y:geo.y,w:geo.w,h:geo.h,o:1,n:'border-'+side.toLowerCase()});
+        var stkn={t:'f',f:[{c:bc.c,a:bc.a}],e:[],r:{tl:0,tr:0,br:0,bl:0},clip:false,x:geo.x,y:geo.y,w:geo.w,h:geo.h,o:1,n:'border-'+side.toLowerCase()};
+        if(bc.a>=1){var btk=tokOf(bc.c,'stroke');if(btk)stkn.ftk=btk}
+        node.ch.push(stkn);
       }
     }
     if(cs.mixBlendMode&&cs.mixBlendMode!=='normal')node.bm=cs.mixBlendMode;
-    for(var j=0;j<el.children.length;j++){
-      var c=serEl(el.children[j],{x:rect.left,y:rect.top},(path===undefined?'0':path)+'/'+j);
-      if(c){
-        try{var zj=parseInt(getComputedStyle(el.children[j]).zIndex);if(!isNaN(zj))c.__zi=zj}catch(e3){}
-        node.ch.push(c);
+    // 子节点按 DOM 顺序铺开（八轮）：文本段与其余元素子节点交错——混排行（已选<b>2</b>项）的
+    // 段序/图层序与 DOM 一致，deepTextPairs 采文顺序才正确；元素子节点索引 jEl 与 el.children 对齐
+    var jEl=0;
+    for(var ci2=0;ci2<el.childNodes.length;ci2++){
+      var mnd=el.childNodes[ci2];
+      if(mnd.nodeType===3){
+        var mrn=runByFirstNode.get(mnd);
+        if(mrn)node.ch.push(mrn);
+      } else if(mnd.nodeType===1){
+        var c=serEl(mnd,{x:rect.left,y:rect.top},(path===undefined?'0':path)+'/'+jEl);
+        if(c){
+          try{var zj=parseInt(getComputedStyle(mnd).zIndex);if(!isNaN(zj))c.__zi=zj}catch(e3){}
+          node.ch.push(c);
+        }
+        jEl++;
       }
     }
     // z-index 重排（CSS 有 z-index 的元素改变绘制顺序；Figma appendChild 顺序=图层顺序，稳定排序仅移动显式 z 的子节点）
@@ -376,8 +471,8 @@ const BOOTSTRAP = `(function(){
       idx.sort(function(A,B){return A.z-B.z||A.i-B.i});
       node.ch=idx.map(function(E){delete E.n.__zi;return E.n});
     } else node.ch.forEach(function(c){delete c.__zi});
-    var pb=pseudoNode(el,':before',w,h,trInfo,rect);
-    var pa=pseudoNode(el,':after',w,h,trInfo,rect);
+    var pb=pseudoNode(el,':before',w,h,textRuns,rect);
+    var pa=pseudoNode(el,':after',w,h,textRuns,rect);
     // 自动布局置信转换（设计师视角：能增删内容的弹性容器，改文案不错位）：
     // 条件全过才打 al 标——display:flex 且 nowrap、方向非 reverse、justify/align 在 Figma 可映射集、
     // 子节点全流内（无 absolute/fixed、无 visibility:hidden）、无「文本+元素」混排、边框统一（转描边）或无、
@@ -452,6 +547,9 @@ const BOOTSTRAP = `(function(){
     }
     var hook=window.MS_FIGMA_EXPORT||{rootSelector:'#app',states:[{name:'默认态',setup:function(){}}],columns:1,frameWidth:0,settleMs:200};
     var root=document.querySelector(hook.rootSelector||'#app')||document.body;
+    // 根提升（2026-10-31 像素审计缺陷 A）：契约写 '.ms-shell .ms-main' 之类壳内子树时，提升到整壳 .ms-shell
+    // ——侧边栏/顶栏一并序列化（库「完整侧边栏」映射才有机会命中），帧宽回到视口 1440；非壳内 root 不动
+    try{var sh=(root&&root.closest)?root.closest('.ms-shell'):null;if(sh&&sh!==root)root=sh}catch(e4){}
     var settle=hook.settleMs!=null?hook.settleMs:200;
     // 无契约页（外部网页）宽度取渲染视口（build-scene --viewport 注入），自家 demo 契约显式 frameWidth 优先
     var cols=hook.columns||1,W=hook.frameWidth||window.__MS_VIEWPORT__||1440,GAP=64;
