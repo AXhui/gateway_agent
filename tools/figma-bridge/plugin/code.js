@@ -27,7 +27,7 @@
 // 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
 // build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
 // 不再静默产出旧缺陷板。两侧同步 bump。
-const PLUGIN_BUILD = 'r9';
+const PLUGIN_BUILD = 'r10';
 
 const FONT_FAMILY = 'PingFang SC';
 const STYLE_MAP = {
@@ -124,7 +124,7 @@ async function ensureFonts(scene) {
 
 let ICON_MAP = new Map();
 let iconInstCount = 0, iconFallbackCount = 0, iconDynCount = 0;
-let libInstCount = 0, libFallbackCount = 0, libPropCount = 0, libImportFailCount = 0, libColorPickCount = 0, libShapePickCount = 0, libSwapCount = 0, libTextDoneCount = 0, libColDoneCount = 0, libUnderflowCount = 0, libIconSwapCount = 0, libVisualRepickCount = 0, libSizePickCount = 0, libFontDoneCount = 0, libFontFailCount = 0, libIconOnlyCount = 0, libIconOnlyHiddenCount = 0, libEmptyInputHiddenCount = 0, libColorRepaintCount = 0, instTextCount = 0, instUnderCount = 0, instanceFitFailCount = 0;
+let libInstCount = 0, libFallbackCount = 0, libPropCount = 0, libImportFailCount = 0, libColorPickCount = 0, libShapePickCount = 0, libSwapCount = 0, libTextDoneCount = 0, libColDoneCount = 0, libUnderflowCount = 0, libIconSwapCount = 0, libVisualRepickCount = 0, libSizePickCount = 0, libFontDoneCount = 0, libFontFailCount = 0, libIconOnlyCount = 0, libIconOnlyHiddenCount = 0, libEmptyInputHiddenCount = 0, libColorRepaintCount = 0, instTextCount = 0, instUnderCount = 0, instanceFitFailCount = 0, libAddonHiddenCount = 0, libSlotHiddenCount = 0, libTextSweepCount = 0;
 
 // —— 动态找库组件（2026-10-29 用户指令：不要自己生产，去团队库找组件引用）——
 // getTeamLibraryAsync 拉每份可访问库的组件目录（key+name），两类命中：
@@ -743,7 +743,9 @@ async function rewriteInstanceText(inst, target, lib) {
   const layers = [];
   const origLen = new Map(); // 改写前每层字符数（超长省略号判定基准）
   const origW = new Map();   // 改写前每层宽（截断定回原宽，防 hug 层已被长文案撑开）
-  (function df(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') layers.push(c); df(c); }); })(inst);
+  // 十轮：df 剪枝不可见子树——Figma 里父层 visible=false 不改子层自身 visible，只查文本层会漏；
+  // addon 隐藏（hideInputAddons）后其内层 http:// 文本必须退出对位序列，demo 值才能落到值层
+  (function df(nd) { (nd.children || []).forEach(c => { if (c.visible === false) return; if (c.type === 'TEXT') layers.push(c); df(c); }); })(inst);
   if (!layers.length) return libTexts.length <= 1;
   if (libTexts.length > layers.length + 4) return false;
   // 视觉阅读序：y 主序（2px 容差）、x 次序；无几何信息的层保持 DOM 序
@@ -849,26 +851,86 @@ async function rewriteInstanceText(inst, target, lib) {
 // 图标槽换装（2026-10-31 按钮输入框转化修复）：walkLib 新采 lib.icnk（块内真实图标的库 key），
 // 实例内层图标槽 mainComponent 换成 demo 图标——此前图标名/key 在序列化侧丢失，Delete 永远挂库默认 Add。
 // 守卫：btn/input/select/stat 类控件；只换首个 ≤24px 小实例槽；checkbox/radio/switch 载体豁免（形态即语义）
+// 十轮：①walk 剪枝不可见子树（addon 藏掉的容器里不再选槽）②候选按位置裁决——icL 取最左、
+// icR 取最右（首个命中顺序是主档图层序不保证视觉序，右置 suffix 排前会抢走换装）③返回槽节点
+// （供 hideExtraIconSlots 区分已换装槽），调用方 truthiness 兼容旧布尔用法
 async function swapIconSlot(inst, lib) {
-  if (!lib.icnk && !lib.icnf) return false;
-  if (!/ms-(btn|input|select|stat)/.test(String(lib.cls || ''))) return false;
+  if (!lib.icnk && !lib.icnf) return null;
+  if (!/ms-(btn|input|select|stat)/.test(String(lib.cls || ''))) return null;
   let comp = lib.icnk ? (ICON_MAP.get(lib.icnk) || await ensureLibComp(lib.icnk)) : await ensureIconByName(lib.icnf);
-  if (!comp || comp.type !== 'COMPONENT') return false;
-  let slot = null;
+  if (!comp || comp.type !== 'COMPONENT') return null;
+  const cands = [];
   (function walk(x) {
-    if (slot) return;
     for (const c of x.children || []) {
-      if (slot) return;
+      if (c.visible === false) continue;
       if (c.type === 'INSTANCE' && c.mainComponent && c.width <= 24 && c.height <= 24
-        && !/check|radio|switch|滑|勾选|开关/i.test(String(c.mainComponent.name || ''))) {
-        try { c.mainComponent = comp; slot = c; return; } catch (e) {}
-      }
+        && !/check|radio|switch|滑|勾选|开关/i.test(String(c.mainComponent.name || ''))) cands.push(c);
       walk(c);
     }
   })(inst);
+  if (!cands.length) return null;
+  cands.sort((a, b) => (a.x || 0) - (b.x || 0));
+  const slot = lib.icR ? cands[cands.length - 1] : cands[0];
+  try { slot.mainComponent = comp; } catch (e) { return null; }
   // 换装后按 HTML 涂色（含 token 绑定）——库变体自带的图标色不随 HTML，颜色对应关系以 demo 为准
-  if (slot && lib.icnc) { try { await paintIconStrokes(slot, lib.icnc, lib.ictk); } catch (e) {} }
-  return !!slot;
+  if (lib.icnc) { try { await paintIconStrokes(slot, lib.icnc, lib.ictk); } catch (e) {} }
+  return slot;
+}
+// 十轮：库 Input 集没有任何 addon/preIcon BOOLEAN 轴（实测只有 Size/State/Filled 三 VARIANT 轴）——
+// http:// 前缀块、44px 设置图标附加块、person 前图标、input-suffix 都是烤进变体的嵌套子实例，
+// 七轮的布尔轴关态路径对这套库形同虚设。按 HTML 证据隐藏：demo 输入框没有 addon 容器结构 →
+// ms-input 直发子 INSTANCE 里**非图标槽尺寸**（>24px）的结构块全 hidden（InputAddon http:// 前缀块、
+// 28~44px 设置图标附加块都在这层；≤24px 槽留给换装）；ms-select 只藏名字命中 addon/affix 的
+// 直发子实例（自带下拉 chevron 是语义结构，保留）。
+function hideInputAddons(inst, lib) {
+  const cls = String(lib.cls || '');
+  const isInput = /(^|\s)ms-input(\s|$)/.test(cls);
+  const isSelect = /(^|\s)ms-select(\s|$)/.test(cls);
+  if (!isInput && !isSelect) return;
+  let n = 0;
+  for (const c of inst.children || []) {
+    if (c.type !== 'INSTANCE' || c.visible === false) continue;
+    if (isInput && c.width <= 24 && c.height <= 24) continue;
+    if (isSelect && !/addon|affix|附加|前缀|后缀/i.test(String(c.name || ''))) continue;
+    try { c.visible = false; n++; } catch (e) {}
+  }
+  libAddonHiddenCount += n;
+}
+// 十轮：图标槽收口——demo 只有一个图标（或没有图标）时，换装槽之外残余的 ≤24px 图标槽实例
+//（input-suffix、未被换装的 person 前图标）一律 hidden。仅 ms-input（泄漏重灾区；select 自带
+// chevron、btn 图标变体是语义结构，不藏）。
+function hideExtraIconSlots(inst, lib, swapped) {
+  if (!/(^|\s)ms-input(\s|$)/.test(String(lib.cls || ''))) return;
+  let n = 0;
+  (function w(x) {
+    for (const c of x.children || []) {
+      if (c.visible === false) continue;
+      if (c !== swapped && c.type === 'INSTANCE' && c.mainComponent && c.width <= 24 && c.height <= 24
+        && !/check|radio|switch|滑|勾选|开关/i.test(String(c.mainComponent.name || ''))) {
+        try { c.visible = false; n++; continue; } catch (e) {}
+      }
+      w(c);
+    }
+  })(inst);
+  libSlotHiddenCount += n;
+}
+// 十轮：残余文本收口——实例内可见 TEXT 层多于 demo 文本段数时，超出段藏掉（主档默认文案不随
+// demo 泄漏）。排序与 rewriteInstanceText 同款（y 主序 2px 容差、x 次序），保证藏的是同批「尾部」。
+// 仅 input/select/checkbox/radio 四类控件载体；空证据（0 段）走 materializeLib 空输入分支全藏。
+function hideLeftoverTexts(inst, lib) {
+  const cls = String(lib.cls || '');
+  if (!/(^|\s)ms-(input|select|checkbox|radio)(\s|$)/.test(cls)) return;
+  const want = (lib.texts && lib.texts.length ? lib.texts : (lib.text ? [lib.text] : [])).length;
+  if (!want) return;
+  const vis = [];
+  (function w(x) { for (const c of x.children || []) { if (c.visible === false) continue; if (c.type === 'TEXT') vis.push(c); w(c); } })(inst);
+  if (!vis.length) return;
+  if (vis.every(l => typeof l.x === 'number' && typeof l.y === 'number')) {
+    vis.sort((a, b) => (Math.abs(a.y - b.y) > 2 ? a.y - b.y : a.x - b.x));
+  }
+  let n = 0;
+  for (let i = want; i < vis.length; i++) { try { vis[i].visible = false; n++; } catch (e) {} }
+  libTextSweepCount += n;
 }
 // 落图后视觉复核（自愈，2026-10-31 按钮输入框转化修复）：payload 轴名失配 / setProperties 静默失败
 // 时实例根呈现背离 demo 证据（lib.col 底色）——直接比色在兄弟变体里找明显更贴的一个。保守门限：
@@ -1010,6 +1072,11 @@ async function materializeLib(n) {
             // 泄漏）。scene 侧 icL/icR 给首个图标的左右位置；after/suffix 类轴吃 icR，其余吃 icL
             const isAfter = /after|suffix|后|尾|trailing/.test(nn);
             val = isAfter ? !!n.lib.icR : !!n.lib.icL;
+          } else if (/^tag$|^label$|文本|文字/.test(nn)) {
+            // 十轮：库 Checkbox 的 tag BOOLEAN（默认 true）控制标签 <p>{text}</p>——轴名此前
+            // 无规则管辖恒落默认 true，裸表格勾选框（16×16 无文本证据）泄漏主档 "Checkbox" 文案。
+            // 用户裁定：标题/表单场景（块内有文本证据）才带文本；表格列只有勾选框、没有文本。
+            val = !!((n.lib.texts && n.lib.texts.length) || n.lib.text);
           }
           else if (/disable/.test(nn)) val = toks.includes('disabled');
           else if (SEM_AXES[nn]) val = toks.includes(nn) || (nn === 'warn' && toks.includes('warning'));
@@ -1030,14 +1097,21 @@ async function materializeLib(n) {
         try { inst.setProperties(payload); libPropCount += Object.keys(payload).length; }
         catch (e) { console.warn('setProperties skip', n.lib.cls, JSON.stringify(payload), e); }
       }
+      // 十轮：addon 隐藏先于文案改写——烤进变体的 http:// 前缀块/设置图标附加块退出结构后，
+      // 其内层文本也随之退出 rewriteInstanceText 的对位序列（df 剪枝不可见子树），
+      // demo 值才能落到值层而非 addon 文本层（REQ-019 objname 输入框 Example 未改写根因）
+      hideInputAddons(inst, n.lib);
       // 实例文案 + 文字色按 HTML 统一改写（对位-校验-自愈；tabs 走 swapNestedTabs 自带文案覆写）；
       // 表达力守卫不过（demo 段数 > 实例层数+4）→ 回退整块本地重绘，不硬替换丢内容
       if ((n.lib.texts && n.lib.texts.length || n.lib.text) && !n.lib.tabs) {
         const ok = await rewriteInstanceText(inst, tgt, n.lib);
         if (!ok) { try { inst.remove(); } catch (e0) {} return { inst: null, underflow: true }; }
+        hideLeftoverTexts(inst, n.lib);
       }
       if (n.lib.tabs && n.lib.tabs.length) await swapNestedTabs(inst, n.lib);
-      if (await swapIconSlot(inst, n.lib)) libIconSwapCount++;
+      const slot = await swapIconSlot(inst, n.lib);
+      if (slot) libIconSwapCount++;
+      hideExtraIconSlots(inst, n.lib, slot);
       return { inst, underflow: false };
     };
     let built = await buildInstance(target);
@@ -1046,10 +1120,12 @@ async function materializeLib(n) {
       // 纯图标钮：比色重选会按底色丢掉图标槽变体，跳过；残留的主档 Label 文本层藏掉
       //（实例内层 visible 是合法 override；REQ-020 操作列实测变体自带 "Label" 泄漏）
       (function dfx(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') { try { c.visible = false; libIconOnlyHiddenCount++; } catch (e0) {} } dfx(c); }); })(built.inst);
-    } else if (/(^|\s)ms-(input|select)(\s|$)/.test(String(n.lib.cls || '')) && !(n.lib.texts && n.lib.texts.length) && !n.lib.text) {
+    } else if (/(^|\s)ms-(input|select|checkbox|radio)(\s|$)/.test(String(n.lib.cls || '')) && !(n.lib.texts && n.lib.texts.length) && !n.lib.text) {
       // 空输入兜底（REQ-018 根因之三）：demo 输入框无 value/placeholder 时 rewriteInstanceText
       // 整段跳过，库主档默认 value="Example" 泄漏——空输入本就不该有可见文案，实例内层 TEXT 层
-      // 全部 visible=false（带 placeholder/value 的输入走改写路径，不进此分支）
+      // 全部 visible=false（带 placeholder/value 的输入走改写路径，不进此分支）。
+      // 十轮：扩到 checkbox/radio——裸勾选框无文本证据时主档 "Checkbox" 文案同样不该可见
+      //（tag 轴关态是第一道闸，这里是结构兜底，双保险不算双计）
       (function htx(nd) { (nd.children || []).forEach(c => { if (c.type === 'TEXT') { try { c.visible = false; libEmptyInputHiddenCount++; } catch (e0) {} } htx(c); }); })(built.inst);
     } else {
       const alt = pickVariantByVisual(comp, target, built.inst, n.lib);
@@ -1358,7 +1434,7 @@ figma.ui.onmessage = async msg => {
   const EXT_SCENE = !!(scene && scene.ext);
   nodeCount = 0; doneCells = 0; totalCells = scene.cells.length;
   iconInstCount = 0; iconFallbackCount = 0; iconDynCount = 0;
-  libInstCount = 0; libFallbackCount = 0; libPropCount = 0; libImportFailCount = 0; libColorPickCount = 0; libShapePickCount = 0; libSwapCount = 0; libTextDoneCount = 0; libColDoneCount = 0; libUnderflowCount = 0; libIconSwapCount = 0; libVisualRepickCount = 0; libSizePickCount = 0; libFontDoneCount = 0; libFontFailCount = 0; libIconOnlyCount = 0; libIconOnlyHiddenCount = 0; libEmptyInputHiddenCount = 0; libColorRepaintCount = 0; instTextCount = 0; instUnderCount = 0; instanceFitFailCount = 0;
+  libInstCount = 0; libFallbackCount = 0; libPropCount = 0; libImportFailCount = 0; libColorPickCount = 0; libShapePickCount = 0; libSwapCount = 0; libTextDoneCount = 0; libColDoneCount = 0; libUnderflowCount = 0; libIconSwapCount = 0; libVisualRepickCount = 0; libSizePickCount = 0; libFontDoneCount = 0; libFontFailCount = 0; libIconOnlyCount = 0; libIconOnlyHiddenCount = 0; libEmptyInputHiddenCount = 0; libColorRepaintCount = 0; instTextCount = 0; instUnderCount = 0; instanceFitFailCount = 0; libAddonHiddenCount = 0; libSlotHiddenCount = 0; libTextSweepCount = 0;
   libDynHitCount = 0; CATALOG_CACHE.clear(); dialogFullPageCount = 0;
   imgFillCount = 0; gradFillCount = 0; alApplyCount = 0;
   rctCount = 0; RCT_NODES = []; cellFrames = [];
@@ -1561,7 +1637,7 @@ figma.ui.onmessage = async msg => {
     // 外部网页（scene.ext）不进本地组件体系——库/令牌段整体替换为模式标记，不报「库实例 0 异常」误导
     const libSeg = EXT_SCENE
       ? '｜外部网页 · 纯图层（不走本地组件库）'
-      : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，文案改写 ' + libTextDoneCount + '，文字色 ' + libColDoneCount + '，字样覆写 ' + libFontDoneCount + (libFontFailCount ? '（失败 ' + libFontFailCount + '）' : '') + '，图标槽换装 ' + libIconSwapCount + (libIconOnlyCount ? '，纯图标钮 ' + libIconOnlyCount + (libIconOnlyHiddenCount ? '（藏 Label ' + libIconOnlyHiddenCount + ' 层）' : '') : '') + (libEmptyInputHiddenCount ? '，空输入藏文案 ' + libEmptyInputHiddenCount + ' 层' : '') + '，视觉复核重选 ' + libVisualRepickCount + '，颜色覆写 ' + libColorRepaintCount + '，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (libSizePickCount ? '，高度择尺寸 ' + libSizePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (instanceFitFailCount ? '，实例内层扩宽失败 ' + instanceFitFailCount + '（Figma 实例模型限制，定宽槽装不下长文案——该块建议守卫拒收本地绘制）' : '') + (libUnderflowCount ? '，内容不齐回退 ' + libUnderflowCount + '（demo 段数超实例容量，整块本地重绘保内容）' : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
+      : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，文案改写 ' + libTextDoneCount + '，文字色 ' + libColDoneCount + '，字样覆写 ' + libFontDoneCount + (libFontFailCount ? '（失败 ' + libFontFailCount + '）' : '') + '，图标槽换装 ' + libIconSwapCount + (libAddonHiddenCount ? '，附加结构隐藏 ' + libAddonHiddenCount : '') + (libSlotHiddenCount ? '，图标槽隐藏 ' + libSlotHiddenCount : '') + (libTextSweepCount ? '，残余文本隐藏 ' + libTextSweepCount : '') + (libIconOnlyCount ? '，纯图标钮 ' + libIconOnlyCount + (libIconOnlyHiddenCount ? '（藏 Label ' + libIconOnlyHiddenCount + ' 层）' : '') : '') + (libEmptyInputHiddenCount ? '，空输入藏文案 ' + libEmptyInputHiddenCount + ' 层' : '') + '，视觉复核重选 ' + libVisualRepickCount + '，颜色覆写 ' + libColorRepaintCount + '，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (libSizePickCount ? '，高度择尺寸 ' + libSizePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (instanceFitFailCount ? '，实例内层扩宽失败 ' + instanceFitFailCount + '（Figma 实例模型限制，定宽槽装不下长文案——该块建议守卫拒收本地绘制）' : '') + (libUnderflowCount ? '，内容不齐回退 ' + libUnderflowCount + '（demo 段数超实例容量，整块本地重绘保内容）' : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
     figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + (instTextCount ? '｜实例文案改写 ' + instTextCount : '') + (instUnderCount ? '｜实例内容回退 ' + instUnderCount : '') + '｜变体集 ' + variantSetCount + (defSetReattach ? '（补挂被吞变体 ' + defSetReattach + '）' : '') + '｜图标库实例 ' + iconInstCount + (iconDynCount ? '（按名动态兜底 ' + iconDynCount + '）' : '') + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
     importing = false; // 连续导入（多页面逐个导入）不被「导入进行中」挡住
     // 飞书任务链路：转完不自动关面板——iframe 里的回写 fetch 需要活着；回写完 ui 发 feishu-close 再关

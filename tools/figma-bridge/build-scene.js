@@ -118,7 +118,7 @@ const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 // 构建号（与插件 PLUGIN_BUILD 同步 bump）：面板开着时 JS 上下文不随磁盘更新重载，旧面板导入新 scene
 // 只会产出旧缺陷板——插件侧 build ≠ PLUGIN_BUILD 拒导并提示重开面板（figma-mock 有红绿靶）
-scene.build = 'r9';
+scene.build = 'r10';
 if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
 // 入口页 URL 归一记录（cell.u）：原型连线——入口内链接 lk 命中其它 cell.u 即挂 ON_CLICK 跳转
 if (EXT && scene.cells[0]) scene.cells[0].u = SITE ? pathKey(SITE) : path.basename(demoPath);
@@ -446,7 +446,9 @@ if (!EXT) try {
         // 块中心的左右关系给出 icL/icR，插件侧图标类轴按位置裁决（ic 保留 = icL||icR 兼容旧消费方）。
         let icL = 0, icR = 0;
         if (icm && icm.__io && n.w) {
-          const icCx = icm.__io[0] + (icm.w || 16) / 2;
+          // 十轮：__io 累计偏移含块自身 n.x（父系绝对坐标），与块内局部系 n.w/2 直接比 → 几乎恒判
+          // icR（REQ-019 工具栏左置 search 图标被记 icR:1、图标槽换装选错位）。先减 n.x 归一到块内系。
+          const icCx = icm.__io[0] - (n.x || 0) + (icm.w || 16) / 2;
           if (icCx < n.w / 2) icL = 1; else icR = 1;
         }
         if (icm) delete icm.__io;

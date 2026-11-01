@@ -473,6 +473,62 @@ const MOCK_LIBS = new Map();
   inputSet.appendChild(mkInputV('Standard', 32)); inputSet.appendChild(mkInputV('Large', 40));
   inputSet.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Standard', 'Large'], defaultValue: 'Standard' } };
   MOCK_LIBS.set('lib:input-x', inputSet);
+
+  // 十轮靶子：真库 Input 结构（Milesight_IOT_Web 实测）——组件集**没有任何 addon/preIcon BOOLEAN 轴**
+  //（只有 Size/State/Filled VARIANT），http:// 前缀块（InputAddon 直发子实例）、28px 设置图标附加块
+  //（Component 1 直发子实例）、person 前图标 + input-suffix（'input' 内层 16px 实例）全是烤进变体的
+  // 结构。七轮布尔轴关态路径对这套结构无效 → 十轮证据隐藏三连：addon 结构隐藏（>24px 直发子实例）/
+  // 槽位换装收口（换装槽之外全藏）/改写 df 剪枝（藏掉的 addon 文本退出对位，值落到值层）。
+  const personIco = mkIconComp('person1'); MOCK_LIBS.set('icon:person1', personIco);
+  const gearIco = mkIconComp('gear1'); MOCK_LIBS.set('icon:gear1', gearIco);
+  const suffixIco = mkIconComp('suffix1'); MOCK_LIBS.set('icon:suffix1', suffixIco);
+  const addonComp = new FNode('COMPONENT', { name: 'Input-Addon', width: 56, height: 32 });
+  addonComp.appendChild(mkText('http://'));
+  MOCK_LIBS.set('lib:input-addon', addonComp);
+  const mkInputRL = () => {
+    const c = new FNode('COMPONENT', { name: 'Size 尺寸=Small, State 状态=normal, Filled 填充=true', width: 220, height: 32 });
+    c.variantProperties = { 'Size 尺寸': 'Small', 'State 状态': 'normal', 'Filled 填充': 'true' };
+    c.componentPropertyDefinitions = {
+      'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+      'State 状态': { type: 'VARIANT', variantOptions: ['normal', 'disable'], defaultValue: 'normal' },
+      'Filled 填充': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'true' },
+      '值': { type: 'TEXT', defaultValue: 'Example' },
+    };
+    const addon = new FNode('INSTANCE', { name: 'Input-Addon', width: 56, height: 32 });
+    addon.mainComponent = addonComp;
+    c.appendChild(addon);
+    const gear = new FNode('INSTANCE', { name: 'Component 1', width: 28, height: 28 });
+    gear.mainComponent = gearIco;
+    c.appendChild(gear);
+    const inner = new FNode('FRAME', { name: 'input', width: 120, height: 32 });
+    const person = new FNode('INSTANCE', { name: 'icon/person', x: 4, y: 8, width: 16, height: 16 });
+    person.mainComponent = personIco;
+    inner.appendChild(person);
+    const val = mkText('Example'); val.x = 28; val.y = 6;
+    inner.appendChild(val);
+    const suf = new FNode('INSTANCE', { name: 'input-suffix', x: 96, y: 8, width: 16, height: 16 });
+    suf.mainComponent = suffixIco;
+    inner.appendChild(suf);
+    c.appendChild(inner);
+    return c;
+  };
+  const inputRLSet = new FNode('COMPONENT_SET', { name: 'Input 真结构', width: 220, height: 32 });
+  inputRLSet.appendChild(mkInputRL());
+  inputRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:input-rl', inputRLSet);
+
+  // 十轮靶子：真库 Checkbox——tag BOOLEAN 默认 true 控标签 <p>{text}</p>、text TEXT 默认 "Checkbox"。
+  // 轴名 tag 此前无规则管辖恒落默认 true → 裸表格勾选框（无文本证据）泄漏 "Checkbox" 文案；
+  // 用户裁定：标题场景（块内有文本）才带文本，表格列只有勾选框。
+  const checkComp = new FNode('COMPONENT', { name: 'Checkbox', width: 90, height: 22 });
+  checkComp.componentPropertyDefinitions = {
+    tag: { type: 'BOOLEAN', defaultValue: true },
+    text: { type: 'TEXT', defaultValue: 'Checkbox' },
+    selected: { type: 'BOOLEAN', defaultValue: false },
+  };
+  const checkLabel = mkText('Checkbox'); checkLabel.x = 22; checkLabel.y = 2;
+  checkComp.appendChild(checkLabel);
+  MOCK_LIBS.set('lib:checkbox-rl', checkComp);
 })();
 
 // ---------- mock figma ----------
@@ -740,6 +796,21 @@ const SCENE = {
           ch: [T('2026-08-01 ~ 2026-08-31', { x: 524, y: 790, w: 190 })] },
         { t: 'f', n: 'ms-input ms-input--lg ms-input--blank', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 740, y: 780, w: 200, h: 40, o: 1,
           lib: { k: 'lib:input-x', f: 'Input 输入框', cls: 'ms-input ms-input--lg ms-input--blank', tok: [], ic: false } },
+        // 十轮：真库 Input 结构 + Checkbox tag 轴（REQ-019 板审计）：①搜索框 = addon 结构隐藏 +
+        // person 槽换装 search + suffix 藏 + 值落值层（addon 内层 http:// 退出对位序列）；
+        // ②无图标值输入 = person/suffix 槽全藏 + Example 改写；③裸 checkbox（无文本证据）=
+        // tag 轴关 + 标签藏；④带文本 checkbox = 标签改写、不藏
+        { t: 'f', n: 'ms-input rl-search', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 240, y: 840, w: 260, h: 32, o: 1,
+          lib: { k: 'lib:input-rl', f: 'Input 真结构', cls: 'ms-input rl-search', tok: [], texts: ['4900 Water #31005621'], tcols: [[0.1, 0.1, 0.1]], ic: true, icL: 1, icnk: 'icon:search2', icnc: [0.4, 0.4, 0.4] },
+          ch: [{ t: 'ic', k: 'icon:search2', f: 'icon/search2', svg: '<svg viewBox="0 0 24 24"></svg>', x: 248, y: 848, w: 16, h: 16, o: 1, col: [0.4, 0.4, 0.4] }, T('4900 Water #31005621', { x: 272, y: 846, w: 180 })] },
+        { t: 'f', n: 'ms-input rl-value', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 520, y: 840, w: 200, h: 32, o: 1,
+          lib: { k: 'lib:input-rl', f: 'Input 真结构', cls: 'ms-input rl-value', tok: [], texts: ['Heat Meter 01'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('Heat Meter 01', { x: 524, y: 846, w: 150 })] },
+        { t: 'f', n: 'ms-checkbox rl-check', f: [], e: [], r: { tl: 3, tr: 3, br: 3, bl: 3 }, clip: false, x: 740, y: 844, w: 16, h: 16, o: 1,
+          lib: { k: 'lib:checkbox-rl', f: 'Checkbox', cls: 'ms-checkbox rl-check', tok: [], ic: false } },
+        { t: 'f', n: 'ms-checkbox rl-check-label', f: [], e: [], r: { tl: 3, tr: 3, br: 3, bl: 3 }, clip: false, x: 800, y: 840, w: 90, h: 22, o: 1,
+          lib: { k: 'lib:checkbox-rl', f: 'Checkbox', cls: 'ms-checkbox rl-check-label', tok: [], texts: ['启用告警'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('启用告警', { x: 822, y: 842, w: 60 })] },
       ],
     },
   }, {
@@ -1140,6 +1211,54 @@ vm.runInContext(code, sandbox);
     blankTexts.length > 0 && blankTexts.every(t => t.visible === false),
     blankTexts.map(t => t.visible).join(','));
   A('空输入藏文案计数入通知', doneMsg0 && /空输入藏文案/.test(doneMsg0), doneMsg0);
+
+  // ---- 十轮：真库 Input 结构 + Checkbox tag 轴（REQ-019 板审计：addon/前图标泄漏 + 表格勾选框文案）----
+  const rlInst = (nm, root) => { let o = null; (function w5(n2) { if (o) return; (n2.children || []).forEach(c => { if (!o && String(c.name || '') === nm && c.type === 'INSTANCE') o = c; else w5(c); }); })(root); return o; };
+  const visText = root => { let o = null; (function w6(nd) { (nd.children || []).forEach(c => { if (o || c.visible === false) return; if (c.type === 'TEXT') o = c; else w6(c); }); })(root); return o; };
+  const rls = iconInsts.find(i => String(i.name).includes('rl-search'));
+  A('真结构搜索框落库实例', !!rls);
+  const addonInst = rls && rlInst('Input-Addon', rls);
+  A('addon 结构隐藏（http:// 前缀块 visible=false）', !!addonInst && addonInst.visible === false,
+    addonInst && String(addonInst.visible));
+  const gearInst = rls && rlInst('Component 1', rls);
+  A('设置图标附加块隐藏（visible=false）', !!gearInst && gearInst.visible === false,
+    gearInst && String(gearInst.visible));
+  const sufInst = rls && rlInst('input-suffix', rls);
+  A('未换装图标槽隐藏（input-suffix visible=false）', !!sufInst && sufInst.visible === false,
+    sufInst && String(sufInst.visible));
+  const personSlot = rls && rlInst('icon/person', rls);
+  A('person 前图标槽换装 search2（icL 位置证据选最左槽）',
+    !!personSlot && personSlot.visible !== false && personSlot.mainComponent && /search2/.test(String(personSlot.mainComponent.name || '')),
+    personSlot && String(personSlot.mainComponent && personSlot.mainComponent.name));
+  const rlsVal = rls && visText(rls);
+  A('值落值层（Example → 4900…，addon 内层 http:// 退出对位序列）',
+    !!rlsVal && /4900 Water/.test(String(rlsVal.characters)), rlsVal && String(rlsVal.characters));
+  const addonTxt = addonInst && (addonInst.children || []).find(c => c.type === 'TEXT');
+  A('addon 内层 http:// 不被误写（红态下值会错落 addon 层）',
+    !!addonTxt && addonTxt.characters === 'http://', addonTxt && String(addonTxt.characters));
+  const rlv = iconInsts.find(i => String(i.name).includes('rl-value'));
+  A('真结构无图标输入落库实例', !!rlv);
+  const rlvPerson = rlv && rlInst('icon/person', rlv);
+  A('无图标证据时前图标槽隐藏（person visible=false，库默认图标零泄漏）',
+    !!rlvPerson && rlvPerson.visible === false, rlvPerson && String(rlvPerson.visible));
+  const rlvVal = rlv && visText(rlv);
+  A('无图标输入值改写（Example → Heat Meter 01）',
+    !!rlvVal && /Heat Meter 01/.test(String(rlvVal.characters)), rlvVal && String(rlvVal.characters));
+  const rcb = iconInsts.find(i => String(i.name) === 'ms-checkbox rl-check');
+  A('裸勾选框落库实例', !!rcb);
+  const rcsp = rcb && Object.assign({}, ...(rcb.setProps || []));
+  A('tag 轴关（tag=false，标签结构不随默认 true 泄漏）', !!rcsp && rcsp.tag === false, JSON.stringify(rcsp));
+  const rcbTxt = rcb ? (function ft5(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft5(c)); }); return o; })(rcb) : [];
+  A('裸勾选框藏主档 Checkbox 文案（表格列只有勾选框、没有文本）',
+    rcbTxt.length > 0 && rcbTxt.every(t => t.visible === false), rcbTxt.map(t => t.visible).join(','));
+  const rcl = iconInsts.find(i => String(i.name) === 'ms-checkbox rl-check-label');
+  A('带文本勾选框落库实例', !!rcl);
+  const rclTxt = rcl && (rcl.children || []).find(c => c.type === 'TEXT');
+  A('标题勾选框文本改写（Checkbox → 启用告警，不藏）',
+    !!rclTxt && rclTxt.characters === '启用告警' && rclTxt.visible !== false,
+    rclTxt && String(rclTxt.characters) + '/' + rclTxt.visible);
+  A('十轮计数入通知（附加结构隐藏/图标槽隐藏）',
+    doneMsg0 && /附加结构隐藏 [1-9]/.test(doneMsg0) && /图标槽隐藏 [1-9]/.test(doneMsg0), doneMsg0);
 
   // ---- 对位-校验-自愈（2026-10-31 强化）：文字/内容错位 + 缺失三根因收口 ----
   const ordInst = iconInsts.find(i => i.name === 'ms-ord');

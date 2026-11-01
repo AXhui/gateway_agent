@@ -173,3 +173,17 @@
 - **单行文本 hug 防换行（materialize）**：浏览器量盒可能窄于 Figma 字形排宽（同字号不同 hinting，host 标题自然 ≈212px vs 盒 208px），`NONE`+定宽遇宽字形即折行。单行文本（无 `n.tr` 省略号、无 `\n`、高 ≤1.6×行高）落图后改 `textAutoResize='WIDTH_AND_HEIGHT'`，x 按对齐锚定（left 不动 / center 保盒中心 / right 保右缘）；`n.tr` 与多行文本保持 NONE+定宽盒。**当前板实测所有文本均单行未折**——本条是系统性预防（旧 scene 定宽盒 + Figma 宽字形必折）。
 - **mock 校准**：FNode 的 TEXT `width` getter 模拟自然宽（chars×fs×0.6）——hug 重锚靶靠它驱动（居中 744→755 / 300→333.2，真 Figma 同字体漂移亚像素级）；**靶 fixture 类名必须避开既有同名靶**（ms-btn--sm 与五轮纯图标钮同名会让 find 串靶，新靶用 ms-btnt--sm）。
 
+
+### 4.14 十轮修复（2026-11-01 REQ-019 板 184:9931：checkbox 文案泄漏 + input addon/前图标泄漏 + icL 坐标系 bug）
+
+> 来源：用户令「checkbox 的引用也没很规范。如果是标题的，才需要这个文本，在 table 列，只有一个勾选框，没有文本。还有 input 也是，还是会有差异，需要隐藏前后的 addon，也需要隐藏前 icon」。修后 mock 201/201（+16 靶，红态 7 红实证）、verify-scene 七页 100%、REQ-019 重建 202 lib 命中证据齐备。
+
+- **icL/icR 坐标系 bug（序列化侧）**：build-scene 的 firstIcon 累计偏移含块自身 `n.x`（父系绝对坐标），却与块内局部系 `n.w/2` 直接比 → 图标几乎恒判右置（REQ-019 工具栏左置 search 被记 `icR:1`，七轮的 preIcon/afterIcon 位置裁决整套失效）。修法：`icCx = __io[0] - (n.x||0) + w/2` 先归一到块内系。
+- **真库 Input 无 addon/preIcon 轴（七轮轴关态路径失效的根因）**：实测 Milesight_IOT_Web 的 Input 组件集只有 `Size 尺寸/State 状态/Filled 填充` 三 VARIANT 轴——http:// 前缀块（InputAddon 直发子实例）、28~44px 设置图标附加块（Component 1 直发子实例）、person 前图标 + input-suffix（'input' 内层 16px 实例）全是**烤进变体的结构**，布尔轴关态对它无效。修法 = 证据隐藏三连（插件 buildInstance 内，顺序敏感）：
+  1. **hideInputAddons**（setProperties 后、改写前）：ms-input 直发子 INSTANCE 中**非图标槽尺寸**（>24px）的结构块 visible=false（≤24px 槽留给换装）；ms-select 只藏名字命中 `addon|affix|附加|前缀|后缀` 的直发子实例（自带 chevron 是语义结构保留）。
+  2. **改写 df 剪枝不可见子树**：Figma 里父层 visible=false 不改子层自身 visible，只查 TEXT 层会漏——addon 藏掉后其内层 http:// 文本必须退出对位序列，demo 值才能落到值层（REQ-019 objname 输入框 "Example 未改写、http:// 被写成 4900 Water" 双症状根因）。swapIconSlot walk 同款剪枝 + 候选按位置裁决（icL 取最左、icR 取最右——首个命中序是主档图层序不保证视觉序）。
+  3. **hideExtraIconSlots**：换装槽之外残余的 ≤24px 图标槽实例（input-suffix、未换装的 person）一律 visible=false；无图标证据（ic=false）时全藏——库默认图标零泄漏。仅 ms-input（select chevron / btn 图标变体是语义结构不藏）。
+- **Checkbox tag 轴（用户裁定）**：真库 Checkbox 的 `tag` BOOLEAN（默认 true）控制标签 `<p>{text}</p>`，轴名此前无规则管辖恒落默认 → 裸表格勾选框泄漏主档 "Checkbox" 文案。新轴规则：`tag|label|文本|文字` → `有文本证据才 true`；**标题场景（块内有文本）才带文本，表格列只有勾选框**。空证据兜底（藏全 TEXT）同步扩到 checkbox/radio（tag 轴关态是第一道闸、结构兜底双保险，不算双计）。
+- **hideLeftoverTexts（残余文本收口）**：实例内可见 TEXT 层多于 demo 文本段数时，超出段 visible=false（排序与 rewriteInstanceText 同款防错位）。仅 input/select/checkbox/radio 载体。
+- **计数可见性**：通知新增「附加结构隐藏 N / 图标槽隐藏 N / 残余文本隐藏 N」。
+- **坑**：①红态靶必须能** discriminate**——「值落值层」用 visText 断言在红态（addon 可见、值错落 addon 层）仍绿，须补「addon 内层 http:// 保持原样」断言才能抓住错位；②靶 fixture 的 icon 槽若是**直发子**（七轮轴模型），addon 隐藏不能一刀切直发子 INSTANCE——按 >24px 尺寸排除槽位，两代库结构（轴式/烤入式）同一插件路径兼容。
