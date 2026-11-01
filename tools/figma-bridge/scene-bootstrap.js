@@ -341,12 +341,22 @@ const BOOTSTRAP = `(function(){
     // 这里合成同款 t:'t' 节点：value 优先（值色 = cs.color），否则 placeholder（::placeholder 计算色）；
     // 几何取内容盒（左内边距 + 行高垂直居中），宽度 canvas 量测（无 DOM 文本节点，Range 不可用）。
     // 排除非文本型 input（checkbox/radio 的 value 是表单语义值，不是可见文案）。
+    // select 选中项（2026-11-01 十二轮）：原生 select 闭合态的选中文案由浏览器绘制、同样无 DOM
+    // 文本节点 → 库 Select 实例值层空白（板上全部下拉只剩 chevron）。取 selectedOptions[0].label 合成，
+    // 值色 = select 的 cs.color；option 子元素闭合态零盒（w<0.5）由 serEl 既有下限自然过滤。
     var phNode=null;
-    if(!txt&&(tag==='input'||tag==='textarea')){
+    if(!txt&&(tag==='input'||tag==='textarea'||tag==='select')){
       var ityp=(el.getAttribute&&el.getAttribute('type'))||'text';
-      if(!/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(ityp)){
-        var rv=String(el.value||'').replace(/\\s+/g,' ').trim();
-        var rph=String((el.getAttribute&&el.getAttribute('placeholder'))||'').replace(/\\s+/g,' ').trim();
+      if(tag==='select'||!/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(ityp)){
+        var rv,rph;
+        if(tag==='select'){
+          var so=(el.selectedOptions&&el.selectedOptions[0])||(el.options&&el.options[el.selectedIndex]);
+          rv=so?String(so.label||so.text||'').replace(/\\s+/g,' ').trim():'';
+          rph='';
+        }else{
+          rv=String(el.value||'').replace(/\\s+/g,' ').trim();
+          rph=String((el.getAttribute&&el.getAttribute('placeholder'))||'').replace(/\\s+/g,' ').trim();
+        }
         var showT=rv||rph,isPh=!rv;
         if(showT){
           var pcs2=isPh?getComputedStyle(el,'::placeholder'):cs;

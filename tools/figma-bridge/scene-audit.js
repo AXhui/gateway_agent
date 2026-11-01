@@ -180,16 +180,25 @@ const AUDIT_MAIN = function (cell, idx) {
     // 表单值/占位镜像（2026-10-31 七轮，input 转化根因）：序列化侧从 value/placeholder 属性合成 t:'t'
     // 节点（DOM 无文本节点，上方正文检查永远跳过 input）——此处单独核对合成节点存在性与字符一致，
     // 防合成逻辑回归丢失（库 Input 实例会退回主档 Example）。空输入无合成节点合法。
-    if (tag === 'input' || tag === 'textarea') {
+    // select 选中项同款镜像（2026-11-01 十二轮）：闭合 select 的选中文案浏览器绘制，核对
+    // selectedOptions[0].label 已入 scene（库 Select 实例值层空白 = 板上下拉全空根因）。
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
       var itypA = (el.getAttribute && el.getAttribute('type')) || 'text';
-      if (!/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(itypA)) {
-        var avv = String(el.value || '').replace(/\s+/g, ' ').trim();
-        var app = String((el.getAttribute && el.getAttribute('placeholder')) || '').replace(/\s+/g, ' ').trim();
+      if (tag === 'select' || !/^(checkbox|radio|button|submit|reset|file|hidden|image|range|color)$/i.test(itypA)) {
+        var avv, app;
+        if (tag === 'select') {
+          var soA = (el.selectedOptions && el.selectedOptions[0]) || (el.options && el.options[el.selectedIndex]);
+          avv = soA ? String(soA.label || soA.text || '').replace(/\s+/g, ' ').trim() : '';
+          app = '';
+        } else {
+          avv = String(el.value || '').replace(/\s+/g, ' ').trim();
+          app = String((el.getAttribute && el.getAttribute('placeholder')) || '').replace(/\s+/g, ' ').trim();
+        }
         var ashow = avv || app;
         if (ashow) {
           var atn = (n.ch || []).filter(function (c) { return c.t === 't'; })[0];
-          if (!atn) fail('text', path, 'input 值/占位未入 scene: "' + ashow.slice(0, 24) + '"');
-          else if (atn.text !== ashow) fail('text', path, 'input 文本不符: "' + String(atn.text).slice(0, 24) + '" vs "' + ashow.slice(0, 24) + '"');
+          if (!atn) fail('text', path, 'input/select 值未入 scene: "' + ashow.slice(0, 24) + '"');
+          else if (atn.text !== ashow) fail('text', path, 'input/select 文本不符: "' + String(atn.text).slice(0, 24) + '" vs "' + ashow.slice(0, 24) + '"');
           else ok();
         }
       }

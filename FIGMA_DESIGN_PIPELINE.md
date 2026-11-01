@@ -44,7 +44,7 @@
 | 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、取源暂存、登记队列、/done 回写飞书；engine=mcp 时调官方链路 |
 | 任务队列 | `tools/figma-bridge/feishu-tasks.json`（gitignore） | server.js 单写（tmp+rename 原子替换），serve.py 只读展示；状态：待转 → 已转 / 已转·回写失败 |
 | 桥接凭据 | `tools/figma-bridge/auth.json`（gitignore） | service account / refresh token，仅本机（mcp 备用链路用） |
-| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：Demo名称/产品分类/需求描述/提示词/demoUrl/Figma链接/Figma状态 + 按钮字段 |
+| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：需求编号/记录类型/生成人/更新时间/产品分类/需求描述/提示词/demoUrl/Figma链接/Figma状态 + 按钮字段（2026-11-01 改版：Demo 名称列已删，反查键 = 需求编号） |
 | 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息（无需改动，沿用旧 Body） |
 | cloudflared 隧道 | quick tunnel，域名随重启变化 | 本机二进制 `~/.local/bin/cloudflared`（brew 4.x 有兼容问题，直装官方 release）；`~/.local/bin/cloudflared tunnel --url http://localhost:8080`，日志 `/tmp/bridge-tunnel.log` |
 | 内部插件（生产链路） | 仓库 `tools/figma-bridge/plugin/` → 部署 `~/Desktop/html-to-figma-internal/` | 面板「飞书任务」区 + serve.py（:8124，/api/list /api/build /api/feishu-tasks /api/feishu-done）+ code.js 导入 |
@@ -89,14 +89,16 @@ curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"local","engine":"local
 
 ```json
 {
-  "demoName":    "<引用：Demo名称>",
+  "demoName":    "<引用：需求编号>",
   "category":    "<引用：产品分类>",
   "requirement": "<引用：需求描述>",
   "prompt":      "<引用：提示词>"
 }
 ```
 
-> `record_id` 可加可不加。加了 → /done 直接写那一行；不加 → 按 **Demo 名称** 自动反查记录再回写。
+> `demoName` 字段名沿用旧 Body 不改，取值改为引用**需求编号**列（2026-11-01 表格改版：Demo 名称列已删）。任何含 `REQ-###` 的字符串都可以——server.js `reqNoOf` 一律提取 `REQ-###` 归一（`REQ-20`→`REQ-020`）后面板显示名与表格反查键。
+
+> `record_id` 可加可不加。加了 → /done 直接写那一行；不加 → 按**需求编号**（`demoName` 提取 REQ-### 归一）自动反查记录再回写（同 REQ 多行时取更新时间最新一条）。
 > `demoUrl` 可选。带了 → 直接下载暂存作导入源；不带也会走「表格反查预览 URL / 本地归档」兜底（见下节）。
 > `engine` 可选：`mcp` → 走附录的官方自动导入备用链路；缺省 = 本地插件登记。
 

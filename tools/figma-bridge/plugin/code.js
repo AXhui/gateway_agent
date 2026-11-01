@@ -27,7 +27,7 @@
 // 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
 // build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
 // 不再静默产出旧缺陷板。两侧同步 bump。
-const PLUGIN_BUILD = 'r11b';
+const PLUGIN_BUILD = 'r12';
 
 const FONT_FAMILY = 'PingFang SC';
 const STYLE_MAP = {
@@ -263,13 +263,16 @@ async function paintIconStrokes(inst, col, tok) {
   // 描边/填充两种落点各按 scope 绑定（icon 族变量多为 SHAPE_FILL；错配 scope 由 tokPaint 内部跳过）
   const sp = tok ? await tokPaint(plain, tok, 'STROKE') : plain;
   const fp = tok ? await tokPaint(plain, tok, 'SHAPE_FILL') : plain;
+  // 几何节点全集（2026-11-01 十二轮）：库 icon 组件的默认填充是自家语义色（#272E3B 深 / #C9CBCE 浅），
+  // 不是纯黑——旧逻辑只重涂「近纯黑填充」漏掉库默认色，info/copy/more 落图保持库默认深色。
+  // demo 图标经 MS_ICONS 单色（currentColor），几何层描边与纯 SOLID 填充一律按 demo 色重涂。
+  const GEO = { VECTOR: 1, RECTANGLE: 1, ELLIPSE: 1, LINE: 1, POLYGON: 1, STAR: 1, BOOLEAN_OPERATION: 1 };
   (function walk(nd) {
     try {
-      if ('strokes' in nd && nd.strokes.length) nd.strokes = [sp];
-      // fill 型图标（无描边、纯黑填充=currentColor 默认）：填色一并覆盖
-      else if (nd.type === 'VECTOR' && nd.fills && nd.fills.length === 1 && nd.fills[0].type === 'SOLID' &&
-        nd.fills[0].color.r < 0.01 && nd.fills[0].color.g < 0.01 && nd.fills[0].color.b < 0.01)
-        nd.fills = [fp];
+      if (GEO[nd.type]) {
+        if ('strokes' in nd && nd.strokes.length) nd.strokes = [sp];
+        if (nd.fills && nd.fills.length && nd.fills.every(p => p.type === 'SOLID')) nd.fills = [fp];
+      }
     } catch (e) {}
     if (nd.children) nd.children.forEach(walk);
   })(inst);

@@ -197,3 +197,12 @@
 - **审计启用（能套现有裁决机的才开）**：`ms-segmented-item → components/Segmented`（选中轴显式 token；尺寸轴 28.8 vs 大30/中26 平局不判走默认+resize；组级 Segmented-group 弃用——数量/选中位是结构事实非类名，token 表达不了且组宽烤死）、`ms-timeline-dot → time-dot`（单轴 status 裸值无碰撞：裸→进行中 / success→完成 / error→失败 / muted·warm→等待，warm 色差由 repaintLibInstance 按 HTML 兜正；Timeline 整条与 components/time 项集内容烤死弃用）。
 - **勘验后维持 disabled（记录启用条件）**：`ms-progress`——Progress-Line/Status-Normal 集 Value 值轴仅 5%~95% 的 5% 离散档、宽度烤死（large 400 / Small 174），HTML 任意 % 内层填充无法表达（实例 resize 只缩根、内层不随比例重排，statCard 同族判例）；状态集（Success/Error/Warn/Waiting × Small）同因。启用条件 = 库出填充条独立子组件或内层比例 resize 可靠化。其余 13 条 disabled（表格数据行/表单项/卡片内容等动态内容、文本节点无类名）维持诚实原则。
 - **端到端验证载体坑**：REQ-019 九个导出状态无一打开含 segmented/timeline 的视图（元素在内联 runtime 的 JS 模板串里）——grep `class="` 计数会误判「已渲染」；用 /tmp 可见页验 walkLib 证据（修饰 token 在前、裸类兜底 appended 在后、col/高度证据齐）后再重建 REQ scene 交还面板。
+
+### 4.16 十二轮修复（2026-11-01 REQ-019 板 187:14922：select 选中值消失 + 库默认色图标不重涂）
+
+> 来源：用户令「input的文本消失了，input标题的icon颜色也不对，应该是灰色」。修后 mock **234/234**（+10 靶，红态 1 红正中填充重涂靶）、verify-scene 七页 100%（REQ-019 断言 11904→11909，select 值入审计）、构建号两侧 r11b→**r12**。
+
+- **select 选中值序列化（序列化侧根因）**：原生 `<select>` 闭合态的选中项文案由**浏览器绘制**（selectedOptions[0].label），无 DOM 文本节点——七轮只合成 input/textarea → ms-select 块 `lib.texts` 恒空 → 插件 hideLeftoverTexts 把实例内层 TEXT 全藏（板上全部下拉只剩 chevron）。修法：七轮合成块扩到 select（值 = selectedOptions[0].label||text，值色 = cs.color；option 子元素闭合态零盒由 serEl 既有 w<0.5 下限自然过滤），scene-audit 补镜像（input/select 值必须入 scene）。
+- **排他守卫写反（本层自伤，红态由 verify-scene 揭示）**：非文本型排除正则写成 `tag!=='select'&&!/^(checkbox|…)$/` —— select 整体短路**永远不进合成分支**（本意是「select 免检 type、input 才排除非文本型」，正确写法 `tag==='select'||!/^(…)$/`）。教训：**audit 镜像必须与实现同 PR**——mock 靶（scene 侧已供 texts）全绿，verify-scene 首跑 REQ-019 text×5 才暴露合成根本没跑。
+- **库默认色图标无条件重涂（插件侧根因，paintIconStrokes）**：库 icon 组件的默认填充是自家语义色（实测 #272E3B 深蓝黑 / #C9CBCE 浅灰），不是纯黑——旧填充分支只重涂「近纯黑 <0.01」→ info/copy/more 落图保持库默认深色（描边型 search 一直正常）。修法：几何节点全集（VECTOR/RECTANGLE/ELLIPSE/LINE/POLYGON/STAR/BOOLEAN_OPERATION）内，`strokes` 有值重涂描边、`fills` 纯 SOLID 无条件重涂填充（demo 图标经 MS_ICONS 单色 currentColor，混合色=部分重涂即本根因）。板取证：16×16 info 图标像素 #272E3B×8 + #787D85×18 + #C9CBCE×5。
+- **板错位一格 = 暂存副本旧版（流程结论，非工具缺陷）**：板 9 格全部显示下一态内容、末格空帧（serEl-null 兜底帧 h:600）——14:57 scene 来自暂存副本的**旧版 demo**（states name/setup 错位）；当前源 9 态全部健康（探针 sameRef/display/childCount/contentText 四证）。**飞书表格预览 URL 服务的是下载时刻的 demo 版本**——改 demo 后重转必须重新触发任务，不能复用旧暂存。

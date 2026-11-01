@@ -517,6 +517,47 @@ const MOCK_LIBS = new Map();
   inputRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
   MOCK_LIBS.set('lib:input-rl', inputRLSet);
 
+  // 十二轮靶子 A：库默认语义色图标（REQ-019 板 187:14922「input 标题 icon 颜色不对，应该是灰色」）——
+  // 库 icon 组件默认填充不是纯黑而是自家语义色（实测 #272E3B 深蓝黑 ×8px / #C9CBCE 浅灰），
+  // 旧 paintIconStrokes 填充分支只重涂「近纯黑 <0.01」→ 库默认色原样泄漏（info 图标画成深蓝黑）。
+  // 靶：填充 + 描边两 path 均带库默认 #272E3B，demo 证据灰 #6B7785 → 全部无条件按 HTML 重涂。
+  const mkIconCompLib = (key, col) => {
+    const c = new FNode('COMPONENT', { name: 'icon/' + key, width: 24, height: 24 });
+    const sp = new FNode('VECTOR', { width: 24, height: 24, strokes: [{ type: 'SOLID', color: col }], fills: [] });
+    const fp = new FNode('VECTOR', { width: 24, height: 24, fills: [{ type: 'SOLID', color: col }], strokes: [] });
+    c.appendChild(sp); c.appendChild(fp);
+    return c;
+  };
+  MOCK_LIBS.set('icon:info-rl', mkIconCompLib('info-rl', { r: 0.153, g: 0.180, b: 0.231 }));
+
+  // 十二轮靶子 B：库 Select 组件集（REQ-019 板 select 选中值消失）——原生 <select> 的选中项文案是
+  // 浏览器绘制（无 DOM 文本节点），序列化侧合成 t:'t' 后 texts 非空，插件侧既有链路应把值写进值层。
+  // 结构对齐真库：值 TEXT（'值' TEXT 属性默认 Example）+ chevron 语义结构（保留）+ addon 直发子实例
+  // （hideInputAddons 按 addon|affix 名隐藏，内层文案不得被对位改写）。
+  const chevIco = mkIconComp('chevron-down'); MOCK_LIBS.set('icon:chevron-dn', chevIco);
+  const mkSelectRL = () => {
+    const c = new FNode('COMPONENT', { name: 'Size 尺寸=Small, State 状态=normal', width: 200, height: 32 });
+    c.variantProperties = { 'Size 尺寸': 'Small', 'State 状态': 'normal' };
+    c.componentPropertyDefinitions = {
+      'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+      'State 状态': { type: 'VARIANT', variantOptions: ['normal', 'disable'], defaultValue: 'normal' },
+      '值': { type: 'TEXT', defaultValue: 'Example' },
+    };
+    const addon = new FNode('INSTANCE', { name: 'affix', width: 56, height: 32 });
+    addon.mainComponent = addonComp;
+    c.appendChild(addon);
+    const val = mkText('Example'); val.x = 12; val.y = 6;
+    c.appendChild(val);
+    const chev = new FNode('INSTANCE', { name: 'chevron-down', x: 176, y: 8, width: 16, height: 16 });
+    chev.mainComponent = chevIco;
+    c.appendChild(chev);
+    return c;
+  };
+  const selectRLSet = new FNode('COMPONENT_SET', { name: 'Select 下拉选择', width: 200, height: 32 });
+  selectRLSet.appendChild(mkSelectRL());
+  selectRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:select-x', selectRLSet);
+
   // 十一轮靶子：库 steps-item（Milesight_IOT_Web 实测轴系：Layout 布局 × Small 小型 × Status 状态）。
   // tail 连接线烤在 item 内（header.tail 内 line、88px 定宽）、步号数字是 icon 子实例内可覆写 TEXT——
   // 整条 steps 集 Number 轴只有 3~6 → 逐项映射：done/active/裸类 token 裁决 Status，Small 走高度裁决
@@ -920,6 +961,15 @@ const SCENE = {
         { t: 'f', n: 'ms-checkbox rl-check-label', f: [], e: [], r: { tl: 3, tr: 3, br: 3, bl: 3 }, clip: false, x: 800, y: 840, w: 90, h: 22, o: 1,
           lib: { k: 'lib:checkbox-rl', f: 'Checkbox', cls: 'ms-checkbox rl-check-label', tok: [], texts: ['启用告警'], tcols: [[0.1, 0.1, 0.1]], ic: false },
           ch: [T('启用告警', { x: 822, y: 842, w: 60 })] },
+        // 十二轮：①库默认色图标（#272E3B 填充+描边）按 demo 灰 #6B7785 重涂；②select 选中值
+        //（原生 <select> 无 DOM 文本，序列化合成 t:'t' 后 texts=['M-Bus'] → 值落值层 + addon 隐藏
+        // + chevron 保留）；③无文本证据 select → 值层全藏（空下拉不泄漏 Example）
+        { t: 'ic', k: 'icon:info-rl', f: 'icon/info-rl', svg: '<svg viewBox="0 0 24 24"></svg>', x: 940, y: 844, w: 16, h: 16, o: 1, col: [0.42, 0.47, 0.52], ctk: 'color-icon-secondary' },
+        { t: 'f', n: 'ms-select rl-selval', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 840, w: 200, h: 32, o: 1,
+          lib: { k: 'lib:select-x', f: 'Select 下拉选择', cls: 'ms-select rl-selval', tok: [], texts: ['M-Bus'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('M-Bus', { x: 984, y: 846, w: 150 })] },
+        { t: 'f', n: 'ms-select rl-selblank', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 1200, y: 840, w: 160, h: 32, o: 1,
+          lib: { k: 'lib:select-x', f: 'Select 下拉选择', cls: 'ms-select rl-selblank', tok: [], ic: false } },
       ],
     },
   }, {
@@ -1368,6 +1418,37 @@ vm.runInContext(code, sandbox);
     rclTxt && String(rclTxt.characters) + '/' + rclTxt.visible);
   A('十轮计数入通知（附加结构隐藏/图标槽隐藏）',
     doneMsg0 && /附加结构隐藏 [1-9]/.test(doneMsg0) && /图标槽隐藏 [1-9]/.test(doneMsg0), doneMsg0);
+
+  // ---- 十二轮：库默认色图标重涂 + select 选中值链路（REQ-019 板 187:14922 input 文本消失 / icon 颜色不对）----
+  const infoInst = iconInsts.find(i => String(i.name) === 'icon/info-rl');
+  A('库默认色图标落库实例', !!infoInst);
+  const infoFp = infoInst && (infoInst.children || []).find(v => v.type === 'VECTOR' && (v.fills || []).length && !(v.strokes || []).length);
+  A('库默认色填充无条件重涂（#272E3B → demo 灰，不再只认近纯黑 <0.01）',
+    !!infoFp && Math.abs(infoFp.fills[0].color.r - 0.42) < 0.02 && Math.abs(infoFp.fills[0].color.g - 0.47) < 0.02 && Math.abs(infoFp.fills[0].color.b - 0.52) < 0.02,
+    infoFp && JSON.stringify(infoFp.fills[0].color));
+  const infoSp = infoInst && (infoInst.children || []).find(v => v.type === 'VECTOR' && (v.strokes || []).length);
+  A('库默认色描边同步重涂（strokes → demo 灰）',
+    !!infoSp && Math.abs(infoSp.strokes[0].color.r - 0.42) < 0.02 && Math.abs(infoSp.strokes[0].color.b - 0.52) < 0.02,
+    infoSp && JSON.stringify(infoSp.strokes[0].color));
+  const selV = iconInsts.find(i => i.name === 'ms-select rl-selval');
+  A('select 落库实例', !!selV);
+  const selValT = selV && visText(selV);
+  A('select 选中值落值层（Example → M-Bus：原生 select 无 DOM 文本，序列化合成后 texts 非空才可达）',
+    !!selValT && String(selValT.characters) === 'M-Bus', selValT && String(selValT.characters));
+  const selAddon = selV && rlInst('affix', selV);
+  A('select addon 直发子隐藏（affix visible=false）', !!selAddon && selAddon.visible === false,
+    selAddon && String(selAddon.visible));
+  const selAddonTxt = selAddon && (selAddon.children || []).find(c => c.type === 'TEXT');
+  A('select addon 内层 http:// 不被误写（值错落 addon 层 = 红态判别）',
+    !!selAddonTxt && selAddonTxt.characters === 'http://', selAddonTxt && String(selAddonTxt.characters));
+  const selChev = selV && rlInst('chevron-down', selV);
+  A('select chevron 语义结构保留（不随 addon 隐藏）', !!selChev && selChev.visible !== false,
+    selChev && String(selChev.visible));
+  const selB = iconInsts.find(i => i.name === 'ms-select rl-selblank');
+  A('空 select 落库实例', !!selB);
+  const selBTxt = selB ? (function ft6(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft6(c)); }); return o; })(selB) : [];
+  A('空 select 藏值层 Example（无文本证据不泄漏默认值）',
+    selBTxt.length > 0 && selBTxt.every(t => t.visible === false), selBTxt.map(t => t.visible).join(','));
 
   // ---- 十一轮：步骤条逐项换库 steps-item（REQ-019 向导条；Status token 裁决 + Small 高度裁决 + tail 证据）----
   const stpA = iconInsts.find(i => i.name === 'ms-step ms-step--active');

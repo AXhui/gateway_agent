@@ -106,51 +106,22 @@ function updateRecordStatus(recordId, status, jobId) {
   ], (code, out) => console.log(`[writeback:${jobId}] 状态置为${status} lark-cli 退出 code=${code} ${out.slice(0, 300)}`))
 }
 
-function writeBackToFeishu(task, jobId, url) {
+async function writeBackToFeishu(task, jobId, url) {
   // 按最终结果决定回写动作：有链接 → 写链接+已完成；无链接 → 标记失败（不让"转Figma中"卡住）
   const apply = (recordId) => url
     ? updateRecordField(recordId, url, jobId)
     : updateRecordStatus(recordId, '失败', jobId)
 
   if (task.record_id) return apply(task.record_id)
-  // 兜底：工作流没带 record_id 时，按 Demo 名称+版本号 反查记录（同名多版本靠版本号区分）
-  if (!task.demoName) {
-    console.log(`[writeback:${jobId}] 无 record_id 也无 demoName，跳过回写`)
+  const reqNo = reqNoOf(task)
+  if (!reqNo) {
+    console.log(`[writeback:${jobId}] 无 record_id 且提取不到 REQ 编号（demoName=${task.demoName}），跳过回写`)
     return
   }
-  const conditions = [["Demo 名称", "Is", task.demoName]]
-  const body = {
-    keyword: task.demoName,
-    search_fields: ["Demo 名称"],
-    select_fields: ["Demo 名称"],
-    filter: { logic: "and", conditions },
-    limit: 20,
-  }
-  larkCli([
-    'base', '+record-search',
-    '--base-token', FEISHU.baseToken,
-    '--table-id', FEISHU.tableId,
-    '--json', JSON.stringify(body),
-    '--format', 'json',
-    '--as', 'user',
-  ], (code, out) => {
-    if (code !== 0) return console.log(`[writeback:${jobId}] 反查失败 code=${code} ${out.slice(0, 200)}`)
-    let ids = []
-    try {
-      const data = JSON.parse(out).data
-      ids = (data.record_id_list || []).filter((_, i) => {
-        const row = data.data[i] || []
-        return row[0] === task.demoName
-      })
-    } catch (e) {
-      return console.log(`[writeback:${jobId}] 反查结果解析失败:`, e.message)
-    }
-    if (!ids.length) {
-      return console.log(`[writeback:${jobId}] 表里没找到 Demo 名称=${task.demoName} 的记录，跳过回写`)
-    }
-    console.log(`[writeback:${jobId}] 按 Demo 名称反查命中 ${ids.length} 条：${ids.join(', ')}`)
-    ids.forEach((id) => apply(id))
-  })
+  const id = await latestRowByReqNo(reqNo, `writeback:${jobId}`)
+  if (!id) return console.log(`[writeback:${jobId}] 表里没找到 需求编号=${reqNo} 的记录，跳过回写`)
+  console.log(`[writeback:${jobId}] 按需求编号 ${reqNo} 反查最新行：${id}`)
+  apply(id)
 }
 
 // ---- html.to.design 认证（自有凭据，独立于 claude 的存储）----
@@ -364,6 +335,44 @@ function extractUrl(text) {
   return m ? m[0] : null
 }
 
+// 2026-11-01 表格改版：「Demo 名称」列已删（新 schema = 需求编号/记录类型/生成人/更新时间），
+// 工作流 payload 的旧引用 <引用：Demo名称> 取不到值时会落成路径/生成人串（实测
+// 「chromewk/05_release/REQ-020/demo.html」）。面板显示名与表格反查键一律从中提取 REQ-### 归一。
+function reqNoOf(task) {
+  const raw = String((task && (task.reqNo || task.demoName)) || '')
+  const m = raw.match(/REQ-(\d+)/i)
+  return m ? 'REQ-' + String(Number(m[1])).padStart(3, '0') : null
+}
+
+// 按需求编号反查行，取「更新时间」最新的一条（同一 REQ 存在 新建+多条更新 历史行）
+async function latestRowByReqNo(reqNo, tag) {
+  const body = {
+    keyword: reqNo, search_fields: ['需求编号'],
+    select_fields: ['需求编号', '更新时间'],
+    filter: { logic: 'and', conditions: [['需求编号', 'Is', reqNo]] },
+    limit: 20,
+  }
+  const { code, out } = await larkCliAsync([
+    'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+    '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
+  ])
+  if (code !== 0) { console.log(`[${tag}] 按需求编号反查失败 code=${code} ${String(out).slice(0, 200)}`); return null }
+  try {
+    const data = JSON.parse(out).data
+    const ids = data.record_id_list || []
+    let best = null, bestTs = -1
+    ;(data.data || []).forEach((row, i) => {
+      if (!ids[i] || String(row[0] || '').trim() !== reqNo) return
+      const ts = Date.parse(String(row[1] || '').replace(/-/g, '/')) || 0
+      if (ts >= bestTs) { bestTs = ts; best = ids[i] }
+    })
+    return best
+  } catch (e) {
+    console.log(`[${tag}] 反查结果解析失败:`, e.message)
+    return null
+  }
+}
+
 function resolveDemoSource(task, jobId, cb) {
   const finish = (info, src) => {
     console.log(info
@@ -384,9 +393,9 @@ function resolveDemoSource(task, jobId, cb) {
     })
   }
   const fromLocal = () => {
-    const m = String(task.demoName || '').match(/REQ-(\d+)/i)
-    if (m) {
-      const p = `${REPO_ROOT}/05_release/REQ-${m[1]}/demo.html`
+    const reqNo = reqNoOf(task)
+    if (reqNo) {
+      const p = `${REPO_ROOT}/05_release/${reqNo}/demo.html`
       if (fs.existsSync(p)) {
         console.log(`[demo:${jobId}] 用本地归档 ${p}`)
         return finish({ htmlPath: p, src: '本地归档' }, '本地归档')
@@ -395,11 +404,12 @@ function resolveDemoSource(task, jobId, cb) {
     finish(null)
   }
   const fromRecord = () => {
-    if (!task.demoName) return fromLocal()
-    const conditions = [["Demo 名称", "Is", task.demoName]]
+    const reqNo = reqNoOf(task)
+    if (!reqNo) return fromLocal()
+    const conditions = [["需求编号", "Is", reqNo]]
     const body = {
-      keyword: task.demoName, search_fields: ["Demo 名称"],
-      select_fields: ["Demo 名称", "预览 URL"],
+      keyword: reqNo, search_fields: ["需求编号"],
+      select_fields: ["需求编号", "预览 URL", "更新时间"],
       filter: { logic: "and", conditions }, limit: 5,
     }
     larkCli([
@@ -409,12 +419,15 @@ function resolveDemoSource(task, jobId, cb) {
       let url = null
       try {
         const data = JSON.parse(out).data
-        // 同名行可能有多条（历史同步重复），遍历取第一条带可用链接的，空链接行跳过
-        for (const row of data.data || []) {
-          if ((row[0] || '').trim() !== String(task.demoName).trim()) continue
+        // 同一 REQ 有多条历史行（新建+更新）：按更新时间取最新一条带可用链接的，空链接行跳过
+        let bestTs = -1
+        ;(data.data || []).forEach((row, i) => {
+          if ((row[0] || '').trim() !== reqNo) return
           const u = extractUrl(row[1])
-          if (u) { url = u; break }
-        }
+          if (!u) return
+          const ts = Date.parse(String(row[2] || '').replace(/-/g, '/')) || 0
+          if (ts >= bestTs) { bestTs = ts; url = u }
+        })
       } catch (e) { /* 落到本地归档兜底 */ }
       if (!url) {
         console.log(`[demo:${jobId}] 表格「预览 URL」列无可用链接（未上传或 UNC 占位），走本地归档兜底`)
@@ -507,6 +520,11 @@ function runTask(task, jobId, done) {
 // ---- 本地链路：登记任务（取源 + 暂存 + 写队列），转完回写（/done）----
 
 function registerLocalTask(task, jobId, res) {
+  const reqNo = reqNoOf(task)
+  // 面板显示名归一：本身以 REQ-### 开头的保留全名（「REQ-020 · WMBUS 采集」）；
+  // 旧工作流引用取不到值落成的路径/生成人串则归一为 REQ-###，与表格需求编号一致
+  const displayName = reqNo && !/^REQ-\d+/i.test(String(task.demoName || '').trim())
+    ? reqNo : (task.demoName || '')
   resolveDemoSource(task, jobId, (demo) => {
     if (!demo) {
       console.log(`[task:${jobId}] 三层取源均未命中，本地登记失败，标记表格行失败`)
@@ -519,7 +537,7 @@ function registerLocalTask(task, jobId, res) {
       if (!staged.startsWith(REPO_ROOT)) {
         // 云端下载落在 /tmp：挪进 serve.py 白名单（~/Desktop/_drops/feishu/），面板才可见可转
         fs.mkdirSync(STAGE_DIR, { recursive: true })
-        const safe = String(task.demoName || 'demo').replace(/[^\w\-.]+/g, '_').slice(0, 60) || 'demo'
+        const safe = String(displayName || 'demo').replace(/[^\w\-.]+/g, '_').slice(0, 60) || 'demo'
         staged = path.join(STAGE_DIR, `${safe}-${jobId}.html`)
         fs.copyFileSync(demo.htmlPath, staged)
       }
@@ -532,7 +550,8 @@ function registerLocalTask(task, jobId, res) {
     const pad = (x) => (x < 10 ? '0' : '') + x
     const t = {
       id: String(jobId), jobId,
-      demoName: task.demoName || '',
+      demoName: displayName,
+      reqNo: reqNo || '',
       recordId: task.record_id || '',
       time: `${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
       status: '待转', src: demo.src || '',
@@ -551,26 +570,11 @@ async function feishuApplyDone(task, taskId, url) {
   let recordIds = []
   if (task.recordId) {
     recordIds = [task.recordId]
-  } else if (task.demoName) {
-    const conditions = [["Demo 名称", "Is", task.demoName]]
-    const body = {
-      keyword: task.demoName, search_fields: ["Demo 名称"],
-      select_fields: ["Demo 名称"],
-      filter: { logic: "and", conditions }, limit: 20,
-    }
-    const { code, out } = await larkCliAsync([
-      'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
-      '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
-    ])
-    if (code !== 0) return { ok: false, error: '按名称反查失败 code=' + code + ' ' + String(out).slice(0, 200) }
-    try {
-      const data = JSON.parse(out).data
-      recordIds = (data.record_id_list || []).filter((_, i) => {
-        const row = data.data[i] || []
-        return row[0] === task.demoName
-      })
-    } catch (e) {
-      return { ok: false, error: '反查结果解析失败：' + e.message }
+  } else {
+    const reqNo = reqNoOf(task)
+    if (reqNo) {
+      const id = await latestRowByReqNo(reqNo, `done:${taskId}`)
+      if (id) recordIds = [id]
     }
   }
   if (!recordIds.length) return { ok: false, error: '表里没找到对应记录（recordId 为空且按名称未反查到）' }
