@@ -223,33 +223,25 @@ async function fetchScene(autoImport){
 }
 
 function pad2(x){ return (x < 10 ? '0' : '') + x; }
-// 「选择 HTML」下拉 = 飞书任务组 + 本地 HTML 组；两份清单任一刷新都整体重建（选中项尽量保持）
+// 「选择 HTML」下拉 = 单一列表：飞书任务（REQ 编号 · 状态，置顶）+ 本地 HTML；两份清单任一刷新都整体重建（选中项尽量保持）
 function renderHtmlSel(){
   var sel = $('htmlSel');
   var cur = sel.value;
   sel.innerHTML = '';
-  if (feishuTasks.length){
-    var g = document.createElement('optgroup');
-    g.label = '飞书任务（选中后点下方按钮即转 + 自动回写表格）';
-    feishuTasks.slice(0, 20).forEach(function(t){
-      var o = document.createElement('option');
-      o.value = 'ft:' + t.id;
-      o.textContent = (t.demoName || ('任务 ' + t.id)) + ' · ' + t.status;
-      if (!t.path) o.disabled = true;
-      g.appendChild(o);
-    });
-    sel.appendChild(g);
-  }
-  var g2 = document.createElement('optgroup');
-  g2.label = '本地 HTML';
+  feishuTasks.slice(0, 20).forEach(function(t){
+    var o = document.createElement('option');
+    o.value = 'ft:' + t.id;
+    o.textContent = (t.demoName || ('任务 ' + t.id)) + ' · ' + t.status;
+    if (!t.path) o.disabled = true;
+    sel.appendChild(o);
+  });
   htmlList.forEach(function(h){
     var o = document.createElement('option');
     var d = new Date(h.mtime*1000);
     o.value = h.path;
     o.textContent = pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes())+' · '+h.rel;
-    g2.appendChild(o);
+    sel.appendChild(o);
   });
-  sel.appendChild(g2);
   for (var i=0;i<sel.options.length;i++){
     if (sel.options[i].value === cur){ sel.selectedIndex = i; break; }
   }

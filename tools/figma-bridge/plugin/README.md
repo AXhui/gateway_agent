@@ -11,7 +11,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
         → 插件面板选 HTML → 生成 scene.json → 落图（图标/控件走库实例，库目录动态找回）
 ```
 
-- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉顶部飞书任务组展示（REQ 名 · 状态），选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli），回写失败面板不关、可「重试回写」；已转/失败任务在下方管理区「补填链接 / 重试回写」（无可管理行时隐藏）。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
+- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号 · 状态**，与表格需求编号列一致，置顶）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli），回写失败面板不关、可「重试回写」；已转/失败任务在下方管理区「补填链接 / 重试回写」（无可管理行时隐藏）。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
 
 - **图标实例化**：demo 内联的 `MS_ICONS`（Lucide 集）经签名反查识别后，按 `tools/figma-bridge/icon-keys.json` 映射成 **Milesight_IOT_Web 团队库图标组件实例**（颜色按 currentColor 换算成描边覆盖）；无映射/导入失败自动回退矢量 SVG。库映射重建方法见 icon-keys.json 头注释。
 - **颜色令牌绑定（2026-10-30）**：落 Figma 的实色不新建裸色——build-scene 按 tokens.css 令牌名反查（跟随页面主题）产出 `scene.tokVars`，插件按 `tools/figma-bridge/token-vars.json` 注册表 `importVariableByKeyAsync` 导入库「Color Token」变量并 `setBoundVariableForPaint` 绑定（scope 门禁 + 读回校验，库值≠demo 色自动回退裸色）；改库变量全局改稿。完成通知报「令牌绑定 N」，N=0 且有 tokVars 即异常（查注册表 key / 库订阅）。
