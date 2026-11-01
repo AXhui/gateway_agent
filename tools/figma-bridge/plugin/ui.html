@@ -212,7 +212,26 @@ async function fetchScene(autoImport){
 }
 
 function pad2(x){ return (x < 10 ? '0' : '') + x; }
-// 「选择 HTML」下拉 = 单一列表：飞书任务（REQ 编号，置顶，无状态标识）+ 本地 HTML；两份清单任一刷新都整体重建（选中项尽量保持）
+// 导入时间映射（用户指令：本地 HTML 按导入时间排序）：历史里 payload.path 命中的文件取最近一次导入时间；
+// 新条目带 ts(ms)；旧条目只有 "MM-DD HH:mm" 字符串，按当年解析、跨年（解析出未来日期）回退上一年
+function parseTimeStr(s){
+  var mt = /^(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(s || '');
+  if (!mt) return 0;
+  var now = new Date();
+  var d = new Date(now.getFullYear(), mt[1]-1, +mt[2], +mt[3], +mt[4]);
+  if (d.getTime() - now.getTime() > 7*864e5) d = new Date(now.getFullYear()-1, mt[1]-1, +mt[2], +mt[3], +mt[4]);
+  return d.getTime();
+}
+function impTimeMap(){
+  var m = {};
+  hist.forEach(function(h){
+    var p = h && h.payload && h.payload.path;
+    if (!p || (p in m)) return;   // hist 新→旧，首条即最近一次导入
+    m[p] = h.ts || parseTimeStr(h.time);
+  });
+  return m;
+}
+// 「选择 HTML」下拉 = 单一列表：飞书任务（REQ 编号，置顶，无状态标识）+ 本地 HTML（导入过的按导入时间新→旧，没导过的按文件时间排后）
 function renderHtmlSel(){
   var sel = $('htmlSel');
   var cur = sel.value;
@@ -224,9 +243,16 @@ function renderHtmlSel(){
     o.textContent = t.demoName || ('任务 ' + t.id);
     sel.appendChild(o);
   });
-  htmlList.forEach(function(h){
+  var imp = impTimeMap();
+  htmlList.slice().sort(function(a, b){
+    var ia = imp[a.path] || 0, ib = imp[b.path] || 0;
+    if (ia && ib) return ib - ia;                 // 都导过 → 导入时间新→旧
+    if (ia) return -1;                            // 只 a 导过 → a 靠前
+    if (ib) return 1;
+    return (b.mtime || 0) - (a.mtime || 0);       // 都没导过 → 文件时间新→旧
+  }).forEach(function(h){
     var o = document.createElement('option');
-    var d = new Date(h.mtime*1000);
+    var d = imp[h.path] ? new Date(imp[h.path]) : new Date(h.mtime*1000);
     o.value = h.path;
     o.textContent = pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes())+' · '+h.rel;
     sel.appendChild(o);
@@ -399,11 +425,12 @@ function pushHist(pl){
   var key = JSON.stringify(pl);
   hist = hist.filter(function(h){ return JSON.stringify(h.payload) !== key; });
   var d = new Date(), pad = function(x){ return (x < 10 ? '0' : '') + x; };
-  hist.unshift({payload:pl, label:histLabel(pl), time:pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())});
+  hist.unshift({payload:pl, label:histLabel(pl), ts:d.getTime(), time:pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())});
   if (hist.length > 12) hist.length = 12;
   saveHist(); renderHist();
 }
 function renderHist(){
+  renderHtmlSel();   // 历史异步回填后按导入时间重排「选择 HTML」本地列表（loadList 首渲时 hist 可能还没到）
   var w = $('histWrap'), list = $('histList');
   if (!hist.length){ w.style.display = 'none'; return; }
   w.style.display = '';

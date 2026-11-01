@@ -10,18 +10,20 @@
 
 ```
 飞书多维表格 ──点按钮──▶ 自动化工作流「UED确认转Figma通知设计师」
-                              │ HTTP POST（需求字段；record_id 可选）
+                              │ ① 置状态节点：Figma状态 = 转Figma中（⚠ 必须排在 HTTP 节点之前）
+                              │ ② HTTP POST（需求字段，经 cloudflare 隧道 —— 只是加速通道，失败不阻断）
                               ▼
-              cloudflare 隧道（公网临时域名）
-                              │
-                              ▼
-              本机桥接 server.js :8080（POST /task，engine=local 默认）
+              本机桥接 server.js :8080（engine=local 默认）
+                ├─ POST /task：隧道可达时立即登记（加速通道）
+                └─ 表格轮询（每 30s，2026-11-01 起）：差分「Figma状态」列，
+                   行变「转Figma中」即本地登记 —— 任务到达不再依赖隧道；
+                   两路同到由 recordId 去重收敛，POST 保留为快路径
                               │ 三层取源拿 demo.html（demoUrl / 表格反查预览URL / 本地归档）
                               │ 本地归档 → 直接引用路径；云端下载 → 暂存 ~/Desktop/_drops/feishu/
                               ▼
               登记任务 feishu-tasks.json（状态=待转；单写者 server.js，原子替换）
                               ▼  ◀── GET /api/feishu-tasks（serve.py 只读）
-              Figma 内部插件「选择 HTML」下拉 · 单一列表（飞书任务 REQ 编号置顶 + 本地 HTML）
+              Figma 内部插件「选择 HTML」下拉 · 单一列表（飞书任务 REQ 编号置顶 + 本地 HTML 按最近导入时间排序）
                               │ UED 选中任务点「生成 scene.json 并导入」
                               ▼
               build-scene.js 构建 scene.json（库匹配/令牌绑定/全状态铺开全保留）
@@ -30,7 +32,7 @@
                               │ 转完不关面板：code.js 发 import-done（closePlugin 会连 iframe 销毁）
                               ▼
               ui.html POST /api/feishu-done → serve.py 转发 server.js POST /done
-                              │ lark-cli 回写（record_id 直写 / 按 Demo 名称反查）
+                              │ lark-cli 回写（record_id 直写 / 按需求编号反查）
                               ▼
               多维表格该行「Figma状态」= 已完成；「Figma链接」列到表格手填（面板管理区已移除）
 ```
@@ -73,7 +75,9 @@ curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"local","engine":"local
 
 数据服务 serve.py（:8124）由 build-scene 自动保活；手动：`python3 ~/Desktop/html-to-figma-internal/serve.py`。
 
-### 3. 启动隧道（每次重启域名会变）
+### 3. 启动隧道（每次重启域名会变；现为加速通道，非必需）
+
+> 2026-11-01 起任务到达有轮询兜底（server.js 每 30s 差分表格），隧道断了/域名过期只是少了 POST 加速路径，不再丢任务。
 
 ```bash
 ~/.local/bin/cloudflared tunnel --url http://localhost:8080 >> /tmp/bridge-tunnel.log 2>&1 &
@@ -81,6 +85,8 @@ curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"local","engine":"local
 ```
 
 ### 4. 飞书工作流配置（HTTP 请求节点；沿用旧 Body 无需改动）
+
+> **节点顺序（硬要求，2026-11-01 事故固化）**：「置状态 → Figma状态=转Figma中」节点必须排在 HTTP 请求节点**之前**——HTTP 失败（隧道域名过期）会中断工作流，状态置不上则轮询也取不到任务。最简单：把 HTTP 节点整个删掉（轮询 30s 内取到）。
 
 | 项 | 值 |
 |---|---|
@@ -118,7 +124,7 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 2. **lark-cli 对不存在的记录也退出码 0**：只把不存在的 id 报在 JSON 的 `data.record_not_found` 数组里。server.js 回写后必须解析该字段——全部 not found 才算失败（任务标「已转·回写失败」）。
 3. **serve.py 跑的是 Desktop 部署副本**：Figma 从 `~/Desktop/html-to-figma-internal/` 加载 manifest。改了仓库 `plugin/` 源码要 cp 过去；serve.py 旧进程不重启 = 改动永不生效（build-scene ensureServe 会按 mtime 自动重启，手动改用 kill + 重开）。日志统一落 `~/Desktop/html-to-figma-internal/serve.log`。
 4. **插件 API 拿不到自己文件的 URL**：「Figma链接」列无法全自动——状态列自动回写，链接由 UED 直接在多维表格手填（原面板「补填链接」入口已随管理区移除）。
-5. **隧道域名易变**：cloudflared quick tunnel 每次重启换域名，工作流 URL 要同步改；固定方案待做（named tunnel + 自己的域名）。
+5. **隧道域名易变（已降级为加速通道）**：cloudflared quick tunnel 每次重启换域名，工作流 URL 过期时 POST 到不了本机（飞书通知照发、毫无表迹）。2026-11-01 起 server.js 每 30s **轮询表格差分取任务**——行「Figma状态」变「转Figma中」即本地登记，任务到达不再依赖隧道（首轮只建基线，存量卡「转Figma中」的行不回灌；重新点击/状态变化才登记）。**前提（一次性工作流修改）**：「置状态 Figma状态=转Figma中」节点必须排在 HTTP 节点**之前**（HTTP 失败会中断工作流、状态置不上 → 轮询也看不见——2026-11-01 实测当天点击零登记的根因）。建议把置状态挪到最前或直接删掉 HTTP 节点。
 6. **库组件导入要求订阅库**：目标文件须在资源库面板订阅 Milesight_IOT_Web 与网关/路由器业务库，否则 `importComponentSetByKeyAsync` 不可用（完成通知「库组件实例 0」即查这个）。
 7. **JS 渲染的 demo 依赖真实浏览器执行**：build-scene 用无头 Chrome 渲染，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
 
@@ -221,8 +227,8 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 
 | 症状 | 查哪 |
 |---|---|
-| 按钮点了表格没动静 | `/tmp/bridge-server.log` 有没有新 `[task]`；没有 → 工作流 URL 是否过期（隧道换域名） |
-| 下拉没有飞书任务 | `feishu-tasks.json` 是否有待转条目；无 → **cloudflared 隧道进程是否活着**（挂了工作流 POST 到不了本机，飞书通知照发——2026-11-01 实测）或 /task 是否走了 engine=mcp |
+| 按钮点了表格没动静 | 表格该行「Figma状态」有没有变「转Figma中」；没变 → 工作流 HTTP 节点失败**中断了后续节点**（置状态排在 HTTP 后）——把置状态节点挪到 HTTP 前或删掉 HTTP 节点；变了但面板没任务 → 看 `/tmp/bridge-server.log` 的 `[poll]` 行（每 30s 一查，server.js 是否在跑：`lsof -i :8080`） |
+| 下拉没有飞书任务 | `/tmp/bridge-server.log` 有无 `[poll] 表格出现「转Figma中」→ 本地登记`；有登记但下拉没有 → `feishu-tasks.json` 是否待转条目、serve.py `:8124` 是否活着；`/task` 是否走了 engine=mcp |
 | 点任务没反应 / build 失败 | `serve.log`（`~/Desktop/html-to-figma-internal/serve.log`）的 `/api/build` 行；demo 路径是否在 serve.py 白名单内（05_release / output / ~/Desktop） |
 | 导入成功但表格没回写 | 桥接日志 `[writeback:...]`：`记录不存在` → 表格行已删或 record_id/demoName 对不上；lark-cli 报权限 → 重跑 `lark-cli auth login`。面板留着重试即可 |
 | 完成通知「库组件实例 0」 | 目标文件未订阅两份库（资源库面板开启），见坑 6 |

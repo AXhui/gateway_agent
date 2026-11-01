@@ -603,6 +603,61 @@ async function feishuApplyDone(task, taskId, url) {
 
 // ---- HTTP 服务 ----
 
+// ---- 轮询取任务（2026-11-01 隧道域名过期事故固化）----
+// cloudflared quick tunnel 每次重启换域名，工作流 HTTP 节点 URL 一过期 POST 就到不了本机（飞书通知照发、
+// 表格毫无动静）。工作流点按钮本身会把行 Figma状态 置「转Figma中」——这里每 30s 拉一次表格做状态差分：
+// 行状态变为「转Figma中」→ 直接走 registerLocalTask 本地登记（同 POST /task 的三层取源）。
+// 任务到达不再依赖隧道；POST /task 保留为加速通道（两路都到由 saveTask 的 recordId 去重收敛）。
+// 前提：工作流「置状态」节点须排在 HTTP 节点之前（或删掉 HTTP 节点），否则 HTTP 失败先中断流程、状态置不上。
+const POLL_MS = 30 * 1000
+const pollPrev = new Map()   // recordId -> 上次快照的 Figma状态（String 归一）
+let pollBusy = false
+
+function registerPolledTask(recordId, name) {
+  const task = { demoName: String(name || '').trim(), record_id: recordId }
+  const jobId = Date.now()
+  if (!reqNoOf(task)) { console.log(`[poll:${jobId}] 行名不含 REQ 编号，跳过: ${task.demoName}`); return }
+  console.log(`[poll:${jobId}] 表格出现「转Figma中」→ 本地登记: ${reqNoOf(task)} (record ${recordId})`)
+  // res 只用于 HTTP 回包；轮询路径无请求方，stub 吞回包，结果走日志 + 队列文件
+  registerLocalTask(task, jobId, { writeHead() {}, end() {} })
+}
+
+async function pollFeishuTasks() {
+  if (pollBusy) return
+  pollBusy = true
+  try {
+    const body = {
+      keyword: 'REQ-', search_fields: ['需求编号'],
+      select_fields: ['需求编号', FEISHU.statusField],
+      limit: 50,
+    }
+    const { code, out } = await larkCliAsync([
+      'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+      '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
+    ])
+    if (code !== 0) { console.log(`[poll] 表格查询失败 code=${code} ${String(out).slice(0, 120)}`); return }
+    const data = JSON.parse(out).data
+    const ids = data.record_id_list || []
+    const first = pollPrev.size === 0   // 首轮只建基线：存量卡在「转Figma中」的历史行不回灌面板
+    let stuck = 0
+    ;(data.data || []).forEach((row, i) => {
+      const id = ids[i]
+      if (!id) return
+      const status = String(row[1] || '')
+      const prev = pollPrev.get(id)
+      pollPrev.set(id, status)
+      const converting = status.includes('转Figma中')
+      if (first) { if (converting) stuck++; return }
+      if (converting && prev !== status) registerPolledTask(id, row[0])
+    })
+    if (first) console.log(`[poll] 基线快照 ${pollPrev.size} 行；存量「转Figma中」${stuck} 行不登记（重新点击/状态变化才会登记）`)
+  } catch (e) {
+    console.log('[poll] 异常:', e.message)
+  } finally {
+    pollBusy = false
+  }
+}
+
 const server = http.createServer((req, res) => {
   // CORS：允许任意页面（多维表格内嵌 HTML / 本地按钮页）直接 POST
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -695,4 +750,6 @@ if (process.argv.includes('--login')) {
 } else if (require.main === module) {
   if (!loadAuth()) console.log('[warn] 尚未授权：先跑 node server.js --login')
   server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=本地插件登记（engine=mcp 走自动导入）`))
+  pollFeishuTasks()                       // 首轮立即建基线，之后每 30s 差分取任务
+  setInterval(pollFeishuTasks, POLL_MS)
 }
