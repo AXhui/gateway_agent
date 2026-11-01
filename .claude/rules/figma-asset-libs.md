@@ -225,3 +225,12 @@
 - **库目录并行拉取**：buildLibCatalog 原逐库串行（每库 20s 限时 × N 库全串进总耗时）→ `Promise.all` 并行，总耗时 = 最慢一库。
 - **各阶段报耗时**：IMPORT_T0 起表，库目录 / preload / 每屏导入状态行与完成通知都带秒数——「慢在哪一步」一眼可见，下次回归有数据可查。
 - **限时不上调**：degraded-but-alive（如 25s 能回来）的 key 会被 20s 切断、本次导入降级本地重绘——用户裁定速度优先（「不要增加等待时间」）；本地重绘兜底在，视觉不塌。
+
+### 4.19 十五轮修复（2026-11-01 九页 demo 导入 ~800s：主循环边画边串行导入）
+
+> 来源：r14 后用户实测「就几个页面，用了将近 800s」。r14 只掐了「同 key 重放」，但 materialize 主循环里四类资产仍是**边画边逐个导入**——资产服务停顿时每个新 key 串行烧满 20s 限时，几十个 key = 几百秒。修后 mock **239/239**（+1 靶，红态 r14 正中）、verify-scene 七页 100%、构建号两侧 r14→**r15**。
+
+- **四类串行资产**（全部改预载）：①图标按名兜底 `ensureIconByName`（icn:* 缓存键，含 swapIconSlot 的 `lib.icnf`）；②动态命中的库 key `dynLibFor`（materialize 时才算 key 再导入）+ 图标槽换装 key `lib.icnk`（此前也不在预载集）；③颜色变量 `importVariableByKeyAsync`（tokVar 按名逐个导入，~60 个变量键）；④远程图片 `createImageAsync`（逐 src）。
+- **修法 `preloadSceneAssets(scene)`**：库目录建成后一次 walk 全树（cells + defs），收集四类清单 → 单个 `Promise.all` 并行预载（各自走 tmo 限时、失败照十四轮缓存 null）→ 主循环 materialize 全程只查缓存。总耗时从 **Σ(每 key × 限时)** 塌缩为 **max(最慢一个)**——最坏 ~40s 封顶（预载两段各一次限时），不再随 key 数线性放大。
+- **计数不虚增**：图片预载用内联 warm（不走 imagePaint），imgFillCount 仍在真实落图时计数——r14 与 r15 的通知计数逐项一致（mock 全量断言背书）。
+- **预载状态行**：`预载资产：图标名 N·动态库 N·变量 N·图片 N…`——数量可见，回归时可对照哪个家族在膨胀。

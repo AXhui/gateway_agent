@@ -1081,6 +1081,8 @@ vm.runInContext(code, sandbox);
   A('挂起 key 失败缓存防重放（两个同 key 节点只导入一次，十四轮）', hangTries === 1, 'attempts=' + hangTries);
   const hangFail = (String(calls.notify.find(t => t.indexOf('导入完成') === 0) || '').match(/库导入失败 (\d+)/) || [])[1];
   A('挂起 key 计入库导入失败（整链收口不再挂死）', +hangFail >= 1, 'fail=' + hangFail);
+  // ---- 十五轮：四类资产（图标名/动态库 key/变量/图片）提前并行预载，主循环零新鲜导入 ----
+  A('资产预载阶段状态行（十五轮）', calls.uiPost.some(m => m && m.type === 'status' && String(m.text).indexOf('预载资产') >= 0));
   const iconInst2 = iconInsts.find(i => (i.parent && i.parent !== cell) || true);
   const paintedStroke = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.strokes || []).length, i.children || []));
   const paintedFill = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.fills || []).length && !(n.strokes || []).length, i.children || []));

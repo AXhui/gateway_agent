@@ -27,7 +27,7 @@
 // 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
 // build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
 // 不再静默产出旧缺陷板。两侧同步 bump。
-const PLUGIN_BUILD = 'r14';
+const PLUGIN_BUILD = 'r15';
 
 // 库资产导入超时护栏（2026-11-01 十三轮：面板卡死「导入库组件 20/30」）——
 // importComponentByKeyAsync 偶发永不返回（Figma 资产服务停顿），preload 的 Promise.all 整体死等、
@@ -294,6 +294,44 @@ async function ensureLibComp(k, fam) {
   }
   if (c) ICON_MAP.set(k, c); else ICON_MAP.set(k, null);
   return c;
+}
+// 十五轮：资产预载——materialize 主循环里四类资产原本「边画边串行导入」（图标按名兜底 icn:*、
+// 动态命中的库 key、颜色变量 importVariableByKeyAsync、远程图片 createImageAsync）——资产服务
+// 停顿时每个新 key 串行烧满限时（20s × N = 几百秒，九页 demo 实测 ~800s 的主构成）。
+// 全部提前并行预载，主循环只查缓存：总耗时从 Σ(每 key 限时) 塌缩为 max(最慢一个)。
+async function preloadSceneAssets(scene) {
+  const iconNames = new Set(), dynKeys = new Map(), imgSrcs = new Set();
+  (function walk(n) {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { n.forEach(walk); return; }
+    if (n.t === 'ic' && !n.k && n.f) iconNames.add(n.f);
+    if (n.lib && n.lib.icnf && !n.lib.icnk) iconNames.add(n.lib.icnf); // swapIconSlot 按名换装
+    if (n.lib && n.lib.icnk) dynKeys.set(n.lib.icnk, undefined);      // 图标槽换装 key（原为 materialize 时串行导入）
+    if (n.t === 'img' && n.src) imgSrcs.add(n.src);
+    if (n.bg) for (const g of n.bg) { if (g && g.k === 'u' && g.src) imgSrcs.add(g.src); }
+    if (!n.lib && n.n && /(^|\s)(ms|bc)-/.test(String(n.n))) {
+      const d = dynLibFor(n); // 与 materialize 同判：只有动态命中才需要预载其 key
+      if (d) dynKeys.set(d.k, d.f);
+    }
+    (n.ch || []).forEach(walk);
+  })(sceneRoots(scene));
+  const varKeys = Object.values((scene && scene.tokVars) || {}).filter(k => !VAR_CACHE.has(k));
+  postStatus('预载资产：图标名 ' + iconNames.size + '·动态库 ' + dynKeys.size + '·变量 ' + varKeys.length + '·图片 ' + imgSrcs.size + '…');
+  await Promise.all([
+    ...[...iconNames].map(f => ensureIconByName(f)),
+    ...[...dynKeys].map(kv => ensureLibComp(kv[0], kv[1])),
+    ...varKeys.map(k => (async () => {
+      let v = null;
+      try { v = await tmo(figma.variables.importVariableByKeyAsync(k), LIB_TMO, k); }
+      catch (e) { console.warn('token var import fail:', k); }
+      VAR_CACHE.set(k, v);
+    })()),
+    ...[...imgSrcs].map(s => (async () => {
+      if (IMG_CACHE.has(s)) return;
+      try { IMG_CACHE.set(s, (await tmo(figma.createImageAsync(s), IMG_TMO, String(s).slice(0, 60))).hash); }
+      catch (e) { IMG_CACHE.set(s, null); console.warn('image fail:', String(s).slice(0, 60), e && e.message || e); }
+    })())
+  ]);
 }
 
 async function paintIconStrokes(inst, col, tok) {
@@ -1535,6 +1573,7 @@ figma.ui.onmessage = async msg => {
     if (!EXT_SCENE) { postStatus('拉取库目录…'); await buildLibCatalog(); }
     indexExistingComponents();
     await preloadIconComponents(scene);
+    if (!EXT_SCENE) await preloadSceneAssets(scene); // 十五轮：四类资产并行预载，主循环零新鲜导入
     const defCount = await buildDefs(scene);
     const page = figma.currentPage;
     const board = figma.createFrame();
