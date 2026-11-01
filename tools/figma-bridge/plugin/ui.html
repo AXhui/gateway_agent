@@ -87,15 +87,6 @@
   .dropbox.on{border-color:var(--acc);background:rgba(33,150,243,.1);color:var(--acc)}
   .dropbox.on b{color:var(--acc)}
 
-  .card{margin:12px 0 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px 12px}
-  .crow{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:11px;border-bottom:1px solid #333}
-  .crow:last-child{border-bottom:0}
-  .crow svg{flex:none;color:var(--dim)}
-  .crow .k{color:var(--dim);flex:none;width:52px}
-  .crow .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--dim)}
-  .dot.ok{background:var(--ok)} .dot.err{background:var(--err)} .dot.warn{background:var(--warn)}
-
   #st{min-height:34px;margin:2px 0 4px;color:var(--sub);font-size:11px;word-break:break-all;line-height:1.5}
   #st.err{color:var(--err)} #st.ok{color:#81c784}
 
@@ -103,9 +94,6 @@
   summary{font-size:11px;color:var(--dim);cursor:pointer;padding:4px 0;user-select:none}
   summary:hover{color:var(--sub)}
   details .dgrid{display:flex;flex-direction:column;gap:7px;margin:6px 0 4px}
-  .capbtn{display:block;text-align:center;padding:8px 0;font-size:11.5px;font-weight:600;
-    background:var(--acc-dim);color:#fff;border-radius:8px;cursor:grab}
-  .capbtn:hover{background:var(--acc)}
   textarea{width:100%;height:60px;font-size:10px;font-family:ui-monospace,Menlo,monospace;
     border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--card2);color:var(--txt);outline:none}
 
@@ -126,7 +114,7 @@
   <div class="sec" id="ftSec" style="display:none"><span class="n">飞</span>飞书任务<span class="hint" id="ftHint"></span><button class="link" id="ftBtn">刷新</button></div>
   <div class="hlist" id="ftList" style="display:none"></div>
 
-  <div class="sec"><span class="n">1</span>选择 HTML<span class="hint">列表 / 链接 / 拖入文件</span></div>
+  <div class="sec"><span class="n">1</span>选择 HTML<span class="hint">飞书任务 / 本地文件 / 链接 / 拖入</span></div>
   <div class="row">
     <select id="htmlSel"></select>
     <button class="ico" id="listBtn" title="刷新 HTML 列表"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>
@@ -148,31 +136,10 @@
     <b>拖入 .html / .zip 文件</b><span>或</span><button id="browseBtn" class="link">浏览…</button>
     <input id="fileIn" type="file" accept=".html,.htm,.zip" hidden>
   </div>
-  <details>
-    <summary>浏览器捕获（登录页 / 本地页 / 需交互页面）</summary>
-    <div class="dgrid">
-      <div style="font-size:10.5px;color:var(--dim);line-height:1.5">把下面的按钮<b style="color:var(--sub)">拖到 Chrome 收藏夹栏</b>，在目标页面点一下——捕获的是你眼前渲染后的页面（含登录态，curl 够不着的都走这里）。回本面板点「导入当前 scene.json」。</div>
-      <a class="capbtn" href="javascript:(function(){var h='<!DOCTYPE html>'+document.documentElement.outerHTML;fetch('http://127.0.0.1:8124/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({capture:1,url:location.href,name:document.title||'capture',content:h})}).then(function(r){return r.json()}).then(function(j){alert(j.ok?'✅ 已捕获并发送，回 Figma 面板点「导入当前 scene.json」':'❌ '+(j.error||(j.log||[]).join(' ')))}).catch(function(e){alert('❌ 发送失败：'+e+'（确认终端已跑 serve.py）')})})();">📌 捕获此页 → Figma（拖到收藏夹栏）</a>
-    </div>
-  </details>
   <details id="histWrap" style="display:none">
     <summary>最近导入（点击重导）</summary>
     <div class="hlist" id="histList"></div>
   </details>
-
-  <div class="card">
-    <div class="crow">
-      <span class="dot" id="dotSrv"></span><span class="k">后台</span><span class="v" id="cardSrv">检测中…</span>
-    </div>
-    <div class="crow">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13.5l9 5 9-5"/></svg>
-      <span class="k">scene</span><span class="v" id="cardScene">未生成</span>
-    </div>
-    <div class="crow">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
-      <span class="k">库</span><span class="v" id="cardLib">待生成 HTML</span>
-    </div>
-  </div>
 
   <button id="buildBtn" class="primary">生成 scene.json 并导入</button>
   <div id="st"></div>
@@ -185,6 +152,8 @@
       <button id="pasteBtn">导入粘贴的 JSON</button>
       <textarea id="codeTa" placeholder="或把 HTML/CSS 代码粘贴到这里（纯图层转录，相对资源可在代码头写 &lt;base href=...&gt;）"></textarea>
       <button id="codeBtn">转换粘贴的代码</button>
+      <div style="font-size:10.5px;color:var(--dim);line-height:1.5">浏览器捕获（登录页 / 本地页 / 需交互页面）：把下面的按钮<b style="color:var(--sub)">拖到 Chrome 收藏夹栏</b>，在目标页面点一下——捕获的是你眼前渲染后的页面（含登录态，curl 够不着的都走这里）。回本面板点「导入当前 scene.json」。</div>
+      <a class="capbtn" style="display:block;text-align:center;padding:8px 0;font-size:11.5px;font-weight:600;background:var(--acc-dim);color:#fff;border-radius:8px;text-decoration:none" href="javascript:(function(){var h='<!DOCTYPE html>'+document.documentElement.outerHTML;fetch('http://127.0.0.1:8124/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({capture:1,url:location.href,name:document.title||'capture',content:h})}).then(function(r){return r.json()}).then(function(j){alert(j.ok?'✅ 已捕获并发送，回 Figma 面板点「导入当前 scene.json」':'❌ '+(j.error||(j.log||[]).join(' ')))}).catch(function(e){alert('❌ 发送失败：'+e+'（确认终端已跑 serve.py）')})})();">📌 捕获此页 → Figma（拖到收藏夹栏）</a>
     </div>
   </details>
 
@@ -194,15 +163,11 @@
 
 <script>
 var scene = null;     // 待导入 scene.json
-var needLibs = [];    // scene.libs：本页命中的库需求
-var libsUnavailable = false;
-var libRefreshTimer = null;
-var avail = [];       // getAvailableLibrariesAsync 结果 {id,name,enabled}（仅状态展示，不设门禁）
 var busy = false;     // 构建进行中（三个入口互斥，一次只跑一个）
-var serverOk = null;  // 后台连通性：null 未知 / true / false
 var hist = [];        // 导入历史（PRO 一键重导）：clientStorage 持久化，code.js 代理读写
-var feishuTasks = [];      // 飞书「点击转Figma」登记的任务（server.js → serve.py /api/feishu-tasks）
+var feishuTasks = [];      // 飞书「点击转Figma」登记的任务（server.js → serve.py /api/feishu-tasks），已并入「选择 HTML」下拉
 var pendingFeishu = null;  // 本次构建来源的飞书任务：send() 时打进 scene.feishu，转完自动回写表格
+var htmlList = [];    // 本地 HTML 列表（serve.py /api/list）
 
 function $(id){return document.getElementById(id);}
 function status(m, cls){
@@ -210,7 +175,6 @@ function status(m, cls){
   el.textContent = m;
   el.className = cls || '';
 }
-function nn(s){return String(s||'').toLowerCase().replace(/[\s（）()_-]+/g,'');}
 function send(json){
   if (pendingFeishu && json) json.feishu = { id: String(pendingFeishu.id) };
   parent.postMessage({pluginMessage:{type:'scene', json:json}},'*');
@@ -219,12 +183,6 @@ window.onmessage = function(e){
   var m = e.data && e.data.pluginMessage;
   if (m && m.type === 'status') status(m.text);
   if (m && m.type === 'history') { hist = Array.isArray(m.list) ? m.list : []; renderHist(); }
-  if (m && m.type === 'libs') {
-    clearTimeout(libRefreshTimer);
-    libsUnavailable = !!m.unavailable;
-    avail = m.list || [];
-    updateGate(); renderCard();
-  }
   // code.js 导入结果透传（仅飞书任务链路）：成功 → 回写表格后关面板；失败 → 清挂起、任务保持待转可重点
   if (m && m.type === 'import-done' && m.feishu) {
     var t = pendingFeishu;
@@ -240,39 +198,6 @@ window.onmessage = function(e){
   }
 };
 
-// 状态摘要卡
-function renderCard(){
-  var dot = $('dotSrv');
-  if (serverOk === null){ dot.className = 'dot'; $('cardSrv').textContent = '检测中…'; }
-  else if (serverOk){ dot.className = 'dot ok'; $('cardSrv').textContent = '已连接 · 127.0.0.1:8124'; }
-  else { dot.className = 'dot err'; $('cardSrv').textContent = '未连接——终端跑 python3 serve.py（构建时也会自动拉起）'; }
-
-  if (scene && scene.cells){
-    var nm = scene.name ? scene.name + ' · ' : '';
-    $('cardScene').textContent = nm + scene.cells.length + ' 屏';
-  } else $('cardScene').textContent = '未生成';
-
-  if (libsUnavailable){
-    $('cardLib').textContent = '自动匹配 · 按 key 直载（失败自动回退重绘）';
-  } else if (!needLibs.length){
-    $('cardLib').textContent = scene ? '本页无库需求' : '待生成 HTML';
-  } else {
-    var on = needLibs.filter(function(n){ var m = matchLib(n); return m && m.enabled; }).length;
-    $('cardLib').textContent = '需求 ' + needLibs.length + ' 库 · ' + on + ' 已启用' +
-      (on < needLibs.length ? '（其余按 key 直载）' : ' ✓');
-  }
-}
-
-// 库匹配：id（libraryKey）相等或名称互相包含（含未启用的库，用于状态展示）
-function matchLib(need){
-  for (var i=0;i<avail.length;i++){
-    var a = avail[i];
-    if (need.key && a.id === need.key) return a;
-    if (nn(a.name).indexOf(nn(need.name))>=0 || nn(need.name).indexOf(nn(a.name))>=0) return a;
-  }
-  return null;
-}
-
 function updateGate(){
   $('buildBtn').disabled = busy || !$('htmlSel').value;
   $('importBtn').disabled = busy;
@@ -285,8 +210,7 @@ function updateGate(){
 
 function adoptScene(j){
   scene = j;
-  needLibs = Array.isArray(scene.libs) ? scene.libs : [];
-  updateGate(); renderCard();
+  updateGate();
 }
 
 async function fetchScene(autoImport){
@@ -298,28 +222,51 @@ async function fetchScene(autoImport){
   else status('scene.json 就绪：' + scene.cells.length + ' 屏，点「导入当前 scene.json」', 'ok');
 }
 
+function pad2(x){ return (x < 10 ? '0' : '') + x; }
+// 「选择 HTML」下拉 = 飞书任务组 + 本地 HTML 组；两份清单任一刷新都整体重建（选中项尽量保持）
+function renderHtmlSel(){
+  var sel = $('htmlSel');
+  var cur = sel.value;
+  sel.innerHTML = '';
+  if (feishuTasks.length){
+    var g = document.createElement('optgroup');
+    g.label = '飞书任务（选中后点下方按钮即转 + 自动回写表格）';
+    feishuTasks.slice(0, 20).forEach(function(t){
+      var o = document.createElement('option');
+      o.value = 'ft:' + t.id;
+      o.textContent = (t.demoName || ('任务 ' + t.id)) + ' · ' + t.status;
+      if (!t.path) o.disabled = true;
+      g.appendChild(o);
+    });
+    sel.appendChild(g);
+  }
+  var g2 = document.createElement('optgroup');
+  g2.label = '本地 HTML';
+  htmlList.forEach(function(h){
+    var o = document.createElement('option');
+    var d = new Date(h.mtime*1000);
+    o.value = h.path;
+    o.textContent = pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes())+' · '+h.rel;
+    g2.appendChild(o);
+  });
+  sel.appendChild(g2);
+  for (var i=0;i<sel.options.length;i++){
+    if (sel.options[i].value === cur){ sel.selectedIndex = i; break; }
+  }
+  updateGate();
+}
+
 async function loadList(){
   try{
     var r = await fetch('http://127.0.0.1:8124/api/list');
     var j = await r.json();
-    serverOk = true;
-    var sel = $('htmlSel');
-    sel.innerHTML = '';
-    (j.htmls || []).forEach(function(h){
-      var o = document.createElement('option');
-      var d = new Date(h.mtime*1000);
-      var pad = function(x){return (x<10?'0':'')+x;};
-      o.value = h.path;
-      o.textContent = pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+h.rel;
-      sel.appendChild(o);
-    });
-    if (!(j.htmls||[]).length) status('没扫到 HTML——确认 05_release / output / 桌面有 demo，或先跑 python3 serve.py', 'err');
-    updateGate();
+    htmlList = j.htmls || [];
   }catch(e){
-    serverOk = false;
+    htmlList = [];
     status('后台未连接：' + e.message + ' —— 终端跑 python3 serve.py（或先用「高级 → 导入粘贴的 JSON」）', 'err');
   }
-  renderCard();
+  renderHtmlSel();
+  if (!htmlList.length && !feishuTasks.length) status('没扫到 HTML——确认 05_release / output / 桌面有 demo，或先跑 python3 serve.py', 'err');
 }
 
 $('listBtn').onclick = function(){ loadList(); loadFeishuTasks(); };
@@ -336,7 +283,6 @@ async function runBuild(payload, label, feishuTask){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
-    serverOk = true;
     var j = await r.json();
     if (!j.ok){
       pendingFeishu = null;
@@ -346,16 +292,22 @@ async function runBuild(payload, label, feishuTask){
     pushHist(payload);
     await fetchScene(true);
   }catch(e){
-    serverOk = false;
     pendingFeishu = null;
     status('生成失败：' + e.message + ' —— 确认 serve.py 已跑（新版本含 /api/build）', 'err');
-  }finally{ busy = false; updateGate(); renderCard(); }
+  }finally{ busy = false; updateGate(); }
 }
 
 $('buildBtn').onclick = function(){
-  var p = $('htmlSel').value;
-  if (!p){ status('先选择一个 HTML', 'err'); return; }
-  runBuild({path:p}, '生成 scene.json 中');
+  var v = $('htmlSel').value;
+  if (!v){ status('先选择一个 HTML 或飞书任务', 'err'); return; }
+  if (v.indexOf('ft:') === 0){
+    var id = v.slice(3), t = null;
+    feishuTasks.forEach(function(x){ if (String(x.id) === id) t = x; });
+    if (!t || !t.path){ status('该任务没有 demo 源，不能转换', 'err'); return; }
+    runBuild({path: t.path}, '转飞书任务 ' + (t.demoName || t.id), t);
+    return;
+  }
+  runBuild({path:v}, '生成 scene.json 中');
 };
 
 // 拖拽导入：面板全域为放置区，.html 全文上传走 build；.zip 整站包 base64 上传解包批量转录
@@ -458,14 +410,14 @@ async function feishuDonePost(taskId, figmaUrl, okMsg){
   }
 }
 function renderFeishuTasks(){
+  // 待转任务已并入「选择 HTML」下拉；本区只保留已转/失败任务的管理行（补填链接 / 重试回写），无可管理行时整体隐藏
+  var rows = feishuTasks.filter(function(t){ return t.status !== '待转'; }).slice(0, 20);
   var sec = $('ftSec'), list = $('ftList');
-  sec.style.display = list.style.display = feishuTasks.length ? '' : 'none';
-  var pend = feishuTasks.filter(function(t){ return t.status === '待转'; }).length;
-  $('ftHint').textContent = pend ? (pend + ' 个待转 · 点击即转，转完自动回写表格')
-    : (feishuTasks.length ? '全部已转 · 可补填 Figma 链接' : '');
+  sec.style.display = list.style.display = rows.length ? '' : 'none';
+  $('ftHint').textContent = rows.length ? '已转 · 可补填 Figma 链接 / 重试回写（转换入口在上方下拉）' : '';
   list.innerHTML = '';
-  feishuTasks.slice(0, 20).forEach(function(t){
-    var b = document.createElement('div');   // div 容器：已转行内还要放「补填链接」按钮，button 套 button 不可点
+  rows.forEach(function(t){
+    var b = document.createElement('div');   // div 容器：行内还要放「补填链接」按钮，button 套 button 不可点
     b.className = 'hbtn';
     b.appendChild(ftTag(t.status));
     var hv = document.createElement('span'); hv.className = 'hv';
@@ -474,39 +426,32 @@ function renderFeishuTasks(){
     var ht2 = document.createElement('span'); ht2.className = 'ht2';
     ht2.textContent = t.time || '';
     b.appendChild(hv); b.appendChild(ht2);
-    if (t.status === '待转') {
-      b.style.cursor = 'pointer';
-      b.onclick = function(){
-        if (busy || !t.path) return;
-        runBuild({path: t.path}, '转飞书任务 ' + (t.demoName || t.id), t);
-      };
-    } else {
-      b.style.opacity = String(t.status).indexOf('失败') >= 0 ? '' : '.6';
-      // 回写失败 → 重试回写；已转 → 补填 Figma 链接（插件 API 拿不到自身文件 URL，人工贴一次）
-      var retry = String(t.status).indexOf('失败') >= 0;
-      var bl = document.createElement('button'); bl.className = 'link';
-      bl.textContent = retry ? '重试回写' : '补填链接';
-      bl.onclick = function(ev){
-        ev.stopPropagation();
-        if (retry) { feishuDonePost(t.id, null, '重试回写成功').then(loadFeishuTasks); return; }
-        b.innerHTML = '';
-        var inp = document.createElement('input'); inp.type = 'text';
-        inp.placeholder = 'https://www.figma.com/design/…';
-        var ok = document.createElement('button'); ok.className = 'mini'; ok.textContent = '回写';
-        b.appendChild(inp); b.appendChild(ok); inp.focus();
-        function go(){
-          var u = (inp.value || '').trim();
-          if (!u) return;
-          if (!/^https:\/\/([\w-]+\.)?figma\.com\//.test(u)) { status('不是 Figma 链接：' + u, 'err'); return; }
-          feishuDonePost(t.id, u, 'Figma 链接已回写表格').then(loadFeishuTasks);
-        }
-        ok.onclick = go;
-        inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
-      };
-      b.appendChild(bl);
-    }
+    b.style.opacity = String(t.status).indexOf('失败') >= 0 ? '' : '.6';
+    // 回写失败 → 重试回写；已转 → 补填 Figma 链接（插件 API 拿不到自身文件 URL，人工贴一次）
+    var retry = String(t.status).indexOf('失败') >= 0;
+    var bl = document.createElement('button'); bl.className = 'link';
+    bl.textContent = retry ? '重试回写' : '补填链接';
+    bl.onclick = function(ev){
+      ev.stopPropagation();
+      if (retry) { feishuDonePost(t.id, null, '重试回写成功').then(loadFeishuTasks); return; }
+      b.innerHTML = '';
+      var inp = document.createElement('input'); inp.type = 'text';
+      inp.placeholder = 'https://www.figma.com/design/…';
+      var ok = document.createElement('button'); ok.className = 'mini'; ok.textContent = '回写';
+      b.appendChild(inp); b.appendChild(ok); inp.focus();
+      function go(){
+        var u = (inp.value || '').trim();
+        if (!u) return;
+        if (!/^https:\/\/([\w-]+\.)?figma\.com\//.test(u)) { status('不是 Figma 链接：' + u, 'err'); return; }
+        feishuDonePost(t.id, u, 'Figma 链接已回写表格').then(loadFeishuTasks);
+      }
+      ok.onclick = go;
+      inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+    };
+    b.appendChild(bl);
     list.appendChild(b);
   });
+  renderHtmlSel();
 }
 $('ftBtn').onclick = function(){ loadFeishuTasks(); };
 
@@ -588,12 +533,8 @@ $('codeBtn').onclick = function(){
   runBuild({name:'pasted-code.html', content:c, mode:'ext'}, '转换粘贴的代码');
 };
 
-renderCard();
 loadList();
 loadFeishuTasks();
-// 库状态静默刷新：只喂下方状态卡「库」一行，面板不再设独立组件库区块
-clearTimeout(libRefreshTimer);
-parent.postMessage({pluginMessage:{type:'refresh-libs'}},'*');
 </script>
 </body>
 </html>
