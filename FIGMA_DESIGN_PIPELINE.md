@@ -2,9 +2,9 @@
 
 ## 功能
 
-在飞书多维表格（UI demo 表）里点一个按钮，demo HTML 被取回并**登记为插件面板任务**；UED 在插件面板「选择 HTML」下拉的**飞书任务组**里选中该任务点生成，转换落画布，表格行自动回写「已完成」（Figma 链接可在面板补填）。
+在飞书多维表格（UI demo 表）里点一个按钮，demo HTML 被取回并**登记为插件面板任务**；UED 在插件面板「选择 HTML」下拉里选中该任务点生成，转换落画布，表格行自动回写「已完成」（Figma 链接到表格手填）。
 
-> **面板改版（2026-11-01 用户指令「飞书任务和 html 融合到一起、最好可以选择的」+「浏览器捕获和后台库信息可以隐藏」+「飞书任务的链接融入到本地链接、编号要一致」+「脚本前端，截图部分移除」+「不要区分飞书和本地状态，也不需要有已转状态」）**：「选择 HTML」下拉为**单一列表**——飞书任务（REQ 编号，与表格需求编号列一致，置顶，**无状态标识**；无 demo 源的任务不进下拉）+ 本地 HTML 混排，选中点「生成」即转 + 自动回写；面板每 15s 轮询任务。原「飞书任务」区只保留**已转/回写失败**的管理行（补填链接 / 重试回写），无可管理行时整体隐藏。浏览器捕获书签已从前端移除（serve.py `{capture}` 分支保留）；后台/scene/库状态卡移除（连通性诊断收敛到操作时报错提示）。
+> **面板改版（2026-11-01 用户指令「飞书任务和 html 融合到一起、最好可以选择的」+「浏览器捕获和后台库信息可以隐藏」+「飞书任务的链接融入到本地链接、编号要一致」+「脚本前端，截图部分移除」+「不要区分飞书和本地状态，也不需要有已转状态」+「管理区也没隐藏，整个去掉」）**：「选择 HTML」下拉为**单一列表**——飞书任务（REQ 编号，与表格需求编号列一致，置顶，**无状态标识**；无 demo 源的任务不进下拉）+ 本地 HTML 混排，选中点「生成」即转 + 自动回写；面板每 15s 轮询任务。**「飞书任务」管理区（补填链接 / 重试回写）已整体移除**——Figma 链接到多维表格手填，回写失败下拉重选重新生成即重试。浏览器捕获书签已从前端移除（serve.py `{capture}` 分支保留）；后台/scene/库状态卡移除（连通性诊断收敛到操作时报错提示）。
 
 > **通道裁决（2026-10-31 用户指令，反转 2026-10-25 裁决）**：「点击转 Figma」按钮**默认走本地内部插件**（html-to-figma-internal，组件化/库实例化/令牌绑定全保留）；官方 html.to.design MCP 链路**保留为手动备用**（POST /task 带 `{"engine":"mcp"}` 或环境变量 `H2D_ENGINE=mcp` 时走旧自动导入，见文末附录），按钮不再默认触发它。
 
@@ -32,7 +32,7 @@
               ui.html POST /api/feishu-done → serve.py 转发 server.js POST /done
                               │ lark-cli 回写（record_id 直写 / 按 Demo 名称反查）
                               ▼
-              多维表格该行「Figma状态」= 已完成；「Figma链接」列可在面板「补填链接」写回
+              多维表格该行「Figma状态」= 已完成；「Figma链接」列到表格手填（面板管理区已移除）
 ```
 
 > 无 demo 源（三层取源全落空）时任务直接失败并标表格行「失败」（日志「三层取源均未命中」）。原「无 demo 源走 claude 自由设计」的 LLM 兜底已于 2026-10-23 删除——token 消耗不可控。
@@ -49,7 +49,7 @@
 | 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：需求编号/记录类型/生成人/更新时间/产品分类/需求描述/提示词/demoUrl/Figma链接/Figma状态 + 按钮字段（2026-11-01 改版：Demo 名称列已删，反查键 = 需求编号） |
 | 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息（无需改动，沿用旧 Body） |
 | cloudflared 隧道 | quick tunnel，域名随重启变化 | 本机二进制 `~/.local/bin/cloudflared`（brew 4.x 有兼容问题，直装官方 release）；`~/.local/bin/cloudflared tunnel --url http://localhost:8080`，日志 `/tmp/bridge-tunnel.log` |
-| 内部插件（生产链路） | 仓库 `tools/figma-bridge/plugin/` → 部署 `~/Desktop/html-to-figma-internal/` | 面板（飞书任务并入「选择 HTML」下拉 + 已转管理区）+ serve.py（:8124，/api/list /api/build /api/feishu-tasks /api/feishu-done）+ code.js 导入 |
+| 内部插件（生产链路） | 仓库 `tools/figma-bridge/plugin/` → 部署 `~/Desktop/html-to-figma-internal/` | 面板（飞书任务并入「选择 HTML」下拉，管理区已移除）+ serve.py（:8124，/api/list /api/build /api/feishu-tasks /api/feishu-done）+ code.js 导入 |
 | html.to.design MCP（手动备用） | `https://mcp.to.design`（云端） | OAuth 认证；engine=mcp 时中继到官方 Figma 插件自动导入 |
 | lark-cli | `/usr/local/bin/lark-cli` | 回写多维表格，用户身份登录；调用全部收敛在 server.js |
 
@@ -114,10 +114,10 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 
 ## 已踩过的坑（关键，改动前必读）
 
-1. **closePlugin 会连 iframe 一起销毁**：飞书任务导入成功后 code.js **不能**直接 `figma.closePlugin()`——iframe 没了，回写请求发不出去。链路是：code.js 发 `import-done`（不关面板）→ ui.html POST `/api/feishu-done` 等回写结果 → 成功才发 `feishu-close` 关面板；回写失败面板保持打开，「飞书任务」管理区出现「重试回写」。
+1. **closePlugin 会连 iframe 一起销毁**：飞书任务导入成功后 code.js **不能**直接 `figma.closePlugin()`——iframe 没了，回写请求发不出去。链路是：code.js 发 `import-done`（不关面板）→ ui.html POST `/api/feishu-done` 等回写结果 → 成功才发 `feishu-close` 关面板；回写失败面板保持打开、状态行报错，下拉重选该任务重新生成即重试（管理区已移除）。
 2. **lark-cli 对不存在的记录也退出码 0**：只把不存在的 id 报在 JSON 的 `data.record_not_found` 数组里。server.js 回写后必须解析该字段——全部 not found 才算失败（任务标「已转·回写失败」）。
 3. **serve.py 跑的是 Desktop 部署副本**：Figma 从 `~/Desktop/html-to-figma-internal/` 加载 manifest。改了仓库 `plugin/` 源码要 cp 过去；serve.py 旧进程不重启 = 改动永不生效（build-scene ensureServe 会按 mtime 自动重启，手动改用 kill + 重开）。日志统一落 `~/Desktop/html-to-figma-internal/serve.log`。
-4. **插件 API 拿不到自己文件的 URL**：「Figma链接」列无法全自动——状态列自动回写，链接由 UED 在面板「补填链接」手工填（面板校验 figma.com 域名）。
+4. **插件 API 拿不到自己文件的 URL**：「Figma链接」列无法全自动——状态列自动回写，链接由 UED 直接在多维表格手填（原面板「补填链接」入口已随管理区移除）。
 5. **隧道域名易变**：cloudflared quick tunnel 每次重启换域名，工作流 URL 要同步改；固定方案待做（named tunnel + 自己的域名）。
 6. **库组件导入要求订阅库**：目标文件须在资源库面板订阅 Milesight_IOT_Web 与网关/路由器业务库，否则 `importComponentSetByKeyAsync` 不可用（完成通知「库组件实例 0」即查这个）。
 7. **JS 渲染的 demo 依赖真实浏览器执行**：build-scene 用无头 Chrome 渲染，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
@@ -214,8 +214,8 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 1. 多维表格某行点「转 Figma」按钮——桥接取源、登记任务（`/health` 的 `localPending` +1）
 2. UED 在**目标 Figma 文件**里打开内部插件（右键 → Plugins → Development → HTML to Figma (Milesight Internal)），「选择 HTML」下拉单一列表置顶显示飞书任务（REQ 编号；面板每 15s 自动轮询，开着也会出现）
 3. 选中该任务点「生成 scene.json 并导入」→ 转换落画布（库实例 + 令牌绑定 + 全状态铺开）→ 完成后**面板自动**回写表格「Figma状态=已完成」并自动关闭
-4. 把当前文件的 Figma 链接在面板「补填链接」写回（或跳过——状态已回写）
-5. 回写失败时面板不关、任务标「已转·回写失败」，在「飞书任务」管理区点「重试回写」
+4. 把当前文件的 Figma 链接直接填到多维表格该行（面板管理区已移除；状态已自动回写，链接可跳过）
+5. 回写失败时面板不关、状态行报错——下拉重选该任务点「生成」重新走一遍即重试回写
 
 ## 排障
 
