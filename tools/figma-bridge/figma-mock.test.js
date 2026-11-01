@@ -812,6 +812,7 @@ const SCENE = {
         // 十三轮挂起红靶（面板卡死「导入库组件 20/30」）：comp/set 双 API 均永不返回 → 插件必须限时兜底不死锁；
         // 故意不带 svg（不走本地回退，不污染 svgCreated 全量断言）
         { t: 'ic', k: 'lib:hang', f: 'zz-hang-x9', x: 80, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] },
+        { t: 'ic', k: 'lib:hang', f: 'zz-hang-x9', x: 120, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] }, // 十四轮：同 key 第二个节点——验证失败缓存短路（不重放导入链）
         { t: 'ic', f: 'search', svg: '<svg viewBox="0 0 24 24"></svg>', x: 40, y: 300, w: 16, h: 16, o: 1, col: [0.1, 0.1, 0.1] }, // 无 key：icon-keys 未映射 → 插件按名走库目录兜底
         { t: 'f', n: 'ms-btn ms-btn--primary', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 340, w: 88, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: ['primary'], text: 'Save', ic: false }, ch: [T('Save')] },
@@ -1073,8 +1074,11 @@ vm.runInContext(code, sandbox);
   A('图标实例化（icon:check 导入）', calls.importKey.includes('icon:check'));
   // ---- 挂起 key 限时兜底（2026-11-01 十三轮红靶：面板曾卡死「导入库组件 20/30」）----
   // 旧代码 Promise.all 死等永不返回的 importComponentByKeyAsync → 本断言永远到不了（红态 = 测试挂起被 timeout 杀）
-  A('挂起 key 不死锁（comp 超时 → set 超时 → key 失效兜底走完）',
-    calls.importKey.includes('lib:hang') && calls.importSetKey.includes('lib:hang'));
+  // ---- 十四轮断言改判：超时 = 服务停顿，不再级联 set API（级联只会让一个停顿 key 烧 3×限时）----
+  A('挂起 key 不死锁（comp 超时 → 失败兜底走完）', calls.importKey.includes('lib:hang'));
+  A('超时不级联 set API 重试（停顿重试无意义，十四轮）', !calls.importSetKey.includes('lib:hang'));
+  const hangTries = calls.importKey.filter(x => x === 'lib:hang').length;
+  A('挂起 key 失败缓存防重放（两个同 key 节点只导入一次，十四轮）', hangTries === 1, 'attempts=' + hangTries);
   const hangFail = (String(calls.notify.find(t => t.indexOf('导入完成') === 0) || '').match(/库导入失败 (\d+)/) || [])[1];
   A('挂起 key 计入库导入失败（整链收口不再挂死）', +hangFail >= 1, 'fail=' + hangFail);
   const iconInst2 = iconInsts.find(i => (i.parent && i.parent !== cell) || true);

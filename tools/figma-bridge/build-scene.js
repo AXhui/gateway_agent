@@ -124,7 +124,7 @@ scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
 if (OUT_NAME && !scene.name.includes(OUT_NAME)) scene.name = OUT_NAME + ' · ' + scene.name;
 // 构建号（与插件 PLUGIN_BUILD 同步 bump）：面板开着时 JS 上下文不随磁盘更新重载，旧面板导入新 scene
 // 只会产出旧缺陷板——插件侧 build ≠ PLUGIN_BUILD 拒导并提示重开面板（figma-mock 有红绿靶）
-scene.build = 'r13';
+scene.build = 'r14';
 if (EXT) scene.ext = 1; // 插件据此切纯图层通知、跳过库目录拉取（本地组件体系仅对自家 ms-* demo 有意义）
 // 入口页 URL 归一记录（cell.u）：原型连线——入口内链接 lk 命中其它 cell.u 即挂 ON_CLICK 跳转
 if (EXT && scene.cells[0]) scene.cells[0].u = SITE ? pathKey(SITE) : path.basename(demoPath);

@@ -27,13 +27,19 @@
 // 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
 // build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
 // 不再静默产出旧缺陷板。两侧同步 bump。
-const PLUGIN_BUILD = 'r13';
+const PLUGIN_BUILD = 'r14';
 
 // 库资产导入超时护栏（2026-11-01 十三轮：面板卡死「导入库组件 20/30」）——
 // importComponentByKeyAsync 偶发永不返回（Figma 资产服务停顿），preload 的 Promise.all 整体死等、
 // 面板无超时无兜底只能重启。所有库资产导入（组件/组件集/变量/库目录/远程图片）统一限时，
 // 超时按导入失败走既有兜底（key 失效找回 / 裸色 / 占位矩形），不再挂死整链。
 // mock 经 figma.__LIB_TMO_MS 缩短限时做「挂起 key」红靶。
+//
+// 十四轮（2026-11-01 用户实测「之前 30s 现在 4 分钟」）：r13 只保不死没保快——
+// ①超时后仍级联重试 set API + 目录 alt（一个停顿 key 最多烧 3×限时）；②**失败不缓存**——
+// ICON_MAP 只存成功，导入失败的 key 在 materialize 主循环里每被一个节点用到就把整条级联重放一遍，
+// 公共 key（Button 等）× 每节点 80s = 分钟级到小时级。修法：超时=服务停顿不级联（区别于 API 错配/key 轮换，
+// 二者都是立即抛错、重试才有意义）；失败 null 进缓存（has() 命中即短路）；库目录并行拉取；各阶段报耗时。
 const LIB_TMO = +(figma && figma.__LIB_TMO_MS) || 20000;
 const IMG_TMO = 30000; // 远程图片可合法较慢，独立更长限时
 function tmo(p, ms, tag) {
@@ -44,6 +50,7 @@ function tmo(p, ms, tag) {
 }
 function impC(k) { return tmo(figma.importComponentByKeyAsync(k), LIB_TMO, k); }
 function impS(k) { return tmo(figma.importComponentSetByKeyAsync(k), LIB_TMO, k); }
+function isTmoErr(e) { return String(e && e.message || '').indexOf('导入超时') === 0; }
 
 const FONT_FAMILY = 'PingFang SC';
 const STYLE_MAP = {
@@ -153,16 +160,18 @@ async function buildLibCatalog() {
   LIB_CATALOG = []; CATALOG_CACHE.clear();
   if (typeof figma.getTeamLibraryAsync !== 'function' || typeof figma.getAvailableLibrariesAsync !== 'function') return;
   try {
+    const t0 = Date.now();
     const list = await figma.getAvailableLibrariesAsync();
-    for (const a of (list || [])) {
+    // 并行拉取（十四轮）：串行时任一库停顿 N×限时 全串进总耗时；并行后总耗时 = 最慢一库
+    await Promise.all((list || []).map(async a => {
       try {
         const pub = await tmo(figma.getTeamLibraryAsync(a.id), LIB_TMO, a.id);
         const eat = x => (Array.isArray(x) ? x : Object.values(x || {}))
           .forEach(c => { if (c && c.key && c.name != null) LIB_CATALOG.push({ lib: a.name, key: c.key, name: String(c.name) }); });
         eat(pub.components); eat(pub.componentSets);
       } catch (e) { console.warn('catalog fail:', a.name, e && e.message || e); }
-    }
-    postStatus('库目录 ' + LIB_CATALOG.length + ' 组件（' + (list || []).length + ' 库）');
+    }));
+    postStatus('库目录 ' + LIB_CATALOG.length + ' 组件（' + (list || []).length + ' 库，' + ((Date.now() - t0) / 1000).toFixed(1) + 's）');
   } catch (e) { console.warn('catalog unavailable:', e && e.message || e); }
 }
 function catalogFind(name) {
@@ -238,39 +247,52 @@ async function preloadIconComponents(scene) {
   })(sceneRoots(scene));
   const arr = [...pairs.keys()];
   if (!arr.length) return;
+  const t0 = Date.now();
   postStatus('导入库组件 0/' + arr.length + '…');
   let done = 0;
   await Promise.all(arr.map(async k => {
+    // 超时 = 服务停顿（非 API 错配/key 轮换，二者都立即抛错）：不再级联 set API，失败缓存防重放（十四轮）
     try { ICON_MAP.set(k, await impC(k)); }
     catch (e1) {
-      // 组件集 key 只认 importComponentSetByKeyAsync（真 API 错配即抛，曾致全部控件静默回退）
-      try { ICON_MAP.set(k, await impS(k)); }
-      catch (e) { await importByKeyOrName(k, pairs.get(k), e); }
+      if (isTmoErr(e1)) { await importByKeyOrName(k, pairs.get(k), e1); }
+      else {
+        // 组件集 key 只认 importComponentSetByKeyAsync（真 API 错配即抛，曾致全部控件静默回退）
+        try { ICON_MAP.set(k, await impS(k)); }
+        catch (e) { await importByKeyOrName(k, pairs.get(k), e); }
+      }
     }
     done++;
-    if (done % 5 === 0 || done === arr.length) postStatus('导入库组件 ' + done + '/' + arr.length + '…');
+    if (done % 5 === 0 || done === arr.length) postStatus('导入库组件 ' + done + '/' + arr.length + '…（' + ((Date.now() - t0) / 1000).toFixed(1) + 's）');
   }));
 }
 // key 失效兜底（库重发布后 key 轮换）：按家族名从库目录找现 key 重试，仍失败才计导入失败
 async function importByKeyOrName(k, fam, err) {
+  // 超时 = 资产服务停顿：alt 重试同样会停顿，直接失败并缓存 null——否则一个卡住的公共 key
+  // 在 materialize 主循环里每被一个节点用到就重放整条级联（十四轮 4 分钟回归根因）
+  if (isTmoErr(err)) { ICON_MAP.set(k, null); libImportFailCount++; console.warn('component import stall:', k); return; }
   const alt = catalogFind(fam);
   if (alt && alt.key !== k) {
     try { ICON_MAP.set(k, await impC(alt.key)); libDynHitCount++; return; } catch (e2) {}
     try { ICON_MAP.set(k, await impS(alt.key)); libDynHitCount++; return; } catch (e3) {}
   }
+  ICON_MAP.set(k, null); // 失败也缓存：materialize 再遇到同 key 短路，不重放导入链
   libImportFailCount++;
   console.warn('component import fail:', k, err);
 }
 // 就地导入（动态命中的 key 不在预载集）：component API 优先、set API 回退、key 失效按名找回
 async function ensureLibComp(k, fam) {
-  let c = ICON_MAP.get(k);
-  if (c) return c;
+  // has() 命中即短路：预载失败缓存的 null 也返回——不短路则每个用到该 key 的节点重放整条导入链（十四轮）
+  if (ICON_MAP.has(k)) return ICON_MAP.get(k);
+  let c = null;
   try { c = await impC(k); }
   catch (e1) {
-    try { c = await impS(k); }
-    catch (e) { await importByKeyOrName(k, fam, e); c = ICON_MAP.get(k) || null; }
+    if (isTmoErr(e1)) { await importByKeyOrName(k, fam, e1); }
+    else {
+      try { c = await impS(k); }
+      catch (e) { await importByKeyOrName(k, fam, e); }
+    }
   }
-  if (c) ICON_MAP.set(k, c);
+  if (c) ICON_MAP.set(k, c); else ICON_MAP.set(k, null);
   return c;
 }
 
@@ -1494,6 +1516,7 @@ figma.ui.onmessage = async msg => {
     }
   }
   importing = true;
+  const IMPORT_T0 = Date.now(); // 总耗时（十四轮：各阶段报秒，慢在哪一步一眼可见）
   // 外部网页模式（serve.py 链接导入 → build-scene --ext）：纯图层转录，不拉库目录/不做库匹配（2026-10-30 用户裁定：复制的网页链接不走本地组件）
   const EXT_SCENE = !!(scene && scene.ext);
   nodeCount = 0; doneCells = 0; totalCells = scene.cells.length;
@@ -1523,7 +1546,7 @@ figma.ui.onmessage = async msg => {
     for (let i = 0; i < scene.cells.length; i++) {
       const c = scene.cells[i];
       doneCells = i + 1;
-      postStatus('导入 ' + doneCells + '/' + totalCells + '：' + (c.label || ''));
+      postStatus('导入 ' + doneCells + '/' + totalCells + '：' + (c.label || '') + '（' + ((Date.now() - IMPORT_T0) / 1000).toFixed(1) + 's）');
       const cellF = figma.createFrame();
       cellF.name = c.label || 'cell';
       cellF.fills = [];
@@ -1702,7 +1725,7 @@ figma.ui.onmessage = async msg => {
     const libSeg = EXT_SCENE
       ? '｜外部网页 · 纯图层（不走本地组件库）'
       : '｜库组件实例 ' + libInstCount + '（属性设置 ' + libPropCount + ' 项，文案改写 ' + libTextDoneCount + '，文字色 ' + libColDoneCount + '，字样覆写 ' + libFontDoneCount + (libFontFailCount ? '（失败 ' + libFontFailCount + '）' : '') + '，图标槽换装 ' + libIconSwapCount + (libAddonHiddenCount ? '，附加结构隐藏 ' + libAddonHiddenCount : '') + (libSlotHiddenCount ? '，图标槽隐藏 ' + libSlotHiddenCount : '') + (libTextSweepCount ? '，残余文本隐藏 ' + libTextSweepCount : '') + (libTailHiddenCount || libTailGrowCount ? '，步骤尾线 ' + libTailHiddenCount + ' 藏/' + libTailGrowCount + ' 拉宽' : '') + (libIconOnlyCount ? '，纯图标钮 ' + libIconOnlyCount + (libIconOnlyHiddenCount ? '（藏 Label ' + libIconOnlyHiddenCount + ' 层）' : '') : '') + (libEmptyInputHiddenCount ? '，空输入藏文案 ' + libEmptyInputHiddenCount + ' 层' : '') + '，视觉复核重选 ' + libVisualRepickCount + '，颜色覆写 ' + libColorRepaintCount + '，颜色择变体 ' + libColorPickCount + (libDynHitCount ? '，库目录动态命中 ' + libDynHitCount : '') + (libShapePickCount ? '，形状择变体 ' + libShapePickCount : '') + (libSizePickCount ? '，高度择尺寸 ' + libSizePickCount : '') + (dialogFullPageCount ? '，蒙版铺满 ' + dialogFullPageCount : '') + (libSwapCount ? '，嵌套实例 swap ' + libSwapCount : '') + (instanceFitFailCount ? '，实例内层扩宽失败 ' + instanceFitFailCount + '（Figma 实例模型限制，定宽槽装不下长文案——该块建议守卫拒收本地绘制）' : '') + (libUnderflowCount ? '，内容不齐回退 ' + libUnderflowCount + '（demo 段数超实例容量，整块本地重绘保内容）' : '') + (libFallbackCount ? '，回退 ' + libFallbackCount : '') + (libImportFailCount ? '，库导入失败 ' + libImportFailCount + '（0 实例即异常，查 component-keys.json key / 库订阅 / 库目录动态找回）' : '') + '）｜令牌绑定 ' + tokBindCount + '（库 Color Token 变量，0 且有 tokVars 即异常查 token-vars.json key）';
-    figma.notify('导入完成：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + (instTextCount ? '｜实例文案改写 ' + instTextCount : '') + (instUnderCount ? '｜实例内容回退 ' + instUnderCount : '') + '｜变体集 ' + variantSetCount + (defSetReattach ? '（补挂被吞变体 ' + defSetReattach + '）' : '') + '｜图标库实例 ' + iconInstCount + (iconDynCount ? '（按名动态兜底 ' + iconDynCount + '）' : '') + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
+    figma.notify('导入完成（' + ((Date.now() - IMPORT_T0) / 1000).toFixed(1) + 's）：' + totalCells + ' 屏｜组件 ' + defCount + (defReuseCount ? '（复用既有 ' + defReuseCount + '，重复块不再新建）' : '') + (instTextCount ? '｜实例文案改写 ' + instTextCount : '') + (instUnderCount ? '｜实例内容回退 ' + instUnderCount : '') + '｜变体集 ' + variantSetCount + (defSetReattach ? '（补挂被吞变体 ' + defSetReattach + '）' : '') + '｜图标库实例 ' + iconInstCount + (iconDynCount ? '（按名动态兜底 ' + iconDynCount + '）' : '') + libSeg + '｜自动布局 ' + alApplyCount + '｜图片 ' + imgFillCount + '｜渐变 ' + gradFillCount + '｜矢量回退 ' + iconFallbackCount + (rctCount + lkCount ? '｜原型连线 ' + (rctCount + lkCount) : '') + (scrollCount ? '｜滚动 ' + scrollCount : '') + (fixLiftCount ? '｜吸顶 ' + fixLiftCount : '') + (EXT_SCENE && extStyleCount ? '｜本地色样式 ' + extStyleCount : '') + (famHitCount ? '｜字体映射 ' + famHitCount : ''));
     importing = false; // 连续导入（多页面逐个导入）不被「导入进行中」挡住
     // 飞书任务链路：转完不自动关面板——iframe 里的回写 fetch 需要活着；回写完 ui 发 feishu-close 再关
     if (scene.feishu && scene.feishu.id) {
