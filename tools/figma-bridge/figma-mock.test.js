@@ -681,6 +681,8 @@ mkVar('v:drift', 'color-warm-normal', [0.9, 0.1, 0.1]);                       //
 // 'v:missing' 故意不注册：tokVars 带该 key，importVariableByKeyAsync 抛错 → 插件 catch 后保持裸色
 const mockPage = new FNode('PAGE', { name: 'Page 1' });
 const figma = {
+  // 十三轮挂起红靶：插件侧 LIB_TMO 读此值缩短限时（真跑默认 20s）；120ms 让超时路径可测
+  __LIB_TMO_MS: 120,
   createFrame: () => new FNode('FRAME'),
   createText: () => new FNode('TEXT', { characters: '' }),
   createRectangle: () => new FNode('RECTANGLE'),
@@ -721,6 +723,7 @@ const figma = {
   getLocalPaintStylesAsync: async () => PAINT_STYLES.slice(),
   importComponentByKeyAsync: async k => {
     calls.importKey.push(k);
+    if (k === 'lib:hang') return new Promise(() => {}); // 十三轮挂起靶：永不 resolve/reject（资产服务停顿形态）
     const n = MOCK_LIBS.get(k);
     if (!n) throw new Error('key not found: ' + k);
     // 对齐真 API：component_set 的 key 走本方法必抛错（曾掩盖根因的 mock 盲区）
@@ -729,6 +732,7 @@ const figma = {
   },
   importComponentSetByKeyAsync: async k => {
     calls.importSetKey.push(k);
+    if (k === 'lib:hang') return new Promise(() => {}); // 十三轮挂起靶：set API 同样停顿
     const n = MOCK_LIBS.get(k);
     if (!n || n.type !== 'COMPONENT_SET') throw new Error('set key not found: ' + k);
     return n;
@@ -805,6 +809,9 @@ const SCENE = {
                { t: 'f', n: 'sk2', f: [{ c: [0.7, 0.7, 0.7], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 72, y: 4, w: 60, h: 32, o: 1, ch: [] }] },
         { t: 'img', src: 'data:image/png;base64,MOCKDATA', x: 0, y: 200, w: 120, h: 80, o: 1, fit: 'cover', r: { tl: 8, tr: 8, br: 8, bl: 8 } },
         { t: 'ic', k: 'icon:check', f: 'icon/check', svg: '<svg viewBox="0 0 24 24"></svg>', x: 0, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9], ctk: 'color-icon-normal' },
+        // 十三轮挂起红靶（面板卡死「导入库组件 20/30」）：comp/set 双 API 均永不返回 → 插件必须限时兜底不死锁；
+        // 故意不带 svg（不走本地回退，不污染 svgCreated 全量断言）
+        { t: 'ic', k: 'lib:hang', f: 'zz-hang-x9', x: 80, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] },
         { t: 'ic', f: 'search', svg: '<svg viewBox="0 0 24 24"></svg>', x: 40, y: 300, w: 16, h: 16, o: 1, col: [0.1, 0.1, 0.1] }, // 无 key：icon-keys 未映射 → 插件按名走库目录兜底
         { t: 'f', n: 'ms-btn ms-btn--primary', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 340, w: 88, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: ['primary'], text: 'Save', ic: false }, ch: [T('Save')] },
@@ -991,6 +998,9 @@ vm.createContext(sandbox);
 vm.runInContext(code, sandbox);
 
 (async () => {
+  // 死锁看门狗（十三轮）：旧代码 Promise.all 死等永不返回的库导入 → 事件循环排空静默退出 0（假绿）。
+  // 看门狗把「没跑到汇总」变成硬失败，守住挂起红靶的判别力。
+  const watchdog = setTimeout(() => { console.error('✗ 挂起死锁：导入未在 45s 内完成（库资产导入超时护栏失效？）'); process.exit(1); }, 45000);
   const handler = figma.ui.onmessage;
   if (typeof handler !== 'function') { console.error('✗ 未捕获 onmessage 入口'); process.exit(1); }
   await handler({ type: 'scene', json: JSON.parse(JSON.stringify(SCENE)) });
@@ -1061,6 +1071,12 @@ vm.runInContext(code, sandbox);
   const iconInst = findBy(n => n.type === 'INSTANCE' && n.name !== 'ms-btn ms-btn--primary' && n.setProps === undefined)[0];
   const iconInsts = findBy(n => n.type === 'INSTANCE');
   A('图标实例化（icon:check 导入）', calls.importKey.includes('icon:check'));
+  // ---- 挂起 key 限时兜底（2026-11-01 十三轮红靶：面板曾卡死「导入库组件 20/30」）----
+  // 旧代码 Promise.all 死等永不返回的 importComponentByKeyAsync → 本断言永远到不了（红态 = 测试挂起被 timeout 杀）
+  A('挂起 key 不死锁（comp 超时 → set 超时 → key 失效兜底走完）',
+    calls.importKey.includes('lib:hang') && calls.importSetKey.includes('lib:hang'));
+  const hangFail = (String(calls.notify.find(t => t.indexOf('导入完成') === 0) || '').match(/库导入失败 (\d+)/) || [])[1];
+  A('挂起 key 计入库导入失败（整链收口不再挂死）', +hangFail >= 1, 'fail=' + hangFail);
   const iconInst2 = iconInsts.find(i => (i.parent && i.parent !== cell) || true);
   const paintedStroke = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.strokes || []).length, i.children || []));
   const paintedFill = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.fills || []).length && !(n.strokes || []).length, i.children || []));
@@ -1751,5 +1767,6 @@ vm.runInContext(code, sandbox);
   if (doneMsg) console.log('  通知: ' + doneMsg);
 
   console.log('\n=== figma-mock: ' + pass + ' 通过 / ' + fail + ' 失败');
+  clearTimeout(watchdog);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('✗ harness 异常:', e); process.exit(1); });

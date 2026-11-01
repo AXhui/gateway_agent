@@ -206,3 +206,12 @@
 - **排他守卫写反（本层自伤，红态由 verify-scene 揭示）**：非文本型排除正则写成 `tag!=='select'&&!/^(checkbox|…)$/` —— select 整体短路**永远不进合成分支**（本意是「select 免检 type、input 才排除非文本型」，正确写法 `tag==='select'||!/^(…)$/`）。教训：**audit 镜像必须与实现同 PR**——mock 靶（scene 侧已供 texts）全绿，verify-scene 首跑 REQ-019 text×5 才暴露合成根本没跑。
 - **库默认色图标无条件重涂（插件侧根因，paintIconStrokes）**：库 icon 组件的默认填充是自家语义色（实测 #272E3B 深蓝黑 / #C9CBCE 浅灰），不是纯黑——旧填充分支只重涂「近纯黑 <0.01」→ info/copy/more 落图保持库默认深色（描边型 search 一直正常）。修法：几何节点全集（VECTOR/RECTANGLE/ELLIPSE/LINE/POLYGON/STAR/BOOLEAN_OPERATION）内，`strokes` 有值重涂描边、`fills` 纯 SOLID 无条件重涂填充（demo 图标经 MS_ICONS 单色 currentColor，混合色=部分重涂即本根因）。板取证：16×16 info 图标像素 #272E3B×8 + #787D85×18 + #C9CBCE×5。
 - **板错位一格 = 暂存副本旧版（流程结论，非工具缺陷）**：板 9 格全部显示下一态内容、末格空帧（serEl-null 兜底帧 h:600）——14:57 scene 来自暂存副本的**旧版 demo**（states name/setup 错位）；当前源 9 态全部健康（探针 sameRef/display/childCount/contentText 四证）。**飞书表格预览 URL 服务的是下载时刻的 demo 版本**——改 demo 后重转必须重新触发任务，不能复用旧暂存。
+
+### 4.17 十三轮修复（2026-11-01 面板卡死「导入库组件 20/30」：库资产导入挂起无超时）
+
+> 来源：用户报「点击导入后脚本一直没反应」，面板状态停在「导入库组件 20/30...」（进度每 20 个才刷一次，此为 preload 最后一条状态）。修后 mock **236/236**（+2 靶，红态坐实：旧代码 + 挂起 key = 测试死等）、verify-scene 七页零缺陷、构建号两侧 r12→**r13**。
+
+- **根因（插件侧）**：`preloadIconComponents` 用 `Promise.all` 并发导入全部库 key，`importComponentByKeyAsync` 偶发**永不返回**（Figma 资产服务停顿）→ 整个 Promise.all 死等，导入链无超时无兜底，面板只能重启。同类裸奔 await：`importVariableByKeyAsync`（tokVar）、`createImageAsync`（imagePaint）、`getTeamLibraryAsync`（buildLibCatalog）。
+- **修法（统一限时护栏）**：`tmo(promise, ms, tag)` + `impC/impS` 包装器——组件/组件集 20s、库目录 20s、远程图片 30s；超时按导入失败走**既有兜底**（key 失效按名找回 / 令牌回退裸色 / 图片占位矩形 / 该库目录跳过），不再挂死整链。限时值可经 `figma.__LIB_TMO_MS` 覆盖（mock 缩到 120ms 做红靶）。
+- **preload 进度每 5 个刷一次**（原每 20 个，最后一条状态距挂点太远，排障定位难）。
+- **mock 红靶纪律再证**：Node 里「死等的 pending promise」不保活事件循环——旧代码跑 mock 是**静默提前退出 0（假绿）**而非挂起。修法：测试尾部加 45s 死锁看门狗（没跑到汇总 = 硬失败 exit 1），把挂起靶的判别力钉死。

@@ -27,7 +27,23 @@
 // 面板里跑的可能是旧代码（REQ-018 板 182:63565 实证：input 五处主档默认全泄漏 = 七轮前形态）。
 // build-scene 给 scene 写 build 构建号，与插件 PLUGIN_BUILD 不匹配 = 面板代码旧于仓库 → 拒导提示重开面板，
 // 不再静默产出旧缺陷板。两侧同步 bump。
-const PLUGIN_BUILD = 'r12';
+const PLUGIN_BUILD = 'r13';
+
+// 库资产导入超时护栏（2026-11-01 十三轮：面板卡死「导入库组件 20/30」）——
+// importComponentByKeyAsync 偶发永不返回（Figma 资产服务停顿），preload 的 Promise.all 整体死等、
+// 面板无超时无兜底只能重启。所有库资产导入（组件/组件集/变量/库目录/远程图片）统一限时，
+// 超时按导入失败走既有兜底（key 失效找回 / 裸色 / 占位矩形），不再挂死整链。
+// mock 经 figma.__LIB_TMO_MS 缩短限时做「挂起 key」红靶。
+const LIB_TMO = +(figma && figma.__LIB_TMO_MS) || 20000;
+const IMG_TMO = 30000; // 远程图片可合法较慢，独立更长限时
+function tmo(p, ms, tag) {
+  return Promise.race([
+    p,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('导入超时(' + Math.round(ms / 1000) + 's): ' + tag)), ms))
+  ]);
+}
+function impC(k) { return tmo(figma.importComponentByKeyAsync(k), LIB_TMO, k); }
+function impS(k) { return tmo(figma.importComponentSetByKeyAsync(k), LIB_TMO, k); }
 
 const FONT_FAMILY = 'PingFang SC';
 const STYLE_MAP = {
@@ -140,7 +156,7 @@ async function buildLibCatalog() {
     const list = await figma.getAvailableLibrariesAsync();
     for (const a of (list || [])) {
       try {
-        const pub = await figma.getTeamLibraryAsync(a.id);
+        const pub = await tmo(figma.getTeamLibraryAsync(a.id), LIB_TMO, a.id);
         const eat = x => (Array.isArray(x) ? x : Object.values(x || {}))
           .forEach(c => { if (c && c.key && c.name != null) LIB_CATALOG.push({ lib: a.name, key: c.key, name: String(c.name) }); });
         eat(pub.components); eat(pub.componentSets);
@@ -225,22 +241,22 @@ async function preloadIconComponents(scene) {
   postStatus('导入库组件 0/' + arr.length + '…');
   let done = 0;
   await Promise.all(arr.map(async k => {
-    try { ICON_MAP.set(k, await figma.importComponentByKeyAsync(k)); }
+    try { ICON_MAP.set(k, await impC(k)); }
     catch (e1) {
       // 组件集 key 只认 importComponentSetByKeyAsync（真 API 错配即抛，曾致全部控件静默回退）
-      try { ICON_MAP.set(k, await figma.importComponentSetByKeyAsync(k)); }
+      try { ICON_MAP.set(k, await impS(k)); }
       catch (e) { await importByKeyOrName(k, pairs.get(k), e); }
     }
     done++;
-    if (done % 20 === 0) postStatus('导入库组件 ' + done + '/' + arr.length + '…');
+    if (done % 5 === 0 || done === arr.length) postStatus('导入库组件 ' + done + '/' + arr.length + '…');
   }));
 }
 // key 失效兜底（库重发布后 key 轮换）：按家族名从库目录找现 key 重试，仍失败才计导入失败
 async function importByKeyOrName(k, fam, err) {
   const alt = catalogFind(fam);
   if (alt && alt.key !== k) {
-    try { ICON_MAP.set(k, await figma.importComponentByKeyAsync(alt.key)); libDynHitCount++; return; } catch (e2) {}
-    try { ICON_MAP.set(k, await figma.importComponentSetByKeyAsync(alt.key)); libDynHitCount++; return; } catch (e3) {}
+    try { ICON_MAP.set(k, await impC(alt.key)); libDynHitCount++; return; } catch (e2) {}
+    try { ICON_MAP.set(k, await impS(alt.key)); libDynHitCount++; return; } catch (e3) {}
   }
   libImportFailCount++;
   console.warn('component import fail:', k, err);
@@ -249,9 +265,9 @@ async function importByKeyOrName(k, fam, err) {
 async function ensureLibComp(k, fam) {
   let c = ICON_MAP.get(k);
   if (c) return c;
-  try { c = await figma.importComponentByKeyAsync(k); }
+  try { c = await impC(k); }
   catch (e1) {
-    try { c = await figma.importComponentSetByKeyAsync(k); }
+    try { c = await impS(k); }
     catch (e) { await importByKeyOrName(k, fam, e); c = ICON_MAP.get(k) || null; }
   }
   if (c) ICON_MAP.set(k, c);
@@ -286,8 +302,8 @@ async function ensureIconByName(name) {
   if (c) return c;
   const alt = catalogFind(name);
   if (alt) {
-    try { c = await figma.importComponentByKeyAsync(alt.key); } catch (e) {}
-    if (!c) { try { c = await figma.importComponentSetByKeyAsync(alt.key); } catch (e2) {} }
+    try { c = await impC(alt.key); } catch (e) {}
+    if (!c) { try { c = await impS(alt.key); } catch (e2) {} }
     if (c && c.type === 'COMPONENT') { ICON_MAP.set(ck, c); iconDynCount++; return c; }
   }
   ICON_MAP.set(ck, null);
@@ -345,7 +361,7 @@ async function tokVar(name) {
   if (!key) return null;
   if (VAR_CACHE.has(key)) return VAR_CACHE.get(key);
   let v = null;
-  try { v = await figma.variables.importVariableByKeyAsync(key); }
+  try { v = await tmo(figma.variables.importVariableByKeyAsync(key), LIB_TMO, key); }
   catch (e) { console.warn('token var import fail:', name, e); }
   VAR_CACHE.set(key, v);
   return v;
@@ -377,7 +393,7 @@ async function flushTokBinds() {
 async function imagePaint(src, fit) {
   if (!src) return null;
   if (!IMG_CACHE.has(src)) {
-    try { IMG_CACHE.set(src, (await figma.createImageAsync(src)).hash); }
+    try { IMG_CACHE.set(src, (await tmo(figma.createImageAsync(src), IMG_TMO, String(src).slice(0, 60))).hash); }
     catch (e) { IMG_CACHE.set(src, null); console.warn('image fail:', String(src).slice(0, 60), e && e.message || e); }
   }
   const hash = IMG_CACHE.get(src);

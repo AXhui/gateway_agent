@@ -227,6 +227,7 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 
 | 症状 | 查哪 |
 |---|---|
+| 面板卡「导入库组件 X/Y...」不动 | 库资产导入停顿（Figma 资产服务偶发不返回）。r13 起每项限时 20s 自动超时兜底不再挂死；仍卡 = 面板跑旧代码——**完全关闭面板再重开**（构建号护栏会拒导旧 scene 并提示） |
 | 按钮点了表格没动静 | 表格该行「Figma状态」有没有变「转Figma中」；没变 → 工作流 HTTP 节点失败**中断了后续节点**（置状态排在 HTTP 后）——把置状态节点挪到 HTTP 前或删掉 HTTP 节点；变了但面板没任务 → 看 `/tmp/bridge-server.log` 的 `[poll]` 行（每 30s 一查，server.js 是否在跑：`lsof -i :8080`） |
 | 下拉没有飞书任务 | `/tmp/bridge-server.log` 有无 `[poll] 表格出现「转Figma中」→ 本地登记`；有登记但下拉没有 → `feishu-tasks.json` 是否待转条目、serve.py `:8124` 是否活着；`/task` 是否走了 engine=mcp |
 | 点任务没反应 / build 失败 | `serve.log`（`~/Desktop/html-to-figma-internal/serve.log`）的 `/api/build` 行；demo 路径是否在 serve.py 白名单内（05_release / output / ~/Desktop） |
