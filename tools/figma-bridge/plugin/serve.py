@@ -3,7 +3,8 @@
 - GET  /            静态文件（根 ~/Desktop，含 scene.json）
 - GET  /api/list    扫描 HTML 根（05_release / output / ~/Desktop）返回可选 demo 清单
 - POST /api/build   输入统一落 build-scene.js：
-                     {path}            白名单根内的本地 HTML 路径
+                     {path}            白名单根内的本地 HTML 路径（可带 outName=任务名/REQ 编号，
+                                       参考页与主画板名随任务命名 → build-scene --out-name）
                      {name, content}   拖拽进面板的 HTML 全文 → 存 ~/Desktop/_drops/ 再 build
                                        （mode:'ext' = 粘贴的外部代码 → --ext 纯图层，可带 url 补 base）
                      {url}             粘贴的 http(s) 链接 → 下载到 ~/Desktop/_drops/ 再 build
@@ -356,6 +357,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         vp = str(req.get('viewports') or '')
         vp_ok = re.fullmatch(r'\d{3,4}(?:,\d{3,4}){0,3}', vp) if vp else None
         dk = str(req.get('theme') or '').lower() == 'dark'   # 暗色补帧（free 层 dark & light themes 对标）
+        # 任务名透传（飞书任务构建面板带 outName=REQ 编号）：参考页文件名与 Figma 主画板名随任务命名
+        on = re.sub(r'[^\w\-.· ]', '', str(req.get('outName') or '')).strip()[:40]
         try:
             # 链接导入 = 外部网页模式（--ext）：build-scene 纯图层转录，不走本地组件库匹配/组件化/令牌绑定；
             # --site 带原始链接 → 入口页自动发现同源页面（导航优先，上限 8）逐页转录多帧；
@@ -370,6 +373,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 cmd += ['--ext']
             if (site_url or ext_mode) and dk:
                 cmd += ['--theme', 'dark']
+            if on:
+                cmd += ['--out-name', on]
             # Windows 兼容：自动注入 CHROME 环境变量 + 强制 UTF-8 解码
             env = os.environ.copy()
             if os.name == 'nt':

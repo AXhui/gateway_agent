@@ -32,6 +32,10 @@ const thIdx = args.indexOf('--theme');
 const THEME = thIdx >= 0 && String(args[thIdx + 1] || '').toLowerCase() === 'dark' ? 'dark' : ''; // 暗色补帧（尽力转换）
 const outDirIdx = args.indexOf('--out-dir');
 const outDir = outDirIdx >= 0 ? args[outDirIdx + 1] : path.join(os.homedir(), 'Desktop');
+// 任务名透传（飞书任务=REQ 编号，面板经 serve.py 带入）：参考页文件名与主画板名都随任务命名，
+// 不再落泛名 figma-export.html 混进面板本地列表（2026-11-01 用户令「名称一起转过去，保持列表一致性」）
+const outNameIdx = args.indexOf('--out-name');
+const OUT_NAME = outNameIdx >= 0 ? String(args[outNameIdx + 1] || '').trim().slice(0, 40) : '';
 if (!demoPath || !fs.existsSync(demoPath)) {
   console.error('用法: node build-scene.js <demo.html> [--out-dir <dir>]');
   process.exit(1);
@@ -116,6 +120,8 @@ catch (e) { console.error(e.message); process.exit(3); }
 // 画板名 = 功能名（"EG71 · Data Library · Inbuilt Update"），组件名 = 类名家族 + 文本变体，不出现无名层
 const titleM = html.match(/<title>([^<]*)<\/title>/i);
 scene.name = (titleM && titleM[1].trim()) || path.basename(demoPath, '.html');
+// 任务名前缀进主画板名（demo 标题已含 REQ 编号则不重复）
+if (OUT_NAME && !scene.name.includes(OUT_NAME)) scene.name = OUT_NAME + ' · ' + scene.name;
 // 构建号（与插件 PLUGIN_BUILD 同步 bump）：面板开着时 JS 上下文不随磁盘更新重载，旧面板导入新 scene
 // 只会产出旧缺陷板——插件侧 build ≠ PLUGIN_BUILD 拒导并提示重开面板（figma-mock 有红绿靶）
 scene.build = 'r12';
@@ -717,15 +723,18 @@ function stripP(n) {
 scene.cells.forEach(c => stripP(c.root));
 if (scene.defs) Object.keys(scene.defs).forEach(id => stripP(scene.defs[id].root));
 
+// 参考页随源命名：--out-name（任务名）优先；源文件叫 demo.html 时取上级目录名（05_release/REQ-###/demo.html → REQ-###）
+const stem0 = path.basename(demoPath, '.html');
+const srcName = (OUT_NAME || (stem0 === 'demo' ? path.basename(path.dirname(demoPath)) : stem0)).replace(/[/\\]/g, '');
 fs.writeFileSync(path.join(outDir, 'scene.json'), JSON.stringify(scene));
 
-const tiled = buildExportPage(html, path.basename(demoPath, '.html'));
-if (tiled.states) fs.writeFileSync(path.join(outDir, 'figma-export.html'), tiled.html);
+const tiled = buildExportPage(html, srcName);
+if (tiled.states) fs.writeFileSync(path.join(outDir, srcName + '-export.html'), tiled.html);
 
 const count = n => 1 + (n.ch || []).reduce((a, c) => a + count(c), 0);
 scene.cells.forEach(c => console.log('  屏 ' + c.label + '｜' + count(c.root) + ' 节点｜' + c.w + '×' + Math.round(c.h)));
 console.log('完成 → ' + path.join(outDir, 'scene.json') +
-  (tiled.states ? ' + figma-export.html（全状态铺开参考页）'
+  (tiled.states ? ' + ' + srcName + '-export.html（全状态铺开参考页）'
     : (EXT && scene.cells.length > 1 ? '（外部网页多页转录 ' + scene.cells.length + ' 帧）' : '（无契约，单态）')));
 if (EXT) console.log('模式: 外部网页纯图层转录——跳过本地组件库匹配/组件化/图标库映射/令牌绑定（--ext，链接导入不走自家组件体系）');
 if (iconStats) console.log('图标: 库实例 ' + iconStats.inst + '｜识别未映射(留名按库目录兜底,兜不中回退svg) ' + iconStats.nomap + '｜其他矢量 ' + iconStats.plain);

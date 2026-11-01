@@ -285,7 +285,7 @@ $('buildBtn').onclick = function(){
     var id = v.slice(3), t = null;
     feishuTasks.forEach(function(x){ if (String(x.id) === id) t = x; });
     if (!t || !t.path){ status('该任务没有 demo 源，不能转换', 'err'); return; }
-    runBuild({path: t.path}, '转飞书任务 ' + (t.demoName || t.id), t);
+    runBuild({path: t.path, outName: t.demoName}, '转飞书任务 ' + (t.demoName || t.id), t);
     return;
   }
   runBuild({path:v}, '生成 scene.json 中');

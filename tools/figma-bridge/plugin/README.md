@@ -11,7 +11,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
         → 插件面板选 HTML → 生成 scene.json → 落图（图标/控件走库实例，库目录动态找回）
 ```
 
-- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号**，置顶，**无状态标识、不区分飞书/本地**；无 demo 源的任务不进下拉）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli）；面板每 15s 轮询任务，开着也能看到新登记的；回写失败状态行报错，下拉重选该任务重新生成即重试。原「飞书任务」管理区（补填链接 / 重试回写）已按用户指令移除——Figma 链接直接到多维表格手填。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
+- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号**，置顶，**无状态标识、不区分飞书/本地**；无 demo 源的任务不进下拉）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli）；面板每 15s 轮询任务，开着也能看到新登记的；回写失败状态行报错，下拉重选该任务重新生成即重试。原「飞书任务」管理区（补填链接 / 重试回写）已按用户指令移除——Figma 链接直接到多维表格手填。**名称随任务转过去（2026-11-01）**：任务构建把 REQ 编号经 `outName` 带进 build-scene——桌面参考页名 `REQ-###-export.html`、Figma 主画板名 `REQ-### · <demo 标题>`（标题已含则不重复），与下拉/表格列表命名一致。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
 
 - **图标实例化**：demo 内联的 `MS_ICONS`（Lucide 集）经签名反查识别后，按 `tools/figma-bridge/icon-keys.json` 映射成 **Milesight_IOT_Web 团队库图标组件实例**（颜色按 currentColor 换算成描边覆盖）；无映射/导入失败自动回退矢量 SVG。库映射重建方法见 icon-keys.json 头注释。
 - **颜色令牌绑定（2026-10-30）**：落 Figma 的实色不新建裸色——build-scene 按 tokens.css 令牌名反查（跟随页面主题）产出 `scene.tokVars`，插件按 `tools/figma-bridge/token-vars.json` 注册表 `importVariableByKeyAsync` 导入库「Color Token」变量并 `setBoundVariableForPaint` 绑定（scope 门禁 + 读回校验，库值≠demo 色自动回退裸色）；改库变量全局改稿。完成通知报「令牌绑定 N」，N=0 且有 tokVars 即异常（查注册表 key / 库订阅）。
@@ -19,7 +19,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
 - **蒙版全页三根因收口（2026-10-29）**：库弹窗实例内部蒙版不随根 resize → 强制铺满+卡片重居中（通知报「蒙版铺满 N」）；蒙版透明度做在图层上（非 FILL）→ 双通道识别；DOM 蒙版嵌在有裁切容器内 → 序列化侧提升到状态帧根再全幅。
 - **词干匹配三补（2026-10-29）**：目录名末段归一（去路径前缀/序号）+ 中英文词干桥接（标题/弹窗/导航栏…）+ 权威两库优先（防多库同名命中错误库）。
 - 状态来源：demo 内嵌的 `window.MS_FIGMA_EXPORT` 契约（Tab 各态/弹窗/启用禁用/空态，见仓库 AGENTS.md 生成规范第 7 条）；无契约回退单态。
-- 同时产出 `figma-export.html`（全状态铺开参考页，浏览器打开可与 Figma 结果对照）。
+- 同时产出 `<源名>-export.html`（全状态铺开参考页，浏览器打开可与 Figma 结果对照）。命名随源走（2026-11-01）：飞书任务构建带任务名（`--out-name`，如 `REQ-020-export.html`）；本地构建取源文件名（源叫 `demo.html` 时取上级目录名 `REQ-###`）——不再落泛名 `figma-export.html` 混进「选择 HTML」本地列表。
 
 ## 安装（换电脑一句话）
 
