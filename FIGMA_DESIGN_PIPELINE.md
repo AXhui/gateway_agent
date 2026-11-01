@@ -4,7 +4,7 @@
 
 在飞书多维表格（UI demo 表）里点一个按钮，demo HTML 被取回并**登记为插件面板任务**；UED 在插件面板「选择 HTML」下拉的**飞书任务组**里选中该任务点生成，转换落画布，表格行自动回写「已完成」（Figma 链接可在面板补填）。
 
-> **面板改版（2026-11-01 用户指令「飞书任务和 html 融合到一起、最好可以选择的」+「浏览器捕获和后台库信息可以隐藏」+「飞书任务的链接融入到本地链接、编号要一致」）**：「选择 HTML」下拉为**单一列表**——飞书任务（REQ 编号 · 状态，与表格需求编号列一致，置顶）+ 本地 HTML 混排，选中点「生成」即转 + 自动回写；无 demo 源的任务置灰。原「飞书任务」区只保留**已转/回写失败**的管理行（补填链接 / 重试回写），无可管理行时整体隐藏。浏览器捕获书签移入「高级」折叠区；后台/scene/库状态卡移除（连通性诊断收敛到操作时报错提示）。
+> **面板改版（2026-11-01 用户指令「飞书任务和 html 融合到一起、最好可以选择的」+「浏览器捕获和后台库信息可以隐藏」+「飞书任务的链接融入到本地链接、编号要一致」+「脚本前端，截图部分移除」+「不要区分飞书和本地状态，也不需要有已转状态」）**：「选择 HTML」下拉为**单一列表**——飞书任务（REQ 编号，与表格需求编号列一致，置顶，**无状态标识**；无 demo 源的任务不进下拉）+ 本地 HTML 混排，选中点「生成」即转 + 自动回写；面板每 15s 轮询任务。原「飞书任务」区只保留**已转/回写失败**的管理行（补填链接 / 重试回写），无可管理行时整体隐藏。浏览器捕获书签已从前端移除（serve.py `{capture}` 分支保留）；后台/scene/库状态卡移除（连通性诊断收敛到操作时报错提示）。
 
 > **通道裁决（2026-10-31 用户指令，反转 2026-10-25 裁决）**：「点击转 Figma」按钮**默认走本地内部插件**（html-to-figma-internal，组件化/库实例化/令牌绑定全保留）；官方 html.to.design MCP 链路**保留为手动备用**（POST /task 带 `{"engine":"mcp"}` 或环境变量 `H2D_ENGINE=mcp` 时走旧自动导入，见文末附录），按钮不再默认触发它。
 
@@ -21,7 +21,7 @@
                               ▼
               登记任务 feishu-tasks.json（状态=待转；单写者 server.js，原子替换）
                               ▼  ◀── GET /api/feishu-tasks（serve.py 只读）
-              Figma 内部插件「选择 HTML」下拉 · 单一列表（飞书任务 REQ 编号 · 状态置顶 + 本地 HTML）
+              Figma 内部插件「选择 HTML」下拉 · 单一列表（飞书任务 REQ 编号置顶 + 本地 HTML）
                               │ UED 选中任务点「生成 scene.json 并导入」
                               ▼
               build-scene.js 构建 scene.json（库匹配/令牌绑定/全状态铺开全保留）
@@ -61,7 +61,7 @@
 
 对 Claude Code 说一句 **「安装 html to design 脚本」**（`install-html-to-design` 技能），自动完成：仓库 `tools/figma-bridge/plugin/` → `~/Desktop/html-to-figma-internal/` → 校验依赖 → 拉起 serve.py → 给出 Figma 导入步骤。手动等价：`mkdir -p ~/Desktop/html-to-figma-internal && cp tools/figma-bridge/plugin/* ~/Desktop/html-to-figma-internal/`，Figma 里 Plugins → Development → Import from manifest 选该目录 manifest.json。
 
-导入落在**当前打开的文件**里；UED 在目标文件里开插件，「选择 HTML」下拉为单一列表，飞书任务（REQ 编号 · 状态）置顶显示。
+导入落在**当前打开的文件**里；UED 在目标文件里开插件，「选择 HTML」下拉为单一列表，飞书任务（REQ 编号）置顶显示。
 
 ### 2. 启动桥接（本机）
 
@@ -212,7 +212,7 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 ## 日常使用
 
 1. 多维表格某行点「转 Figma」按钮——桥接取源、登记任务（`/health` 的 `localPending` +1）
-2. UED 在**目标 Figma 文件**里打开内部插件（右键 → Plugins → Development → HTML to Figma (Milesight Internal)），「选择 HTML」下拉单一列表置顶显示飞书任务（REQ 编号 · 状态）
+2. UED 在**目标 Figma 文件**里打开内部插件（右键 → Plugins → Development → HTML to Figma (Milesight Internal)），「选择 HTML」下拉单一列表置顶显示飞书任务（REQ 编号；面板每 15s 自动轮询，开着也会出现）
 3. 选中该任务点「生成 scene.json 并导入」→ 转换落画布（库实例 + 令牌绑定 + 全状态铺开）→ 完成后**面板自动**回写表格「Figma状态=已完成」并自动关闭
 4. 把当前文件的 Figma 链接在面板「补填链接」写回（或跳过——状态已回写）
 5. 回写失败时面板不关、任务标「已转·回写失败」，在「飞书任务」管理区点「重试回写」
@@ -222,7 +222,7 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 | 症状 | 查哪 |
 |---|---|
 | 按钮点了表格没动静 | `/tmp/bridge-server.log` 有没有新 `[task]`；没有 → 工作流 URL 是否过期（隧道换域名） |
-| 下拉没有飞书任务 | `feishu-tasks.json` 是否有待转条目（有 → serve.py 是否重启到新代码，curl `:8124/api/feishu-tasks` 直查）；无 → /task 是否走了 engine=mcp |
+| 下拉没有飞书任务 | `feishu-tasks.json` 是否有待转条目；无 → **cloudflared 隧道进程是否活着**（挂了工作流 POST 到不了本机，飞书通知照发——2026-11-01 实测）或 /task 是否走了 engine=mcp |
 | 点任务没反应 / build 失败 | `serve.log`（`~/Desktop/html-to-figma-internal/serve.log`）的 `/api/build` 行；demo 路径是否在 serve.py 白名单内（05_release / output / ~/Desktop） |
 | 导入成功但表格没回写 | 桥接日志 `[writeback:...]`：`记录不存在` → 表格行已删或 record_id/demoName 对不上；lark-cli 报权限 → 重跑 `lark-cli auth login`。面板留着重试即可 |
 | 完成通知「库组件实例 0」 | 目标文件未订阅两份库（资源库面板开启），见坑 6 |

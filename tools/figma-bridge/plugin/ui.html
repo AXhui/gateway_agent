@@ -152,8 +152,6 @@
       <button id="pasteBtn">导入粘贴的 JSON</button>
       <textarea id="codeTa" placeholder="或把 HTML/CSS 代码粘贴到这里（纯图层转录，相对资源可在代码头写 &lt;base href=...&gt;）"></textarea>
       <button id="codeBtn">转换粘贴的代码</button>
-      <div style="font-size:10.5px;color:var(--dim);line-height:1.5">浏览器捕获（登录页 / 本地页 / 需交互页面）：把下面的按钮<b style="color:var(--sub)">拖到 Chrome 收藏夹栏</b>，在目标页面点一下——捕获的是你眼前渲染后的页面（含登录态，curl 够不着的都走这里）。回本面板点「导入当前 scene.json」。</div>
-      <a class="capbtn" style="display:block;text-align:center;padding:8px 0;font-size:11.5px;font-weight:600;background:var(--acc-dim);color:#fff;border-radius:8px;text-decoration:none" href="javascript:(function(){var h='<!DOCTYPE html>'+document.documentElement.outerHTML;fetch('http://127.0.0.1:8124/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({capture:1,url:location.href,name:document.title||'capture',content:h})}).then(function(r){return r.json()}).then(function(j){alert(j.ok?'✅ 已捕获并发送，回 Figma 面板点「导入当前 scene.json」':'❌ '+(j.error||(j.log||[]).join(' ')))}).catch(function(e){alert('❌ 发送失败：'+e+'（确认终端已跑 serve.py）')})})();">📌 捕获此页 → Figma（拖到收藏夹栏）</a>
     </div>
   </details>
 
@@ -223,16 +221,16 @@ async function fetchScene(autoImport){
 }
 
 function pad2(x){ return (x < 10 ? '0' : '') + x; }
-// 「选择 HTML」下拉 = 单一列表：飞书任务（REQ 编号 · 状态，置顶）+ 本地 HTML；两份清单任一刷新都整体重建（选中项尽量保持）
+// 「选择 HTML」下拉 = 单一列表：飞书任务（REQ 编号，置顶，无状态标识）+ 本地 HTML；两份清单任一刷新都整体重建（选中项尽量保持）
 function renderHtmlSel(){
   var sel = $('htmlSel');
   var cur = sel.value;
   sel.innerHTML = '';
   feishuTasks.slice(0, 20).forEach(function(t){
+    if (!t.path) return;  // 无 demo 源的任务不进下拉（不区分状态，可转即可选）
     var o = document.createElement('option');
     o.value = 'ft:' + t.id;
-    o.textContent = (t.demoName || ('任务 ' + t.id)) + ' · ' + t.status;
-    if (!t.path) o.disabled = true;
+    o.textContent = t.demoName || ('任务 ' + t.id);
     sel.appendChild(o);
   });
   htmlList.forEach(function(h){
@@ -527,6 +525,8 @@ $('codeBtn').onclick = function(){
 
 loadList();
 loadFeishuTasks();
+// 飞书任务轻量轮询：面板开着也能看到新登记的任务（构建中不打扰）
+setInterval(function(){ if (!busy) loadFeishuTasks(); }, 15000);
 </script>
 </body>
 </html>

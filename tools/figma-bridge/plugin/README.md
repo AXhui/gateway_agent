@@ -11,7 +11,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
         → 插件面板选 HTML → 生成 scene.json → 落图（图标/控件走库实例，库目录动态找回）
 ```
 
-- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号 · 状态**，与表格需求编号列一致，置顶）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli），回写失败面板不关、可「重试回写」；已转/失败任务在下方管理区「补填链接 / 重试回写」（无可管理行时隐藏）。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
+- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号**，置顶，**无状态标识、不区分飞书/本地**；无 demo 源的任务不进下拉）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli）；面板每 15s 轮询任务，开着也能看到新登记的。回写失败面板不关、可「重试回写」；已转/失败任务在下方管理区「补填链接 / 重试回写」（无可管理行时隐藏）。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
 
 - **图标实例化**：demo 内联的 `MS_ICONS`（Lucide 集）经签名反查识别后，按 `tools/figma-bridge/icon-keys.json` 映射成 **Milesight_IOT_Web 团队库图标组件实例**（颜色按 currentColor 换算成描边覆盖）；无映射/导入失败自动回退矢量 SVG。库映射重建方法见 icon-keys.json 头注释。
 - **颜色令牌绑定（2026-10-30）**：落 Figma 的实色不新建裸色——build-scene 按 tokens.css 令牌名反查（跟随页面主题）产出 `scene.tokVars`，插件按 `tools/figma-bridge/token-vars.json` 注册表 `importVariableByKeyAsync` 导入库「Color Token」变量并 `setBoundVariableForPaint` 绑定（scope 门禁 + 读回校验，库值≠demo 色自动回退裸色）；改库变量全局改稿。完成通知报「令牌绑定 N」，N=0 且有 tokVars 即异常（查注册表 key / 库订阅）。
@@ -45,7 +45,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
      - **一键重导（re-import）**：每次导入（下拉/路径/链接/批量）自动记入「最近导入」历史（`figma.clientStorage` 持久化，跨会话保留，上限 12 条），点击历史行即原参数重跑；拖拽全文无持久负载不进历史。
      - **高清图（high-res images）**：图片转录取 `srcset` 最大 w/x 候选（含 `<picture><source>`，替代浏览器按视口选的小图）；懒加载占位图（data:/pixel/placeholder）自动回退 `data-src` 真实源。
    - **Free 层核心全量（2026-10-30，对标 html.to.design free-features）**：
-     - **浏览器捕获（browser capture）**：面板「浏览器捕获」区有一个 📌 书签按钮——**拖到 Chrome 收藏夹栏**，在任意目标页面（登录后内网/本地页/需交互 JS 页）点一下，渲染后的 DOM 全文直传 serve.py（`{capture}` 分支，走 `--ext --site`）——curl 抓不到的页面全走这里；捕获后回面板点「导入当前 scene.json」。
+     - **浏览器捕获（browser capture）**：面板书签按钮已按用户指令移除（2026-11-01「脚本前端，截图部分移除」）；serve.py `{capture}` 分支保留，原书签的 `javascript:` 代码仍可手动调用（渲染后 DOM 直传 → `--ext --site`）。
      - **暗色/亮色双主题（dark & light themes）**：链接/捕获/粘贴代码导入可勾「暗色补帧」，入口页按暗色约定（head 前置 localStorage 主题键 + `.dark`/`data-theme` class）补渲染一帧（帧名 `·暗色`）。**尽力转换**：站点需自带暗色约定，无暗色 CSS 则与亮色同貌。
      - **本地色样式（use local styles）**：外部网页导入时，重复 ≥3 次的不透明实色自动建本地 paint style（名称 = `#HEX`，上限 30 色）并回绑到所有节点——改一处样式全局换色。自家 ms-* demo 不走此路（实色一律绑库 Color Token 变量，契约不变）。
      - **字体映射（replace missing fonts）**：文本按页面真实 font-family 首族映射（系统栈→PingFang SC、Arial/Helvetica/Inter/Roboto/Georgia/Times/Menlo 等直用；表外字体名原样尝试加载），整族加载失败自动回退默认家族，不再全部拍平成一种字体。
