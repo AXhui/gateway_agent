@@ -23,3 +23,6 @@ tools/figma-bridge/auth.json
 
 # figma-bridge 本地链路运行态任务队列（server.js 单写，serve.py 只读，随时可删）
 tools/figma-bridge/feishu-tasks.json
+
+# Python 字节码缓存（临时产物，不入库）
+__pycache__/
