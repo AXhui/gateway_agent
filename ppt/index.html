@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>UED Next · MS AI 协作伙伴</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="content.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main id="viewport" aria-label="UED Next 比赛演讲">
+    <div id="stage">
+      <header class="masthead"><a class="wordmark" href="#1">UED<span>Next</span><i></i></a><span class="mast-caption">MS AI 协作伙伴 <b>/</b> 飞书 AI 创新应用</span><span class="edition">DESIGNED TO COLLABORATE</span></header>
+      <div id="slides"></div>
+      <div id="asset-token" aria-hidden="true"><strong>148</strong><span>组件与业务规则</span></div>
+      <footer class="stage-footer"><span id="chapter-label"></span><div class="footer-track"><div id="progress"></div></div><span id="page-label"></span></footer>
+    </div>
+  </main>
+  <nav id="toolbar" aria-label="演讲控制">
+    <button id="previous" title="上一步（←）" aria-label="上一步">←</button>
+    <span id="step-label"></span>
+    <button id="next" title="下一步（空格 / → / 翻页笔）" aria-label="下一步">→</button>
+    <span class="separator"></span>
+    <button id="open-menu" title="章节与备用页（M）">目录</button>
+    <button id="replay" title="重播当前屏（R）">重播</button>
+    <button id="presenter" title="打开独立讲稿窗口（P）">讲稿</button>
+    <button id="fullscreen" title="全屏（F）">全屏</button>
+    <button id="motion" aria-pressed="false" title="减少动态效果">减弱动效</button>
+  </nav>
+  <dialog id="menu" aria-labelledby="menu-title"><div class="dialog-heading"><div><p class="eyebrow">CONTENTS / 目录</p><h2 id="menu-title">跟着故事，看到价值。</h2></div><button data-close aria-label="关闭目录">关闭 ×</button></div><div id="menu-grid"></div><p class="menu-hint">方向键 / 空格：逐步推进　 ·　 M：目录　 ·　 R：重播　 ·　 P：讲稿　 ·　 F：全屏</p></dialog>
+  <dialog id="lightbox" aria-label="查看真实截图"><div class="lightbox-toolbar"><span id="lightbox-caption"></span><div><button id="zoom-out" aria-label="缩小">−</button><button id="zoom-reset">适合屏幕</button><button id="zoom-in" aria-label="放大">＋</button><button data-close>关闭 ×</button></div></div><div id="lightbox-surface"><img id="lightbox-image" alt=""></div><p class="lightbox-hint">滚轮缩放 · 拖动查看 · Esc 关闭</p></dialog>
+  <div id="toast" role="status"></div>
+</body>
+</html>

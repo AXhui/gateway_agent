@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "offline": true,
+  "slideCount": 17,
+  "mainDurationSeconds": 570,
+  "introDurationSeconds": 71,
+  "errors": [],
+  "localRequestCount": 31,
+  "layout": [
+    {
+      "title": "1：让 AI 懂业务",
+      "spills": []
+    },
+    {
+      "title": "2：时间，应该留给体验",
+      "spills": []
+    },
+    {
+      "title": "3：快，还不够",
+      "spills": []
+    },
+    {
+      "title": "4：业务大脑 × 协作骨架",
+      "spills": []
+    },
+    {
+      "title": "5：把经验教给 AI",
+      "spills": []
+    },
+    {
+      "title": "6：飞书，让协作真正发生",
+      "spills": []
+    },
+    {
+      "title": "7：一次真实需求",
+      "spills": []
+    },
+    {
+      "title": "8：让问题回到需求源头",
+      "spills": []
+    },
+    {
+      "title": "9：交付，可以继续编辑",
+      "spills": []
+    },
+    {
+      "title": "10：不仅快，还要算得清",
+      "spills": []
+    },
+    {
+      "title": "11：让个人经验，成为组织能力",
+      "spills": []
+    },
+    {
+      "title": "12：UED Next",
+      "spills": []
+    },
+    {
+      "title": "13：备用 / 功能与证据",
+      "spills": []
+    },
+    {
+      "title": "14：备用 / 成本口径",
+      "spills": []
+    },
+    {
+      "title": "15：备用 / 评委问答",
+      "spills": []
+    },
+    {
+      "title": "16：备用 / 拓展实录",
+      "spills": []
+    }
+  ],
+  "checks": [
+    "intro video plays with audio and can be skipped",
+    "intro returns from cover and Home",
+    "step navigation and backwards restoration",
+    "main deck stops at closing",
+    "appendix directory",
+    "evidence zoom",
+    "manual video playback and seek ranges",
+    "video end pause",
+    "video leave pause",
+    "manual and error screenshot fallbacks",
+    "speaker popup and preview synchronization",
+    "speaker timer",
+    "reduced motion",
+    "16:9 and 4:3 and mobile letterboxing"
+  ]
+}
