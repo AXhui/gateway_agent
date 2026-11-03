@@ -217,6 +217,10 @@
   addEventListener('pagehide',()=>pauseAll());
   if(isPreview){$('#toolbar').hidden=true;document.body.classList.add('reduced');}
   resize();render(true);controlsVisible();
+  document.fonts.ready.then(()=>{
+    resize();
+    if(!document.fonts.check('28px "UED Sans"'))toast('内置字体未加载，请保留完整的 assets/fonts 文件夹后重新打开。');
+  });
 
   // Evidence viewer: bounded zoom, pointer capture and pan.
   let zoom=1,panX=0,panY=0,drag=null;
