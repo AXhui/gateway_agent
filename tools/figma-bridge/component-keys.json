@@ -21,16 +21,17 @@
    "kind": "set",
    "enabled": true,
    "tokens": {
+    "": "strock",
     "primary": "primary",
     "danger": "danger",
     "success": "success",
-    "dashed": "dashed",
-    "link": "link",
+    "dashed": "dash",
+    "link": "text",
     "text": "text",
-    "filled": "filled",
+    "filled": "primary",
     "xs": "xs",
-    "sm": "small",
-    "lg": "large",
+    "sm": "s",
+    "lg": "l",
     "loading": "loading",
     "disabled": "disabled"
    }
@@ -113,12 +114,13 @@
    "kind": "set",
    "enabled": true,
    "tokens": {
-    "primary": "primary",
-    "success": "success",
-    "error": "error",
-    "warn": "warning",
-    "warm": "warning",
-    "remind": "remind",
+    "": "light background,default",
+    "primary": "light background,primary",
+    "success": "light background,success",
+    "error": "light background,danger",
+    "warn": "light background,warning",
+    "warm": "light background,warning",
+    "remind": "light background,warning",
     "outline": "outline",
     "round": "round"
    }
@@ -252,11 +254,11 @@
   {
    "cls": "bc-eg71-sidenav",
    "lib": "biz",
-   "key": "b0a2f0467524c5ed13e8a9303354f5b059690067",
-   "figmaName": "侧边栏-账户",
+   "key": "53afdc24e9a6bdc6deeb48e3102b37114c519bf0",
+   "figmaName": "侧边栏",
    "kind": "set",
    "enabled": true,
-   "note": "壳侧边栏整块直调业务库实例（用户 2026-10-24 指示：库里已做好，直接调用去改造）；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
+   "note": "壳侧边栏整块直调业务库**完整侧边栏**（2026-10-31 用户指示：改引用完整侧边栏，原「侧边栏- 账户」只是账户局部段）；实例文案按 demo 逐段改写（rewriteInstanceText 对位-校验-自愈），demo 段数超实例容量时表达力守卫回退本地重绘保内容；菜单高亮态/当前路由由设计师在 Figma 内切变体或改实例；导入失败自动回退本地重绘子树"
   },
   {
    "cls": "ms-header",
@@ -336,7 +338,7 @@
    "figmaName": "Progress-Line",
    "kind": "set",
    "enabled": false,
-   "note": "进度条（track+bar）——已检索命中；变体轴未勘验且填充百分比不可由实例表达（30% 进度会失真），待变体勘验后启用；表格内进度另有 Components/Table-Cell/Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb"
+   "note": "进度条（track+bar）——已勘验（十一轮）：Progress-Line/Status-Normal 集（本 key）Value 值轴仅 5%~95% 的 5% 离散档、宽度烤死（large 400×22 / Small 174×18），HTML ms-progress-bar 是任意 % 内层宽度——实例 resize 只缩根、内层填充条不随比例重排（statCard 同族判例：实例内层 resize 真 API 不可靠）→ 不可表达，维持 disabled。另有 Progress-Line 状态集（Status=Success/Error/Warn/Waiting × Small 小）同因填充宽度烤死不可表达。启用条件：库提供填充条独立子组件、或实例内层比例 resize 可靠化。表格内进度另有 Components/Table-Cell/Progress e50fbbc663351bbe0d9a562ce47ce288bfab5edb"
   },
   {
    "cls": "ms-form-item",
@@ -372,7 +374,8 @@
    "figmaName": "Statistic",
    "kind": "set",
    "enabled": true,
-   "note": "统计数值——demo 无 ms-stat 块级锚点（仅 stat-title/value/suffix/trend 子件类）；待统计卡形态守卫；Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
+   "guard": "statCard",
+   "note": "统计数值——statCard 守卫（2026-10-31 像素审计缺陷 B）：库 Statistic 为横排（图标+数值+后缀）；HTML 竖排统计瓦片（小标题在上、大数值在下）表达不了 → 守卫不过本地绘制。Trend 93f9f72bdd0ed01b60e0db45e4e9b78d67305e88 / Trend Group 35faa7cbb8655386188aebcc159943e62fbd8794 备用"
   },
   {
    "cls": "ms-step",
@@ -380,26 +383,43 @@
    "key": "b9453771916484a745f8ebbf330eebd810b85d6a",
    "figmaName": "components/steps-item",
    "kind": "set",
-   "enabled": false,
-   "note": "步骤项——变体轴未勘验（步骤条集 95e3f2fc32b88278e2443515e88ea6ddc8884239 / steps-item-dot 865d4969d43ef3abf39fb87d37db7b7f6821a269 / steps-item-icon 18203362a6ba9fdd8c94767c1a8787bd52a01aeb 记录备用）"
+   "guard": "stepItem",
+   "enabled": true,
+   "tokens": {
+    "": "水平左对齐,等待",
+    "done": "水平左对齐,完成",
+    "active": "水平左对齐,进行中"
+   },
+   "note": "十一轮启用（用户令「步骤条也要组件，html 出现的内容都有」）。整条 steps 集（95e3f2…）Number 轴只有 3~6 变体（无 2 步）且变体内部仅是 item 并排无附加结构——弃整条走逐项映射，任意步数可表达。状态经修饰类 token：done→完成 / active→进行中 / 裸类兜底→等待；Layout=水平左对齐烤入全部 token 值；Small 小型走高度裁决（块 24px→true 胜 32px 差 8px）。tail 连接线烤在 item 内（header.tail 内 line 矢量）：build-scene 采 lib.tail（后代有无 ms-step-line）——末步 tail:0 藏 tail、有线的步骤把 tail/line 拉宽到实例余宽（demo 的 flex:1 连线填满到右端）。步号数字是 icon 子实例内 TEXT 层（'2'），随 rewriteInstanceText 阅读序对位覆写；done 步 HTML 无数字文本（check svg），Complete 变体 icon 是对勾无文字。含 desc 的步骤条（升级弹窗）守卫不过走本地绘制——tip 帧烤在 item 内且高度证据被 desc 拉高 muddy，不硬凑"
   },
   {
-   "cls": "ms-timeline-item",
+   "cls": "ms-timeline-dot",
    "lib": "web",
    "key": "25c49e2f0d7c63340bb8a3a523373f9758bc7dfa",
    "figmaName": "time-dot",
    "kind": "set",
-   "enabled": false,
-   "note": "时间轴项——变体轴未勘验（Timeline 整条 8b68ec5abaef290026e4d65dd7fe4fc4ce11cbbc / time 组件集 7fa25d5c673a1a62aea93cd49b331a3bacd5fe34 记录备用）"
+   "enabled": true,
+   "tokens": {
+    "": "进行中",
+    "success": "完成",
+    "error": "失败",
+    "muted": "等待",
+    "warm": "等待"
+   },
+   "note": "十一轮启用（用户令「html 出现的内容都有」）。已勘验：time-dot 集单轴 status 状态=进行中/完成/完成-big/失败/等待（8×8，完成-big 16×16 是值非轴——demo 点恒 9px 不用）。状态经修饰类 token：裸(primary)→进行中 / --success→完成 / --error→失败 / --muted→等待 / --warm→等待（库无 warm 档，色差由 repaintLibInstance 按 HTML 覆写兜正——硬性规则「颜色以 HTML 为准」）。9×9 resize 到块尺寸。外圈 3px ring（box-shadow spread）序列化不覆盖，9px 级视觉差可忽略。整条 Timeline 集（8b68ec5a，Mode=left/right/alternate）内容烤死弃用；components/time 项集（7fa25d5c，left×Type×Disabled，90px 高内容烤入）整项换装会冻标题/时间文案——弃用，时间轴行（线+文案）走本地绘制、点走本集"
   },
   {
-   "cls": "ms-segmented",
+   "cls": "ms-segmented-item",
    "lib": "web",
-   "key": "bac33c7889e56fd62f740a667af511ed3aaa8af0",
-   "figmaName": "Segmented-group",
+   "key": "ab98425f47361fb7360528a2c647a895c6c241f8",
+   "figmaName": "components/Segmented",
    "kind": "set",
-   "enabled": false,
-   "note": "分段单选——demo 锚点为 ms-segmented-item（项级）而非组级；内部项集 ab98425f47361fb7360528a2c647a895c6c241f8 记录备用，待项级锚点启用"
+   "enabled": true,
+   "tokens": {
+    "": "选中=false",
+    "active": "选中=true"
+   },
+   "note": "十一轮启用（用户令「html 出现的内容都有」）。已勘验：item 集四轴 尺寸(大30/中26/小20/迷你18)×选中(true/false)×悬停×禁用；选中经修饰类 token（--active→true / 裸→false），悬停/禁用落默认 false（demo 无此修饰类）。尺寸轴：demo item 高≈28（13px 文案+4×2 padding）vs 大30/中26 双双差 2px 平局不判 → 默认档（大）+ 根 resize 到块高吸收 2px。组级 Segmented-group 集（bac33c78，尺寸×数量2-5×↳选中位）弃用：数量/选中位是结构事实非类名，token 表达不了（需 build-scene 合成结构证据 = 新机制），且组宽烤死（如 数量4=283px）实例内层不随比例重排；组轨道（灰底圆角）走本地结构帧，与 steps 逐项映射同构（项走库、轨道本地）"
   },
   {
    "cls": "ms-tabs",

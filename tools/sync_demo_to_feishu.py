@@ -97,6 +97,7 @@ def main():
     )
     parser.add_argument("--prompt", default="", help="用户本次的原始提示词/需求原话")
     parser.add_argument("--req-id", default="", help="需求编号（如 REQ-004），供工作流按需求查找/更新旧记录")
+    parser.add_argument("--duration", default="", help="生成耗时（分钟，可空）")
     parser.add_argument("--category", default="", help="产品分类：云平台/CCTV/CV/网关/路由器/uink（AI 自动判断）")
     # AI 自评的 5 维度分数（0-100，整数）；不填则为空，等待 UED 复核
     parser.add_argument("--structure", type=int, help="结构还原度 0-100（AI 自评）")
@@ -227,6 +228,34 @@ def main():
                 except Exception as e:
                     print(f"[组件分析] 失败（不阻塞同步）: {e}", file=sys.stderr)
 
+    # 编号裁定（2026-11-09 用户裁定：REQ 编号唯一权威源=飞书多维表格，先占先得）
+    # demo 进飞书时做「新增编号」操作：目标编号被其他生成人/其他提示词的记录先占
+    # → 自动挪到全表 max+1 再入表；属本生成人或同 demo（提示词匹配）→ 同号更新。
+    if args.req_id:
+        if not args.generator:
+            print(
+                "[编号裁定] 警告：生成人为空（git config user.name 未设置？），"
+                "表格「生成人」列会记空值",
+                file=sys.stderr,
+            )
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import next_req_id
+
+            rows = next_req_id.fetch_occupied_rows()
+            if rows is None:
+                print("[编号裁定] 警告：无法查询多维表格，跳过裁定（编号冲突不拦截）", file=sys.stderr)
+            else:
+                final_id, note = next_req_id.arbitrate(
+                    args.req_id, args.generator, clean_prompt(args.prompt), rows
+                )
+                if final_id != args.req_id:
+                    print(f"[编号裁定] {args.req_id} → {final_id}：{note}", file=sys.stderr)
+                    args.name = args.name.replace(args.req_id, final_id)
+                    args.req_id = final_id
+        except Exception as e:
+            print(f"[编号裁定] 失败（不阻塞同步）: {e}", file=sys.stderr)
+
     payload = {
         "Demo 名称": args.name,
         "需求描述": args.description,
@@ -246,10 +275,51 @@ def main():
         "产品分类": category,
         "AI自评": ai_comment,
         "组件清单": component_list_text,
+        # 新行即该 REQ 当前最新（webhook 若映射此字段则新行自带标记；
+        # 随后 backfill_demo_components.sh 会清掉旧行的「最新」，保证每 REQ 恒一条）
+        "最新": True,
     }
 
     print(f"[同步中] {args.name} → {webhook_url}")
     ok = sync_to_feishu(payload, webhook_url, webhook_token)
+
+    # 同步成功后自动回填「使用组件」link 字段（webhook 写不了 link，只能靠 lark-cli）。
+    # 根因（2026-10-31 空白行事故）：webhook 插行不带 link 字段，回填此前只挂在
+    # post-commit 钩子上——手动同步、或钩子回填早于 webhook 索引刷新，都会留下空白行。
+    # 这里兜底：本机有 lark-cli 就地回填（全量更新该 REQ 的记录），没有则显式警告。
+    if ok and args.req_id:
+        demo_dir = (
+            Path(args.demo_dir) if args.demo_dir
+            else (Path(args.quality_file).parent if args.quality_file else None)
+        )
+        demo_html = (demo_dir / "demo.html") if demo_dir else None
+        if demo_html and demo_html.is_file():
+            import shutil
+            import time
+
+            if shutil.which("lark-cli"):
+                time.sleep(2)  # webhook 插行后 record-search 索引有滞后
+                repo_root = Path(__file__).resolve().parent.parent
+                cmd = [
+                    "bash", str(repo_root / "tools" / "backfill_demo_components.sh"),
+                    "--demo-file", str(demo_html),
+                    "--req-id", args.req_id,
+                ]
+                if args.quality_file:
+                    cmd += ["--quality-file", args.quality_file]
+                res = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+                lines = (res.stdout or "").strip().splitlines()
+                for ln in lines[-3:] or ["（回填脚本无输出）"]:
+                    print(f"[回填] {ln}")
+                if res.returncode != 0:
+                    print(f"[警告] 回填退出码 {res.returncode}：{(res.stderr or '').strip()[:300]}", file=sys.stderr)
+            else:
+                print(
+                    "[警告] 本机无 lark-cli，「使用组件/AI自评」字段暂空："
+                    "请在本机登录 lark-cli 后重跑，或手动执行 tools/backfill_demo_components.sh",
+                    file=sys.stderr,
+                )
+
     sys.exit(0 if ok else 1)
 
 

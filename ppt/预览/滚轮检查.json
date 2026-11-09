@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    "scroll down and up",
+    "intro skip and return",
+    "cross-slide restoration",
+    "gesture inertia suppression",
+    "video control exclusion",
+    "directory scrolling",
+    "evidence zoom preserved",
+    "browser zoom preserved",
+    "horizontal ignored",
+    "line and page delta normalization"
+  ],
+  "errors": []
+}

@@ -69,69 +69,69 @@ window.MS_ICONS = {
   scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" x2="17" y1="12" y2="12"/></svg>',
   chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>',
   chevronUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>',
-  chevronsLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5" />path d="m18 17-5-5 5-5" /></svg>',
-  chevronsRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 17 5-5-5-5" />path d="m13 17 5-5-5-5" /></svg>',
-  chevronsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5" />path d="m17 18-5-5-5 5" /></svg>',
-  chevronsDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5" />path d="m7 13 5 5 5-5" /></svg>',
-  arrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" />path d="M12 19V5" /></svg>',
-  arrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" />path d="m19 12-7 7-7-7" /></svg>',
-  cornerUpLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20v-7a4 4 0 0 0-4-4H4" />path d="M9 14 4 9l5-5" /></svg>',
-  cornerUpRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5" />path d="M4 20v-7a4 4 0 0 1 4-4h12" /></svg>',
-  arrowUpToLine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14" />path d="m18 13-6-6-6 6" />path d="M12 7v14" /></svg>',
-  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />circle cx="12" cy="12" r="3" /></svg>',
-  eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />path d="m2 2 20 20" /></svg>',
-  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" />path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>',
-  rotateCcw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />path d="M3 3v5h5" /></svg>',
-  rotateCw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />path d="M21 3v5h-5" /></svg>',
-  eraser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" />path d="m5.082 11.09 8.828 8.828" /></svg>',
-  gripVertical: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1" />circle cx="9" cy="5" r="1" />circle cx="9" cy="19" r="1" />circle cx="15" cy="12" r="1" />circle cx="15" cy="5" r="1" />circle cx="15" cy="19" r="1" /></svg>',
-  indentDecrease: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H11" />path d="M21 12H11" />path d="M21 19H11" />path d="m7 8-4 4 4 4" /></svg>',
-  indentIncrease: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H11" />path d="M21 12H11" />path d="M21 19H11" />path d="m3 8 4 4-4 4" /></svg>',
-  fileText: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />path d="M14 2v5a1 1 0 0 0 1 1h5" />path d="M10 9H8" />path d="M16 13H8" />path d="M16 17H8" /></svg>',
-  fileArchive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5" />path d="M14 2v5a1 1 0 0 0 1 1h5" />path d="M8 12v-1" />path d="M8 18v-2" />path d="M8 7V6" />circle cx="8" cy="20" r="2" /></svg>',
-  fileInput: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1" />path d="M14 2v5a1 1 0 0 0 1 1h5" />path d="M2 15h10" />path d="m9 18 3-3-3-3" /></svg>',
-  fileOutput: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.226 20.925A2 2 0 0 0 6 22h12a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v3.127" />path d="M14 2v5a1 1 0 0 0 1 1h5" />path d="m5 11-3 3" />path d="m5 17-3-3h10" /></svg>',
-  layoutTemplate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="7" x="3" y="3" rx="1" />rect width="9" height="7" x="3" y="14" rx="1" />rect width="5" height="7" x="16" y="14" rx="1" /></svg>',
+  chevronsLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5" /><path d="m18 17-5-5 5-5" /></svg>',
+  chevronsRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" /></svg>',
+  chevronsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5" /><path d="m17 18-5-5-5 5" /></svg>',
+  chevronsDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5" /><path d="m7 13 5 5 5-5" /></svg>',
+  arrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>',
+  arrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></svg>',
+  cornerUpLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20v-7a4 4 0 0 0-4-4H4" /><path d="M9 14 4 9l5-5" /></svg>',
+  cornerUpRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5" /><path d="M4 20v-7a4 4 0 0 1 4-4h12" /></svg>',
+  arrowUpToLine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14" /><path d="m18 13-6-6-6 6" /><path d="M12 7v14" /></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>',
+  rotateCcw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>',
+  rotateCw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>',
+  eraser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" /><path d="m5.082 11.09 8.828 8.828" /></svg>',
+  gripVertical: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></svg>',
+  indentDecrease: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H11" /><path d="M21 12H11" /><path d="M21 19H11" /><path d="m7 8-4 4 4 4" /></svg>',
+  indentIncrease: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H11" /><path d="M21 12H11" /><path d="M21 19H11" /><path d="m3 8 4 4-4 4" /></svg>',
+  fileText: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>',
+  fileArchive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M8 12v-1" /><path d="M8 18v-2" /><path d="M8 7V6" /><circle cx="8" cy="20" r="2" /></svg>',
+  fileInput: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M2 15h10" /><path d="m9 18 3-3-3-3" /></svg>',
+  fileOutput: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.226 20.925A2 2 0 0 0 6 22h12a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v3.127" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="m5 11-3 3" /><path d="m5 17-3-3h10" /></svg>',
+  layoutTemplate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="7" x="3" y="3" rx="1" /><rect width="9" height="7" x="3" y="14" rx="1" /><rect width="5" height="7" x="16" y="14" rx="1" /></svg>',
   folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>',
-  type: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16" />path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />path d="M9 20h6" /></svg>',
-  image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" />circle cx="9" cy="9" r="2" />path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>',
-  languages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6" />path d="m4 14 6-6 2-3" />path d="M2 5h12" />path d="M7 2h1" />path d="m22 22-5-10-5 10" />path d="M14 18h6" /></svg>',
-  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />rect x="2" y="4" width="20" height="16" rx="2" /></svg>',
+  type: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16" /><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /><path d="M9 20h6" /></svg>',
+  image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>',
+  languages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6" /><path d="m4 14 6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="m22 22-5-10-5 10" /><path d="M14 18h6" /></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" /></svg>',
   messageSquare: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
-  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3" />circle cx="6" cy="12" r="3" />circle cx="18" cy="19" r="3" />line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>',
-  arrowRightLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4" />path d="M20 7H4" />path d="m8 21-4-4 4-4" />path d="M4 17h16" /></svg>',
-  repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4" />path d="M3 11v-1a4 4 0 0 1 4-4h14" />path d="m7 22-4-4 4-4" />path d="M21 13v1a4 4 0 0 1-4 4H3" /></svg>',
-  columns3: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" />path d="M9 3v18" />path d="M15 3v18" /></svg>',
-  idCard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 19a4 4 0 00-8 0" />path d="M16 10h2" />path d="M16 14h2" />circle cx="9" cy="12" r="3" />rect x="2" y="5" width="20" height="14" rx="2" /></svg>',
-  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5" />path d="M21 12H9" />path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>',
-  login: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" />path d="M15 12H3" />path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg>',
-  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h.01" />path d="M3 12h.01" />path d="M3 19h.01" />path d="M8 5h13" />path d="M8 12h13" />path d="M8 19h13" /></svg>',
-  hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" />line x1="4" x2="20" y1="15" y2="15" />line x1="10" x2="8" y1="3" y2="21" />line x1="16" x2="14" y1="3" y2="21" /></svg>',
-  thumbsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />path d="M7 10v12" /></svg>',
-  circleX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" />path d="m15 9-6 6" />path d="m9 9 6 6" /></svg>',
-  squareMinus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" />path d="M8 12h8" /></svg>',
-  squarePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" />path d="M8 12h8" />path d="M12 8v8" /></svg>',
-  squareCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" />path d="m9 11 3 3L22 4" /></svg>',
-  circleArrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" />path d="M12 8v8" />path d="m8 12 4 4 4-4" /></svg>',
-  circleArrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" />path d="m16 12-4-4-4 4" />path d="M12 16V8" /></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>',
+  arrowRightLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4" /><path d="M20 7H4" /><path d="m8 21-4-4 4-4" /><path d="M4 17h16" /></svg>',
+  repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" /></svg>',
+  columns3: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path d="M15 3v18" /></svg>',
+  idCard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 19a4 4 0 00-8 0" /><path d="M16 10h2" /><path d="M16 14h2" /><circle cx="9" cy="12" r="3" /><rect x="2" y="5" width="20" height="14" rx="2" /></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>',
+  login: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h.01" /><path d="M3 12h.01" /><path d="M3 19h.01" /><path d="M8 5h13" /><path d="M8 12h13" /><path d="M8 19h13" /></svg>',
+  hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></svg>',
+  thumbsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /><path d="M7 10v12" /></svg>',
+  circleX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>',
+  squareMinus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /></svg>',
+  squarePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>',
+  squareCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" /><path d="m9 11 3 3L22 4" /></svg>',
+  circleArrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v8" /><path d="m8 12 4 4 4-4" /></svg>',
+  circleArrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m16 12-4-4-4 4" /><path d="M12 16V8" /></svg>',
   loaderCircle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>',
-  nfc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" />path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" />path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8" />path d="M16.37 2a20.16 20.16 0 0 1 0 20" /></svg>',
-  gauge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4" />path d="M3.34 19a10 10 0 1 1 17.32 0" /></svg>',
-  bellRing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" />path d="M22 8c0-2.3-.8-4.3-2-6" />path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />path d="M4 2C2.8 3.7 2 5.7 2 8" /></svg>',
-  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />path d="m21.854 2.147-10.94 10.939" /></svg>',
-  workflow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2" />path d="M7 11v4a2 2 0 0 0 2 2h4" />rect width="8" height="8" x="13" y="13" rx="2" /></svg>',
-  volume2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />path d="M16 9a5 5 0 0 1 0 6" />path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></svg>',
-  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" />path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" />path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>',
-  packagePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12" />path d="M16 17h6" />path d="M19 14v6" />path d="M21 10.535V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955" />path d="M3.29 7 12 12l8.71-5" />path d="m7.5 4.27 8.997 5.148" /></svg>',
-  toggleLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="3" />rect width="20" height="14" x="2" y="5" rx="7" /></svg>',
-  toggleRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="12" r="3" />rect width="20" height="14" x="2" y="5" rx="7" /></svg>',
+  nfc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" /><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" /><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8" /><path d="M16.37 2a20.16 20.16 0 0 1 0 20" /></svg>',
+  gauge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" /></svg>',
+  bellRing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M22 8c0-2.3-.8-4.3-2-6" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /><path d="M4 2C2.8 3.7 2 5.7 2 8" /></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></svg>',
+  workflow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2" /><path d="M7 11v4a2 2 0 0 0 2 2h4" /><rect width="8" height="8" x="13" y="13" rx="2" /></svg>',
+  volume2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /><path d="M16 9a5 5 0 0 1 0 6" /><path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></svg>',
+  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>',
+  packagePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12" /><path d="M16 17h6" /><path d="M19 14v6" /><path d="M21 10.535V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955" /><path d="M3.29 7 12 12l8.71-5" /><path d="m7.5 4.27 8.997 5.148" /></svg>',
+  toggleLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="3" /><rect width="20" height="14" x="2" y="5" rx="7" /></svg>',
+  toggleRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="12" r="3" /><rect width="20" height="14" x="2" y="5" rx="7" /></svg>',
   wrench: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" /></svg>',
-  database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" />path d="M3 5V19A9 3 0 0 0 21 19V5" />path d="M3 12A9 3 0 0 0 21 12" /></svg>',
-  databaseBackup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" />path d="M3 12a9 3 0 0 0 5 2.69" />path d="M21 9.3V5" />path d="M3 5v14a9 3 0 0 0 6.47 2.88" />path d="M12 12v4h4" />path d="M13 20a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L12 16" /></svg>',
-  trendingUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6" />path d="m22 7-8.5 8.5-5-5L2 17" /></svg>',
-  gitCompare: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3" />circle cx="6" cy="6" r="3" />path d="M13 6h3a2 2 0 0 1 2 2v7" />path d="M11 18H8a2 2 0 0 1-2-2V9" /></svg>',
-  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
-  unlink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71" />path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71" />line x1="8" x2="8" y1="2" y2="5" />line x1="2" x2="5" y1="8" y2="8" />line x1="16" x2="16" y1="19" y2="22" />line x1="19" x2="22" y1="16" y2="16" /></svg>',
+  database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></svg>',
+  databaseBackup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 12a9 3 0 0 0 5 2.69" /><path d="M21 9.3V5" /><path d="M3 5v14a9 3 0 0 0 6.47 2.88" /><path d="M12 12v4h4" /><path d="M13 20a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L12 16" /></svg>',
+  trendingUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6" /><path d="m22 7-8.5 8.5-5-5L2 17" /></svg>',
+  gitCompare: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" /><path d="M13 6h3a2 2 0 0 1 2 2v7" /><path d="M11 18H8a2 2 0 0 1-2-2V9" /></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
+  unlink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71" /><path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71" /><line x1="8" x2="8" y1="2" y2="5" /><line x1="2" x2="5" y1="8" y2="8" /><line x1="16" x2="16" y1="19" y2="22" /><line x1="19" x2="22" y1="16" y2="16" /></svg>',
 };
 
 /* ---------- 渲染小工具 ---------- */
@@ -723,7 +723,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-com-title', cn: '标题', cat: '通用',
-      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。',
+      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。v1.2.0（REQ-020）：按钮区 buttons 增可选 icon/key/disabled，bind 分发 eg71-com-title-btn（detail.key），向后兼容。',
       atoms: ['typography', 'form', 'tag', 'icon', 'tooltip', 'switch', 'button', 'text'],
       entityHint: 'com',
       tags: ['标题', '页面', 'Tab', '卡片', '分组', 'Tag', '开关', '按钮'],
@@ -752,12 +752,12 @@ window.MS_BIZ_UTIL = (function () {
           const sw = `<label class="ms-switch ms-switch--xs"><input type="checkbox"${ctx.switchChecked ? ' checked' : ''}><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>`;
           main.push(`${label}${sw}`);
         }
-        // 右组：操作按钮区——独立按钮、gap 12（契约禁贴合式 ms-btn-group）
+        // 右组：操作按钮区——独立按钮、gap 12（契约禁贴合式 ms-btn-group）；v1.2.0 增可选 icon/key/disabled + bind 事件分发
         let extraEl = '';
         if (ctx.showButton && Array.isArray(ctx.buttons) && ctx.buttons.length) {
           extraEl = `<div class="bc-com-title-extra">${ctx.buttons.map(b => {
             const kind = b.kind === 'filled' ? ' ms-btn--filled' : (b.kind === 'text' ? ' ms-btn--text' : '');
-            return `<button class="ms-btn ms-btn--sm${kind}">${esc(b.t)}</button>`;
+            return `<button type="button" class="ms-btn ms-btn--sm${kind}"${b.key ? ` data-title-btn="${esc(b.key)}"` : ''}${b.disabled ? ' disabled' : ''}>${b.icon ? ico(b.icon, 16) : ''}${esc(b.t)}</button>`;
           }).join('')}</div>`;
         }
         const row = `<div class="bc-com-title-row"><div class="bc-com-title-main">${main.join('')}</div>${extraEl}</div>`;
@@ -765,6 +765,13 @@ window.MS_BIZ_UTIL = (function () {
           ? `<span class="bc-com-title-desc ms-text ms-text--auxiliary">${esc(ctx.describe)}</span>`
           : '';
         return `<div class="bc-com-title bc-com-title--${level}${alignCls}">${row}${descEl}</div>`;
+      },
+      bind(root) {
+        const rootEl = (root && root.querySelectorAll) ? root : document;
+        rootEl.querySelectorAll('[data-title-btn]').forEach(b => b.addEventListener('click', () => {
+          if (b.disabled) return;
+          b.dispatchEvent(new CustomEvent('eg71-com-title-btn', { bubbles: true, detail: { key: b.getAttribute('data-title-btn') } }));
+        }));
       }
     },
     {
@@ -4840,7 +4847,7 @@ window.MS_BIZ_UTIL = (function () {
           + '<div class="ms-modal-body bc-eg71-lib-upload-body">'
           + '<div class="ms-alert ms-alert--info"><span class="ms-alert-icon">' + ico('info', 16) + '</span>'
           + '<div class="ms-alert-body"><span>' + esc(ctx.note || 'Please make sure the offline package is a standard package officially released by Milesight.') + '</span>'
-          + ' <a class="ms-link" href="javascript:void(0)" data-lib-upload-download>' + esc(ctx.linkText || 'Official Download') + '</a></div></div>'
+          + (ctx.hideLink ? '' : ' <a class="ms-link" href="javascript:void(0)" data-lib-upload-download>' + esc(ctx.linkText || 'Official Download') + '</a>') + '</div></div>'
           + '<div class="bc-eg71-lib-upload-drop">'
           + '<div class="ms-upload" data-lib-upload-file tabindex="0" role="button" aria-label="Select offline package">'
           + ico('upload', 32)
@@ -4888,13 +4895,17 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-device-lib-table', cn: '设备库型号表', cat: '数据服务',
-      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库帧 · EG71 表格左对齐契约硬性落地）：Device Model / Service Reference Count（bc-num 计数下钻链接）/ Operation（eye 图标钮，bc-eg71-table-ops 仅 nowrap）三列全左对齐，表尾 Total N + 单页分页；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count（计数下钻）/ eg71-devicelib-view（型号查看，detail.model）。',
+      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库主帧 6 列 · EG71 表格左对齐契约硬性落地）：Device Model / Vendor / Protocol Type / Number of Objects（bc-num）/ Device Reference Count（bc-num 计数下钻链接）/ Operation（opsMode=view 单 eye 钮；manage 追加 edit/trash 钮，bc-eg71-table-ops 仅 nowrap）全列左对齐，表尾 Total N + 分页（pageSize/page 派生页码，点击翻页）；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count / eg71-devicelib-view / eg71-devicelib-edit / eg71-devicelib-delete（detail.model）/ eg71-devicelib-page（detail.page）。v2.0.0（REQ-020）：3 列升 6 列（rows 增 vendor/protocol/objects，列头默认随 Figma 主帧），Operation 增 manage 形态与翻页。',
       atoms: ['table', 'button', 'icon', 'pagination', 'empty'],
       entityHint: 'gateway',
-      tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', 'EG71'],
+      tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', '厂商', '协议', 'EG71'],
       render(ctx) {
         const rows = ctx.rows || [];
         const total = typeof ctx.total === 'number' ? ctx.total : rows.length;
+        const opsMode = ctx.opsMode === 'manage' ? 'manage' : 'view';
+        const pageSize = typeof ctx.pageSize === 'number' && ctx.pageSize > 0 ? ctx.pageSize : 10;
+        const page = typeof ctx.page === 'number' && ctx.page > 0 ? ctx.page : 1;
+        const pages = Math.max(1, Math.ceil(total / pageSize));
         if (!rows.length) {
           return '<div class="bc-eg71-device-lib-table"><div class="ms-empty">'
             + ico('fileText', 32)
@@ -4905,18 +4916,33 @@ window.MS_BIZ_UTIL = (function () {
           + '<table class="ms-table">'
           + '<thead><tr>'
           + '<th>' + esc(ctx.modelTitle || 'Device Model') + '</th>'
-          + '<th>' + esc(ctx.countTitle || 'Service Reference Count') + '</th>'
+          + '<th>' + esc(ctx.vendorTitle || 'Vendor') + '</th>'
+          + '<th>' + esc(ctx.protocolTitle || 'Protocol Type') + '</th>'
+          + '<th>' + esc(ctx.objectsTitle || 'Number of Objects') + '</th>'
+          + '<th>' + esc(ctx.countTitle || 'Device Reference Count') + '</th>'
           + '<th>' + esc(ctx.opsTitle || 'Operation') + '</th>'
           + '</tr></thead>'
           + '<tbody>' + rows.map(r => '<tr>'
             + '<td><span class="bc-eg71-device-lib-name">' + esc(r.model) + '</span></td>'
-            + '<td><a class="ms-link bc-num bc-eg71-device-lib-count" href="javascript:void(0)" data-devicelib-count="' + esc(r.model) + '" aria-label="' + esc(r.model) + ' service references">' + r.refs + '</a></td>'
-            + '<td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-devicelib-view="' + esc(r.model) + '" aria-label="View ' + esc(r.model) + '" title="View">' + ico('eye', 16) + '</button></td>'
+            + '<td>' + esc(r.vendor || '—') + '</td>'
+            + '<td>' + esc(r.protocol || '—') + '</td>'
+            + '<td><span class="bc-num">' + (r.objects != null ? r.objects : '—') + '</span></td>'
+            + '<td><a class="ms-link bc-num bc-eg71-device-lib-count" href="javascript:void(0)" data-devicelib-count="' + esc(r.model) + '" aria-label="' + esc(r.model) + ' reference count">' + r.refs + '</a></td>'
+            + '<td class="bc-eg71-table-ops"><button type="button" class="ms-btn ms-btn--sm" data-devicelib-view="' + esc(r.model) + '" aria-label="View ' + esc(r.model) + '" title="View">' + ico('eye', 16) + '</button>'
+            + (opsMode === 'manage'
+              ? '<button type="button" class="ms-btn ms-btn--sm" data-devicelib-edit="' + esc(r.model) + '" aria-label="Edit ' + esc(r.model) + '" title="Edit">' + ico('edit', 16) + '</button>'
+                + '<button type="button" class="ms-btn ms-btn--sm" data-devicelib-delete="' + esc(r.model) + '" aria-label="Delete ' + esc(r.model) + '" title="Delete">' + ico('trash', 16) + '</button>'
+              : '')
+            + '</td>'
             + '</tr>').join('') + '</tbody>'
           + '</table>'
           + '<div class="bc-table-foot bc-eg71-device-lib-foot">'
           + '<span class="ms-text ms-text--secondary ms-text--sm">Total <span class="bc-num">' + total + '</span></span>'
-          + '<span class="ms-pagination"><span class="ms-page-item" disabled>‹</span><span class="ms-page-item ms-page-item--active">1</span><span class="ms-page-item" disabled>›</span></span>'
+          + '<span class="ms-pagination">'
+          + '<span class="ms-page-item"' + (page <= 1 ? ' disabled' : ' data-devicelib-page="' + (page - 1) + '"') + '>‹</span>'
+          + Array.from({ length: pages }, (_, i) => i + 1).map(p => '<span class="ms-page-item' + (p === page ? ' ms-page-item--active' : '') + '"' + (p === page ? '' : ' data-devicelib-page="' + p + '"') + '>' + p + '</span>').join('')
+          + '<span class="ms-page-item"' + (page >= pages ? ' disabled' : ' data-devicelib-page="' + (page + 1) + '"') + '>›</span>'
+          + '</span>'
           + '</div>'
           + '</div>';
       },
@@ -4929,7 +4955,13 @@ window.MS_BIZ_UTIL = (function () {
           const cnt = e.target.closest('[data-devicelib-count]');
           if (cnt) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-count', { bubbles: true, detail: { model: cnt.getAttribute('data-devicelib-count') } })); return; }
           const view = e.target.closest('[data-devicelib-view]');
-          if (view) wrap.dispatchEvent(new CustomEvent('eg71-devicelib-view', { bubbles: true, detail: { model: view.getAttribute('data-devicelib-view') } }));
+          if (view) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-view', { bubbles: true, detail: { model: view.getAttribute('data-devicelib-view') } })); return; }
+          const edit = e.target.closest('[data-devicelib-edit]');
+          if (edit) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-edit', { bubbles: true, detail: { model: edit.getAttribute('data-devicelib-edit') } })); return; }
+          const del = e.target.closest('[data-devicelib-delete]');
+          if (del) { wrap.dispatchEvent(new CustomEvent('eg71-devicelib-delete', { bubbles: true, detail: { model: del.getAttribute('data-devicelib-delete') } })); return; }
+          const pg = e.target.closest('[data-devicelib-page]');
+          if (pg) wrap.dispatchEvent(new CustomEvent('eg71-devicelib-page', { bubbles: true, detail: { page: Number(pg.getAttribute('data-devicelib-page')) } }));
         });
       }
     }

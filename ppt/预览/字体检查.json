@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "offline": true,
+  "usedFonts": [
+    {
+      "selector": ".slide.active h1",
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Bold",
+          "isCustomFont": true,
+          "glyphCount": 18
+        }
+      ]
+    },
+    {
+      "selector": ".slide.active .number",
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Medium",
+          "isCustomFont": true,
+          "glyphCount": 2
+        }
+      ]
+    },
+    {
+      "selector": ".wordmark",
+      "fonts": [
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC",
+          "isCustomFont": true,
+          "glyphCount": 4
+        },
+        {
+          "familyName": "Noto Sans SC Thin",
+          "postScriptName": "NotoSansSC-Bold",
+          "isCustomFont": true,
+          "glyphCount": 3
+        }
+      ]
+    }
+  ]
+}

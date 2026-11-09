@@ -3,7 +3,8 @@
 - GET  /            静态文件（根 ~/Desktop，含 scene.json）
 - GET  /api/list    扫描 HTML 根（05_release / output / ~/Desktop）返回可选 demo 清单
 - POST /api/build   输入统一落 build-scene.js：
-                     {path}            白名单根内的本地 HTML 路径
+                     {path}            白名单根内的本地 HTML 路径（可带 outName=任务名/REQ 编号，
+                                       参考页与主画板名随任务命名 → build-scene --out-name）
                      {name, content}   拖拽进面板的 HTML 全文 → 存 ~/Desktop/_drops/ 再 build
                                        （mode:'ext' = 粘贴的外部代码 → --ext 纯图层，可带 url 补 base）
                      {url}             粘贴的 http(s) 链接 → 下载到 ~/Desktop/_drops/ 再 build
@@ -13,8 +14,10 @@
                      {name, zip_b64}   .zip 整站包 → 解包 _drops/（file:// 相对资源天然可用）→ 批量转录
                      {viewports}       可选 '1440,390' 多视口（仅链接导入转发 build-scene --viewport）
                      {theme}           可选 'dark' 入口页暗色补帧（--theme dark，尽力转换）
+- GET  /api/feishu-tasks  读飞书任务队列（server.js feishu-tasks.json）→ 插件面板「飞书任务」区
+- POST /api/feishu-done   UED 转完回写：{taskId, figmaUrl?} → 转发 server.js POST /done → lark-cli 回写表格
 用法：python3 serve.py [port]   （默认 8124，与 V2 插件面板 127.0.0.1:8124 对齐）"""
-import http.server, socketserver, os, sys, json, subprocess, urllib.request, time, re, base64, zipfile, io
+import http.server, socketserver, os, sys, json, subprocess, urllib.request, urllib.error, time, re, base64, zipfile, io
 from urllib.parse import urlparse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8124
@@ -91,6 +94,12 @@ def fetch_pending_list():
     except Exception as e:
         print('fetch_pending_list error:', e, file=sys.stderr)
         return []
+
+# 飞书「点击转Figma」本地链路：server.js POST /task 登记任务到 feishu-tasks.json（单写者=server.js，
+# 本服务只读展示给插件面板）；UED 在面板点任务转换 → 转完 POST /api/feishu-done → 本服务转发 server.js
+# POST /done → lark-cli 回写多维表格（Figma状态/Figma链接）。lark-cli 调用全部收敛在 server.js。
+FEISHU_TASKS = os.path.join(REPO, 'tools/figma-bridge', 'feishu-tasks.json')
+BRIDGE = 'http://127.0.0.1:8080'
 
 
 def extract_zip(b64):
@@ -182,24 +191,67 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.split('?')[0] == '/api/list':
             return self.reply_json({'ok': True, 'htmls': scan_htmls()})
+        if self.path.split('?')[0] == '/api/feishu-tasks':
+            # 飞书任务队列只读展示：文件缺省/损坏按空列表处理，面板据此隐藏「飞书任务」区
+            try:
+                with open(FEISHU_TASKS, encoding='utf-8') as f:
+                    tasks = json.load(f)
+            except Exception:
+                tasks = []
+            if not isinstance(tasks, list):
+                tasks = []
+            tasks = [t for t in tasks if isinstance(t, dict) and t.get('id')]
+            tasks.sort(key=lambda t: int(t.get('id') or 0), reverse=True)
+            return self.reply_json({'ok': True, 'tasks': tasks[:50]})
         super().do_GET()
+
+    def read_json_body(self):
+        length = int(self.headers.get('Content-Length') or 0)
+        try:
+            return json.loads(self.rfile.read(length) or b'{}'), None
+        except ValueError:
+            return None, 'JSON 解析失败'
 
     def do_POST(self):
         try:
-            self.handle_build()
+            self.handle_post()
         except subprocess.TimeoutExpired:
             self.reply_json({'ok': False, 'error': '下载或构建超时，请重试'}, 504)
         except Exception as e:
             self.reply_json({'ok': False, 'error': str(e)}, 500)
 
-    def handle_build(self):
-        if self.path.split('?')[0] != '/api/build':
+    def handle_post(self):
+        route = self.path.split('?')[0]
+        if route == '/api/feishu-done':
+            # 插件面板转完回写：转发给 server.js /done（lark-cli 收敛在那边），原样透传结果
+            req, err = self.read_json_body()
+            if err or not isinstance(req, dict) or not req.get('taskId'):
+                return self.reply_json({'ok': False, 'error': err or '缺 taskId'}, 400)
+            try:
+                rq = urllib.request.Request(
+                    BRIDGE + '/done', data=json.dumps(req).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'}, method='POST')
+                with urllib.request.urlopen(rq, timeout=120) as resp:
+                    back = resp.read(1024 * 1024)
+                try:
+                    j = json.loads(back)
+                except ValueError:
+                    j = {'ok': False, 'error': '回写服务响应异常'}
+                return self.reply_json(j, 200 if j.get('ok') else 502)
+            except urllib.error.HTTPError as e:
+                try:
+                    j = json.loads(e.read(1024 * 1024) or b'{}')
+                except Exception:
+                    j = {'ok': False, 'error': 'HTTP %d' % e.code}
+                return self.reply_json(j, e.code)
+            except Exception as e:
+                return self.reply_json(
+                    {'ok': False, 'error': '回写失败（确认 server.js 已启动 :8080）：' + str(e)}, 502)
+        if route != '/api/build':
             return self.reply_json({'ok': False, 'error': 'not found'}, 404)
-        length = int(self.headers.get('Content-Length') or 0)
-        try:
-            req = json.loads(self.rfile.read(length) or b'{}')
-        except ValueError:
-            return self.reply_json({'ok': False, 'error': 'JSON 解析失败'}, 400)
+        req, err = self.read_json_body()
+        if err:
+            return self.reply_json({'ok': False, 'error': err}, 400)
         # 输入分支：capture（书签捕获）/ content（拖拽或粘贴代码）/ url·urls（链接）/ zip / path（白名单）
         p = None
         extra_paths = []   # 批量导入的后续页面 → build-scene 位置参数（显式清单，不做自动发现）
@@ -305,6 +357,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         vp = str(req.get('viewports') or '')
         vp_ok = re.fullmatch(r'\d{3,4}(?:,\d{3,4}){0,3}', vp) if vp else None
         dk = str(req.get('theme') or '').lower() == 'dark'   # 暗色补帧（free 层 dark & light themes 对标）
+        # 任务名透传（飞书任务构建面板带 outName=REQ 编号）：参考页文件名与 Figma 主画板名随任务命名
+        on = re.sub(r'[^\w\-.· ]', '', str(req.get('outName') or '')).strip()[:40]
         try:
             # 链接导入 = 外部网页模式（--ext）：build-scene 纯图层转录，不走本地组件库匹配/组件化/令牌绑定；
             # --site 带原始链接 → 入口页自动发现同源页面（导航优先，上限 8）逐页转录多帧；
@@ -319,6 +373,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 cmd += ['--ext']
             if (site_url or ext_mode) and dk:
                 cmd += ['--theme', 'dark']
+            if on:
+                cmd += ['--out-name', on]
             # Windows 兼容：自动注入 CHROME 环境变量 + 强制 UTF-8 解码
             env = os.environ.copy()
             if os.name == 'nt':

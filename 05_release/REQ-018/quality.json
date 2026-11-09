@@ -1,0 +1,9 @@
+{
+  "structure": 100,
+  "component": 84,
+  "interaction": 100,
+  "visual": 96,
+  "field": 100,
+  "category": "网关",
+  "reason": "structure 100：脚本分，统一壳+骨架 5/5+装配 270 调用点（score_fidelity.json），U1/U2 零扣分；component 84：脚本分，③疑似手写函数×19（页面抽屉编排 editDrawerHtml/renderAddDrawer 等，弹窗全走 B_Eg71Modal 契约、R2b 为零，函数名启发式近似）+⑤令牌 69%（裸 px 绝大多数为内联 runtime 源文件固有值，页面层样式全 L1 token）（score_component.json）；interaction 100：零扣分（T1-T5 交互链/状态集/状态保持/字段/边界全通，Esc 全链+批量 disabled 联动+空态+危险确认齐）；visual 96：−4 壳侧边栏 13px×1（U3-2，冻结壳存量，REQ-013/016/017 同判例）；field 100：脚本分（score_fidelity.json 实体 30 key+装配 76 点）+T4 零扣分（四服务/列差异/失败处理四态/Error Notification 4 条全对 PRD）。"
+}

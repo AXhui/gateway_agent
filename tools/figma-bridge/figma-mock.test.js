@@ -8,6 +8,7 @@ const fs = require('fs'), path = require('path'), os = require('os'), vm = requi
 
 // ---------- mock 节点 ----------
 let NODE_SEQ = 0;
+const REMOVED = []; // remove() 全量登记（svgCache 原型清场断言用）
 class FNode {
   constructor(type, opts = {}) {
     this.id = ++NODE_SEQ; this.type = type; this.children = []; this.parent = null;
@@ -24,6 +25,47 @@ class FNode {
   resize(w, h) { this._w = w; this._h = h; }
   resizeWithoutConstraints(w, h) { this._w = w; this._h = h; }
   rescale(s) { this._w *= s; this._h *= s; }
+  // 对齐真 API（mock 校准纪律，2026-10-31 五轮 REQ-020 实测）：给既有 frame 开 AL，主轴 sizing 落
+  // hug（AUTO）并立即收缩到内容+padding——蒙版 1440→468、弹窗 foot 372→71.48 的根因复刻；此后显式
+  // FIXED 不回弹尺寸，必须再 resize 才恢复（插件 sizing-first + 终态 resize 即为此）。副轴 hug 不模拟
+  //（无缺陷证据，保 mock 最小）——red 靶：AL-hug 用例在此模拟下无插件修复必红。
+  set layoutMode(v) {
+    const was = this._layoutMode;
+    this._layoutMode = v;
+    if (v && v !== 'NONE' && (!was || was === 'NONE')) { this._ps = 'AUTO'; this._cs = 'AUTO'; this._hug(); }
+  }
+  get layoutMode() { return this._layoutMode; }
+  set primaryAxisSizingMode(v) { this._ps = v; }
+  get primaryAxisSizingMode() { return this._ps; }
+  set counterAxisSizingMode(v) { this._cs = v; }
+  get counterAxisSizingMode() { return this._cs; }
+  set itemSpacing(v) { this._sp = v; if (this._ps === 'AUTO') this._hug(); }
+  get itemSpacing() { return this._sp; }
+  set paddingTop(v) { this._pt = v; if (this._ps === 'AUTO') this._hug(); }
+  get paddingTop() { return this._pt; }
+  set paddingBottom(v) { this._pb = v; if (this._ps === 'AUTO') this._hug(); }
+  get paddingBottom() { return this._pb; }
+  set paddingLeft(v) { this._pl = v; if (this._ps === 'AUTO') this._hug(); }
+  get paddingLeft() { return this._pl; }
+  set paddingRight(v) { this._pr = v; if (this._ps === 'AUTO') this._hug(); }
+  get paddingRight() { return this._pr; }
+  _hug() {
+    if (!this._layoutMode || this._layoutMode === 'NONE' || !this.children || !this.children.length) return;
+    const horiz = this._layoutMode === 'HORIZONTAL';
+    const pad = (horiz ? (this._pl || 0) + (this._pr || 0) : (this._pt || 0) + (this._pb || 0));
+    const len = this.children.reduce((s, c) => s + (horiz ? c.width : c.height), 0) + (this._sp || 0) * Math.max(0, this.children.length - 1) + pad;
+    if (horiz) this._w = len; else this._h = len;
+  }
+  // 对齐真 API 枚举（官方手册 2026-10-31 developers.figma.com + mock 校准纪律）：
+  // counterAxisAlignItems 只收 MIN|MAX|CENTER|BASELINE——赋 STRETCH 必抛；stretch 语义在子节点
+  // layoutAlign（枚举含 STRETCH）。此前 mock 宽松收下 STRETCH，plugin 抛错被外层 catch 吞掉后
+  // 终态 resize 一并跳过 → AL-hug 冻结（REQ-020 footer 71.48 根因），绿灯掩盖全灭。
+  set counterAxisAlignItems(v) { if (!['MIN', 'MAX', 'CENTER', 'BASELINE'].includes(v)) throw new Error('cannot set counterAxisAlignItems: ' + v); this._cai = v; }
+  get counterAxisAlignItems() { return this._cai; }
+  set primaryAxisAlignItems(v) { if (!['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN', 'SPACE_EVENLY', 'SPACE_AROUND'].includes(v)) throw new Error('cannot set primaryAxisAlignItems: ' + v); this._pai = v; }
+  get primaryAxisAlignItems() { return this._pai; }
+  set layoutAlign(v) { if (!['MIN', 'CENTER', 'MAX', 'STRETCH', 'INHERIT'].includes(v)) throw new Error('cannot set layoutAlign: ' + v); this._la = v; }
+  get layoutAlign() { return this._la; }
   // 对齐真 API：绝对变换（沿父链累加 x/y，忽略旋转——fix 提升换算用）
   get absoluteTransform() {
     let tx = this.x, ty = this.y, p = this.parent;
@@ -34,7 +76,7 @@ class FNode {
     if (ch.parent) ch.parent.children = ch.parent.children.filter(c => c !== ch);
     ch.parent = this; this.children.push(ch); return ch;
   }
-  remove() { if (this.parent) this.parent.children = this.parent.children.filter(c => c !== this); this.parent = null; }
+  remove() { REMOVED.push(this); if (this.parent) this.parent.children = this.parent.children.filter(c => c !== this); this.parent = null; }
   clone() {
     const c = new FNode(this.type);
     Object.assign(c, this);
@@ -61,19 +103,31 @@ class FNode {
     inst.setProps = [];
     inst.setProperties = p => {
       inst.setProps.push(p);
-      // 对齐真 API（mock 校准纪律）：TEXT 属性同步写入绑定文本层（按 defaultValue 定位）——
-      // 实例文案回填的 used 过滤依赖 characters 已被 setProperties 更新这一真行为
+      // 对齐真 API（mock 校准纪律）：TEXT 属性按绑定层 componentPropertyReferences.characters 定位写入，
+      // 未绑 references 的（手搭 mock 组件）退回 defaultValue 定位——实例文案回填的 used 过滤依赖
+      // characters 已被 setProperties 更新这一真行为
       Object.entries(p).forEach(([k2, v]) => {
         const d = (inst.componentPropertyDefinitions || {})[k2];
         if (!d || d.type !== 'TEXT') return;
         const hit = [];
-        (function ft(nd) { (nd.children || []).forEach(c => { if (hit.length) return; if (c.type === 'TEXT' && c.characters === d.defaultValue) hit.push(c); else ft(c); }); })(inst);
+        (function fr(nd) { (nd.children || []).forEach(c => { if (hit.length) return; if (c.type === 'TEXT' && c.componentPropertyReferences && c.componentPropertyReferences.characters === k2) hit.push(c); else fr(c); }); })(inst);
+        if (!hit[0]) {
+          (function ft(nd) { (nd.children || []).forEach(c => { if (hit.length) return; if (c.type === 'TEXT' && c.characters === d.defaultValue) hit.push(c); else ft(c); }); })(inst);
+        }
         if (hit[0]) hit[0].characters = v;
       });
     };
     return inst;
   }
   setProperties(p) { (this.setProps = this.setProps || []).push(p); }
+  // 对齐真 API：组件上暴露 TEXT 属性（返回属性名，值写进绑定层的 componentPropertyReferences）
+  addComponentProperty(name, type, defaultValue) {
+    this.componentPropertyDefinitions = this.componentPropertyDefinitions || {};
+    let pname = String(name), i = 2;
+    while (Object.keys(this.componentPropertyDefinitions).includes(pname)) pname = String(name) + ' ' + i++;
+    this.componentPropertyDefinitions[pname] = { type, defaultValue };
+    return pname;
+  }
 }
 
 // ---------- mock 库组件 ----------
@@ -154,24 +208,50 @@ const MOCK_LIBS = new Map();
   MOCK_LIBS.set('lib:dialog-lock', dlgLockSet);
 
   // web Tabs/Top 三层：外壳 set + 内部 Components/Tabs-Top（Item 数量轴）+ Components/Tab（Selecte 选择轴）
-  const mkTabComp = sel => {
-    const c = new FNode('COMPONENT', { name: 'Selecte=' + sel, width: 100, height: 48 });
-    c.variantProperties = { 'Selecte 选择': sel, 'Size 尺寸': 'medium' };
+  // 2026-10-31 像素审计回归靶：①Tab 项包在 'tabs group' 帧里（真库结构——旧 w8 跳过名字含 tabs 的子树，
+  // tabKids 收空 → Tab 文案全 "Tab"）；②Top 带 More 更多 轴（旧逻辑不约束 → more 按钮残影）；
+  // ③Tab 带 Icon/ShowSelect 轴（旧逻辑不约束 → 图标/chevron 泄漏）
+  const mkTabComp = (sel, icon, ssel) => {
+    const c = new FNode('COMPONENT', { name: 'Selecte=' + sel + ', Icon=' + icon + ', ShowSelect=' + ssel, width: 100, height: 48 });
+    c.variantProperties = { 'Selecte 选择': sel, 'Size 尺寸': 'medium', 'Icon 图标': icon, 'ShowSelect 下拉': ssel };
     c.appendChild(mkText('Tab'));
+    if (icon === 'true') c.appendChild(new FNode('VECTOR', { name: 'icon', width: 16, height: 16 }));
+    if (ssel === 'true') c.appendChild(new FNode('VECTOR', { name: 'chevron-down', width: 16, height: 16 }));
     return c;
   };
   const tabSet = new FNode('COMPONENT_SET', { name: 'Components/Tab', width: 100, height: 48 });
-  tabSet.appendChild(mkTabComp('true')); tabSet.appendChild(mkTabComp('false'));
-  const mkTabsTopComp = n2 => {
-    const c = new FNode('COMPONENT', { name: 'Item 数量=' + n2, width: 100 * n2, height: 48 });
-    c.variantProperties = { 'Item 数量': String(n2), 'Size 尺寸': 'medium', 'Icon 图标': 'false' };
-    for (let i = 0; i < n2; i++) c.appendChild(new FNode('INSTANCE', { name: 'Tab', width: 100, height: 48 }));
+  ['true', 'false'].forEach(sel => ['true', 'false'].forEach(ic => ['true', 'false'].forEach(ss =>
+    tabSet.appendChild(mkTabComp(sel, ic, ss)))));
+  const mkTabsTopComp = (n2, more) => {
+    const c = new FNode('COMPONENT', { name: 'Item 数量=' + n2 + (more ? ', More=true' : ''), width: 100 * n2 + 24, height: 48 });
+    c.variantProperties = { 'Item 数量': String(n2), 'Size 尺寸': 'medium', 'Icon 图标': 'false', 'More 更多': more ? 'true' : 'false' };
+    const grp = new FNode('FRAME', { name: 'tabs group', width: 100 * n2, height: 48 });
+    for (let i = 0; i < n2; i++) {
+      const ti = new FNode('INSTANCE', { name: 'Tab', width: 100, height: 48, x: i * 100 });
+      // 真结构（2026-10-31 三轮校准）：嵌套实例挂 mainComponent——真 API 有、mock clone 不带；
+      // 插件按 mainComponent 所属集合识别 tab 项（库重发布后图层名可能不再是 'tab'）
+      ti.mainComponent = tabSet.children[tabSet.children.length - 1];
+      grp.appendChild(ti);
+    }
+    c.appendChild(grp);
+    // 真库形态（2026-10-31 审计实测）：被选变体自身携带 more 按钮，无轴可关 → 靠 hideMore 藏
+    c.appendChild(new FNode('INSTANCE', { name: 'more button', width: 24, height: 48, x: 100 * n2 }));
     return c;
   };
   const tabsTopSet = new FNode('COMPONENT_SET', { name: 'Components/Tabs-Top', width: 200, height: 48 });
-  tabsTopSet.appendChild(mkTabsTopComp(2)); tabsTopSet.appendChild(mkTabsTopComp(3));
+  // more=true 的 cnt=2 排在前面：旧逻辑（不约束 More 轴）会先命中它——回归陷阱
+  tabsTopSet.appendChild(mkTabsTopComp(2, true)); tabsTopSet.appendChild(mkTabsTopComp(2)); tabsTopSet.appendChild(mkTabsTopComp(3));
+  tabsTopSet.componentPropertyDefinitions = {
+    'Item 数量': { type: 'VARIANT', variantOptions: ['2', '3'], defaultValue: '2' },
+    'Icon 图标': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    'More 更多': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'true' },
+  };
   const tabsComp = new FNode('COMPONENT', { name: 'Tabs/Top', width: 1220, height: 48 });
-  tabsComp.appendChild(new FNode('INSTANCE', { name: 'Components/Tabs-Top', width: 200, height: 48 }));
+  const innerTop = new FNode('INSTANCE', { name: 'Components/Tabs-Top', width: 200, height: 48 });
+  // 真结构（2026-10-31 三轮校准）：嵌套实例挂 mainComponent——真 API 有、mock clone 不带；
+  // 插件按 mainComponent 所属集合识别 inner（真库重发布后该层图层名已不是 'Tabs-Top'，按名查找落空 → swap 静默退出）
+  innerTop.mainComponent = tabsTopSet.children[0];
+  tabsComp.appendChild(innerTop);
   const tabsSet = new FNode('COMPONENT_SET', { name: 'Tabs/Top', width: 1220, height: 48 });
   tabsSet.appendChild(tabsComp);
   MOCK_LIBS.set('lib:tabs', tabsSet); MOCK_LIBS.set('lib:tabs-top', tabsTopSet); MOCK_LIBS.set('lib:tab', tabSet);
@@ -187,6 +267,19 @@ const MOCK_LIBS = new Map();
   statComp.appendChild(mkText('Value'));
   statComp.appendChild(mkText('Label'));
   MOCK_LIBS.set('lib:stat', statComp);
+
+  // 证据裁决靶子（2026-10-31 像素审计缺陷 E/F）：icon 类 VARIANT 轴，HTML 块无矢量子节点（ic=false）
+  // → 必须择 Icon=false 变体；默认值故意设 'true'（default Add 图标泄漏复刻）
+  const tagxSet = new FNode('COMPONENT_SET', { name: 'Tag 标签X', width: 60, height: 24 });
+  tagxSet.componentPropertyDefinitions = { 'Icon 图标': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'true' } };
+  ['true', 'false'].forEach(ic => {
+    const c = new FNode('COMPONENT', { name: 'Icon=' + ic, width: 60, height: 24 });
+    c.variantProperties = { 'Icon 图标': ic };
+    c.appendChild(mkText('Tag'));
+    if (ic === 'true') c.appendChild(new FNode('VECTOR', { name: 'chevron-down-big', width: 12, height: 12 }));
+    tagxSet.appendChild(c);
+  });
+  MOCK_LIBS.set('lib:tagx', tagxSet);
 
   // 双语词干命中靶子（2026-10-29 用户实测「组件库很多没有匹配上」）：
   // ①路径前缀名（'2 Navigation/1 Breadcrumb'）→ ms-breadcrumb 词干经「末段去序号归一」命中；
@@ -211,10 +304,363 @@ const MOCK_LIBS = new Map();
   cardLay.appendChild(mkText('上传固件')); cardLay.appendChild(mkText('Uploading 40%')); cardLay.appendChild(mkText('Cancel'));
   maskLay.appendChild(cardLay); dlgLay.appendChild(maskLay); dlgLaySet.appendChild(dlgLay);
   MOCK_LIBS.set('lib:dialog-layop', dlgLaySet);
+
+  // 属性定义序≠视觉序靶子（2026-10-31 文字错位根因）：BTN 属性定义在前、TITLE 在后，
+  // 视觉上 TITLE 层在上（y=0）、BTN 在下（y=40）——按定义序消费 texts 会标题/按钮互换
+  const ordComp = new FNode('COMPONENT', { name: 'TitleButton', width: 200, height: 80 });
+  const ordTitle = mkText('Title'); ordTitle.y = 0;
+  const ordBtn = mkText('Button'); ordBtn.y = 40;
+  ordComp.appendChild(ordTitle); ordComp.appendChild(ordBtn);
+  ordComp.componentPropertyDefinitions = {
+    'BTN#501': { type: 'TEXT', defaultValue: 'Button' },
+    'TITLE#502': { type: 'TEXT', defaultValue: 'Title' },
+  };
+  MOCK_LIBS.set('lib:swap-order', ordComp);
+
+  // setProperties 自愈靶子（2026-10-31）：库重发布后 defaultValue 漂移（层里 '旧默认' ≠ 属性默认 'New Default'），
+  // 属性写不进绑定层（mock/真库按 defaultValue 定位）→ 写后回读校验须 overrideText 兜底，文案不得丢
+  const driftComp = new FNode('COMPONENT', { name: 'Drift', width: 120, height: 24 });
+  driftComp.appendChild(mkText('旧默认'));
+  driftComp.componentPropertyDefinitions = { 'Label#601': { type: 'TEXT', defaultValue: 'New Default' } };
+  MOCK_LIBS.set('lib:drift', driftComp);
+
+  // 表达力守卫靶子（2026-10-31「缺失很严重」根因）：demo 6 段文案 vs 库组件仅 1 个文本层——
+  // 硬替换丢 5 段 → 必须回退整块本地重绘，6 段全部落图、不产生该库实例
+  const tinyComp = new FNode('COMPONENT', { name: 'Tiny', width: 100, height: 20 });
+  tinyComp.appendChild(mkText('A'));
+  MOCK_LIBS.set('lib:tiny', tinyComp);
+
+  // 图标槽换装 + 视觉复核重选靶子（2026-10-31 按钮输入框转化修复）：
+  // Ghost 变体无主导填充色 → 颜色择变体 dists<2 不判、tok 空 → 轴裁决全不判 → 默认 Ghost（无填充）
+  // 落图与 demo 蓝底背离 → 视觉复核换 Filled 重建；Filled 内嵌 16px 图标槽 INSTANCE（默认 Add），
+  // lib.icnk 换装后指向 demo 真实图标（「Delete 永远挂库默认 Add 图标」复刻）
+  const addIcon = mkIconComp('add'); MOCK_LIBS.set('icon:add', addIcon);
+  const trashIcon = mkIconComp('trash'); MOCK_LIBS.set('icon:trash', trashIcon);
+  const searchIcon = mkIconComp('search'); MOCK_LIBS.set('icon:search-x', searchIcon); // 目录名 icon/search，key 故意不等名——按名兜底只能走目录
+  const mkBtnIc = type => {
+    const c = new FNode('COMPONENT', { name: 'Type=' + type, width: 88, height: 32 });
+    c.variantProperties = { Type: type };
+    c.componentPropertyDefinitions = {
+      Type: { type: 'VARIANT', variantOptions: ['Filled', 'Ghost'], defaultValue: 'Ghost' },
+      'Label#701': { type: 'TEXT', defaultValue: 'Button' },
+    };
+    if (type === 'Filled') {
+      c.fills = [{ type: 'SOLID', color: { r: 0.2, g: 0.4, b: 0.9 } }];
+      // 图标槽只进 Filled：Ghost 保持全树无填充——dominantFill 深扫也不得见色（否则颜色择变体
+      // 直接判 Filled，视觉复核路径测不到）
+      const slot = new FNode('INSTANCE', { name: '1 Basic/1 Icon/Add', width: 16, height: 16 });
+      slot.mainComponent = addIcon;
+      c.appendChild(slot);
+    }
+    c.appendChild(mkText('Button'));
+    return c;
+  };
+  const btnIcSet = new FNode('COMPONENT_SET', { name: 'ButtonIC', width: 88, height: 32 });
+  btnIcSet.appendChild(mkBtnIc('Ghost')); btnIcSet.appendChild(mkBtnIc('Filled'));
+  btnIcSet.componentPropertyDefinitions = { Type: { type: 'VARIANT', variantOptions: ['Filled', 'Ghost'], defaultValue: 'Ghost' } };
+  MOCK_LIBS.set('lib:btn-ic', btnIcSet);
+
+  // shape 门控靶子（2026-10-31「Delete 文字 12px」根因）：Small 88×32 / Large 120×40 几何不同 +
+  // 宽 HTML 块（200×40，宽高比 5.0 更贴 Large 3.0）——旧逻辑 texts 单段也跑形状打分按宽高比误裁
+  // Size=Large；新门控（单段文本不跑形状）保持默认 Small
+  const btnWSet = new FNode('COMPONENT_SET', { name: 'ButtonW', width: 88, height: 32 });
+  [['Small', 88, 32], ['Large', 120, 40]].forEach(([sz, w2, h2]) => {
+    const c = new FNode('COMPONENT', { name: 'Size=' + sz, width: w2, height: h2 });
+    c.variantProperties = { Size: sz };
+    c.componentPropertyDefinitions = {
+      Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+      'Label#702': { type: 'TEXT', defaultValue: 'Button' },
+    };
+    c.appendChild(mkText('Button'));
+    btnWSet.appendChild(c);
+  });
+  btnWSet.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:btn-w', btnWSet);
+
+  // 主题轴 token 优先级靶子（2026-10-31 四轮）：裸类兜底 token（strock）排修饰 token（primary）之后——
+  // pickVariantValue 按 token 序消费；此前按选项序遍历，兜底会压过修饰语义
+  const btnThemeSet = new FNode('COMPONENT_SET', { name: 'ButtonTheme', width: 80, height: 32 });
+  ['Primary', 'Strock', 'Text'].forEach(th => {
+    const c = new FNode('COMPONENT', { name: 'Theme=' + th, width: 80, height: 32 });
+    c.variantProperties = { Theme: th };
+    c.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Primary', 'Strock', 'Text'], defaultValue: 'Primary' }, 'Label#705': { type: 'TEXT', defaultValue: 'Btn' } };
+    c.appendChild(mkText('Btn'));
+    btnThemeSet.appendChild(c);
+  });
+  btnThemeSet.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Primary', 'Strock', 'Text'], defaultValue: 'Primary' } };
+  MOCK_LIBS.set('lib:btn-theme', btnThemeSet);
+
+  // tag 双轴靶子（2026-10-31 四轮）：种类×theme 同时裁决——tinted tag 必须 Light background+theme；
+  // 单值 token 只判 theme、种类落默认 deep background → 深底配同色文字不可见（实测「待分配」根因）
+  const tagKindSet = new FNode('COMPONENT_SET', { name: 'Tag 标签双色', width: 60, height: 24 });
+  [['deep background', 'default'], ['Light background', 'primary'], ['Light background', 'default'], ['outline', 'default']].forEach(pr => {
+    const c = new FNode('COMPONENT', { name: '种类=' + pr[0] + ', theme=' + pr[1], width: 60, height: 24 });
+    c.variantProperties = { '种类': pr[0], theme: pr[1] };
+    c.appendChild(mkText('Tag'));
+    tagKindSet.appendChild(c);
+  });
+  tagKindSet.componentPropertyDefinitions = {
+    '种类': { type: 'VARIANT', variantOptions: ['deep background', 'Light background', 'light outline', 'outline'], defaultValue: 'deep background' },
+    theme: { type: 'VARIANT', variantOptions: ['default', 'primary', 'warning', 'danger', 'success'], defaultValue: 'default' },
+  };
+  MOCK_LIBS.set('lib:tag-kind', tagKindSet);
+
+  // 高度平局靶子（2026-10-31 四轮）：两变体同高不同宽——高度平局不判 + 单段文本不跑形状 → 保持默认 Small
+  const btnTieSet = new FNode('COMPONENT_SET', { name: 'ButtonTie', width: 88, height: 32 });
+  [['Small', 88], ['Large', 120]].forEach(([sz, w3]) => {
+    const c = new FNode('COMPONENT', { name: 'Size=' + sz, width: w3, height: 32 });
+    c.variantProperties = { Size: sz };
+    c.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' }, 'Label#706': { type: 'TEXT', defaultValue: 'Btn' } };
+    c.appendChild(mkText('Btn'));
+    btnTieSet.appendChild(c);
+  });
+  btnTieSet.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:btn-tie', btnTieSet);
+
+  // 纯图标按钮靶子（2026-10-31 五轮，REQ-020 操作列「图标钮变 Label 文字钮」根因）：
+  // Strock+S 带图标槽、Strock+M 纯文字（同轴都合法）——demo 有图标无文字 → 必须择带槽变体 + 换装 + 藏 Label；
+  // lib:btn-noic 全家族无图标槽 → 整块回退本地重绘（图标仍走库实例）
+  const addIo = mkIconComp('add2'); MOCK_LIBS.set('icon:add2', addIo);
+  const mkBtnIO = (sz, withSlot) => {
+    const c = new FNode('COMPONENT', { name: 'Theme=Strock, Size=' + sz, width: 60, height: 28 });
+    c.variantProperties = { Theme: 'Strock', Size: sz };
+    c.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Strock'], defaultValue: 'Strock' }, Size: { type: 'VARIANT', variantOptions: ['S', 'M'], defaultValue: 'M' }, 'Label#801': { type: 'TEXT', defaultValue: 'Label' } };
+    if (withSlot) { const slot = new FNode('INSTANCE', { name: '1 Basic/1 Icon/Add', width: 16, height: 16 }); slot.mainComponent = addIo; c.appendChild(slot); }
+    c.appendChild(mkText('Label'));
+    return c;
+  };
+  const btnIOSet = new FNode('COMPONENT_SET', { name: 'ButtonIO', width: 60, height: 28 });
+  btnIOSet.appendChild(mkBtnIO('M', false)); btnIOSet.appendChild(mkBtnIO('S', true));
+  btnIOSet.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Strock'], defaultValue: 'Strock' }, Size: { type: 'VARIANT', variantOptions: ['S', 'M'], defaultValue: 'M' } };
+  MOCK_LIBS.set('lib:btn-io', btnIOSet);
+  const mkBtnNO = sz => {
+    const c = new FNode('COMPONENT', { name: 'Theme=Strock, Size=' + sz, width: 60, height: 28 });
+    c.variantProperties = { Theme: 'Strock', Size: sz };
+    c.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Strock'], defaultValue: 'Strock' }, Size: { type: 'VARIANT', variantOptions: ['S', 'M'], defaultValue: 'M' }, 'Label#802': { type: 'TEXT', defaultValue: 'Label' } };
+    c.appendChild(mkText('Label'));
+    return c;
+  };
+  const btnNOSet = new FNode('COMPONENT_SET', { name: 'ButtonNO', width: 60, height: 28 });
+  btnNOSet.appendChild(mkBtnNO('M')); btnNOSet.appendChild(mkBtnNO('S'));
+  btnNOSet.componentPropertyDefinitions = { Theme: { type: 'VARIANT', variantOptions: ['Strock'], defaultValue: 'Strock' }, Size: { type: 'VARIANT', variantOptions: ['S', 'M'], defaultValue: 'M' } };
+  MOCK_LIBS.set('lib:btn-noic', btnNOSet);
+
+  // input 转化靶子（2026-10-31 七轮，REQ-018 input 审计根因）：库 Input 组件集——对齐真库轴系：
+  // BOOLEAN preIcon/afterIcon/addonBefore/addonAfter 全默认 true（主档带 http:// 前缀文本 + 图标附加块
+  // + Example 默认值），VARIANT Size（Standard 32 / Large 40），TEXT value 默认 Example。
+  // 旧插件只认 icon 类轴且无位置感 → 左置 search 图标误开 afterIcon、addon 轴无人管 → 三泄漏
+  const searchIco = mkIconComp('search2'); MOCK_LIBS.set('icon:search2', searchIco);
+  const defIco = mkIconComp('add3'); MOCK_LIBS.set('icon:add3', defIco);
+  const mkInputV = (sz, h2) => {
+    const c = new FNode('COMPONENT', { name: 'Size=' + sz, width: 200, height: h2 });
+    c.variantProperties = { Size: sz };
+    c.componentPropertyDefinitions = {
+      Size: { type: 'VARIANT', variantOptions: ['Standard', 'Large'], defaultValue: 'Standard' },
+      preIcon: { type: 'BOOLEAN', defaultValue: true },
+      afterIcon: { type: 'BOOLEAN', defaultValue: true },
+      addonBefore: { type: 'BOOLEAN', defaultValue: true },
+      addonAfter: { type: 'BOOLEAN', defaultValue: true },
+      value: { type: 'TEXT', defaultValue: 'Example' },
+    };
+    const slot = new FNode('INSTANCE', { name: '1 Basic/1 Icon/add', width: 16, height: 16 }); slot.mainComponent = defIco;
+    c.appendChild(slot);
+    c.appendChild(mkText('http://'));
+    c.appendChild(mkText('Example'));
+    c.appendChild(mkText('Setting'));
+    return c;
+  };
+  const inputSet = new FNode('COMPONENT_SET', { name: 'Input 输入框', width: 200, height: 32 });
+  inputSet.appendChild(mkInputV('Standard', 32)); inputSet.appendChild(mkInputV('Large', 40));
+  inputSet.componentPropertyDefinitions = { Size: { type: 'VARIANT', variantOptions: ['Standard', 'Large'], defaultValue: 'Standard' } };
+  MOCK_LIBS.set('lib:input-x', inputSet);
+
+  // 十轮靶子：真库 Input 结构（Milesight_IOT_Web 实测）——组件集**没有任何 addon/preIcon BOOLEAN 轴**
+  //（只有 Size/State/Filled VARIANT），http:// 前缀块（InputAddon 直发子实例）、28px 设置图标附加块
+  //（Component 1 直发子实例）、person 前图标 + input-suffix（'input' 内层 16px 实例）全是烤进变体的
+  // 结构。七轮布尔轴关态路径对这套结构无效 → 十轮证据隐藏三连：addon 结构隐藏（>24px 直发子实例）/
+  // 槽位换装收口（换装槽之外全藏）/改写 df 剪枝（藏掉的 addon 文本退出对位，值落到值层）。
+  const personIco = mkIconComp('person1'); MOCK_LIBS.set('icon:person1', personIco);
+  const gearIco = mkIconComp('gear1'); MOCK_LIBS.set('icon:gear1', gearIco);
+  const suffixIco = mkIconComp('suffix1'); MOCK_LIBS.set('icon:suffix1', suffixIco);
+  const addonComp = new FNode('COMPONENT', { name: 'Input-Addon', width: 56, height: 32 });
+  addonComp.appendChild(mkText('http://'));
+  MOCK_LIBS.set('lib:input-addon', addonComp);
+  const mkInputRL = () => {
+    const c = new FNode('COMPONENT', { name: 'Size 尺寸=Small, State 状态=normal, Filled 填充=true', width: 220, height: 32 });
+    c.variantProperties = { 'Size 尺寸': 'Small', 'State 状态': 'normal', 'Filled 填充': 'true' };
+    c.componentPropertyDefinitions = {
+      'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+      'State 状态': { type: 'VARIANT', variantOptions: ['normal', 'disable'], defaultValue: 'normal' },
+      'Filled 填充': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'true' },
+      '值': { type: 'TEXT', defaultValue: 'Example' },
+    };
+    const addon = new FNode('INSTANCE', { name: 'Input-Addon', width: 56, height: 32 });
+    addon.mainComponent = addonComp;
+    c.appendChild(addon);
+    const gear = new FNode('INSTANCE', { name: 'Component 1', width: 28, height: 28 });
+    gear.mainComponent = gearIco;
+    c.appendChild(gear);
+    const inner = new FNode('FRAME', { name: 'input', width: 120, height: 32 });
+    const person = new FNode('INSTANCE', { name: 'icon/person', x: 4, y: 8, width: 16, height: 16 });
+    person.mainComponent = personIco;
+    inner.appendChild(person);
+    const val = mkText('Example'); val.x = 28; val.y = 6;
+    inner.appendChild(val);
+    const suf = new FNode('INSTANCE', { name: 'input-suffix', x: 96, y: 8, width: 16, height: 16 });
+    suf.mainComponent = suffixIco;
+    inner.appendChild(suf);
+    c.appendChild(inner);
+    return c;
+  };
+  const inputRLSet = new FNode('COMPONENT_SET', { name: 'Input 真结构', width: 220, height: 32 });
+  inputRLSet.appendChild(mkInputRL());
+  inputRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:input-rl', inputRLSet);
+
+  // 十二轮靶子 A：库默认语义色图标（REQ-019 板 187:14922「input 标题 icon 颜色不对，应该是灰色」）——
+  // 库 icon 组件默认填充不是纯黑而是自家语义色（实测 #272E3B 深蓝黑 ×8px / #C9CBCE 浅灰），
+  // 旧 paintIconStrokes 填充分支只重涂「近纯黑 <0.01」→ 库默认色原样泄漏（info 图标画成深蓝黑）。
+  // 靶：填充 + 描边两 path 均带库默认 #272E3B，demo 证据灰 #6B7785 → 全部无条件按 HTML 重涂。
+  const mkIconCompLib = (key, col) => {
+    const c = new FNode('COMPONENT', { name: 'icon/' + key, width: 24, height: 24 });
+    const sp = new FNode('VECTOR', { width: 24, height: 24, strokes: [{ type: 'SOLID', color: col }], fills: [] });
+    const fp = new FNode('VECTOR', { width: 24, height: 24, fills: [{ type: 'SOLID', color: col }], strokes: [] });
+    c.appendChild(sp); c.appendChild(fp);
+    return c;
+  };
+  MOCK_LIBS.set('icon:info-rl', mkIconCompLib('info-rl', { r: 0.153, g: 0.180, b: 0.231 }));
+
+  // 十二轮靶子 B：库 Select 组件集（REQ-019 板 select 选中值消失）——原生 <select> 的选中项文案是
+  // 浏览器绘制（无 DOM 文本节点），序列化侧合成 t:'t' 后 texts 非空，插件侧既有链路应把值写进值层。
+  // 结构对齐真库：值 TEXT（'值' TEXT 属性默认 Example）+ chevron 语义结构（保留）+ addon 直发子实例
+  // （hideInputAddons 按 addon|affix 名隐藏，内层文案不得被对位改写）。
+  const chevIco = mkIconComp('chevron-down'); MOCK_LIBS.set('icon:chevron-dn', chevIco);
+  const mkSelectRL = () => {
+    const c = new FNode('COMPONENT', { name: 'Size 尺寸=Small, State 状态=normal', width: 200, height: 32 });
+    c.variantProperties = { 'Size 尺寸': 'Small', 'State 状态': 'normal' };
+    c.componentPropertyDefinitions = {
+      'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' },
+      'State 状态': { type: 'VARIANT', variantOptions: ['normal', 'disable'], defaultValue: 'normal' },
+      '值': { type: 'TEXT', defaultValue: 'Example' },
+    };
+    const addon = new FNode('INSTANCE', { name: 'affix', width: 56, height: 32 });
+    addon.mainComponent = addonComp;
+    c.appendChild(addon);
+    const val = mkText('Example'); val.x = 12; val.y = 6;
+    c.appendChild(val);
+    const chev = new FNode('INSTANCE', { name: 'chevron-down', x: 176, y: 8, width: 16, height: 16 });
+    chev.mainComponent = chevIco;
+    c.appendChild(chev);
+    return c;
+  };
+  const selectRLSet = new FNode('COMPONENT_SET', { name: 'Select 下拉选择', width: 200, height: 32 });
+  selectRLSet.appendChild(mkSelectRL());
+  selectRLSet.componentPropertyDefinitions = { 'Size 尺寸': { type: 'VARIANT', variantOptions: ['Small', 'Large'], defaultValue: 'Small' } };
+  MOCK_LIBS.set('lib:select-x', selectRLSet);
+
+  // 十一轮靶子：库 steps-item（Milesight_IOT_Web 实测轴系：Layout 布局 × Small 小型 × Status 状态）。
+  // tail 连接线烤在 item 内（header.tail 内 line、88px 定宽）、步号数字是 icon 子实例内可覆写 TEXT——
+  // 整条 steps 集 Number 轴只有 3~6 → 逐项映射：done/active/裸类 token 裁决 Status，Small 走高度裁决
+  // （块 24 → true 胜 32 差 8），末步无 ms-step-line（lib.tail=0）→ 藏 tail、有线的拉宽填满余宽
+  const mkStepIcon = (variant) => {
+    const c = new FNode('COMPONENT', { name: 'steps-item-icon/' + variant, width: 24, height: 24 });
+    const d = mkText('2'); d.x = 7; d.y = 1;
+    c.appendChild(d);
+    return c;
+  };
+  const stepIcoOp = mkStepIcon('Operating'); MOCK_LIBS.set('icon:step-op', stepIcoOp);
+  const stepIcoWait = mkStepIcon('Wait'); MOCK_LIBS.set('icon:step-wait', stepIcoWait);
+  const mkStepV = (layout, small, status, h2) => {
+    const c = new FNode('COMPONENT', { name: 'Layout 布局=' + layout + ', Small 小型=' + small + ', Status 状态=' + status, width: 220, height: h2 });
+    c.variantProperties = { 'Layout 布局': layout, 'Small 小型': String(small), 'Status 状态': status };
+    c.componentPropertyDefinitions = {
+      'Layout 布局': { type: 'VARIANT', variantOptions: ['水平左对齐', '垂直'], defaultValue: '水平左对齐' },
+      'Small 小型': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+      'Status 状态': { type: 'VARIANT', variantOptions: ['完成', '进行中', '等待'], defaultValue: '等待' },
+    };
+    const header = new FNode('FRAME', { name: 'header', width: 210, height: h2 });
+    const ic = new FNode('INSTANCE', { name: 'steps-item-icon', width: 24, height: 24 });
+    ic.mainComponent = status === '等待' ? stepIcoWait : stepIcoOp;
+    header.appendChild(ic);
+    const title = mkText('Step Title'); title.x = 40; title.y = h2 === 24 ? 5 : 7;
+    header.appendChild(title);
+    const tail = new FNode('FRAME', { name: 'tail', x: 122, y: h2 === 24 ? 12 : 16, width: 88, height: 1,
+      fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }] });
+    const line = new FNode('VECTOR', { name: 'line', width: 88, height: 1,
+      fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }], strokes: [] });
+    tail.appendChild(line);
+    header.appendChild(tail);
+    c.appendChild(header);
+    return c;
+  };
+  const stepSet = new FNode('COMPONENT_SET', { name: 'components/steps-item', width: 220, height: 24 });
+  stepSet.appendChild(mkStepV('水平左对齐', true, '进行中', 24));
+  stepSet.appendChild(mkStepV('水平左对齐', true, '等待', 24));
+  stepSet.appendChild(mkStepV('水平左对齐', false, '进行中', 32));
+  stepSet.appendChild(mkStepV('水平左对齐', false, '等待', 32));
+  stepSet.componentPropertyDefinitions = {
+    'Layout 布局': { type: 'VARIANT', variantOptions: ['水平左对齐', '垂直'], defaultValue: '水平左对齐' },
+    'Small 小型': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    'Status 状态': { type: 'VARIANT', variantOptions: ['完成', '进行中', '等待'], defaultValue: '等待' },
+  };
+  MOCK_LIBS.set('lib:steps-item', stepSet);
+
+  // 十一轮续（审计启用）：库 components/Segmented（Milesight_IOT_Web 实测轴系：尺寸 × 选中 × 悬停 × 禁用
+  // ——选中/悬停/禁用同为 true/false 值域）。token 必须「轴名=值」显式寻址：裸 'true' 会让每个未决
+  // 布尔轴都吃到同一值——故 fixture 特意含「选中+悬停+禁用全开」变体，红态（轴名门禁缺失）会选中它，
+  // 悬停/禁用串开可见。尺寸轴块高 28 vs 大30/中26 双差 2px 平局不判 → 默认大 + resize 吸收
+  const mkSegV = (size, sel, hov, dis) => {
+    const c = new FNode('COMPONENT', { name: '尺寸=' + size + ', 选中=' + sel + ', 悬停=' + hov + ', 禁用=' + dis, width: 70, height: size === '大' ? 30 : 26 });
+    c.variantProperties = { '尺寸': size, '选中': sel, '悬停': hov, '禁用': dis };
+    const t = mkText('Segment'); t.x = 12; t.y = 6;
+    c.appendChild(t);
+    return c;
+  };
+  const segSet = new FNode('COMPONENT_SET', { name: 'components/Segmented', width: 70, height: 30 });
+  segSet.appendChild(mkSegV('大', 'true', 'false', 'false'));
+  segSet.appendChild(mkSegV('大', 'false', 'false', 'false'));
+  segSet.appendChild(mkSegV('中', 'false', 'false', 'false'));
+  segSet.appendChild(mkSegV('大', 'true', 'true', 'true'));
+  segSet.componentPropertyDefinitions = {
+    '尺寸': { type: 'VARIANT', variantOptions: ['大', '中', '小', '迷你'], defaultValue: '大' },
+    '选中': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    '悬停': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+    '禁用': { type: 'VARIANT', variantOptions: ['true', 'false'], defaultValue: 'false' },
+  };
+  MOCK_LIBS.set('lib:seg-item', segSet);
+
+  // 十一轮续：库 time-dot（Timeline 页实测：单轴 status 状态=进行中/完成/失败/等待，8×8）。
+  // 单轴裸值无碰撞（与 Segmented 布尔家族相反）；warm 修饰库无档 → 等待 + repaintLibInstance 按 HTML 色兜正
+  const mkDotV = (st, col) => {
+    const c = new FNode('COMPONENT', { name: 'status 状态=' + st, width: 8, height: 8,
+      fills: [{ type: 'SOLID', color: { r: col[0], g: col[1], b: col[2] } }] });
+    c.variantProperties = { 'status 状态': st };
+    return c;
+  };
+  const dotSet = new FNode('COMPONENT_SET', { name: 'time-dot', width: 8, height: 8 });
+  dotSet.appendChild(mkDotV('进行中', [0.2, 0.4, 0.9]));
+  dotSet.appendChild(mkDotV('完成', [0.1, 0.7, 0.3]));
+  dotSet.appendChild(mkDotV('失败', [0.9, 0.2, 0.2]));
+  dotSet.appendChild(mkDotV('等待', [0.6, 0.6, 0.6]));
+  dotSet.componentPropertyDefinitions = { 'status 状态': { type: 'VARIANT', variantOptions: ['进行中', '完成', '失败', '等待'], defaultValue: '进行中' } };
+  MOCK_LIBS.set('lib:time-dot', dotSet);
+
+  // 十轮靶子：真库 Checkbox——tag BOOLEAN 默认 true 控标签 <p>{text}</p>、text TEXT 默认 "Checkbox"。
+  // 轴名 tag 此前无规则管辖恒落默认 true → 裸表格勾选框（无文本证据）泄漏 "Checkbox" 文案；
+  // 用户裁定：标题场景（块内有文本）才带文本，表格列只有勾选框。
+  const checkComp = new FNode('COMPONENT', { name: 'Checkbox', width: 90, height: 22 });
+  checkComp.componentPropertyDefinitions = {
+    tag: { type: 'BOOLEAN', defaultValue: true },
+    text: { type: 'TEXT', defaultValue: 'Checkbox' },
+    selected: { type: 'BOOLEAN', defaultValue: false },
+  };
+  const checkLabel = mkText('Checkbox'); checkLabel.x = 22; checkLabel.y = 2;
+  checkComp.appendChild(checkLabel);
+  MOCK_LIBS.set('lib:checkbox-rl', checkComp);
 })();
 
 // ---------- mock figma ----------
-const calls = { importKey: [], importSetKey: [], importVarKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0, teamLib: 0, uiPost: [], csGet: [], csSet: [] };
+const calls = { importKey: [], importSetKey: [], importVarKey: [], createImageAsync: [], combineAsVariants: [], notify: [], fonts: new Set(), closePlugin: 0, teamLib: 0, uiPost: [], csGet: [], csSet: [], svgCreated: [] };
 let PAINT_STYLES = [], styleSeq = 0;
 
 // ---------- 颜色令牌变量注册表（2026-10-30 令牌绑定契约）----------
@@ -235,16 +681,25 @@ mkVar('v:drift', 'color-warm-normal', [0.9, 0.1, 0.1]);                       //
 // 'v:missing' 故意不注册：tokVars 带该 key，importVariableByKeyAsync 抛错 → 插件 catch 后保持裸色
 const mockPage = new FNode('PAGE', { name: 'Page 1' });
 const figma = {
+  // 十三轮挂起红靶：插件侧 LIB_TMO 读此值缩短限时（真跑默认 20s）；120ms 让超时路径可测
+  __LIB_TMO_MS: 120,
   createFrame: () => new FNode('FRAME'),
   createText: () => new FNode('TEXT', { characters: '' }),
   createRectangle: () => new FNode('RECTANGLE'),
   createComponent: () => new FNode('COMPONENT'),
   createImage: b => ({ hash: 'hash:' + String(b).slice(0, 8) }),
   createImageAsync: async url => { calls.createImageAsync.push(url); return { hash: 'hash:' + String(url).slice(-16) }; },
-  createNodeFromSvg: svg => new FNode('FRAME', { name: 'svg', width: 24, height: 24, children: [] }),
+  createNodeFromSvg: svg => { const n = new FNode('FRAME', { name: 'svg', width: 24, height: 24, children: [] }); calls.svgCreated.push(n); return n; },
   combineAsVariants: (comps, page) => {
+    // 对齐真 API 实测（2026-10-31 REQ-018 defs 板 179:57095）：combine 不自动排布变体（全叠原位、
+    // 集框塌成单变体尺寸），且吞变体——末个 comp 不入集、游离集外。插件侧靠对账补挂 + 网格排布 +
+    // resizeWithoutConstraints 收口；mock 复刻吞末个形态防插件侧回归
     const set = new FNode('COMPONENT_SET', { name: 'set' });
-    comps.forEach(c => set.appendChild(c)); page.appendChild(set);
+    const kept = comps.length > 1 ? comps.slice(0, comps.length - 1) : comps.slice();
+    kept.forEach(c => set.appendChild(c));
+    comps.forEach(c => { if (!kept.includes(c)) page.appendChild(c); });
+    if (kept[0]) { set.width = kept[0].width; set.height = kept[0].height; }
+    page.appendChild(set);
     calls.combineAsVariants.push(comps.map(c => c.name));
     return set;
   },
@@ -268,6 +723,7 @@ const figma = {
   getLocalPaintStylesAsync: async () => PAINT_STYLES.slice(),
   importComponentByKeyAsync: async k => {
     calls.importKey.push(k);
+    if (k === 'lib:hang') return new Promise(() => {}); // 十三轮挂起靶：永不 resolve/reject（资产服务停顿形态）
     const n = MOCK_LIBS.get(k);
     if (!n) throw new Error('key not found: ' + k);
     // 对齐真 API：component_set 的 key 走本方法必抛错（曾掩盖根因的 mock 盲区）
@@ -276,6 +732,7 @@ const figma = {
   },
   importComponentSetByKeyAsync: async k => {
     calls.importSetKey.push(k);
+    if (k === 'lib:hang') return new Promise(() => {}); // 十三轮挂起靶：set API 同样停顿
     const n = MOCK_LIBS.get(k);
     if (!n || n.type !== 'COMPONENT_SET') throw new Error('set key not found: ' + k);
     return n;
@@ -332,6 +789,9 @@ const SCENE = {
         T('Italic Underline', { it: 1, td: 'u', fw: 500, tk: 'color-text-primary' }),
         T('Strike Text', { td: 's', tk: 'color-no-such' }),
         T('Truncated long text', { tr: 1 }),
+        // 九轮防换行靶（REQ-015「大文字不要换行」）：多行文本保持 NONE+定宽盒（Figma 重排风险兜底），单行走 hug
+        T('多行文本第一行\n多行文本第二行', { w: 160, h: 40 }),
+        T('居中断言', { al: 'center', x: 300, w: 100, fs: 14 }),
         { t: 'f', n: 'dashed-blend-rot', f: [{ c: [1, 1, 1], a: 1 }], ftk: 'color-fill-base-normal', e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 60, w: 200, h: 60, o: 1, rot: 15, bm: 'multiply',
           stk: { w: 2, c: [1, 0, 0], a: 1, dash: 'dashed', tk: 'color-error-normal' },
           bg: [{ k: 'l', ang: 90, stops: [{ c: [0.1, 0.4, 0.9], a: 1, p: 0 }, { c: [0.9, 0.2, 0.2], a: 1, p: 1 }] }], ch: [] },
@@ -340,12 +800,31 @@ const SCENE = {
           al: { dir: 'row', gap: 12, just: 'MIN', align: 'CENTER', pt: 8, pr: 8, pb: 8, pl: 8, bw: 1, bc: [0, 0, 0], ba: 1, btk: 'color-border-base' },
           ch: [{ t: 'f', n: 'k1', f: [{ c: [0.8, 0.8, 0.8], a: 1 }], ftk: 'color-text-secondary', e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 8, y: 8, w: 50, h: 24, o: 1, ch: [] },
                { t: 'f', n: 'k2', f: [{ c: [0.7, 0.7, 0.7], a: 1 }], ftk: 'color-warm-normal', e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 70, y: 8, w: 50, h: 24, o: 1, ch: [] }] },
+        // AL stretch 消毒靶（2026-10-31 六轮）：CSS align-items 默认 stretch → 序列化发 align:'STRETCH'——
+        // counterAxisAlignItems 无此枚举（真 API 必抛）；正确表达 = 容器 MIN + 子节点 layoutAlign='STRETCH'，
+        // 且终态 resize 不得被枚举抛错连带跳过（旧代码外层 catch 一口吞 → hug 冻结 136px ≠ 300px）
+        { t: 'f', n: 'al-stretch', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 400, y: 140, w: 300, h: 40, o: 1,
+          al: { dir: 'row', gap: 8, just: 'MIN', align: 'STRETCH', pt: 4, pr: 4, pb: 4, pl: 4 },
+          ch: [{ t: 'f', n: 'sk1', f: [{ c: [0.8, 0.8, 0.8], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 4, y: 4, w: 60, h: 32, o: 1, ch: [] },
+               { t: 'f', n: 'sk2', f: [{ c: [0.7, 0.7, 0.7], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 72, y: 4, w: 60, h: 32, o: 1, ch: [] }] },
         { t: 'img', src: 'data:image/png;base64,MOCKDATA', x: 0, y: 200, w: 120, h: 80, o: 1, fit: 'cover', r: { tl: 8, tr: 8, br: 8, bl: 8 } },
         { t: 'ic', k: 'icon:check', f: 'icon/check', svg: '<svg viewBox="0 0 24 24"></svg>', x: 0, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9], ctk: 'color-icon-normal' },
+        // 十三轮挂起红靶（面板卡死「导入库组件 20/30」）：comp/set 双 API 均永不返回 → 插件必须限时兜底不死锁；
+        // 故意不带 svg（不走本地回退，不污染 svgCreated 全量断言）
+        { t: 'ic', k: 'lib:hang', f: 'zz-hang-x9', x: 80, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] },
+        { t: 'ic', k: 'lib:hang', f: 'zz-hang-x9', x: 120, y: 300, w: 16, h: 16, o: 1, col: [0.2, 0.4, 0.9] }, // 十四轮：同 key 第二个节点——验证失败缓存短路（不重放导入链）
+        { t: 'ic', f: 'search', svg: '<svg viewBox="0 0 24 24"></svg>', x: 40, y: 300, w: 16, h: 16, o: 1, col: [0.1, 0.1, 0.1] }, // 无 key：icon-keys 未映射 → 插件按名走库目录兜底
         { t: 'f', n: 'ms-btn ms-btn--primary', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 340, w: 88, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: ['primary'], text: 'Save', ic: false }, ch: [T('Save')] },
         { t: 'f', n: 'ms-btn', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 120, y: 340, w: 60, h: 32, o: 1,
           lib: { k: 'lib:btn', f: 'Button', cls: 'ms-btn', tok: [], col: [0.2, 0.4, 0.9], text: 'OK', ic: false }, ch: [T('OK')] },
+        // 九轮颜色覆写靶（REQ-015「按钮颜色要和 html 统一」）：demo 白底灰边 bare/sm 按钮，
+        // 库 Strock 变体默认边框是库蓝——lib.col+lib.stk（色条反推描边证据）无条件按 HTML 重涂；
+        // tk 走 v:border（库变量黑值≠demo 灰）→ 读回漂移回退裸灰，恰好覆盖回退分支。
+        // cls 用独立名 ms-btnt--sm：避开五轮纯图标钮靶（ms-btn--sm 同名会让 find 串靶）
+        { t: 'f', n: 'ms-btnt ms-btnt--sm', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 200, y: 340, w: 70, h: 32, o: 1,
+          lib: { k: 'lib:btn-theme', f: 'ButtonTheme', cls: 'ms-btnt ms-btnt--sm', tok: ['strock'], col: [1, 1, 1], stk: { w: 1, c: [0.898, 0.902, 0.922], tk: 'color-border-base' }, text: '导出', ic: false },
+          ch: [T('导出')] },
         { t: 'f', n: 'ms-modal-title', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 480, w: 160, h: 24, o: 1,
           lib: { k: 'lib:title', f: '标题', cls: 'ms-modal-title', tok: [], texts: ['导入离线包'], fs: 16, sw: false }, ch: [T('导入离线包', { fs: 16 })] },
         { t: 'f', n: 'ms-mask', f: [{ c: [0.15, 0.18, 0.23], a: 0.5 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 520, w: 1440, h: 900, o: 1,
@@ -369,8 +848,10 @@ const SCENE = {
         { t: 'f', n: 'ms-modal-title2', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 700, w: 160, h: 24, o: 1,
           lib: { k: 'lib:stale', f: '标题', cls: 'ms-modal-title2', tok: [], texts: ['离线恢复'], fs: 16, sw: false }, ch: [T('离线恢复', { fs: 16 })] },
         { t: 'f', n: 'ms-stat', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 80, y: 700, w: 120, h: 48, o: 1,
-          lib: { k: 'lib:stat', f: 'Statistic', cls: 'ms-stat', tok: [], texts: ['24', '在线设备'], tcols: [[0.2, 0.4, 0.9], undefined], ttoks: ['color-icon-normal', undefined] },
+          lib: { k: 'lib:stat', f: 'Statistic', cls: 'ms-stat', tok: [], texts: ['24', '在线设备'], tcols: [[0.2, 0.4, 0.9], undefined], ttoks: ['color-icon-normal', undefined], tfs: [20, 12], tfw: [600, undefined] },
           ch: [T('24', { col: [0.2, 0.4, 0.9] }), T('在线设备')] },
+        { t: 'f', n: 'ms-tag ms-tag--primary', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 700, w: 60, h: 24, o: 1,
+          lib: { k: 'lib:tagx', f: 'Tag 标签X', cls: 'ms-tag', tok: ['primary'], text: 'MBus', ic: false }, ch: [T('MBus')] },
         { t: 'f', n: 'ms-breadcrumb', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 240, y: 700, w: 200, h: 20, o: 1,
           ch: [T('Home / Devices')] },
         { t: 'f', n: 'ms-header', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 730, w: 200, h: 20, o: 1,
@@ -379,8 +860,124 @@ const SCENE = {
           lib: { k: 'lib:dialog-layop', f: '弹窗Layop', cls: 'ms-mask', tok: [], texts: ['上传固件', 'Uploading 40%', 'Cancel'] },
           ch: [{ t: 'f', n: 'ms-modal', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 540, y: 840, w: 360, h: 120, o: 1,
             ch: [T('上传固件'), T('Uploading 40%'), T('Cancel')] }] },
-        { t: 'inst', d: 'c1', x: 0, y: 400, w: 60, h: 24, o: 1 },
+        { t: 'f', n: 'ms-ord', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 480, y: 700, w: 200, h: 80, o: 1,
+          lib: { k: 'lib:swap-order', f: 'TitleButton', cls: 'ms-ord', tok: [], texts: ['网关设置', '保存'], tcols: [[0.1, 0.1, 0.1], [1, 1, 1]] },
+          ch: [T('网关设置', { col: [0.1, 0.1, 0.1] }), T('保存', { col: [1, 1, 1] })] },
+        { t: 'f', n: 'ms-drift', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 700, y: 700, w: 120, h: 24, o: 1,
+          lib: { k: 'lib:drift', f: 'Drift', cls: 'ms-drift', tok: [], texts: ['新文案'] },
+          ch: [T('新文案')] },
+        { t: 'f', n: 'ms-under', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 840, y: 700, w: 100, h: 20, o: 1,
+          lib: { k: 'lib:tiny', f: 'Tiny', cls: 'ms-under', tok: [], texts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'] },
+          ch: [T('M1'), T('M2'), T('M3'), T('M4'), T('M5'), T('M6')] },
+        // 十一轮（步骤条组件化，REQ-019 向导条两步形态）：active 步（步号 1 + 标题 + 连线 tail:1）+
+        // 末步 wait（步号 2 + 标题、无连线 tail:0）——tok 含裸类兜底「等待」排在修饰 token 之后
+        { t: 'f', n: 'ms-step ms-step--active', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 40, y: 1240, w: 560, h: 24, o: 1,
+          lib: { k: 'lib:steps-item', f: 'components/steps-item', cls: 'ms-step ms-step--active', tok: ['水平左对齐', '进行中', '等待'], texts: ['1', '设备信息'], tcols: [[0.2, 0.4, 0.9], [0.1, 0.1, 0.1]], ic: false, tail: 1 },
+          ch: [T('1', { x: 8, fs: 12, fw: 600, w: 12, h: 20 }), T('设备信息', { x: 36, y: 1, w: 64, h: 22 }),
+            { t: 'f', n: 'ms-step-line', f: [{ c: [0.9, 0.9, 0.9], a: 1 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 120, y: 12, w: 430, h: 1, o: 1, ch: [] }] },
+        { t: 'f', n: 'ms-step', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 620, y: 1240, w: 560, h: 24, o: 1,
+          lib: { k: 'lib:steps-item', f: 'components/steps-item', cls: 'ms-step', tok: ['水平左对齐', '等待'], texts: ['2', '对象配置'], tcols: [[0.1, 0.1, 0.1], [0.1, 0.1, 0.1]], ic: false, tail: 0 },
+          ch: [T('2', { x: 8, fs: 12, fw: 600, w: 12, h: 20 }), T('对象配置', { x: 36, y: 1, w: 64, h: 22 })] },
+        // 十一轮续（审计启用）：分段控制器逐项换库——active 项「选中=true」显式轴 token + 裸项兜底「选中=false」。
+        // 悬停/禁用与选中同值域（true/false）：红态（轴名门禁缺失）裸值把三轴全串开 → 选「全开」变体
+        { t: 'f', n: 'ms-segmented-item ms-segmented-item--active', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 6, tr: 6, br: 6, bl: 6 }, clip: false, x: 40, y: 1300, w: 62, h: 28, o: 1,
+          lib: { k: 'lib:seg-item', f: 'components/Segmented', cls: 'ms-segmented-item ms-segmented-item--active', tok: ['选中=true'], col: [1, 1, 1, 1], texts: ['列表'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('列表')] },
+        { t: 'f', n: 'ms-segmented-item', f: [], e: [], r: { tl: 6, tr: 6, br: 6, bl: 6 }, clip: false, x: 110, y: 1300, w: 62, h: 28, o: 1,
+          lib: { k: 'lib:seg-item', f: 'components/Segmented', cls: 'ms-segmented-item', tok: ['选中=false'], texts: ['卡片'], tcols: [[0.4, 0.4, 0.4]], ic: false },
+          ch: [T('卡片')] },
+        // 十一轮续：时间轴点逐项换库——warm 修饰（库无 warm 档 → 等待 + repaint 按 demo 橙色兜正）+ 裸点（进行中）
+        { t: 'f', n: 'ms-timeline-dot ms-timeline-dot--warm', f: [{ c: [0.95, 0.6, 0.1], a: 1 }], e: [], r: { tl: 5, tr: 5, br: 5, bl: 5 }, clip: false, x: 40, y: 1340, w: 9, h: 9, o: 1,
+          lib: { k: 'lib:time-dot', f: 'time-dot', cls: 'ms-timeline-dot ms-timeline-dot--warm', tok: ['等待'], col: [0.95, 0.6, 0.1, 1], ic: false }, ch: [] },
+        { t: 'f', n: 'ms-timeline-dot', f: [{ c: [0.2, 0.4, 0.9], a: 1 }], e: [], r: { tl: 5, tr: 5, br: 5, bl: 5 }, clip: false, x: 60, y: 1340, w: 9, h: 9, o: 1,
+          lib: { k: 'lib:time-dot', f: 'time-dot', cls: 'ms-timeline-dot', tok: ['进行中'], col: [0.2, 0.4, 0.9, 1], ic: false }, ch: [] },
+        { t: 'inst', d: 'c1', x: 0, y: 400, w: 60, h: 24, o: 1, texts: ['在线'], tcols: [[0.1, 0.6, 0.3]] },
         { t: 's', svg: '<svg viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>', x: 0, y: 440, w: 20, h: 20, o: 1 },
+        // 图标槽换装 + 视觉复核重选（2026-10-31）：轴裁决全不判 → 默认 Ghost 落图背离蓝底 → 换 Filled 重建 + 图标槽换 trash
+        { t: 'f', n: 'ms-btn ms-btn--filled', f: [{ c: [0.2, 0.4, 0.9], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 340, w: 100, h: 32, o: 1,
+          lib: { k: 'lib:btn-ic', f: 'ButtonIC', cls: 'ms-btn ms-btn--filled', tok: [], col: [0.2, 0.4, 0.9, 1], texts: ['Delete Configuration'], ic: true, icnk: 'icon:trash' },
+          ch: [T('Delete Configuration')] },
+        // t:'s' 裸 svg 图标身份（2026-10-31 六轮，REQ-020 ops 钮根因）：损坏 MS_ICONS 的 svg 经 iconSig
+        // 实体容忍反查出 ic 名 → walkLib firstIcon 收 t:'s' → lib.icnf → 按名换装图标槽——
+        // 此前 firstIcon 只认 t:'ic'，icnf 恒空 → 守卫 return false → 库默认 Add 图标泄漏
+        { t: 'f', n: 'ms-btn ms-btn--ops', f: [{ c: [0.2, 0.4, 0.9], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 300, w: 90, h: 32, o: 1,
+          lib: { k: 'lib:btn-ic', f: 'ButtonIC', cls: 'ms-btn ms-btn--ops', tok: [], col: [0.2, 0.4, 0.9, 1], texts: ['搜索设备'], ic: true, icnf: 'search', icnc: [0.1, 0.1, 0.1] },
+          ch: [{ t: 's', svg: '<svg viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>', x: 8, y: 8, w: 16, h: 16, o: 1, ic: 'search', col: [0.1, 0.1, 0.1] }, T('搜索设备')] },
+        // shape 门控（2026-10-31）：宽块 + Small/Large 几何轴，旧逻辑按宽高比误裁 Large——门控后保持默认 Small
+        { t: 'f', n: 'ms-btn ms-btn--wide', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 400, w: 200, h: 40, o: 1,
+          lib: { k: 'lib:btn-w', f: 'ButtonW', cls: 'ms-btn ms-btn--wide', tok: [], texts: ['A Wide Button Label'], ic: false },
+          ch: [T('A Wide Button Label')] },
+        // 裸类兜底 / token 序优先（2026-10-31 四轮）：bare=strock 白底描边；filled 修饰 primary 压过兜底
+        { t: 'f', n: 'ms-btnt', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 300, y: 460, w: 80, h: 32, o: 1,
+          lib: { k: 'lib:btn-theme', f: 'ButtonTheme', cls: 'ms-btnt', tok: ['strock'], text: '取消', ic: false }, ch: [T('取消')] },
+        { t: 'f', n: 'ms-btnt ms-btnt--filled', f: [{ c: [0.2, 0.4, 0.9], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 420, y: 460, w: 80, h: 32, o: 1,
+          lib: { k: 'lib:btn-theme', f: 'ButtonTheme', cls: 'ms-btnt ms-btnt--filled', tok: ['primary', 'strock'], text: '下一步', ic: false }, ch: [T('下一步')] },
+        // tag 双轴（2026-10-31 四轮）：tinted=Light background+theme；outline 修饰压过兜底
+        { t: 'f', n: 'ms-tagk ms-tagk--primary', f: [{ c: [0.9, 0.95, 1], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 300, y: 500, w: 60, h: 24, o: 1,
+          lib: { k: 'lib:tag-kind', f: 'Tag 标签双色', cls: 'ms-tagk ms-tagk--primary', tok: ['light background', 'primary', 'default'], text: '待分配', ic: false }, ch: [T('待分配')] },
+        { t: 'f', n: 'ms-tagk ms-tagk--outline', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 420, y: 500, w: 60, h: 24, o: 1,
+          lib: { k: 'lib:tag-kind', f: 'Tag 标签双色', cls: 'ms-tagk ms-tagk--outline', tok: ['outline', 'light background', 'default'], text: 'M-Bus', ic: false }, ch: [T('M-Bus')] },
+        // 高度平局（2026-10-31 四轮）：两变体同高 → 高度不判 + 形状不跑 → 默认 Small
+        { t: 'f', n: 'ms-btnq', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 540, y: 460, w: 200, h: 32, o: 1,
+          lib: { k: 'lib:btn-tie', f: 'ButtonTie', cls: 'ms-btnq', tok: [], texts: ['A Wide Tie Label'], ic: false },
+          ch: [T('A Wide Tie Label')] },
+        // 几何对齐（2026-10-31 四轮）：单行文本层盒收缩到字形 run + 几何居中——全宽层会漂移居中压兄弟图标
+        // （scene 坐标为 cell 绝对系：宿主 x700 + 字形 run 偏移 44 → 文本层 x744）
+        { t: 'f', n: 'geo-align-host', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 700, y: 460, w: 200, h: 32, o: 1,
+          ch: [T('几何居中段', { al: 'center', x: 744, w: 64, y: 466, h: 20 })] },
+        // 长文案防折行 autoFit（2026-10-31 sig 去宽高）：短文案主档（Disabled 8 字）被长文案实例复用
+        { t: 'inst', d: 'c2', x: 80, y: 400, w: 200, h: 24, o: 1, texts: ['这是一个特别特别特别特别长的实例文案标签内容超过阈值'], tcols: [[0.1, 0.6, 0.3]] },
+        { t: 'inst', d: 'c2', x: 80, y: 440, w: 200, h: 24, o: 1, texts: ['中等长度的实例文案'], tcols: [[0.1, 0.6, 0.3]] },
+        // AL-hug 靶子（2026-10-31 五轮，REQ-020 蒙版 1440→468 / foot 372→71.48 实测复刻）：fix 提升节点
+        // 带 AL——真 API 开 AL 主轴落 hug，插件必须 sizing-first + 终态 resize 钉回 scene 原尺寸
+        { t: 'f', n: 'ms-mask-hug', f: [{ c: [0.15, 0.18, 0.23], a: 0.5 }], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 1440, h: 813, o: 1, fix: 1,
+          al: { dir: 'row', gap: 12, just: 'CENTER', align: 'CENTER', pt: 24, pr: 24, pb: 24, pl: 24 },
+          ch: [{ t: 'f', n: 'ms-modal-hug', f: [{ c: [1, 1, 1], a: 1 }], e: [], r: { tl: 8, tr: 8, br: 8, bl: 8 }, clip: false, x: 510, y: 316.5, w: 420, h: 180, o: 1,
+            ch: [{ t: 'f', n: 'dlg-foot', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 24, y: 124, w: 372, h: 32, o: 1,
+              al: { dir: 'row', gap: 12, just: 'MAX', align: 'CENTER' },
+              ch: [T('Cancel', { x: 300.5, y: 0, w: 71.48, h: 32 })] }] }] },
+        // 纯图标钮（2026-10-31 五轮）：有图标槽的 set → 择带槽变体 + 换装 + 藏 Label；无槽 set → 整块本地重绘
+        { t: 'f', n: 'ms-btnop ms-btnop--sm', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 1100, y: 460, w: 34, h: 28, o: 1,
+          lib: { k: 'lib:btn-io', f: 'ButtonIO', cls: 'ms-btn ms-btn--sm', tok: ['s', 'strock'], ic: true, icnk: 'icon:check', icnc: [0.1, 0.1, 0.1] },
+          ch: [{ t: 'ic', k: 'icon:check', f: 'icon/check', svg: '<svg viewBox="0 0 24 24"></svg>', x: 1109, y: 466, w: 16, h: 16, o: 1, col: [0.1, 0.1, 0.1] }] },
+        { t: 'f', n: 'ms-btnop2 ms-btnop2--sm', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 1160, y: 460, w: 34, h: 28, o: 1,
+          lib: { k: 'lib:btn-noic', f: 'ButtonNO', cls: 'ms-btn ms-btn--sm', tok: ['s', 'strock'], ic: true },
+          ch: [{ t: 'ic', f: 'moreHoriz', svg: '<svg viewBox="0 0 24 24"></svg>', x: 1169, y: 466, w: 16, h: 16, o: 1, col: [0.1, 0.1, 0.1] }] },
+        // input 转化（2026-10-31 七轮，REQ-018）：①搜索框 = 左置图标（icL）+ placeholder 文案（合成文本节点）
+        // → addon 两轴关 + afterIcon 关（不误开）+ preIcon 保槽换 search + Example 改写为占位文案；
+        // ②lg 只读值输入 → 高度判 Large + 值文案改写；③空输入（无 value/placeholder）→ 藏主档 Example
+        { t: 'f', n: 'ms-input bc-eg71-toolbar-search', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 240, y: 780, w: 260, h: 32, o: 1,
+          lib: { k: 'lib:input-x', f: 'Input 输入框', cls: 'ms-input bc-eg71-toolbar-search', tok: [], texts: ['搜索通道名称 / 编号'], tcols: [[0.6, 0.6, 0.6]], ic: true, icL: 1, icnk: 'icon:search2', icnc: [0.4, 0.4, 0.4] },
+          ch: [{ t: 'ic', k: 'icon:search2', f: 'icon/search2', svg: '<svg viewBox="0 0 24 24"></svg>', x: 248, y: 788, w: 16, h: 16, o: 1, col: [0.4, 0.4, 0.4] }, T('搜索通道名称 / 编号', { x: 272, y: 786, w: 180, col: [0.6, 0.6, 0.6] })] },
+        { t: 'f', n: 'ms-input ms-input--lg ms-input--range', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 520, y: 780, w: 200, h: 40, o: 1,
+          lib: { k: 'lib:input-x', f: 'Input 输入框', cls: 'ms-input ms-input--lg ms-input--range', tok: [], texts: ['2026-08-01 ~ 2026-08-31'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('2026-08-01 ~ 2026-08-31', { x: 524, y: 790, w: 190 })] },
+        { t: 'f', n: 'ms-input ms-input--lg ms-input--blank', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 740, y: 780, w: 200, h: 40, o: 1,
+          lib: { k: 'lib:input-x', f: 'Input 输入框', cls: 'ms-input ms-input--lg ms-input--blank', tok: [], ic: false } },
+        // 十轮：真库 Input 结构 + Checkbox tag 轴（REQ-019 板审计）：①搜索框 = addon 结构隐藏 +
+        // person 槽换装 search + suffix 藏 + 值落值层（addon 内层 http:// 退出对位序列）；
+        // ②无图标值输入 = person/suffix 槽全藏 + Example 改写；③裸 checkbox（无文本证据）=
+        // tag 轴关 + 标签藏；④带文本 checkbox = 标签改写、不藏
+        { t: 'f', n: 'ms-input rl-search', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 240, y: 840, w: 260, h: 32, o: 1,
+          lib: { k: 'lib:input-rl', f: 'Input 真结构', cls: 'ms-input rl-search', tok: [], texts: ['4900 Water #31005621'], tcols: [[0.1, 0.1, 0.1]], ic: true, icL: 1, icnk: 'icon:search2', icnc: [0.4, 0.4, 0.4] },
+          ch: [{ t: 'ic', k: 'icon:search2', f: 'icon/search2', svg: '<svg viewBox="0 0 24 24"></svg>', x: 248, y: 848, w: 16, h: 16, o: 1, col: [0.4, 0.4, 0.4] }, T('4900 Water #31005621', { x: 272, y: 846, w: 180 })] },
+        { t: 'f', n: 'ms-input rl-value', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 520, y: 840, w: 200, h: 32, o: 1,
+          lib: { k: 'lib:input-rl', f: 'Input 真结构', cls: 'ms-input rl-value', tok: [], texts: ['Heat Meter 01'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('Heat Meter 01', { x: 524, y: 846, w: 150 })] },
+        { t: 'f', n: 'ms-checkbox rl-check', f: [], e: [], r: { tl: 3, tr: 3, br: 3, bl: 3 }, clip: false, x: 740, y: 844, w: 16, h: 16, o: 1,
+          lib: { k: 'lib:checkbox-rl', f: 'Checkbox', cls: 'ms-checkbox rl-check', tok: [], ic: false } },
+        { t: 'f', n: 'ms-checkbox rl-check-label', f: [], e: [], r: { tl: 3, tr: 3, br: 3, bl: 3 }, clip: false, x: 800, y: 840, w: 90, h: 22, o: 1,
+          lib: { k: 'lib:checkbox-rl', f: 'Checkbox', cls: 'ms-checkbox rl-check-label', tok: [], texts: ['启用告警'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('启用告警', { x: 822, y: 842, w: 60 })] },
+        // 十二轮：①库默认色图标（#272E3B 填充+描边）按 demo 灰 #6B7785 重涂；②select 选中值
+        //（原生 <select> 无 DOM 文本，序列化合成 t:'t' 后 texts=['M-Bus'] → 值落值层 + addon 隐藏
+        // + chevron 保留）；③无文本证据 select → 值层全藏（空下拉不泄漏 Example）
+        { t: 'ic', k: 'icon:info-rl', f: 'icon/info-rl', svg: '<svg viewBox="0 0 24 24"></svg>', x: 940, y: 844, w: 16, h: 16, o: 1, col: [0.42, 0.47, 0.52], ctk: 'color-icon-secondary' },
+        { t: 'f', n: 'ms-select rl-selval', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 980, y: 840, w: 200, h: 32, o: 1,
+          lib: { k: 'lib:select-x', f: 'Select 下拉选择', cls: 'ms-select rl-selval', tok: [], texts: ['M-Bus'], tcols: [[0.1, 0.1, 0.1]], ic: false },
+          ch: [T('M-Bus', { x: 984, y: 846, w: 150 })] },
+        { t: 'f', n: 'ms-select rl-selblank', f: [], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 1200, y: 840, w: 160, h: 32, o: 1,
+          lib: { k: 'lib:select-x', f: 'Select 下拉选择', cls: 'ms-select rl-selblank', tok: [], ic: false } },
       ],
     },
   }, {
@@ -388,8 +985,8 @@ const SCENE = {
     root: { t: 'f', f: [], e: [], r: { tl: 0, tr: 0, br: 0, bl: 0 }, clip: false, x: 0, y: 0, w: 1440, h: 900, o: 1, ch: [T('Confirm Delete?')] },
   }],
   defs: {
-    c1: { name: 'ms-tag', vname: 'Active', root: { t: 'f', n: 'ms-tag', f: [{ c: [0.9, 0.9, 0.9], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 0, w: 60, h: 24, o: 1, ch: [T('Active')] } },
-    c2: { name: 'ms-tag', vname: 'Disabled', root: { t: 'f', n: 'ms-tag', f: [{ c: [0.85, 0.85, 0.85], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 0, w: 60, h: 24, o: 1, ch: [T('Disabled')] } },
+    c1: { name: 'ms-tag', vname: 'Active', sig: 'aabbccdd', root: { t: 'f', n: 'ms-tag', f: [{ c: [0.9, 0.9, 0.9], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 0, w: 60, h: 24, o: 1, ch: [T('Active')] } },
+    c2: { name: 'ms-tag', vname: 'Disabled', sig: '11223344', root: { t: 'f', n: 'ms-tag', f: [{ c: [0.85, 0.85, 0.85], a: 1 }], e: [], r: { tl: 4, tr: 4, br: 4, bl: 4 }, clip: false, x: 0, y: 0, w: 60, h: 24, o: 1, ch: [T('Disabled')] } },
   },
 };
 
@@ -402,6 +999,9 @@ vm.createContext(sandbox);
 vm.runInContext(code, sandbox);
 
 (async () => {
+  // 死锁看门狗（十三轮）：旧代码 Promise.all 死等永不返回的库导入 → 事件循环排空静默退出 0（假绿）。
+  // 看门狗把「没跑到汇总」变成硬失败，守住挂起红靶的判别力。
+  const watchdog = setTimeout(() => { console.error('✗ 挂起死锁：导入未在 45s 内完成（库资产导入超时护栏失效？）'); process.exit(1); }, 45000);
   const handler = figma.ui.onmessage;
   if (typeof handler !== 'function') { console.error('✗ 未捕获 onmessage 入口'); process.exit(1); }
   await handler({ type: 'scene', json: JSON.parse(JSON.stringify(SCENE)) });
@@ -455,6 +1055,14 @@ vm.runInContext(code, sandbox);
     A('AL 对齐', al.primaryAxisAlignItems === 'MIN' && al.counterAxisAlignItems === 'CENTER');
   }
 
+  // ---- AL stretch 消毒（2026-10-31 六轮：官方手册 counterAxisAlignItems 无 STRETCH 枚举）----
+  const alS = findBy(n => n.name === 'al-stretch')[0];
+  A('AL stretch 消毒为 MIN（容器枚举无 STRETCH，不再抛错）', alS && alS.counterAxisAlignItems === 'MIN', alS && alS.counterAxisAlignItems);
+  A('AL stretch 尺寸保持（终态 resize 未被枚举抛错连带跳过；hug 冻结时宽塌到 136）',
+    alS && Math.abs(alS.width - 300) < 1 && Math.abs(alS.height - 40) < 1, alS && (alS.width + '×' + alS.height));
+  A('AL stretch 下沉子节点 layoutAlign=STRETCH', alS && alS.children.length === 2 && alS.children.every(c => c.layoutAlign === 'STRETCH'),
+    alS && alS.children.map(c => c.layoutAlign).join(','));
+
   const img = findBy(n => n.type === 'RECTANGLE')[0];
   A('图片矩形', !!img);
   A('图片 fill IMAGE/FILL', img && img.fills[0] && img.fills[0].type === 'IMAGE' && img.fills[0].scaleMode === 'FILL',
@@ -464,6 +1072,17 @@ vm.runInContext(code, sandbox);
   const iconInst = findBy(n => n.type === 'INSTANCE' && n.name !== 'ms-btn ms-btn--primary' && n.setProps === undefined)[0];
   const iconInsts = findBy(n => n.type === 'INSTANCE');
   A('图标实例化（icon:check 导入）', calls.importKey.includes('icon:check'));
+  // ---- 挂起 key 限时兜底（2026-11-01 十三轮红靶：面板曾卡死「导入库组件 20/30」）----
+  // 旧代码 Promise.all 死等永不返回的 importComponentByKeyAsync → 本断言永远到不了（红态 = 测试挂起被 timeout 杀）
+  // ---- 十四轮断言改判：超时 = 服务停顿，不再级联 set API（级联只会让一个停顿 key 烧 3×限时）----
+  A('挂起 key 不死锁（comp 超时 → 失败兜底走完）', calls.importKey.includes('lib:hang'));
+  A('超时不级联 set API 重试（停顿重试无意义，十四轮）', !calls.importSetKey.includes('lib:hang'));
+  const hangTries = calls.importKey.filter(x => x === 'lib:hang').length;
+  A('挂起 key 失败缓存防重放（两个同 key 节点只导入一次，十四轮）', hangTries === 1, 'attempts=' + hangTries);
+  const hangFail = (String(calls.notify.find(t => t.indexOf('导入完成') === 0) || '').match(/库导入失败 (\d+)/) || [])[1];
+  A('挂起 key 计入库导入失败（整链收口不再挂死）', +hangFail >= 1, 'fail=' + hangFail);
+  // ---- 十五轮：四类资产（图标名/动态库 key/变量/图片）提前并行预载，主循环零新鲜导入 ----
+  A('资产预载阶段状态行（十五轮）', calls.uiPost.some(m => m && m.type === 'status' && String(m.text).indexOf('预载资产') >= 0));
   const iconInst2 = iconInsts.find(i => (i.parent && i.parent !== cell) || true);
   const paintedStroke = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.strokes || []).length, i.children || []));
   const paintedFill = iconInsts.flatMap(i => findBy(n => n.type === 'VECTOR' && (n.fills || []).length && !(n.strokes || []).length, i.children || []));
@@ -533,12 +1152,23 @@ vm.runInContext(code, sandbox);
     const topInner = findByNameM(tabsInst, /tabs-top/i);
     A('嵌套 Tabs-Top swap 到 Item=2', topInner && topInner.variantProperties && topInner.variantProperties['Item 数量'] === '2',
       topInner && JSON.stringify(topInner.variantProperties));
-    const tabKids = topInner ? topInner.children.filter(c => /^tab$/i.test(String(c.name))) : [];
-    A('Tab 实例 ×2（active/inactive 择变体）',
-      tabKids.length === 2 && tabKids[0].variantProperties['Selecte 选择'] === 'true' && tabKids[1].variantProperties['Selecte 选择'] === 'false',
+    // w8 修复（2026-10-31 缺陷 C）：Tab 项包在 'tabs group' 里也要收集到（旧逻辑收空 → 文案全 "Tab"）
+    const tabKids = [];
+    (function collectTabs(nd) { (nd.children || []).forEach(c => { if (/^tab$/i.test(String(c.name))) tabKids.push(c); else collectTabs(c); }); })(topInner || tabsInst);
+    A('Tab 实例 ×2（tabs group 内深收集）', tabKids.length === 2,
+      tabKids.length + ' kids=' + JSON.stringify((function fl(nd) { let o = []; (nd.children || []).forEach(c => { o.push(c.name); o = o.concat(fl(c)); }); return o; })(topInner || tabsInst)));
+    A('Tab 择变体（Selecte 正确 + Icon/ShowSelect 关态）',
+      tabKids.length === 2 && tabKids[0].variantProperties['Selecte 选择'] === 'true' && tabKids[1].variantProperties['Selecte 选择'] === 'false'
+        && tabKids.every(t4 => t4.variantProperties['Icon 图标'] === 'false' && t4.variantProperties['ShowSelect 下拉'] === 'false'),
       tabKids.map(t4 => JSON.stringify(t4.variantProperties)).join(','));
     const tabTexts = tabKids.map(t4 => { const tt = findFirstTextM(t4); return tt ? tt.characters : null; });
     A('Tab 文案覆写 = 设备/固件', tabTexts.join('|') === '设备|固件', tabTexts.join('|'));
+    // More 轴证据裁决（2026-10-31 缺陷 D）：more=true 变体排在前面也不得被选中；more 按钮残影要藏掉
+    A('Top 择变体排除 More=true', topInner && topInner.variantProperties['More 更多'] === 'false',
+      topInner && topInner.variantProperties['More 更多']);
+    const moreBtn = topInner && (function fm2(nd) { let hit = null; (nd.children || []).forEach(c => { if (/more/i.test(String(c.name))) hit = c; else { const r = fm2(c); if (r) hit = r; } }); return hit; })(topInner);
+    A('more 按钮残影隐藏（visible=false 覆写）', moreBtn && moreBtn.visible === false,
+      moreBtn && moreBtn.name + ' visible=' + moreBtn.visible);
     A('辅助组件集导入（tabs-top/tab 走 set API）',
       calls.importSetKey.includes('lib:tabs-top') && calls.importSetKey.includes('lib:tab'), JSON.stringify(calls.importSetKey));
   }
@@ -576,6 +1206,343 @@ vm.runInContext(code, sandbox);
   A('回填层文字色按 HTML 覆盖', !!statCol && statCol.fills[0] && statCol.fills[0].color.b > 0.89
     && statCol.fills[0].color.r > 0.19 && statCol.fills[0].color.r < 0.21,
     statCol && statCol.fills[0] && JSON.stringify(statCol.fills[0].color));
+  // ---- 字样覆写（2026-10-31 五轮）：实例主档默认文字样式（14/Regular）不随 demo——tfs/tfw 逐段覆写 ----
+  const statLay = statInst ? (statInst.children || []).filter(c => c.type === 'TEXT') : [];
+  A('实例字号按 HTML 覆写（24 段 20px / 标签段 12px）',
+    statLay.length === 2 && statLay[0].fontSize === 20 && statLay[1].fontSize === 12,
+    statLay.map(t => t.fontSize).join(','));
+  A('实例字重按 HTML 覆写（600 → Semibold；主档 Regular 不再泄漏）',
+    statLay.length === 2 && statLay[0].fontName && statLay[0].fontName.style === 'Semibold',
+    statLay[0] && JSON.stringify(statLay[0].fontName));
+  A('字样覆写计数入通知', doneMsg0 && /字样覆写 [1-9]/.test(doneMsg0), doneMsg0);
+
+  // ---- 证据裁决（2026-10-31 像素审计缺陷 E/F）：ic=false → icon 类 VARIANT 轴强制关态 ----
+  const tagxInst = iconInsts.find(i => i.name === 'ms-tag ms-tag--primary' || i.name === 'ms-tag');
+  A('无图标证据择 Icon=false 变体（默认 true 不泄漏）',
+    !!tagxInst && tagxInst.variantProperties && tagxInst.variantProperties['Icon 图标'] === 'false',
+    tagxInst && JSON.stringify(tagxInst.variantProperties));
+  A('关态变体无 chevron 矢量残留',
+    !!tagxInst && !(function fv(nd) { return (nd.children || []).some(c => /chevron/i.test(String(c.name)) || fv(c)); })(tagxInst),
+    tagxInst && tagxInst.name);
+
+  // ---- svgCache 原型清场（2026-10-31 像素审计缺陷 G）----
+  A('svgCache 原型导入结束 remove（无游离 Frame）',
+    calls.svgCreated.length >= 1 && calls.svgCreated.every(n => REMOVED.includes(n)),
+    'created=' + calls.svgCreated.length + ' removed=' + calls.svgCreated.filter(n => REMOVED.includes(n)).length);
+
+  // ---- 图标槽换装 + 视觉复核重选 + shape 门控 + autoFit（2026-10-31 按钮输入框转化修复）----
+  const icBtn = iconInsts.find(i => i.name === 'ms-btn ms-btn--filled');
+  A('视觉复核重选 Filled（默认 Ghost 无填充背离蓝底证据 → 换兄弟变体重建）',
+    icBtn && icBtn.variantProperties && icBtn.variantProperties.Type === 'Filled',
+    icBtn && JSON.stringify(icBtn.variantProperties));
+  const icSlot = icBtn && (function fs2(nd) { let o = null; (nd.children || []).forEach(c => { if (c.type === 'INSTANCE' && /icon/i.test(String(c.name))) o = c; else { const r = fs2(c); if (r) o = r; } }); return o; })(icBtn);
+  A('图标槽换装 mainComponent=trash（Delete 不再挂库默认 Add）',
+    icSlot && icSlot.mainComponent && /trash/.test(String(icSlot.mainComponent.name || '')),
+    icSlot && String(icSlot.mainComponent && icSlot.mainComponent.name));
+  // t:'s' svg 身份链（2026-10-31 六轮）：icnf 按名换装——REQ-020 ops 钮 svg 图标不再挂库默认 Add
+  const opsBtn = iconInsts.find(i => String(i.name) === 'ms-btn ms-btn--ops');
+  const opsSlot = opsBtn && (function fs4(nd) { let o = null; (nd.children || []).forEach(c => { if (c.type === 'INSTANCE' && /icon/i.test(String(c.name))) o = c; else { const r = fs4(c); if (r) o = r; } }); return o; })(opsBtn);
+  A('t:s svg icnf 按名换装（裸 svg 图标身份反查后不挂库默认 Add）',
+    opsSlot && opsSlot.mainComponent && /search/.test(String(opsSlot.mainComponent.name || '')),
+    opsSlot && String(opsSlot.mainComponent && opsSlot.mainComponent.name));
+  A('图标换装计数入通知', doneMsg0 && /图标槽换装 [1-9]/.test(doneMsg0), doneMsg0);
+  A('视觉重选计数入通知', doneMsg0 && /视觉复核重选 [1-9]/.test(doneMsg0), doneMsg0);
+  A('图标按名兜底计数入通知', doneMsg0 && /按名动态兜底 1/.test(doneMsg0), doneMsg0);
+  const dynIcon = iconInsts.find(i => String(i.name) === 'icon/search'); // mock createInstance 不挂 mainComponent，按克隆保留的名字找
+  A('无 key 图标按名走库目录实例化（不建本地组件）', !!dynIcon && calls.importKey.includes('icon:search-x'),
+    dynIcon ? 'key=' + String(calls.importKey.includes('icon:search-x')) : '实例缺失');
+  const wideBtn = iconInsts.find(i => i.name === 'ms-btn ms-btn--wide');
+  A('高度择尺寸：40px 块落 Size=Large（高度 px 真值参与裁决，不再默认序混档；2026-10-31 四轮「高度间距不一致」根因）',
+    wideBtn && wideBtn.variantProperties && wideBtn.variantProperties.Size === 'Large',
+    wideBtn && JSON.stringify(wideBtn.variantProperties));
+  A('高度择尺寸计数入通知', doneMsg0 && /高度择尺寸 [1-9]/.test(doneMsg0), doneMsg0);
+  const tieBtn = iconInsts.find(i => i.name === 'ms-btnq');
+  A('高度平局不判 + 单段文本不跑形状（同高变体保持默认 Small，宽高比不再误裁 Large）',
+    tieBtn && tieBtn.variantProperties && tieBtn.variantProperties.Size === 'Small',
+    tieBtn && JSON.stringify(tieBtn.variantProperties));
+
+  // ---- 九轮：实例颜色无条件覆写（用户硬性要求「html 的颜色怎样都按 html 改」）----
+  // demo 白底灰边 bare/sm 按钮落库 Strock 变体后，实例根 fills/strokes 按 HTML 证据重涂——
+  // 库变体默认蓝描边不再泄漏；tk 读回漂移（v:border 黑值≠灰）回退裸色仍是 demo 灰
+  const rpBtn = iconInsts.find(i => String(i.name) === 'ms-btnt ms-btnt--sm');
+  A('实例 fills 按 HTML 覆写（白底，不再随库变体默认）',
+    !!rpBtn && rpBtn.fills && rpBtn.fills[0] && rpBtn.fills[0].color.r > 0.99 && rpBtn.fills[0].color.b > 0.99,
+    rpBtn && rpBtn.fills[0] && JSON.stringify(rpBtn.fills[0].color));
+  A('实例 strokes 按 HTML 覆写（灰边 #E5E6EB，库默认蓝边不再泄漏）',
+    !!rpBtn && rpBtn.strokes && rpBtn.strokes[0] && rpBtn.strokes[0].color
+      && Math.abs(rpBtn.strokes[0].color.r - 0.898) < 0.02 && Math.abs(rpBtn.strokes[0].color.b - 0.922) < 0.02,
+    rpBtn && rpBtn.strokes[0] && JSON.stringify(rpBtn.strokes[0].color));
+  A('描边宽 1 INSIDE', !!rpBtn && rpBtn.strokeWeight === 1 && rpBtn.strokeAlign === 'INSIDE',
+    rpBtn && String(rpBtn.strokeWeight) + '/' + String(rpBtn.strokeAlign));
+  A('stk 令牌绑定尝试过（漂移回退裸色但 key 已 import）', calls.importVarKey.includes('v:border'),
+    'importVarKey=' + JSON.stringify(calls.importVarKey));
+  A('颜色覆写计数入通知', doneMsg0 && /颜色覆写 [1-9]/.test(doneMsg0), doneMsg0);
+
+  // ---- 九轮：单行文本 hug 防换行（用户令「大文字不要换行」）----
+  const hugTxt = findBy(n => n.type === 'TEXT' && n.characters === 'Italic Underline')[0];
+  A('单行文本 hug（WIDTH_AND_HEIGHT，浏览器量盒窄于 Figma 字形排宽不再折行）',
+    hugTxt && hugTxt.textAutoResize === 'WIDTH_AND_HEIGHT',
+    hugTxt && String(hugTxt.textAutoResize));
+  const trTxt = findBy(n => n.type === 'TEXT' && n.characters === 'Truncated long text')[0];
+  A('CSS 省略号文本保持 NONE+ENDING（不 hug）',
+    trTxt && trTxt.textAutoResize === 'NONE' && trTxt.textTruncation === 'ENDING',
+    trTxt && String(trTxt.textAutoResize) + '/' + String(trTxt.textTruncation));
+  const mlTxt = findBy(n => n.type === 'TEXT' && String(n.characters).indexOf('多行文本第一行') === 0)[0];
+  A('多行文本保持定宽盒 NONE（不 hug，防 Figma 重排）',
+    mlTxt && mlTxt.textAutoResize === 'NONE', mlTxt && String(mlTxt.textAutoResize));
+  const ctrTxt = findBy(n => n.type === 'TEXT' && n.characters === '居中断言')[0];
+  // mock 自然宽 = 4 字 × 14 × 0.6 = 33.6 → x = 300 + (100-33.6)/2 = 333.2（真 Figma 同字体漂移亚像素级）
+  A('hug 后居中文本按盒中心回移（x≈333.2，非左锚 300）',
+    ctrTxt && ctrTxt.textAutoResize === 'WIDTH_AND_HEIGHT' && Math.abs(ctrTxt.x - 333.2) < 0.6,
+    ctrTxt && 'x=' + ctrTxt.x + '/' + String(ctrTxt.textAutoResize));
+  const themeBare = iconInsts.find(i => i.name === 'ms-btnt');
+  A('裸类兜底 token：bare 按钮 Theme=Strock（白底描边，不再落默认 Primary 蓝底「文字看不到」根因）',
+    themeBare && themeBare.variantProperties && themeBare.variantProperties.Theme === 'Strock',
+    themeBare && JSON.stringify(themeBare.variantProperties));
+  const themeFilled = iconInsts.find(i => i.name === 'ms-btnt ms-btnt--filled');
+  A('token 序优先：修饰 token 压过裸类兜底（filled→Primary，不被 strock 兜底吃掉）',
+    themeFilled && themeFilled.variantProperties && themeFilled.variantProperties.Theme === 'Primary',
+    themeFilled && JSON.stringify(themeFilled.variantProperties));
+  const tagkPrim = iconInsts.find(i => i.name === 'ms-tagk ms-tagk--primary');
+  A('tag 双轴：tinted → 种类=Light background + theme=primary（浅底彩字，深底同色字不可见根因）',
+    tagkPrim && tagkPrim.variantProperties && tagkPrim.variantProperties['种类'] === 'Light background' && tagkPrim.variantProperties.theme === 'primary',
+    tagkPrim && JSON.stringify(tagkPrim.variantProperties));
+  const tagkOut = iconInsts.find(i => i.name === 'ms-tagk ms-tagk--outline');
+  A('tag outline 修饰压过兜底：种类=outline（不被裸类 Light background 吃掉）',
+    tagkOut && tagkOut.variantProperties && tagkOut.variantProperties['种类'] === 'outline',
+    tagkOut && JSON.stringify(tagkOut.variantProperties));
+  const geoText = findBy(n => n.type === 'TEXT' && n.characters === '几何居中段')[0];
+  // 九轮 hug 后居中文本按盒中心回移：mock 自然宽 = 5 字 × 14 × 0.6 = 42 → x = 744 + (64-42)/2 = 755
+  //（真 Figma 同字体自然宽≈浏览器 run 宽，漂移亚像素级；序列化 run 收缩本身由 verify-scene 断言）
+  A('几何对齐：单行居中文本层 CENTER 且盒收缩到字形 run（hug 后中心回移 x≈755）',
+    geoText && geoText.textAlignHorizontal === 'CENTER' && Math.abs(geoText.x - 755) < 0.6,
+    geoText && String(geoText.textAlignHorizontal) + '/x=' + geoText.x);
+  const longInst = iconInsts.find(i => { const t5 = findFirstTextM(i); return t5 && t5.characters === '这是一个特别特别特别特别长的实例文案标签内容超过阈值'; });
+  const longText = longInst && findFirstTextM(longInst);
+  A('实例特别长文案省略号 ENDING（>24 字符，定回容器宽截断）',
+    longText && longText.textTruncation === 'ENDING' && longText.textAutoResize === 'NONE',
+    longText && String(longText.textTruncation) + '/' + String(longText.textAutoResize));
+  const midInst = iconInsts.find(i => { const t6 = findFirstTextM(i); return t6 && t6.characters === '中等长度的实例文案'; });
+  const midText = midInst && findFirstTextM(midInst);
+  A('实例中等文案全展示（≤24 字符不省略号，WIDTH_AND_HEIGHT 自适应展开，2026-10-31 三轮用户令反转默认）',
+    midText && midText.textAutoResize === 'WIDTH_AND_HEIGHT' && midText.textTruncation !== 'ENDING',
+    midText && String(midText.textAutoResize) + '/' + String(midText.textTruncation));
+
+  // ---- AL-hug 钉尺寸（2026-10-31 五轮，REQ-020 蒙版 1440→468 / foot 372→71.48 根因）----
+  // 真 API 开 AL 主轴落 hug——插件 sizing-first + 终态 resize 后必须保持 scene 原尺寸与提升位
+  const maskHug = cell && (cell.children || []).find(c => c.name === 'ms-mask-hug');
+  A('蒙版提升后保持全幅（1440×813，不被 AL hug 收缩成 468）',
+    !!maskHug && maskHug.width === 1440 && maskHug.height === 813,
+    maskHug && (maskHug.width + '×' + maskHug.height));
+  A('蒙版提升 y=24（lift 不双重补偿；bug 形态是 48）', !!maskHug && Math.abs(maskHug.y - 24) < 0.5,
+    maskHug && String(maskHug.y));
+  const footHug = maskHug && (function ff2(nd) { let o = null; (nd.children || []).forEach(c => { if (c.name === 'dlg-foot') o = c; else { const r = ff2(c); if (r) o = r; } }); return o; })(maskHug);
+  A('弹窗 foot 保持全宽（372，不被 AL hug 收缩成按钮宽 71）',
+    !!footHug && footHug.width === 372 && footHug.height === 32,
+    footHug && (footHug.width + '×' + footHug.height));
+
+  // ---- 纯图标钮（2026-10-31 五轮，REQ-020 操作列「图标钮变 Label 文字钮」根因）----
+  const ioInst = iconInsts.find(i => i.name === 'ms-btn ms-btn--sm' && i.variantProperties && i.variantProperties.Theme === 'Strock');
+  A('纯图标钮择带图标槽变体（Size=S，不被默认序落纯文字 M）',
+    !!ioInst && ioInst.variantProperties.Size === 'S', ioInst && JSON.stringify(ioInst.variantProperties));
+  const ioSlot = ioInst && (function fs3(nd) { let o = null; (nd.children || []).forEach(c => { if (c.type === 'INSTANCE' && /icon/i.test(String(c.name))) o = c; else { const r = fs3(c); if (r) o = r; } }); return o; })(ioInst);
+  A('纯图标钮槽换装 check（图标真身随 demo，不挂库默认 Add）',
+    !!ioSlot && ioSlot.mainComponent && /check/.test(String(ioSlot.mainComponent.name || '')),
+    ioSlot && String(ioSlot.mainComponent && ioSlot.mainComponent.name));
+  const ioLabel = ioInst && (function ft3(nd) { let o = null; (nd.children || []).forEach(c => { if (c.type === 'TEXT' && /Label|Button/.test(String(c.characters))) o = c; else { const r = ft3(c); if (r) o = r; } }); return o; })(ioInst);
+  A('纯图标钮藏主档 Label（visible=false，不再泄漏「Label」文字）', !!ioLabel && ioLabel.visible === false,
+    ioLabel && String(ioLabel.visible));
+  A('纯图标钮计数入通知', doneMsg0 && /纯图标钮 1/.test(doneMsg0), doneMsg0);
+  A('无图标槽家族整块回退本地（不产 ButtonNO 实例）',
+    iconInsts.filter(i => { const vp = i.variantProperties ? Object.keys(i.variantProperties) : []; return vp.includes('Label#802'); }).length === 0
+    && !iconInsts.some(i => String(i.name).includes('ms-btnop2')));
+  const ioFallbackFrame = tree.find(n => String(n.name).startsWith('ms-btnop2')) || findBy(n => String(n.name).startsWith('ms-btnop2'))[0];
+  A('回退本地重绘图标钮落图（边框热区本地 + 图标仍引用库）', !!ioFallbackFrame,
+    (tree.map(n => n.name).join(',')));
+
+  // ---- input 转化（2026-10-31 七轮，REQ-018 input 审计：Example/addon/afterIcon 三泄漏根因）----
+  const inpSearch = iconInsts.find(i => String(i.name).includes('bc-eg71-toolbar-search'));
+  A('搜索框落库实例', !!inpSearch);
+  const isp = inpSearch && Object.assign({}, ...(inpSearch.setProps || []));
+  A('addon 轴全关（addonBefore/addonAfter=false，http:// 前缀与附加块不泄漏）',
+    !!isp && isp.addonBefore === false && isp.addonAfter === false, JSON.stringify(isp));
+  A('afterIcon 关（左置图标不误开右侧图标）', !!isp && isp.afterIcon === false);
+  A('preIcon 保默认 true（左图标槽在，供换装）', !!isp && isp.preIcon === undefined);
+  A('搜索框高度判 Standard（32px）', inpSearch && inpSearch.variantProperties && inpSearch.variantProperties.Size === 'Standard',
+    inpSearch && JSON.stringify(inpSearch.variantProperties));
+  const isTxt = inpSearch && findFirstTextM(inpSearch);
+  A('placeholder 改写（Example → 搜索占位文案）', !!isTxt && /搜索通道名称/.test(String(isTxt.characters)),
+    isTxt && String(isTxt.characters));
+  const isSlot = inpSearch && (function fs4(nd) { let o = null; (nd.children || []).forEach(c => { if (c.type === 'INSTANCE' && /icon/i.test(String(c.name))) o = c; else { const r = fs4(c); if (r) o = r; } }); return o; })(inpSearch);
+  A('preIcon 槽换装 search2（图标真身随 demo）',
+    !!isSlot && isSlot.mainComponent && /search2/.test(String(isSlot.mainComponent.name || '')),
+    isSlot && String(isSlot.mainComponent && isSlot.mainComponent.name));
+  const inpRange = iconInsts.find(i => String(i.name).includes('ms-input--range'));
+  A('lg 输入高度判 Large（40px）', inpRange && inpRange.variantProperties && inpRange.variantProperties.Size === 'Large',
+    inpRange && JSON.stringify(inpRange.variantProperties));
+  const irTxt = inpRange && findFirstTextM(inpRange);
+  A('值文案改写（2026-08-01 ~ 2026-08-31）', !!irTxt && /2026-08-01/.test(String(irTxt.characters)),
+    irTxt && String(irTxt.characters));
+  const rsp = inpRange && Object.assign({}, ...(inpRange.setProps || []));
+  A('无图标输入 preIcon/afterIcon 全关（图标零泄漏）', !!rsp && rsp.preIcon === false && rsp.afterIcon === false);
+  const inpBlank = iconInsts.find(i => String(i.name).includes('ms-input--blank'));
+  A('空输入落库实例', !!inpBlank);
+  const blankTexts = inpBlank ? (function ft4(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft4(c)); }); return o; })(inpBlank) : [];
+  A('空输入藏主档 Example（TEXT 层全 visible=false，不再泄漏默认值）',
+    blankTexts.length > 0 && blankTexts.every(t => t.visible === false),
+    blankTexts.map(t => t.visible).join(','));
+  A('空输入藏文案计数入通知', doneMsg0 && /空输入藏文案/.test(doneMsg0), doneMsg0);
+
+  // ---- 十轮：真库 Input 结构 + Checkbox tag 轴（REQ-019 板审计：addon/前图标泄漏 + 表格勾选框文案）----
+  const rlInst = (nm, root) => { let o = null; (function w5(n2) { if (o) return; (n2.children || []).forEach(c => { if (!o && String(c.name || '') === nm && c.type === 'INSTANCE') o = c; else w5(c); }); })(root); return o; };
+  const visText = root => { let o = null; (function w6(nd) { (nd.children || []).forEach(c => { if (o || c.visible === false) return; if (c.type === 'TEXT') o = c; else w6(c); }); })(root); return o; };
+  const rls = iconInsts.find(i => String(i.name).includes('rl-search'));
+  A('真结构搜索框落库实例', !!rls);
+  const addonInst = rls && rlInst('Input-Addon', rls);
+  A('addon 结构隐藏（http:// 前缀块 visible=false）', !!addonInst && addonInst.visible === false,
+    addonInst && String(addonInst.visible));
+  const gearInst = rls && rlInst('Component 1', rls);
+  A('设置图标附加块隐藏（visible=false）', !!gearInst && gearInst.visible === false,
+    gearInst && String(gearInst.visible));
+  const sufInst = rls && rlInst('input-suffix', rls);
+  A('未换装图标槽隐藏（input-suffix visible=false）', !!sufInst && sufInst.visible === false,
+    sufInst && String(sufInst.visible));
+  const personSlot = rls && rlInst('icon/person', rls);
+  A('person 前图标槽换装 search2（icL 位置证据选最左槽）',
+    !!personSlot && personSlot.visible !== false && personSlot.mainComponent && /search2/.test(String(personSlot.mainComponent.name || '')),
+    personSlot && String(personSlot.mainComponent && personSlot.mainComponent.name));
+  const rlsVal = rls && visText(rls);
+  A('值落值层（Example → 4900…，addon 内层 http:// 退出对位序列）',
+    !!rlsVal && /4900 Water/.test(String(rlsVal.characters)), rlsVal && String(rlsVal.characters));
+  const addonTxt = addonInst && (addonInst.children || []).find(c => c.type === 'TEXT');
+  A('addon 内层 http:// 不被误写（红态下值会错落 addon 层）',
+    !!addonTxt && addonTxt.characters === 'http://', addonTxt && String(addonTxt.characters));
+  const rlv = iconInsts.find(i => String(i.name).includes('rl-value'));
+  A('真结构无图标输入落库实例', !!rlv);
+  const rlvPerson = rlv && rlInst('icon/person', rlv);
+  A('无图标证据时前图标槽隐藏（person visible=false，库默认图标零泄漏）',
+    !!rlvPerson && rlvPerson.visible === false, rlvPerson && String(rlvPerson.visible));
+  const rlvVal = rlv && visText(rlv);
+  A('无图标输入值改写（Example → Heat Meter 01）',
+    !!rlvVal && /Heat Meter 01/.test(String(rlvVal.characters)), rlvVal && String(rlvVal.characters));
+  const rcb = iconInsts.find(i => String(i.name) === 'ms-checkbox rl-check');
+  A('裸勾选框落库实例', !!rcb);
+  const rcsp = rcb && Object.assign({}, ...(rcb.setProps || []));
+  A('tag 轴关（tag=false，标签结构不随默认 true 泄漏）', !!rcsp && rcsp.tag === false, JSON.stringify(rcsp));
+  const rcbTxt = rcb ? (function ft5(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft5(c)); }); return o; })(rcb) : [];
+  A('裸勾选框藏主档 Checkbox 文案（表格列只有勾选框、没有文本）',
+    rcbTxt.length > 0 && rcbTxt.every(t => t.visible === false), rcbTxt.map(t => t.visible).join(','));
+  const rcl = iconInsts.find(i => String(i.name) === 'ms-checkbox rl-check-label');
+  A('带文本勾选框落库实例', !!rcl);
+  const rclTxt = rcl && (rcl.children || []).find(c => c.type === 'TEXT');
+  A('标题勾选框文本改写（Checkbox → 启用告警，不藏）',
+    !!rclTxt && rclTxt.characters === '启用告警' && rclTxt.visible !== false,
+    rclTxt && String(rclTxt.characters) + '/' + rclTxt.visible);
+  A('十轮计数入通知（附加结构隐藏/图标槽隐藏）',
+    doneMsg0 && /附加结构隐藏 [1-9]/.test(doneMsg0) && /图标槽隐藏 [1-9]/.test(doneMsg0), doneMsg0);
+
+  // ---- 十二轮：库默认色图标重涂 + select 选中值链路（REQ-019 板 187:14922 input 文本消失 / icon 颜色不对）----
+  const infoInst = iconInsts.find(i => String(i.name) === 'icon/info-rl');
+  A('库默认色图标落库实例', !!infoInst);
+  const infoFp = infoInst && (infoInst.children || []).find(v => v.type === 'VECTOR' && (v.fills || []).length && !(v.strokes || []).length);
+  A('库默认色填充无条件重涂（#272E3B → demo 灰，不再只认近纯黑 <0.01）',
+    !!infoFp && Math.abs(infoFp.fills[0].color.r - 0.42) < 0.02 && Math.abs(infoFp.fills[0].color.g - 0.47) < 0.02 && Math.abs(infoFp.fills[0].color.b - 0.52) < 0.02,
+    infoFp && JSON.stringify(infoFp.fills[0].color));
+  const infoSp = infoInst && (infoInst.children || []).find(v => v.type === 'VECTOR' && (v.strokes || []).length);
+  A('库默认色描边同步重涂（strokes → demo 灰）',
+    !!infoSp && Math.abs(infoSp.strokes[0].color.r - 0.42) < 0.02 && Math.abs(infoSp.strokes[0].color.b - 0.52) < 0.02,
+    infoSp && JSON.stringify(infoSp.strokes[0].color));
+  const selV = iconInsts.find(i => i.name === 'ms-select rl-selval');
+  A('select 落库实例', !!selV);
+  const selValT = selV && visText(selV);
+  A('select 选中值落值层（Example → M-Bus：原生 select 无 DOM 文本，序列化合成后 texts 非空才可达）',
+    !!selValT && String(selValT.characters) === 'M-Bus', selValT && String(selValT.characters));
+  const selAddon = selV && rlInst('affix', selV);
+  A('select addon 直发子隐藏（affix visible=false）', !!selAddon && selAddon.visible === false,
+    selAddon && String(selAddon.visible));
+  const selAddonTxt = selAddon && (selAddon.children || []).find(c => c.type === 'TEXT');
+  A('select addon 内层 http:// 不被误写（值错落 addon 层 = 红态判别）',
+    !!selAddonTxt && selAddonTxt.characters === 'http://', selAddonTxt && String(selAddonTxt.characters));
+  const selChev = selV && rlInst('chevron-down', selV);
+  A('select chevron 语义结构保留（不随 addon 隐藏）', !!selChev && selChev.visible !== false,
+    selChev && String(selChev.visible));
+  const selB = iconInsts.find(i => i.name === 'ms-select rl-selblank');
+  A('空 select 落库实例', !!selB);
+  const selBTxt = selB ? (function ft6(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft6(c)); }); return o; })(selB) : [];
+  A('空 select 藏值层 Example（无文本证据不泄漏默认值）',
+    selBTxt.length > 0 && selBTxt.every(t => t.visible === false), selBTxt.map(t => t.visible).join(','));
+
+  // ---- 十一轮：步骤条逐项换库 steps-item（REQ-019 向导条；Status token 裁决 + Small 高度裁决 + tail 证据）----
+  const stpA = iconInsts.find(i => i.name === 'ms-step ms-step--active');
+  const stpB = iconInsts.find(i => i.name === 'ms-step');
+  A('active 步骤落库实例（逐项映射，非本地重绘）', !!stpA);
+  A('末步（wait）落库实例', !!stpB);
+  const stpAvp = (stpA && stpA.variantProperties) || {};
+  A('Status 修饰 token 裁决（进行中压过兜底等待）', stpAvp['Status 状态'] === '进行中', JSON.stringify(stpAvp));
+  A('Layout 烤入 token（水平左对齐）', stpAvp['Layout 布局'] === '水平左对齐', JSON.stringify(stpAvp));
+  const stpAsp = stpA && Object.assign({}, ...(stpA.setProps || []));
+  A('Small 小型高度裁决（块 24 → true，步进 payload）', !!stpAsp && stpAsp['Small 小型'] === 'true', JSON.stringify(stpAsp));
+  const stpBvp = (stpB && stpB.variantProperties) || {};
+  A('末步裸类兜底 token（Status=等待）', stpBvp['Status 状态'] === '等待', JSON.stringify(stpBvp));
+  const stpTexts = (inst) => inst ? (function ft6(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft6(c)); }); return o; })(inst).filter(t => t.visible !== false).map(t => t.characters).join('|') : '';
+  const ta = stpTexts(stpA), tb = stpTexts(stpB);
+  A('步号数字 + 标题按 demo 改写（icon 子实例内 TEXT 覆写）', ta === '1|设备信息', ta);
+  A('末步步号 + 标题改写', tb === '2|对象配置', tb);
+  const stepTail = (inst) => { let o = null; (function w9(nd) { (nd.children || []).forEach(c => { if (!o && /^tail$/i.test(String(c.name || ''))) o = c; else w9(c); }); })(inst); return o; };
+  const tailA = stpA && stepTail(stpA), tailB = stpB && stepTail(stpB);
+  A('active 步 tail 拉宽填满余宽（560-122=438）', !!tailA && Math.abs(tailA.width - 438) < 1, tailA && ('w=' + tailA.width));
+  A('末步 tail 隐藏（demo 无连线，不再残留库定宽尾线）', !!tailB && tailB.visible === false, tailB && String(tailB.visible));
+  A('步骤尾线计数入通知（1 藏/1 拉宽）', doneMsg0 && /步骤尾线 1 藏\/1 拉宽/.test(doneMsg0), doneMsg0);
+  A('steps Small 轴走高度裁决计入通知（高度择尺寸 6，红态被 shape 兜底遮成 4）',
+    doneMsg0 && /高度择尺寸 6/.test(doneMsg0), doneMsg0);
+
+  // ---- 十一轮续（审计启用）：segmented/time-dot 逐项换库（「轴名=值」显式 token 防布尔轴串轴）----
+  const segA = iconInsts.find(i => i.name === 'ms-segmented-item ms-segmented-item--active');
+  const segB = iconInsts.find(i => i.name === 'ms-segmented-item');
+  A('分段控制器 active 项落库实例（逐项映射，组轨道本地）', !!segA);
+  A('分段控制器裸项落库实例', !!segB);
+  const segAvp = (segA && segA.variantProperties) || {};
+  A('「选中=true」显式轴 token 裁决', segAvp['选中'] === 'true', JSON.stringify(segAvp));
+  A('布尔轴不串轴（悬停/禁用保持 false——红态裸值串开选「全开」变体）',
+    segAvp['悬停'] === 'false' && segAvp['禁用'] === 'false', JSON.stringify(segAvp));
+  A('尺寸轴 28 vs 大30/中26 平局不判（默认大，resize 吸收 2px）', segAvp['尺寸'] === '大', JSON.stringify(segAvp));
+  const segBvp = (segB && segB.variantProperties) || {};
+  A('裸项兜底（选中=false）', segBvp['选中'] === 'false', JSON.stringify(segBvp));
+  const segTxt = segA ? (function ft7(nd) { const o = []; (nd.children || []).forEach(c => { if (c.type === 'TEXT') o.push(c); o.push(...ft7(c)); }); return o; })(segA).filter(t => t.visible !== false).map(t => t.characters).join('|') : '';
+  A('分段项文案改写（Segment → 列表）', segTxt === '列表', segTxt);
+  const dotW = iconInsts.find(i => i.name === 'ms-timeline-dot ms-timeline-dot--warm');
+  const dotP = iconInsts.find(i => i.name === 'ms-timeline-dot');
+  A('时间轴点落库实例（warm + 裸）', !!dotW && !!dotP);
+  const dotWvp = (dotW && dotW.variantProperties) || {};
+  const dotPvp = (dotP && dotP.variantProperties) || {};
+  A('warm 修饰 → 等待档（库无 warm 档）', dotWvp['status 状态'] === '等待', JSON.stringify(dotWvp));
+  A('裸点 → 进行中档', dotPvp['status 状态'] === '进行中', JSON.stringify(dotPvp));
+  const wf = dotW ? (dotW.fills || []).map(p => p && p.color ? [p.color.r, p.color.g, p.color.b].map(x => Math.round(x * 100) / 100).join(',') : '?').join(';') : '';
+  A('warm 点颜色按 HTML 覆写（等待档灰 → demo 橙，硬性颜色规则）', /0\.95,0\.6,0\.1/.test(String(wf)), String(wf));
+
+  // ---- 对位-校验-自愈（2026-10-31 强化）：文字/内容错位 + 缺失三根因收口 ----
+  const ordInst = iconInsts.find(i => i.name === 'ms-ord');
+  const ordTexts = ordInst ? (ordInst.children || []).filter(c => c.type === 'TEXT') : [];
+  const ordTop = ordTexts.find(t => t.y === 0), ordBottom = ordTexts.find(t => t.y === 40);
+  A('属性定义序≠视觉序：标题/按钮不互换（视觉序对位）',
+    !!ordInst && !!ordTop && !!ordBottom && ordTop.characters === '网关设置' && ordBottom.characters === '保存',
+    ordInst && ordTexts.map(t => t.y + ':' + t.characters).join(' | '));
+  A('库默认文案不残留（Title/Button 已改写）',
+    !!ordInst && !ordTexts.some(t => t.characters === 'Title' || t.characters === 'Button'));
+  A('属性层文字色也按 HTML 覆盖（不再只改回填层）',
+    !!ordTop && ordTop.fills[0] && !ordTop.fills[0].boundVariables && ordTop.fills[0].color.r < 0.11
+    && ordTop.fills[0].color.g < 0.11,
+    ordTop && ordTop.fills[0] && JSON.stringify(ordTop.fills[0].color));
+  const driftInst = iconInsts.find(i => i.name === 'ms-drift');
+  const driftText = driftInst && (driftInst.children || []).find(c => c.type === 'TEXT');
+  A('defaultValue 漂移自愈：属性写不进时 overrideText 兜底',
+    !!driftText && driftText.characters === '新文案', driftText && driftText.characters);
+  A('表达力守卫：装不下的块不硬替换（无 ms-under 实例）',
+    findBy(n => n.type === 'INSTANCE' && n.name === 'ms-under').length === 0);
+  const underTexts = findBy(n => n.type === 'TEXT' && /^M[1-6]$/.test(n.characters)).map(t => t.characters);
+  A('表达力守卫：回退本地重绘 6 段全落图', underTexts.length === 6, underTexts.join('|'));
+  A('文案改写/文字色计数入通知', doneMsg0 && /文案改写 [1-9]/.test(doneMsg0) && /文字色 [1-9]/.test(doneMsg0), doneMsg0);
+  A('内容不齐回退计数入通知', doneMsg0 && /内容不齐回退 1/.test(doneMsg0), doneMsg0);
 
   // ---- 颜色令牌绑定（2026-10-30 契约）：实色绑库 Color Token 变量，不新建裸色值 ----
   A('变量按 key 导入（importVariableByKeyAsync）',
@@ -611,8 +1578,37 @@ vm.runInContext(code, sandbox);
 
   A('def 组件 ×2', figma.currentPage.children[0].children.filter(n => n.type === 'COMPONENT' || n.type === 'COMPONENT_SET').length >= 0 && calls.combineAsVariants.length >= 1,
     'combine=' + JSON.stringify(calls.combineAsVariants));
+  // ---- 八轮（2026-10-31 REQ-018 defs 板）：mock 吞末变体后插件必须补挂回集 + 网格排布 + 集框收缩 ----
+  const defSet = (function () { let o = null; (function w5(n2) { if (o) return; if (n2.type === 'COMPONENT_SET') { o = n2; return; } (n2.children || []).forEach(w5); })(figma.currentPage); return o; })();
+  A('变体集补挂被吞变体（真 API 吞末个，插件对账回集）',
+    !!defSet && defSet.children.length === 2, defSet && ('kids=' + defSet.children.length + ' names=' + defSet.children.map(c2 => c2.name).join(',')));
+  A('变体集网格排布（两变体不叠位）',
+    !!defSet && defSet.children.length === 2 && defSet.children[0].x !== defSet.children[1].x,
+    defSet && defSet.children.map(c2 => c2.x + ',' + c2.y).join(' | '));
+  A('变体集框收缩到内容（2 变体 60px + gutter 24 = 144）',
+    !!defSet && Math.abs(defSet.width - 144) < 1, defSet && ('w=' + defSet.width));
   A('inst 引用实例化', findBy(n => n.type === 'INSTANCE' && n.variantProperties && n.variantProperties.Size).length >= 1);
   A('svg 矢量节点', findBy(n => n.type === 'FRAME' && (n.name === 'svg' || n.name === 's')).length >= 1);
+
+  // ---- 同组件多实例按块改文案（2026-10-31：结构签名去文案，同构不同文案共用组件，实例逐段改写）----
+  const c1Inst = findBy(n => n.type === 'INSTANCE' && n.name === 'Active')[0];
+  const c1InstText = c1Inst && findFirstTextM(c1Inst);
+  A('实例文案按本块改写（不残留 def 首块文案）', c1InstText && c1InstText.characters === '在线', c1InstText && c1InstText.characters);
+  A('实例文字色按本块覆盖', c1InstText && c1InstText.fills[0] && c1InstText.fills[0].color
+    && Math.abs(c1InstText.fills[0].color.g - 0.6) < 0.01, c1InstText && JSON.stringify(c1InstText.fills[0] && c1InstText.fills[0].color));
+  A('实例文案改写计数入通知', doneMsg0 && /实例文案改写 3/.test(doneMsg0), doneMsg0);
+  // ---- TEXT 属性化（2026-10-31，对标 code.to.design）：自建组件文本层暴露为 TEXT 组件属性，实例改文字走 setProperties ----
+  const compA = (function findComp() { let o = null; (function w4(n2) { if (o) return; if (n2.type === 'COMPONENT' && n2.name === 'Active') { o = n2; return; } (n2.children || []).forEach(w4); })(figma.currentPage); return o; })();
+  const compAdefs = (compA && compA.componentPropertyDefinitions) || {};
+  const compAprop = Object.entries(compAdefs).find(([, d2]) => d2.type === 'TEXT');
+  A('自建组件暴露 TEXT 属性', !!compAprop, JSON.stringify(compAdefs));
+  const compAtext = compA && findFirstTextM(compA);
+  A('TEXT 属性绑定文本层（references）', compAtext && compAtext.componentPropertyReferences
+    && compAtext.componentPropertyReferences.characters === (compAprop && compAprop[0]),
+    compAtext && JSON.stringify(compAtext.componentPropertyReferences));
+  A('实例改写走 setProperties（右侧面板 string 字段）', c1Inst && Array.isArray(c1Inst.setProps)
+    && c1Inst.setProps.some(p => compAprop && p[compAprop[0]] === '在线'),
+    c1Inst && JSON.stringify(c1Inst.setProps));
 
   // 原型连线：rct 节点 → reactions 指向目标态画板
   const cell2 = board && board.children.find(c => c.name === '2. 危险确认');
@@ -645,6 +1641,32 @@ vm.runInContext(code, sandbox);
     compCountBefore + ' → ' + compCountAfter);
   A('复用时不再 combineAsVariants', calls.combineAsVariants.length === combineBefore,
     'combine=' + JSON.stringify(calls.combineAsVariants));
+
+  // ---- 结构哈希跨导入复用（2026-10-31 用户指令：先判断再建，同构不同文案只留一个组件）----
+  // vname 改成不同文案 → 同名匹配必失配，只有 description 里的 'h2d-sig:' 结构指纹能命中既有组件
+  const cntComps = nd => { let n = (nd.type === 'COMPONENT' || nd.type === 'COMPONENT_SET') ? 1 : 0; (nd.children || []).forEach(c => { n += cntComps(c); }); return n; };
+  const compCountBefore3 = cntComps(figma.currentPage);
+  const SCENE2 = JSON.parse(JSON.stringify(SCENE));
+  SCENE2.defs.c1.vname = '离线';
+  SCENE2.cells[0].root.ch.filter(n2 => n2.t === 'inst' && n2.d === 'c1').forEach(i2 => { i2.texts = ['离线']; i2.tcols = [[0.1, 0.6, 0.3]]; });
+  SCENE2.cells[0].root.ch.push({ t: 'inst', d: 'c1', x: 0, y: 480, w: 60, h: 24, o: 1,
+    texts: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7'], tcols: [] }); // 7 段 > 1 层+4 → 实例装不下，回退本地重绘
+  // 八轮：伪元素文本层落图命名按字符（此前叫 pseudo-before → verify-import P4 文本比对必漏报）
+  SCENE2.cells[0].root.ch.push({ t: 't', n: 'pseudo-before', text: '*', fs: 14, fw: 400, lh: 20, ls: 0, col: [0.9, 0.2, 0.2], al: 'left', x: 0, y: 300, w: 7, h: 20, o: 1 });
+  await handler({ type: 'scene', json: SCENE2 });
+  const doneMsg3 = calls.notify.filter(t => t.indexOf('导入完成') === 0).pop();
+  A('结构哈希复用（vname 不同也命中既有）', doneMsg3 && /复用既有 2/.test(doneMsg3), doneMsg3);
+  A('哈希复用不新建组件', cntComps(figma.currentPage) === compCountBefore3,
+    compCountBefore3 + ' → ' + cntComps(figma.currentPage));
+  A('实例内容回退入通知', doneMsg3 && /实例内容回退 1/.test(doneMsg3), doneMsg3);
+  const boardsAll = figma.currentPage.children.filter(n => n.type === 'FRAME' && /MockTest/.test(n.name) && !/组件定义/.test(n.name));
+  const board3 = boardsAll[boardsAll.length - 1];
+  const inst3 = board3 && (function f3(nd) { let o = null; (function w3(n2) { if (o) return; if (n2.type === 'INSTANCE' && n2.name === 'Active') { o = n2; return; } (n2.children || []).forEach(w3); })(nd); return o; })(board3);
+  const inst3Text = inst3 && findFirstTextM(inst3);
+  A('哈希复用实例文案随块改写（离线）', inst3Text && inst3Text.characters === '离线', inst3Text && inst3Text.characters);
+  const pseudoT = (function () { let o = null; (function w6(n2) { if (o) return; if (n2.type === 'TEXT' && n2.characters === '*') { o = n2; return; } (n2.children || []).forEach(w6); })(board3); return o; })();
+  A('伪元素文本层按字符命名（P4 可见，不再叫 pseudo-before）',
+    !!pseudoT && pseudoT.name === '*', pseudoT && ('name=' + pseudoT.name));
 
   // ---- 外部网页模式（2026-10-30 用户裁定：复制的网页链接不走本地组件）----
   // scene.ext=1 → 不拉库目录（getTeamLibraryAsync 不新增）、通知报「外部网页 · 纯图层」而非库/令牌段。
@@ -724,10 +1746,33 @@ vm.runInContext(code, sandbox);
     !!histMsg && Array.isArray(histMsg.list) && histMsg.list.length === 1 && histMsg.list[0].label === 'a.com/',
     JSON.stringify(histMsg && histMsg.list));
 
+  // ---- 构建号护栏（r8+）：面板旧代码（scene.build ≠ 插件 PLUGIN_BUILD）→ 拒导提示重开面板；匹配 → 正常导入 ----
+  {
+    const pbM = code.match(/PLUGIN_BUILD\s*=\s*'([^']+)'/);
+    A('插件声明 PLUGIN_BUILD', !!pbM, 'code 中未找到 PLUGIN_BUILD 常量');
+    if (pbM) {
+      // 红态：scene 构建号比插件新（= 面板开着没重开、跑的是旧代码）→ 必须拒导：有重开面板提示、无导入完成
+      const redScene = JSON.parse(JSON.stringify(SCENE)); redScene.build = 'r999';
+      const n0 = calls.notify.length;
+      await handler({ type: 'scene', json: redScene });
+      A('护栏拒导旧面板（提示重开、无导入完成）',
+        calls.notify.slice(n0).some(t => /旧版|重新打开/.test(t)) && !calls.notify.slice(n0).some(t => t.indexOf('导入完成') === 0),
+        calls.notify.slice(n0).join(' | '));
+      // 绿态：构建号匹配 → 放行正常导入
+      const greenScene = JSON.parse(JSON.stringify(SCENE)); greenScene.build = pbM[1];
+      const n1 = calls.notify.length;
+      await handler({ type: 'scene', json: greenScene });
+      A('护栏匹配放行（导入完成照常）',
+        calls.notify.slice(n1).some(t => t.indexOf('导入完成') === 0),
+        calls.notify.slice(n1).join(' | '));
+    }
+  }
+
   const doneMsg = calls.notify.find(t => t.indexOf('导入完成') === 0);
   A('完成通知', !!doneMsg, calls.notify.join(' | '));
   if (doneMsg) console.log('  通知: ' + doneMsg);
 
   console.log('\n=== figma-mock: ' + pass + ' 通过 / ' + fail + ' 失败');
+  clearTimeout(watchdog);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('✗ harness 异常:', e); process.exit(1); });

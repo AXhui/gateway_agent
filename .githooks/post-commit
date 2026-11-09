@@ -42,6 +42,16 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
   [ -z "$DEMO_PATH" ] && continue
 
   REQ_ID=$(echo "$DEMO_PATH" | sed -n 's|^05_release/\(REQ-[^/]*\)/demo\.html$|\1|p')
+  # 编号裁定（2026-11-09 用户裁定：REQ 编号唯一权威源=飞书多维表格「UI Demo 记录」，先占先得；
+  # 进飞书前裁定，目标编号被其他生成人/其他提示词的记录先占 → 挪到全表 max+1。
+  # git 远程/本地目录名不再是取号依据；查询失败保持原编号，不阻断同步）
+  ARBITRATED=$(python3 tools/next_req_id.py --check "$REQ_ID" \
+      --generator "$COMMIT_AUTHOR" \
+      --prompt-file "$(dirname "$DEMO_PATH")/prompt.md" 2>/dev/null | tail -1 || true)
+  if [ -n "$ARBITRATED" ] && [ "$ARBITRATED" != "$REQ_ID" ]; then
+    echo "[post-commit] [编号裁定] $REQ_ID 已被多维表格其他记录先占 → $ARBITRATED（先占者保号）"
+    REQ_ID="$ARBITRATED"
+  fi
   # 清洗 commit message：剥掉 conventional commit 前缀（feat:/fix:/feat(scope): 等）
   # 和重复的 REQ-XXX 编号，只留干净的功能描述
   CLEAN_MSG=$(echo "$COMMIT_MSG" | sed -E \

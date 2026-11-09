@@ -1,8 +1,10 @@
-// 桥接服务 v3：飞书触发端(POST /task) → html.to.design MCP（Figma 插件中转落画布，零 LLM token）
-// 有 demo 源 → import-html 直连导入；无 demo 源 → 任务失败（LLM 自由设计兜底已删，2026-10-23）
+// 桥接服务 v4：飞书触发端(POST /task) → 登记任务 + 暂存 HTML → UED 在内部插件面板手动转设计稿
+// 默认 engine=local（本地插件链路）：/task 只登记到 feishu-tasks.json 并暂存 demo，等 UED 在
+//   Figma 内部插件「飞书任务」区点转；转完插件 → serve.py /api/feishu-done → 本服务 /done → lark-cli 回写表格。
+// engine=mcp（手动备用）：旧 mcp.to.design 自动导入链路原样保留——body 带 {"engine":"mcp"} 或环境变量 H2D_ENGINE=mcp 时走。
 // 用法：
 //   node server.js            启动桥接（:8080）
-//   node server.js --login    首次 OAuth 授权：浏览器点一次，自动铸 service account 长期凭据
+//   node server.js --login    首次 OAuth 授权（仅 mcp 备用链路需要）：浏览器点一次，自动铸 service account 长期凭据
 // 环境变量：H2D_PUBLIC_BASE=https://xxx.trycloudflare.com 时，import-html 失败自动改走 import-url（经公网隧道取页）
 const http = require('http')
 const crypto = require('crypto')
@@ -16,6 +18,34 @@ const REPO_ROOT = '/Users/youxh/Feishu-competition'
 const AUTH_FILE = path.join(__dirname, 'auth.json')          // 本机凭据，已 gitignore，绝不入库
 const MCP_BASE = 'https://mcp.to.design'
 const IMPORT_TIMEOUT_MS = 10 * 60 * 1000                      // 插件导入整页 demo 的安全垫
+
+// ---- 本地插件链路任务队列：feishu-tasks.json（单写者=本服务，tmp+rename 原子替换）----
+// serve.py GET /api/feishu-tasks 只读展示给插件面板；状态流：待转 → 已转 / 已转·回写失败
+const TASKS_FILE = path.join(__dirname, 'feishu-tasks.json')
+const STAGE_DIR = path.join(process.env.HOME || REPO_ROOT, 'Desktop', '_drops', 'feishu')
+
+function readTasks() {
+  try {
+    const a = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'))
+    return Array.isArray(a) ? a : []
+  } catch { return [] }
+}
+function writeTasks(tasks) {
+  const tmp = TASKS_FILE + '.tmp'
+  fs.writeFileSync(tmp, JSON.stringify(tasks, null, 2))
+  fs.renameSync(tmp, TASKS_FILE)
+}
+function saveTask(t) {
+  // 去重：同一触发记录（recordId 优先，无 recordId 用 demoName）还有「待转」任务 → 原地替换
+  const key = t.recordId || t.demoName
+  const tasks = readTasks().filter((x) => {
+    const xkey = x.recordId || x.demoName
+    return !(xkey && xkey === key && x.status === '待转')
+  })
+  tasks.push(t)
+  writeTasks(tasks.slice(-200))
+  return t
+}
 
 // 任务排队：一次只跑一个（Figma 插件同一时刻只接一个导入）
 const queue = []
@@ -49,6 +79,10 @@ function larkCli(args, cb) {
   child.on('close', (code) => cb(code, out))
 }
 
+function larkCliAsync(args) {
+  return new Promise((resolve) => larkCli(args, (code, out) => resolve({ code, out })))
+}
+
 function updateRecordField(recordId, url, jobId) {
   const payload = JSON.stringify({ update_records: { [recordId]: { [FEISHU.linkField]: url, [FEISHU.statusField]: ['已完成'] } } })
   larkCli([
@@ -72,51 +106,22 @@ function updateRecordStatus(recordId, status, jobId) {
   ], (code, out) => console.log(`[writeback:${jobId}] 状态置为${status} lark-cli 退出 code=${code} ${out.slice(0, 300)}`))
 }
 
-function writeBackToFeishu(task, jobId, url) {
+async function writeBackToFeishu(task, jobId, url) {
   // 按最终结果决定回写动作：有链接 → 写链接+已完成；无链接 → 标记失败（不让"转Figma中"卡住）
   const apply = (recordId) => url
     ? updateRecordField(recordId, url, jobId)
     : updateRecordStatus(recordId, '失败', jobId)
 
   if (task.record_id) return apply(task.record_id)
-  // 兜底：工作流没带 record_id 时，按 Demo 名称+版本号 反查记录（同名多版本靠版本号区分）
-  if (!task.demoName) {
-    console.log(`[writeback:${jobId}] 无 record_id 也无 demoName，跳过回写`)
+  const reqNo = reqNoOf(task)
+  if (!reqNo) {
+    console.log(`[writeback:${jobId}] 无 record_id 且提取不到 REQ 编号（demoName=${task.demoName}），跳过回写`)
     return
   }
-  const conditions = [["Demo 名称", "Is", task.demoName]]
-  const body = {
-    keyword: task.demoName,
-    search_fields: ["Demo 名称"],
-    select_fields: ["Demo 名称"],
-    filter: { logic: "and", conditions },
-    limit: 20,
-  }
-  larkCli([
-    'base', '+record-search',
-    '--base-token', FEISHU.baseToken,
-    '--table-id', FEISHU.tableId,
-    '--json', JSON.stringify(body),
-    '--format', 'json',
-    '--as', 'user',
-  ], (code, out) => {
-    if (code !== 0) return console.log(`[writeback:${jobId}] 反查失败 code=${code} ${out.slice(0, 200)}`)
-    let ids = []
-    try {
-      const data = JSON.parse(out).data
-      ids = (data.record_id_list || []).filter((_, i) => {
-        const row = data.data[i] || []
-        return row[0] === task.demoName
-      })
-    } catch (e) {
-      return console.log(`[writeback:${jobId}] 反查结果解析失败:`, e.message)
-    }
-    if (!ids.length) {
-      return console.log(`[writeback:${jobId}] 表里没找到 Demo 名称=${task.demoName} 的记录，跳过回写`)
-    }
-    console.log(`[writeback:${jobId}] 按 Demo 名称反查命中 ${ids.length} 条：${ids.join(', ')}`)
-    ids.forEach((id) => apply(id))
-  })
+  const id = await latestRowByReqNo(reqNo, `writeback:${jobId}`)
+  if (!id) return console.log(`[writeback:${jobId}] 表里没找到 需求编号=${reqNo} 的记录，跳过回写`)
+  console.log(`[writeback:${jobId}] 按需求编号 ${reqNo} 反查最新行：${id}`)
+  apply(id)
 }
 
 // ---- html.to.design 认证（自有凭据，独立于 claude 的存储）----
@@ -330,6 +335,44 @@ function extractUrl(text) {
   return m ? m[0] : null
 }
 
+// 2026-11-01 表格改版：「Demo 名称」列已删（新 schema = 需求编号/记录类型/生成人/更新时间），
+// 工作流 payload 的旧引用 <引用：Demo名称> 取不到值时会落成路径/生成人串（实测
+// 「chromewk/05_release/REQ-020/demo.html」）。面板显示名与表格反查键一律从中提取 REQ-### 归一。
+function reqNoOf(task) {
+  const raw = String((task && (task.reqNo || task.demoName)) || '')
+  const m = raw.match(/REQ-(\d+)/i)
+  return m ? 'REQ-' + String(Number(m[1])).padStart(3, '0') : null
+}
+
+// 按需求编号反查行，取「更新时间」最新的一条（同一 REQ 存在 新建+多条更新 历史行）
+async function latestRowByReqNo(reqNo, tag) {
+  const body = {
+    keyword: reqNo, search_fields: ['需求编号'],
+    select_fields: ['需求编号', '更新时间'],
+    filter: { logic: 'and', conditions: [['需求编号', 'Is', reqNo]] },
+    limit: 20,
+  }
+  const { code, out } = await larkCliAsync([
+    'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+    '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
+  ])
+  if (code !== 0) { console.log(`[${tag}] 按需求编号反查失败 code=${code} ${String(out).slice(0, 200)}`); return null }
+  try {
+    const data = JSON.parse(out).data
+    const ids = data.record_id_list || []
+    let best = null, bestTs = -1
+    ;(data.data || []).forEach((row, i) => {
+      if (!ids[i] || String(row[0] || '').trim() !== reqNo) return
+      const ts = Date.parse(String(row[1] || '').replace(/-/g, '/')) || 0
+      if (ts >= bestTs) { bestTs = ts; best = ids[i] }
+    })
+    return best
+  } catch (e) {
+    console.log(`[${tag}] 反查结果解析失败:`, e.message)
+    return null
+  }
+}
+
 function resolveDemoSource(task, jobId, cb) {
   const finish = (info, src) => {
     console.log(info
@@ -346,26 +389,27 @@ function resolveDemoSource(task, jobId, cb) {
         console.log(`[demo:${jobId}] ${src} 下载失败: ${String(out).slice(0, 150)}`)
         return next()
       }
-      finish({ htmlPath }, src)
+      finish({ htmlPath, src }, src)
     })
   }
   const fromLocal = () => {
-    const m = String(task.demoName || '').match(/REQ-(\d+)/i)
-    if (m) {
-      const p = `${REPO_ROOT}/05_release/REQ-${m[1]}/demo.html`
+    const reqNo = reqNoOf(task)
+    if (reqNo) {
+      const p = `${REPO_ROOT}/05_release/${reqNo}/demo.html`
       if (fs.existsSync(p)) {
         console.log(`[demo:${jobId}] 用本地归档 ${p}`)
-        return finish({ htmlPath: p }, '本地归档')
+        return finish({ htmlPath: p, src: '本地归档' }, '本地归档')
       }
     }
     finish(null)
   }
   const fromRecord = () => {
-    if (!task.demoName) return fromLocal()
-    const conditions = [["Demo 名称", "Is", task.demoName]]
+    const reqNo = reqNoOf(task)
+    if (!reqNo) return fromLocal()
+    const conditions = [["需求编号", "Is", reqNo]]
     const body = {
-      keyword: task.demoName, search_fields: ["Demo 名称"],
-      select_fields: ["Demo 名称", "预览 URL"],
+      keyword: reqNo, search_fields: ["需求编号"],
+      select_fields: ["需求编号", "预览 URL", "更新时间"],
       filter: { logic: "and", conditions }, limit: 5,
     }
     larkCli([
@@ -375,12 +419,15 @@ function resolveDemoSource(task, jobId, cb) {
       let url = null
       try {
         const data = JSON.parse(out).data
-        // 同名行可能有多条（历史同步重复），遍历取第一条带可用链接的，空链接行跳过
-        for (const row of data.data || []) {
-          if ((row[0] || '').trim() !== String(task.demoName).trim()) continue
+        // 同一 REQ 有多条历史行（新建+更新）：按更新时间取最新一条带可用链接的，空链接行跳过
+        let bestTs = -1
+        ;(data.data || []).forEach((row, i) => {
+          if ((row[0] || '').trim() !== reqNo) return
           const u = extractUrl(row[1])
-          if (u) { url = u; break }
-        }
+          if (!u) return
+          const ts = Date.parse(String(row[2] || '').replace(/-/g, '/')) || 0
+          if (ts >= bestTs) { bestTs = ts; url = u }
+        })
       } catch (e) { /* 落到本地归档兜底 */ }
       if (!url) {
         console.log(`[demo:${jobId}] 表格「预览 URL」列无可用链接（未上传或 UNC 占位），走本地归档兜底`)
@@ -470,7 +517,146 @@ function runTask(task, jobId, done) {
   })
 }
 
+// ---- 本地链路：登记任务（取源 + 暂存 + 写队列），转完回写（/done）----
+
+function registerLocalTask(task, jobId, res) {
+  const reqNo = reqNoOf(task)
+  // 面板显示名归一：本身以 REQ-### 开头的保留全名（「REQ-020 · WMBUS 采集」）；
+  // 旧工作流引用取不到值落成的路径/生成人串则归一为 REQ-###，与表格需求编号一致
+  const displayName = reqNo && !/^REQ-\d+/i.test(String(task.demoName || '').trim())
+    ? reqNo : (task.demoName || '')
+  resolveDemoSource(task, jobId, (demo) => {
+    if (!demo) {
+      console.log(`[task:${jobId}] 三层取源均未命中，本地登记失败，标记表格行失败`)
+      writeBackToFeishu(task, jobId, null)
+      res.writeHead(502, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ ok: false, error: '三层取源均未命中（demoUrl / 表格预览URL / 本地归档）' }))
+    }
+    let staged = demo.htmlPath
+    try {
+      if (!staged.startsWith(REPO_ROOT)) {
+        // 云端下载落在 /tmp：挪进 serve.py 白名单（~/Desktop/_drops/feishu/），面板才可见可转
+        fs.mkdirSync(STAGE_DIR, { recursive: true })
+        const safe = String(displayName || 'demo').replace(/[^\w\-.]+/g, '_').slice(0, 60) || 'demo'
+        staged = path.join(STAGE_DIR, `${safe}-${jobId}.html`)
+        fs.copyFileSync(demo.htmlPath, staged)
+      }
+    } catch (e) {
+      console.log(`[task:${jobId}] 暂存失败:`, e.message)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      return res.end(JSON.stringify({ ok: false, error: '暂存 demo 失败：' + e.message }))
+    }
+    const now = new Date()
+    const pad = (x) => (x < 10 ? '0' : '') + x
+    const t = {
+      id: String(jobId), jobId,
+      demoName: displayName,
+      reqNo: reqNo || '',
+      recordId: task.record_id || '',
+      time: `${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      status: '待转', src: demo.src || '',
+      path: staged,
+      figmaUrl: '',
+    }
+    saveTask(t)
+    console.log(`[task:${jobId}] 已登记本地任务: ${t.demoName || '(未命名)'} → ${staged}`)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, mode: 'local', jobId, staged, task: t }))
+  })
+}
+
+// /done 回写：转换已完成（UED 在插件里转的），把表格行置「已完成」，带 figmaUrl 时同时写「Figma 链接」列
+async function feishuApplyDone(task, taskId, url) {
+  let recordIds = []
+  if (task.recordId) {
+    recordIds = [task.recordId]
+  } else {
+    const reqNo = reqNoOf(task)
+    if (reqNo) {
+      const id = await latestRowByReqNo(reqNo, `done:${taskId}`)
+      if (id) recordIds = [id]
+    }
+  }
+  if (!recordIds.length) return { ok: false, error: '表里没找到对应记录（recordId 为空且按名称未反查到）' }
+  const fields = { [FEISHU.statusField]: ['已完成'] }
+  if (url) fields[FEISHU.linkField] = url
+  const payload = JSON.stringify({ update_records: Object.fromEntries(recordIds.map((id) => [id, fields])) })
+  const { code, out } = await larkCliAsync([
+    'base', '+record-batch-update',
+    '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+    '--json', payload, '--as', 'user',
+  ])
+  console.log(`[done:${taskId}] lark-cli 退出 code=${code} ${String(out).slice(0, 300)}`)
+  if (code !== 0) return { ok: false, error: 'lark-cli 更新失败：' + String(out).slice(0, 200) }
+  // lark-cli 对不存在的 record 退出码仍是 0（record_not_found 单列）：全落空 = 回写失败，可重试
+  try {
+    const o = JSON.parse(out)
+    const notFound = Array.isArray(o.data && o.data.record_not_found) ? o.data.record_not_found : []
+    if (notFound.length) {
+      const hit = recordIds.filter((id) => !notFound.includes(id))
+      if (!hit.length) return { ok: false, error: '记录不存在（表格行已删？）：' + notFound.join(',') }
+      console.log(`[done:${taskId}] 部分记录不存在，已跳过：${notFound.join(',')}`)
+    }
+  } catch { /* 输出非 JSON：按退出码判断 */ }
+  return { ok: true }
+}
+
 // ---- HTTP 服务 ----
+
+// ---- 轮询取任务（2026-11-01 隧道域名过期事故固化）----
+// cloudflared quick tunnel 每次重启换域名，工作流 HTTP 节点 URL 一过期 POST 就到不了本机（飞书通知照发、
+// 表格毫无动静）。工作流点按钮本身会把行 Figma状态 置「转Figma中」——这里每 30s 拉一次表格做状态差分：
+// 行状态变为「转Figma中」→ 直接走 registerLocalTask 本地登记（同 POST /task 的三层取源）。
+// 任务到达不再依赖隧道；POST /task 保留为加速通道（两路都到由 saveTask 的 recordId 去重收敛）。
+// 前提：工作流「置状态」节点须排在 HTTP 节点之前（或删掉 HTTP 节点），否则 HTTP 失败先中断流程、状态置不上。
+const POLL_MS = 30 * 1000
+const pollPrev = new Map()   // recordId -> 上次快照的 Figma状态（String 归一）
+let pollBusy = false
+
+function registerPolledTask(recordId, name) {
+  const task = { demoName: String(name || '').trim(), record_id: recordId }
+  const jobId = Date.now()
+  if (!reqNoOf(task)) { console.log(`[poll:${jobId}] 行名不含 REQ 编号，跳过: ${task.demoName}`); return }
+  console.log(`[poll:${jobId}] 表格出现「转Figma中」→ 本地登记: ${reqNoOf(task)} (record ${recordId})`)
+  // res 只用于 HTTP 回包；轮询路径无请求方，stub 吞回包，结果走日志 + 队列文件
+  registerLocalTask(task, jobId, { writeHead() {}, end() {} })
+}
+
+async function pollFeishuTasks() {
+  if (pollBusy) return
+  pollBusy = true
+  try {
+    const body = {
+      keyword: 'REQ-', search_fields: ['需求编号'],
+      select_fields: ['需求编号', FEISHU.statusField],
+      limit: 50,
+    }
+    const { code, out } = await larkCliAsync([
+      'base', '+record-search', '--base-token', FEISHU.baseToken, '--table-id', FEISHU.tableId,
+      '--json', JSON.stringify(body), '--format', 'json', '--as', 'user',
+    ])
+    if (code !== 0) { console.log(`[poll] 表格查询失败 code=${code} ${String(out).slice(0, 120)}`); return }
+    const data = JSON.parse(out).data
+    const ids = data.record_id_list || []
+    const first = pollPrev.size === 0   // 首轮只建基线：存量卡在「转Figma中」的历史行不回灌面板
+    let stuck = 0
+    ;(data.data || []).forEach((row, i) => {
+      const id = ids[i]
+      if (!id) return
+      const status = String(row[1] || '')
+      const prev = pollPrev.get(id)
+      pollPrev.set(id, status)
+      const converting = status.includes('转Figma中')
+      if (first) { if (converting) stuck++; return }
+      if (converting && prev !== status) registerPolledTask(id, row[0])
+    })
+    if (first) console.log(`[poll] 基线快照 ${pollPrev.size} 行；存量「转Figma中」${stuck} 行不登记（重新点击/状态变化才会登记）`)
+  } catch (e) {
+    console.log('[poll] 异常:', e.message)
+  } finally {
+    pollBusy = false
+  }
+}
 
 const server = http.createServer((req, res) => {
   // CORS：允许任意页面（多维表格内嵌 HTML / 本地按钮页）直接 POST
@@ -487,10 +673,48 @@ const server = http.createServer((req, res) => {
       try { task = JSON.parse(body) } catch { task = { raw: body } }
       console.log('[task]', JSON.stringify(task))
       const jobId = Date.now()
-      queue.push({ task, jobId })
-      pumpQueue()
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'h2d', jobId, queued: queue.length }))
+      // engine：local（默认）= 登记到插件面板等 UED 手动转；mcp = 手动备用，走旧自动导入链路
+      if ((task.engine || process.env.H2D_ENGINE || 'local') === 'mcp') {
+        queue.push({ task, jobId })
+        pumpQueue()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        return res.end(JSON.stringify({ ok: true, accepted: true, mode: 'h2d', jobId, queued: queue.length }))
+      }
+      registerLocalTask(task, jobId, res)
+    })
+    return
+  }
+
+  // UED 在内部插件转完回写：serve.py /api/feishu-done 转发到这里（lark-cli 收敛在本服务）
+  if (req.method === 'POST' && req.url === '/done') {
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', async () => {
+      let d
+      try { d = JSON.parse(body) } catch { d = {} }
+      const taskId = String(d.taskId || d.id || '')
+      const tasks = readTasks()
+      const t = tasks.find((x) => String(x.id) === taskId)
+      if (!t) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        return res.end(JSON.stringify({ ok: false, error: '任务不存在或已被清理：' + taskId }))
+      }
+      let url = null
+      if (d.figmaUrl) {
+        const u = extractFigmaUrl(d.figmaUrl)   // 校验格式：只认 figma.com/design|file 链接
+        if (!u) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          return res.end(JSON.stringify({ ok: false, error: '不是合法 Figma 链接：' + d.figmaUrl }))
+        }
+        url = u
+      }
+      const r = await feishuApplyDone(t, taskId, url)
+      t.status = r.ok ? '已转' : '已转·回写失败'
+      if (url) t.figmaUrl = url
+      writeTasks(tasks)
+      console.log(`[done:${taskId}] 回写${r.ok ? '成功' : '失败'}：${t.demoName} → ${url || '(无链接，仅置状态)'}`)
+      res.writeHead(r.ok ? 200 : 502, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(r))
     })
     return
   }
@@ -506,11 +730,14 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && req.url === '/health') {
     const auth = loadAuth()
+    const localPending = readTasks().filter((t) => t.status === '待转').length
     res.writeHead(200, { 'Content-Type': 'application/json' })
     return res.end(JSON.stringify({
       ok: true,
-      mode: 'h2d',
+      mode: 'local',   // 默认链路：登记 → UED 插件面板手动转；engine=mcp 走自动导入
+      engine: process.env.H2D_ENGINE || 'local',
       auth: auth ? (auth.svc ? 'service-account' : 'refresh-token') : 'none',
+      localPending,
       queued: queue.length,
       running,
     }))
@@ -522,5 +749,7 @@ if (process.argv.includes('--login')) {
   cmdLogin().catch((e) => { console.error('[login] 失败:', e.message); process.exit(1) })
 } else if (require.main === module) {
   if (!loadAuth()) console.log('[warn] 尚未授权：先跑 node server.js --login')
-  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=html.to.design 直连`))
+  server.listen(PORT, () => console.log(`桥接服务已启动: http://127.0.0.1:${PORT}  模式=本地插件登记（engine=mcp 走自动导入）`))
+  pollFeishuTasks()                       // 首轮立即建基线，之后每 30s 差分取任务
+  setInterval(pollFeishuTasks, POLL_MS)
 }

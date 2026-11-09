@@ -1,42 +1,43 @@
-# 飞书按钮 → html.to.design → Figma 设计稿 — 全链路说明
+# 飞书按钮 → 本地插件 → Figma 设计稿 — 全链路说明
 
 ## 功能
 
-在飞书多维表格（UI demo 表）里点一个按钮，几分钟后：
+在飞书多维表格（UI demo 表）里点一个按钮，demo HTML 被取回并**登记为插件面板任务**；UED 在插件面板「选择 HTML」下拉里选中该任务点生成，转换落画布，表格行自动回写「已完成」（Figma 链接到表格手填）。
 
-1. 桥接把 demo HTML 经 **html.to.design 官方 MCP**（`mcp.to.design`）直连导入 Figma 当前画布
-2. 生成的 Figma 链接**自动回写**到点按钮那一行的「Figma链接」列
+> **面板改版（2026-11-01 用户指令「飞书任务和 html 融合到一起、最好可以选择的」+「浏览器捕获和后台库信息可以隐藏」+「飞书任务的链接融入到本地链接、编号要一致」+「脚本前端，截图部分移除」+「不要区分飞书和本地状态，也不需要有已转状态」+「管理区也没隐藏，整个去掉」）**：「选择 HTML」下拉为**单一列表**——飞书任务（REQ 编号，与表格需求编号列一致，置顶，**无状态标识**；无 demo 源的任务不进下拉）+ 本地 HTML 混排，选中点「生成」即转 + 自动回写；面板每 15s 轮询任务。**「飞书任务」管理区（补填链接 / 重试回写）已整体移除**——Figma 链接到多维表格手填，回写失败下拉重选重新生成即重试。浏览器捕获书签已从前端移除（serve.py `{capture}` 分支保留）；后台/scene/库状态卡移除（连通性诊断收敛到操作时报错提示）。**名称随任务透传（2026-11-01 用户令「名称一起转过去，保持列表一致性」）**：任务构建经面板 `outName` → serve.py → build-scene `--out-name`——桌面参考页名 `REQ-###-export.html`（本地构建取源名，`demo.html` 取上级目录名）、Figma 主画板名 `REQ-### · <demo 标题>`（标题已含则不重复）；不再产泛名 `figma-export.html`。
 
-**零 LLM token**（v2 的 claude+spec 转录路径已于 2026-10 移除；「无 demo 源走 claude 自由设计」的 LLM 兜底也已于 2026-10-23 删除）；耗时取决于插件导入速度，通常分钟级。
+> **通道裁决（2026-10-31 用户指令，反转 2026-10-25 裁决）**：「点击转 Figma」按钮**默认走本地内部插件**（html-to-figma-internal，组件化/库实例化/令牌绑定全保留）；官方 html.to.design MCP 链路**保留为手动备用**（POST /task 带 `{"engine":"mcp"}` 或环境变量 `H2D_ENGINE=mcp` 时走旧自动导入，见文末附录），按钮不再默认触发它。
 
 ```
 飞书多维表格 ──点按钮──▶ 自动化工作流「UED确认转Figma通知设计师」
-                              │ HTTP POST（需求字段；record_id 可选）
+                              │ ① 置状态节点：Figma状态 = 转Figma中（⚠ 必须排在 HTTP 节点之前）
+                              │ ② HTTP POST（需求字段，经 cloudflare 隧道 —— 只是加速通道，失败不阻断）
                               ▼
-              cloudflare 隧道（公网临时域名）
-                              │
+              本机桥接 server.js :8080（engine=local 默认）
+                ├─ POST /task：隧道可达时立即登记（加速通道）
+                └─ 表格轮询（每 30s，2026-11-01 起）：差分「Figma状态」列，
+                   行变「转Figma中」即本地登记 —— 任务到达不再依赖隧道；
+                   两路同到由 recordId 去重收敛，POST 保留为快路径
+                              │ 三层取源拿 demo.html（demoUrl / 表格反查预览URL / 本地归档）
+                              │ 本地归档 → 直接引用路径；云端下载 → 暂存 ~/Desktop/_drops/feishu/
                               ▼
-              本机桥接 server.js :8080（POST /task）
-                              │ 三层取源拿 demo.html（demoUrl / 本地归档 / 表格反查）
+              登记任务 feishu-tasks.json（状态=待转；单写者 server.js，原子替换）
+                              ▼  ◀── GET /api/feishu-tasks（serve.py 只读）
+              Figma 内部插件「选择 HTML」下拉 · 单一列表（飞书任务 REQ 编号置顶 + 本地 HTML 按最近导入时间排序）
+                              │ UED 选中任务点「生成 scene.json 并导入」
                               ▼
-              mcp.to.design（OAuth，桥接自有凭据）
-                              │ tools/call import-html（demo 全文；命中导出契约时为全状态铺开页）
+              build-scene.js 构建 scene.json（库匹配/令牌绑定/全状态铺开全保留）
                               ▼
-              Figma 里打开的 html.to.design 插件（MCP 标签页，同账号在线）
-                              │ 渲染落画布
+              插件导入落画布（库组件实例 + 令牌绑定 + 原型连线）
+                              │ 转完不关面板：code.js 发 import-done（closePlugin 会连 iframe 销毁）
                               ▼
-              Figma 当前文件里的可编辑设计稿
-                              │ 任务结束
+              ui.html POST /api/feishu-done → serve.py 转发 server.js POST /done
+                              │ lark-cli 回写（record_id 直写 / 按需求编号反查）
                               ▼
-              桥接从导入结果提取 Figma 链接
-                              │ lark-cli 回写
-                              ▼
-              多维表格该行「Figma链接」列 = 设计稿地址
+              多维表格该行「Figma状态」= 已完成；「Figma链接」列到表格手填（面板管理区已移除）
 ```
 
-> 插件离线时桥接**自动拉起**：`open -a Figma` 启动/聚焦 Figma → `figma://plugin/<id>` 深链启动 html.to.design 插件 → 重试导入（最多 3 轮），点击按钮不依赖人事先开好插件。
->
-> 无 demo 源（三层取源全落空）时任务**直接失败**（日志「三层取源均未命中，任务放弃」）。原「退回 claude 自由设计（figma-remote）」的 LLM 兜底已于 2026-10-23 删除——token 消耗不可控。
+> 无 demo 源（三层取源全落空）时任务直接失败并标表格行「失败」（日志「三层取源均未命中」）。原「无 demo 源走 claude 自由设计」的 LLM 兜底已于 2026-10-23 删除——token 消耗不可控。
 
 ---
 
@@ -44,54 +45,48 @@
 
 | 组件 | 位置 | 说明 |
 |---|---|---|
-| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、取源、调 mcp.to.design、回写飞书；Node 25 自带 fetch，`ws` 已装但 v3 不再使用 |
-| 桥接凭据 | `tools/figma-bridge/auth.json`（gitignore） | service account / refresh token，仅本机 |
-| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：Demo名称/产品分类/需求描述/提示词/demoUrl/Figma链接 + 按钮字段 |
-| 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息 |
+| 桥接服务（权威源码） | 本仓库 `tools/figma-bridge/server.js` | 收任务、取源暂存、登记队列、/done 回写飞书；engine=mcp 时调官方链路 |
+| 任务队列 | `tools/figma-bridge/feishu-tasks.json`（gitignore） | server.js 单写（tmp+rename 原子替换），serve.py 只读展示；状态：待转 → 已转 / 已转·回写失败 |
+| 桥接凭据 | `tools/figma-bridge/auth.json`（gitignore） | service account / refresh token，仅本机（mcp 备用链路用） |
+| 飞书多维表格 | `https://milesight.feishu.cn/base/F2MebgSgMaUZSbseUWLcefqbnKd?table=tbln6WxfFJ6iYaek` | UI demo 表，字段：需求编号/记录类型/生成人/更新时间/产品分类/需求描述/提示词/demoUrl/Figma链接/Figma状态 + 按钮字段（2026-11-01 改版：Demo 名称列已删，反查键 = 需求编号） |
+| 自动化工作流 | 多维表格内「UED确认转Figma通知设计师」 | 按钮触发 → HTTP 请求 → 发飞书消息（无需改动，沿用旧 Body） |
 | cloudflared 隧道 | quick tunnel，域名随重启变化 | 本机二进制 `~/.local/bin/cloudflared`（brew 4.x 有兼容问题，直装官方 release）；`~/.local/bin/cloudflared tunnel --url http://localhost:8080`，日志 `/tmp/bridge-tunnel.log` |
-| html.to.design MCP | `https://mcp.to.design`（云端） | OAuth 认证；中继到 Figma 插件 |
-| html.to.design 插件 | Figma 内运行，**MCP 标签页** | 必须与 `--login` 授权同一账号；离线时桥接自动拉起（插件 ID `1159123024924461424`），导入落到插件所在文件的当前画布 |
-| lark-cli | `/usr/local/bin/lark-cli` | 回写多维表格，用户身份登录 |
+| 内部插件（生产链路） | 仓库 `tools/figma-bridge/plugin/` → 部署 `~/Desktop/html-to-figma-internal/` | 面板（飞书任务并入「选择 HTML」下拉，管理区已移除）+ serve.py（:8124，/api/list /api/build /api/feishu-tasks /api/feishu-done）+ code.js 导入 |
+| html.to.design MCP（手动备用） | `https://mcp.to.design`（云端） | OAuth 认证；engine=mcp 时中继到官方 Figma 插件自动导入 |
+| lark-cli | `/usr/local/bin/lark-cli` | 回写多维表格，用户身份登录；调用全部收敛在 server.js |
 
 ---
 
 ## 一次性配置（新人视角）
 
-### 1. Figma 端：插件一次就位（之后桥接自动拉起）
+### 1. Figma 端：内部插件部署（生产链路载体）
 
-Figma 里打开 **html.to.design** 插件 → 登录账号（与第 2 步 `--login` 用同一账号）→ 切到 **MCP 标签页** → 状态点绿色 Ready。首次手动到位后，日常点击按钮桥接会自动拉起 Figma + 插件（3 轮重试）；插件通常停留在上次使用的标签页，若被切走，按报错提示手动回到 MCP 标签页即可。
-插件开着时，导入落在**当前打开的文件**里；换文件 = 在目标文件里重开插件。
+对 Claude Code 说一句 **「安装 html to design 脚本」**（`install-html-to-design` 技能），自动完成：仓库 `tools/figma-bridge/plugin/` → `~/Desktop/html-to-figma-internal/` → 校验依赖 → 拉起 serve.py → 给出 Figma 导入步骤。手动等价：`mkdir -p ~/Desktop/html-to-figma-internal && cp tools/figma-bridge/plugin/* ~/Desktop/html-to-figma-internal/`，Figma 里 Plugins → Development → Import from manifest 选该目录 manifest.json。
 
-### 2. 桥接授权（一次性，浏览器点一次）
+导入落在**当前打开的文件**里；UED 在目标文件里开插件，「选择 HTML」下拉为单一列表，飞书任务（REQ 编号）置顶显示。
+
+### 2. 启动桥接（本机）
 
 ```bash
 cd tools/figma-bridge
-node server.js --login
-# 浏览器弹出 html.to.design 登录页（用插件同一账号）→ 授权
-# 自动完成：动态注册 MCP 客户端 → PKCE 授权码 → 保存 refresh token（14 天）→ 铸 service account（长期）
-```
-
-- service account 铸成功后**永久免续期**；未铸成功则靠 refresh token，**14 天后重跑 `--login`**。
-- 凭据存 `tools/figma-bridge/auth.json`（已 gitignore），**绝不入库**。
-
-### 3. 启动桥接（本机）
-
-```bash
-cd tools/figma-bridge && npm install ws   # 首次
 nohup node server.js >> /tmp/bridge-server.log 2>&1 &
-curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"h2d","auth":"service-account",...}
+curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"local","engine":"local",...}
 ```
 
-### 4. 启动隧道（每次重启域名会变）
+数据服务 serve.py（:8124）由 build-scene 自动保活；手动：`python3 ~/Desktop/html-to-figma-internal/serve.py`。
+
+### 3. 启动隧道（每次重启域名会变；现为加速通道，非必需）
+
+> 2026-11-01 起任务到达有轮询兜底（server.js 每 30s 差分表格），隧道断了/域名过期只是少了 POST 加速路径，不再丢任务。
 
 ```bash
 ~/.local/bin/cloudflared tunnel --url http://localhost:8080 >> /tmp/bridge-tunnel.log 2>&1 &
 # 记下输出的 https://xxx.trycloudflare.com
 ```
 
-可选：`export H2D_PUBLIC_BASE=https://xxx.trycloudflare.com` 再启动桥接——import-html 失败（如 demo 过大）时自动改走 import-url 经公网取页。
+### 4. 飞书工作流配置（HTTP 请求节点；沿用旧 Body 无需改动）
 
-### 5. 飞书工作流配置（HTTP 请求节点）
+> **节点顺序（硬要求，2026-11-01 事故固化）**：「置状态 → Figma状态=转Figma中」节点必须排在 HTTP 请求节点**之前**——HTTP 失败（隧道域名过期）会中断工作流，状态置不上则轮询也取不到任务。最简单：把 HTTP 节点整个删掉（轮询 30s 内取到）。
 
 | 项 | 值 |
 |---|---|
@@ -102,17 +97,20 @@ curl http://127.0.0.1:8080/health    # {"ok":true,"mode":"h2d","auth":"service-a
 
 ```json
 {
-  "demoName":    "<引用：Demo名称>",
+  "demoName":    "<引用：需求编号>",
   "category":    "<引用：产品分类>",
   "requirement": "<引用：需求描述>",
   "prompt":      "<引用：提示词>"
 }
 ```
 
-> `record_id` 可加可不加。加了 → 桥接直接写那一行；不加 → 桥接按 **Demo 名称** 自动反查记录再回写。
-> `demoUrl` 可选。带了 → 直接作为导入源；不带也会走「本地归档 / 表格反查预览 URL」兜底（见下节）。
+> `demoName` 字段名沿用旧 Body 不改，取值改为引用**需求编号**列（2026-11-01 表格改版：Demo 名称列已删）。任何含 `REQ-###` 的字符串都可以——server.js `reqNoOf` 一律提取 `REQ-###` 归一（`REQ-20`→`REQ-020`）后面板显示名与表格反查键。
 
-### 6. lark-cli 登录（回写的前提）
+> `record_id` 可加可不加。加了 → /done 直接写那一行；不加 → 按**需求编号**（`demoName` 提取 REQ-### 归一）自动反查记录再回写（同 REQ 多行时取更新时间最新一条）。
+> `demoUrl` 可选。带了 → 直接下载暂存作导入源；不带也会走「表格反查预览 URL / 本地归档」兜底（见下节）。
+> `engine` 可选：`mcp` → 走附录的官方自动导入备用链路；缺省 = 本地插件登记。
+
+### 5. lark-cli 登录（回写的前提）
 
 ```bash
 lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:field:read
@@ -122,13 +120,13 @@ lark-cli auth login    # 用户身份；scope 需含 base:app:update、base:fiel
 
 ## 已踩过的坑（关键，改动前必读）
 
-1. **插件不在线时自动拉起**：mcp.to.design 是中继，所有导入都经 Figma 里登录同账号、停在 MCP 标签页的插件。插件离线时桥接自动 `open -a Figma` + 深链启动插件并重试（3 轮，冷启动约 1 分钟）。仍失败的排查顺序：插件登录账号与 `--login` 是否一致 → 是否停在 MCP 标签页 → Figma 桌面端是否正常。
-2. **导入落点是插件的当前画布**：html.to.design 不会自己新建文件，落在插件所在文件；想导到哪个文件就在哪个文件里开插件。
-3. **凭据有效期**：service account 长期有效；只有 refresh token 时 14 天过期，桥接日志出现 401/token 端点报错 → 重跑 `node server.js --login`。
-4. **demo 过大**：单文件 demo（内联 CSS/JS）几百 KB 起步。桥接已剥离 HTML 注释；import-html 仍失败时，配置 `H2D_PUBLIC_BASE`（隧道域名）后自动改走 import-url 公网取页兜底。
-5. **JS 渲染的 demo 依赖真实浏览器执行**：html.to.design 在浏览器环境渲染导入的 HTML，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
-6. **隧道域名易变**：cloudflared quick tunnel 每次重启换域名，工作流 URL 要同步改；固定方案待做（named tunnel + 自己的域名）。
-7. **组件库引用规则**：html.to.design 导入是机械转录（产出普通图层，非库组件）；组件回填由设计师在 Figma 内做，库规则见 `.claude/rules/figma-asset-libs.md`。（原坑 7「claude 自由设计模式仍走 claude」已随该模式删除。）
+1. **closePlugin 会连 iframe 一起销毁**：飞书任务导入成功后 code.js **不能**直接 `figma.closePlugin()`——iframe 没了，回写请求发不出去。链路是：code.js 发 `import-done`（不关面板）→ ui.html POST `/api/feishu-done` 等回写结果 → 成功才发 `feishu-close` 关面板；回写失败面板保持打开、状态行报错，下拉重选该任务重新生成即重试（管理区已移除）。
+2. **lark-cli 对不存在的记录也退出码 0**：只把不存在的 id 报在 JSON 的 `data.record_not_found` 数组里。server.js 回写后必须解析该字段——全部 not found 才算失败（任务标「已转·回写失败」）。
+3. **serve.py 跑的是 Desktop 部署副本**：Figma 从 `~/Desktop/html-to-figma-internal/` 加载 manifest。改了仓库 `plugin/` 源码要 cp 过去；serve.py 旧进程不重启 = 改动永不生效（build-scene ensureServe 会按 mtime 自动重启，手动改用 kill + 重开）。日志统一落 `~/Desktop/html-to-figma-internal/serve.log`。
+4. **插件 API 拿不到自己文件的 URL**：「Figma链接」列无法全自动——状态列自动回写，链接由 UED 直接在多维表格手填（原面板「补填链接」入口已随管理区移除）。
+5. **隧道域名易变（已降级为加速通道）**：cloudflared quick tunnel 每次重启换域名，工作流 URL 过期时 POST 到不了本机（飞书通知照发、毫无表迹）。2026-11-01 起 server.js 每 30s **轮询表格差分取任务**——行「Figma状态」变「转Figma中」即本地登记，任务到达不再依赖隧道（首轮只建基线，存量卡「转Figma中」的行不回灌；重新点击/状态变化才登记）。**前提（一次性工作流修改）**：「置状态 Figma状态=转Figma中」节点必须排在 HTTP 节点**之前**（HTTP 失败会中断工作流、状态置不上 → 轮询也看不见——2026-11-01 实测当天点击零登记的根因）。建议把置状态挪到最前或直接删掉 HTTP 节点。
+6. **库组件导入要求订阅库**：目标文件须在资源库面板订阅 Milesight_IOT_Web 与网关/路由器业务库，否则 `importComponentSetByKeyAsync` 不可用（完成通知「库组件实例 0」即查这个）。
+7. **JS 渲染的 demo 依赖真实浏览器执行**：build-scene 用无头 Chrome 渲染，内联 `<script>` 会执行（EG71 壳 `MS_EG71_SHELL.render()` 正常出全页）。
 
 ---
 
@@ -181,9 +179,9 @@ window.MS_FIGMA_EXPORT = {
 
 ---
 
-## 内部免费通道：html-to-figma-internal 插件（备用/保真研究通道，非生产链路）
+## 内部免费通道：html-to-figma-internal 插件（生产链路载体）
 
-> **通道地位（2026-10-25 用户指令）**：点击「转 Figma」的**生产链路一律走官方 html.to.design**（见上文主链路）；本内部通道降级为**备用 + 保真研究**（库实例化/组件化/原型连线等能力沉淀，供对照与回填），不在生产流程中默认启用。
+> **通道地位（2026-10-31 用户指令，反转 2026-10-25 裁决）**：「点击转 Figma」的**生产链路走本内部插件**——数据不出内网、零费用，且库实例化/令牌绑定/原型连线等能力官方链路没有；官方 html.to.design MCP 降级为手动备用（见文末附录）。
 
 html.to.design 云 MCP 开始收费后，本机自研插件可完全替代导入环节（数据不出内网、零费用）：
 
@@ -212,29 +210,57 @@ node tools/figma-bridge/build-scene.js 05_release/REQ-XXX/demo.html
 - **颜色令牌绑定（2026-10-30 用户指令：颜色 token 不要自己新建，去引用基础组件库的 token color）**：内部通道落 Figma 的实色不再新建裸色——全链四段：①注册表 `tools/figma-bridge/token-vars.json`（tokens.css 名 → Milesight_IOT_Web「Color Token」库变量 key 63 条；scopes 不落表以运行时 Variable.scopes 为准；`color-blue-01..10`→库 `color-primary-1..10` 别名直录；同名变量在 UINK 集合发布的排除）；②build-scene 注入 `__MS_TOK_NAMES__` 名单，页内 `getComputedStyle(:root)` 建值→名反查——**自定义属性返回声明字面量而非 rgb() 计算值**（首版根因：正则只匹配 rgb() 全军覆没），解析需覆盖 #HEX/#RGBA/rgb()/`var()` 链 ≤4 跳，自动跟随暗色主题覆写；同值多候选按站点家族优先（text/fill/icon/stroke 四族前缀表）+ 语义名压色阶名；七个采集点打标（文本 `tk`/帧 `ftk`/图标 `ctk`/描边 `stk.tk`·`al.btk`/库实例文本 `lib.ttoks`），verify 路径不注入名单即整体关闭、审计基线不动；③Node 汇总 `scene.tokVars`；④插件 `importVariableByKeyAsync` + `setBoundVariableForPaint` 绑定，**scope 门禁**（错配跳过）+ **读回校验**（绑定后 paint.color 反映变量值，偏差 >0.02 回退裸色——防暗色 demo 进亮色文件/别名值漂移），同步路径描边入队导入尾声 flush；通知报「令牌绑定 N」，0 且有 tokVars 即异常。半透明色/库无名/scope 错配/读回漂移允许裸色。规则固化 `.claude/rules/figma-asset-libs.md` §4.7。mock 85/85（12 条绑定断言：四落点绑定、scope 错配跳过、读回漂移回退、无效 key 回退、计数入通知）；verify 四页 100% 不变；REQ-017 实测 19 个库变量、tk×96/ftk×54/ctk×19。
 - **其余待做（html.to.design 对齐轴）**：富文本分段（span 级混排）、Variables 样式绑定、旋转 transform、多宽度断点导入（原型连线已于 2026-10-25 R5 落地，`MS_FIGMA_EXPORT.states[].trigger` → Figma reactions）。
 - **变体分组 + 组件画板 + 命名/去嵌套（2026-10-24，设计师视角）**：①重复块 def 同名（同家族）≥2 个即互为变体——build-scene 产出 `vname`（块内首段文本）变体标签，插件 `figma.combineAsVariants` 合成 COMPONENT_SET（右侧面板直接切变体），不再散落成孤立组件；②全部组件定义收进「组件定义 · <功能名>」画板，按家族分节、节内网格换行（替换旧的一条长龙散排）；③命名规范——主画板 = demo `<title>`（如「EG71 · Data Library · Inbuilt Update」），状态帧 = 契约 state 名，组件 = 类名家族 + 文本变体，图层名 = 类名/文本，不出现无名层；④去多余嵌套——无视觉贡献且无 `bc-/ms-` 语义类的透传容器在序列化后拍平（子树坐标换算进父级，REQ-017 拍平 630 层，终态节点 −100），库标记子树内的保留作回退数据。⑤「能引用 MS 库坚决不自己造」的边界：原子控件与整块壳件（侧边栏）一律库实例；含动态内容的复合块（弹窗/Tab 栏/标题行）保持本地编排、内部原子件全部库实例——整块换库会丢 demo 内容，本地块内已是库件不算「自己造」。持续优化轴（设计师怎么用 Figma，脚本就朝哪做）：已做 组件集变体/画板分节/库实例直调/图层命名/拍平空壳/属性驱动实例化/Auto Layout/图片渐变；待做 原型连线、富文本分段、Variables 样式绑定、按态分页整理。
-- 其余产物为普通图层（非库组件），组件回填由设计师在 Figma 内做（同坑 7；图标已由上条解决）。
-- **通道裁决（2026-10-25 用户指令，反转此前演进方向）**：点击转 Figma 的生产链路固定走官方 html.to.design；内部通道不接管生产，仅作保真研究与对照基线（上述能力按需回填到官方链路或独立使用）。
+- 其余产物为普通图层（非库组件）的由设计师在 Figma 内回填（同上条；图标/原子控件/壳件已由库实例化解决）。
+- **通道裁决（2026-10-31 用户指令，反转 2026-10-25）**：生产链路走本内部插件；官方 mcp 链路保留为手动备用（附录）。
 
 ---
 
 ## 日常使用
 
-1. 多维表格某行点按钮（Figma/插件没开也没关系，桥接自动拉起）
-2. 工作流立刻发一条飞书消息（固定文案，不代表完成）
-3. 等分钟级，刷新表格——「Figma链接」列出现地址即完成
-4. 打开链接进 Figma 可编辑设计稿（落在插件当前文件）
+1. 多维表格某行点「转 Figma」按钮——桥接取源、登记任务（`/health` 的 `localPending` +1）
+2. UED 在**目标 Figma 文件**里打开内部插件（右键 → Plugins → Development → HTML to Figma (Milesight Internal)），「选择 HTML」下拉单一列表置顶显示飞书任务（REQ 编号；面板每 15s 自动轮询，开着也会出现）
+3. 选中该任务点「生成 scene.json 并导入」→ 转换落画布（库实例 + 令牌绑定 + 全状态铺开）→ 完成后**面板自动**回写表格「Figma状态=已完成」并自动关闭
+4. 把当前文件的 Figma 链接直接填到多维表格该行（面板管理区已移除；状态已自动回写，链接可跳过）
+5. 回写失败时面板不关、状态行报错——下拉重选该任务点「生成」重新走一遍即重试回写
 
 ## 排障
 
 | 症状 | 查哪 |
 |---|---|
-| 按钮点了没反应 | `/tmp/bridge-server.log` 有没有新 `[task]`；没有 → 工作流 URL 是否过期（隧道换域名） |
-| 插件自动拉起 3 轮仍失败 | 插件登录账号与 `--login` 不一致 / 没停在 MCP 标签页（坑 1） |
-| 401 / token 端点报错 | 凭据过期，重跑 `node server.js --login`（坑 3） |
-| import-html 失败 | 桥接日志 `[h2d:...]`；过大 → 配 `H2D_PUBLIC_BASE` 走 import-url 兜底（坑 4） |
-| 导入成功但表格没回写 | 桥接日志找 `[writeback:...]`：`反查失败/没找到记录` → Body 里 demoName 与表格列值不完全一致（注意空格）；lark-cli 退出码非 0 → token 过期，重跑 `lark-cli auth login` |
-| 导入了但链接列没 URL | mcp.to.design 返回体里没带 figma.com 链接——把 `[h2d:...] 导入完成` 后的日志贴出来排查 |
+| 面板卡「导入库组件 X/Y...」不动 | 库资产导入停顿（Figma 资产服务偶发不返回）。r13 起每项限时 20s 自动超时兜底不再挂死；r14 起超时不再级联重试、失败 key 缓存短路（停顿 key 只烧一次 20s，不随节点数放大），各阶段状态行带秒数可直接看慢在哪；仍卡 = 面板跑旧代码——**完全关闭面板再重开**（构建号护栏会拒导旧 scene 并提示） |
+| 导入明显变慢（分钟级） | 状态行秒数定位慢的阶段：库目录（多库×停顿）→ 预载库组件/资产（停顿 key）→ 逐屏导入；r14 修「超时级联+失败不缓存重放」，r15 把图标名/动态库 key/变量/图片四类资产全部**并行预载**（主循环零新鲜导入，总耗时 = 最慢一个不再随 key 数放大）——先确认面板是 r15（关面板重开）再排查 |
+| 按钮点了表格没动静 | 表格该行「Figma状态」有没有变「转Figma中」；没变 → 工作流 HTTP 节点失败**中断了后续节点**（置状态排在 HTTP 后）——把置状态节点挪到 HTTP 前或删掉 HTTP 节点；变了但面板没任务 → 看 `/tmp/bridge-server.log` 的 `[poll]` 行（每 30s 一查，server.js 是否在跑：`lsof -i :8080`） |
+| 下拉没有飞书任务 | `/tmp/bridge-server.log` 有无 `[poll] 表格出现「转Figma中」→ 本地登记`；有登记但下拉没有 → `feishu-tasks.json` 是否待转条目、serve.py `:8124` 是否活着；`/task` 是否走了 engine=mcp |
+| 点任务没反应 / build 失败 | `serve.log`（`~/Desktop/html-to-figma-internal/serve.log`）的 `/api/build` 行；demo 路径是否在 serve.py 白名单内（05_release / output / ~/Desktop） |
+| 导入成功但表格没回写 | 桥接日志 `[writeback:...]`：`记录不存在` → 表格行已删或 record_id/demoName 对不上；lark-cli 报权限 → 重跑 `lark-cli auth login`。面板留着重试即可 |
+| 完成通知「库组件实例 0」 | 目标文件未订阅两份库（资源库面板开启），见坑 6 |
+| 完成通知「令牌绑定 0」 | `token-vars.json` key 失效（库重发布）或库未订阅，见 figma-asset-libs.md §4.7 |
 | 导入结果只有默认单页态 | demo 未内嵌 `MS_FIGMA_EXPORT` 契约（grep demo 源）；契约在但某态缺失 → 该态 setup 抛错，帧标签带「导出失败」 |
+| serve.py 改了不生效 | 跑的是 Desktop 副本——cp 过去 + 重启（坑 3） |
+
+## 附录：官方 mcp.to.design 备用链路（手动，默认不走）
+
+按钮默认走本地插件；需要官方链路时**手动**触发——POST /task 的 Body 加 `"engine":"mcp"`（或桥接进程环境变量 `H2D_ENGINE=mcp`，此时全部任务走官方链路）。链路恢复为 2026-10-25 版自动导入：
+
+```
+POST /task {"engine":"mcp", ...} → server.js 队列 → mcp.to.design（OAuth）
+  → 自动拉起 Figma + html.to.design 插件（MCP 标签页）→ import-html/import-url
+  → 拿到 figma.com 链接 → lark-cli 回写 Figma链接 + Figma状态
+```
+
+### 备用链路专属配置（本链路才需要）
+
+```bash
+node server.js --login   # 浏览器授权 html.to.design（与插件同账号）；service account 长期有效，仅 refresh token 时 14 天续一次
+export H2D_PUBLIC_BASE=https://<隧道域名>   # 可选：import-html 失败（demo 过大）时走 import-url 公网取页兜底
+```
+
+### 备用链路专属坑
+
+- **插件必须在线且停在 MCP 标签页**：离线时桥接自动 `open -a Figma` 深链拉起（3 轮重试，冷启动约 1 分钟）；仍失败查账号一致性 / 标签页 / Figma 桌面端。
+- **导入落点是插件当前打开的文件**；想导到哪就在哪开插件。
+- **凭据**：auth.json（gitignore）——401/token 报错重跑 `--login`。
+- **官方导入是机械转录**（普通图层，无库实例/令牌绑定），组件化需设计师回填；链接列由官方返回体带出、自动回写。
 
 ## 安全红线
 

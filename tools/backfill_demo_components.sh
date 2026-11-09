@@ -15,8 +15,8 @@
 # 行为：
 #   1. 用 tools/detect_components.py 分析 demo.html 命中的组件中文名
 #   2. 用 lark-cli 查组件质量表，得到 组件名 -> record_id 映射
-#   3. 用 lark-cli 查 Demo 记录表按需求编号找最新一条记录
-#   4. 更新该记录的「使用组件」(link) 和「AI自评」(text)
+#   3. 用 lark-cli 查 Demo 记录表按需求编号找全部记录（全量更新，杜绝空白行）
+#   4. 更新这些记录的「使用组件」(link) 和「AI自评」(text)
 set -uo pipefail
 
 # 默认内置团队配置（与 sync_demo_to_feishu.py 一致，所有同事 clone 即可用）
@@ -109,7 +109,9 @@ if [ "$(cat "$TMP_DIR/comp_map.json")" = "{}" ]; then
   exit 1
 fi
 
-# 3) 查 Demo 记录表：按需求编号找最新一条记录（按更新时间倒序取第一条）
+# 3) 查 Demo 记录表：按需求编号找**全部**记录。
+#    webhook 每次同步都插新行，且插行后搜索索引有滞后——只更新"最新一条"会漏掉刚插入的行
+#    （2026-10-31 空白行事故根因）。改为全量更新：新行必中，历史空白行同步自愈。
 DEMO_RECORD=$(lark-cli base +record-search \
   --base-token "$BASE_TOKEN" \
   --table-id "$DEMO_TABLE" \
@@ -118,14 +120,14 @@ DEMO_RECORD=$(lark-cli base +record-search \
   --sort-json '[{"field":"更新时间","desc":true}]' \
   --as user --format json 2>/dev/null || echo '{}')
 printf '%s' "$DEMO_RECORD" > "$TMP_DIR/demo_search.json"
-TARGET_RECORD_ID=$(python3 -c "
+ALL_RECORD_IDS=$(python3 -c "
 import json
 d=json.load(open(r'$WIN_TMP/demo_search.json',encoding='utf-8'))
 data=d.get('data',{})
 rids=data.get('record_id_list',[])
-print(rids[0] if rids else '')
+print(' '.join(rids))
 ")
-if [ -z "$TARGET_RECORD_ID" ]; then
+if [ -z "$ALL_RECORD_IDS" ]; then
   echo "[backfill] 未找到需求编号 $REQ_ID 的 Demo 记录，跳过（Webhook 可能尚未写入或写入失败）"
   rm -rf "$TMP_DIR" 2>/dev/null || true
   exit 0
@@ -147,20 +149,27 @@ fi
 printf '%s' "$AI_COMMENT" > "$TMP_DIR/ai_comment.txt"
 
 UPDATE_JSON=$(python3 -c "
-import json
+import json,sys
+ids=sys.argv[1].split()
 comps=[l.strip() for l in open(r'$WIN_TMP/components.txt',encoding='utf-8') if l.strip()]
 comp_map=json.load(open(r'$WIN_TMP/comp_map.json',encoding='utf-8'))
 ai_comment=open(r'$WIN_TMP/ai_comment.txt',encoding='utf-8').read().strip()
 links=[{'id':comp_map[c]} for c in comps if c in comp_map]
 miss=[c for c in comps if c not in comp_map]
 if miss:
-  import sys
   print('[backfill] 组件未在质量表登记:', ','.join(miss), file=sys.stderr)
 fields={'使用组件': links}
 if ai_comment:
   fields['AI自评']=ai_comment
-print(json.dumps({'update_records':{'$TARGET_RECORD_ID':fields}},ensure_ascii=False))
-" 2>"$TMP_DIR/missing.log" || echo '{}')
+# 「最新」标记维护：ids 由 record-search 按更新时间倒序返回（该字段=同步时刻，回填不改动），
+# 首条=最新行标 True，其余标 False——每次同步后标记自动挪到新行，首页视图（筛选 最新=✓）每 REQ 恒一条
+per={}
+for n,i in enumerate(ids):
+  f=dict(fields)
+  f['最新']= (n==0)
+  per[i]=f
+print(json.dumps({'update_records':per},ensure_ascii=False))
+" "$ALL_RECORD_IDS" 2>"$TMP_DIR/missing.log" || echo '{}')
 if [ -s "$TMP_DIR/missing.log" ]; then
   cat "$TMP_DIR/missing.log" >&2
 fi
@@ -172,19 +181,22 @@ if [ "$UPDATE_JSON" = "{}" ]; then
 fi
 
 if [ "$DRY_RUN" = "1" ]; then
-  echo "[backfill][dry-run] 将更新记录 $TARGET_RECORD_ID:"
+  echo "[backfill][dry-run] 将更新记录 $(echo "$ALL_RECORD_IDS" | wc -w | tr -d ' ') 条:"
   echo "$UPDATE_JSON"
   rm -rf "$TMP_DIR" 2>/dev/null || true
   exit 0
 fi
 
-echo "[backfill] 更新记录 $TARGET_RECORD_ID（使用组件 + AI自评）"
-printf '%s' "$UPDATE_JSON" > "$WIN_TMP/payload.json"
+echo "[backfill] 更新记录 ×$(echo "$ALL_RECORD_IDS" | wc -w | tr -d ' ')（$ALL_RECORD_IDS → 使用组件 + AI自评）"
+# lark-cli --json 只允许 cwd//tmp/~/files 下的文件；mktemp 目录在 /var/folders 会被拒，payload 单独落 /tmp
+PAYLOAD_FILE="/tmp/backfill-payload-$$.json"
+printf '%s' "$UPDATE_JSON" > "$PAYLOAD_FILE"
 RESULT=$(lark-cli base +record-batch-update \
   --base-token "$BASE_TOKEN" \
   --table-id "$DEMO_TABLE" \
-  --json @"$WIN_TMP/payload.json" \
+  --json @"$PAYLOAD_FILE" \
   --as user --format json 2>&1 || true)
+rm -f "$PAYLOAD_FILE" 2>/dev/null || true
 
 if printf '%s' "$RESULT" | grep -q '"ok": true'; then
   echo "[backfill] 组件关联与 AI 自评回写成功"

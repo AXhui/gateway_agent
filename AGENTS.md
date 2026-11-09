@@ -119,7 +119,9 @@ git commit -m "feat: 生成 <需求编号> <简短描述> demo"
 1. **清单格式**：每个业务形态一行——`形态描述 → B_* 组件 ID + ctx 参数`（例：`删除确认弹窗 → B_Eg71Modal + ctx.action='delete'`）。清单先给用户确认（或落 `04_pages/REQ-###/` 供链路消费），确认后才开写 demo。
 2. **禁止自我生产**：demo 里不允许出现与已注册 `B_*` 形态重叠的手写渲染函数（如手搓 `xxxConfirmHtml()` 删除确认而不调 `renderEg71Modal`）。库里没有的形态走铸造注册回库（page-assembly.md §3），不现场手搓。A5 按 R2b 一票否决（签名表见 `.claude/knowledge/K_validation.md`）。
 3. **读契约再调用**：开工前读清单涉及组件的 SKILL.md §2 组装契约；**只内联组件 JS 代码、不按契约以 ctx 调用 = 未完成匹配**。
-4. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
+4. **重复需求重走全链（硬性）**：同一 PRD/需求再次下发——之前交付过 REQ 也一样——按**当前**规则体系当作全新需求重做：重新拉 PRD 正文（文档可能已迭代）、重新出映射清单、重读当前版规则与契约重新装配 + 三角色验收；**旧 demo 不是基线**，其形态须逐条对照当前契约核验，冲突按新规则改并在 validation.md 记修订行；禁止凭记忆沿用旧形态（详见 `.claude/rules/page-assembly.md` §0 第 5 条）。
+5. **动词闭环全局扫描（硬性）**：PRD 全文扫描操作动词（添加 / 编辑 / 删除 / 导入 / 导出 / 启停 / 搜索 / 下发 / 同步…），**只要提到，整条闭环链必须落地**（入口→操作→反馈→结果态→边界）；PRD 只写一步也补全整链，只渲染字面一步 = B 类断链退回（详见 `.claude/rules/interaction-completeness.md` §1.4）。
+4b. **EG71 必查清单**（涉及即必读契约）：壳（`window.MS_EG71_SHELL` + `navGroups`）、`B_Eg71Modal`（删除/禁用/确认/选择弹窗调度）、`B_ComDangerAction`（不可恢复操作统一规范）。
 
 > 背景：REQ-005 M-Bus demo 曾手搓 `delConfirmHtml()` 删除确认弹窗，而 `B_Eg71Modal` 契约齐全且代码已内联同文件——根因是跳过了清单动作。用户白话直出 demo 时同样要先过本清单，不允许因「需求小/急」跳过。
 
@@ -229,11 +231,11 @@ EG71 线表格一律左对齐，写死不改：
 - **runtime 落点**：`bc-eg71-toolbar` 现仅表达操作版；搜索版（左搜索 + 右工具的镜像排布）按 [page-assembly.md](.claude/rules/page-assembly.md) §3 铸造 `ctx.layout='search'` 变体入库后再拼装，禁止页面层手搓。
 
 
-## PRD 评论锚定（生成 demo 后，如用户要求发 review 到 PRD）
+## PRD 评论锚定（每次生成 demo 后主动询问）
 
-生成 demo 后，若用户要求把 review 评论发到飞书 PRD 文档，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
+每次生成 demo 后，必须按 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5 做反向评论差异核对，并把核对结论（可发清单 + 不发清单及原因）展示给用户、**主动询问是否需要评论**（2026-10-30 用户裁定：每次必问，零逻辑漏洞候选也要确认，不得静默跳过）。用户确认发送后，**不要用纯文本 append 到文档底部**，要用锚定评论脚本，让每条评论挂到 PRD 原文对应段落上：
 
-**评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md + 台账；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
+**评论范围（硬性）**：PRD 评论**只发「需求侧逻辑漏洞」**——demo 与 PRD 交互不一致的逻辑：PRD 内部矛盾（正文 vs 图例/附录冲突）、流程断头（去向未定义/跳转目标不存在）、业务规则空白（位数/格式/默认值/权限影响业务行为）。UI 实现细节（展示态补全、入口形态、选项排序、文案措辞）**不发 PRD 评论**，只落 validation.md（多维表格台账已于 2026-10-30 废弃）；判定口径与差异核对表见 [.claude/rules/interaction-completeness.md](.claude/rules/interaction-completeness.md) §2.5。每条评论必须是**方案评论**：指出漏洞 + 给出可采纳的裁决/规则/默认值，只提问不给方案的评论不合格。
 
 1. 先把 review 整理成 JSON 文件（如 `05_release/REQ-XXX/prd_comments.json`），每条包含：
    - `quote`：评论引用的 PRD 原文片段（从 PRD 原文里摘，要能被搜索到）
@@ -250,8 +252,8 @@ EG71 线表格一律左对齐，写死不改：
 
 ## REQ 编号与多机同步（硬性）
 
-- **分配编号前必查远端**：生成新 demo 前，`git fetch origin gitlab` 后取**所有远程** `05_release/` 的最大编号 +1，禁止只看本地目录分配编号（2026-10-16 双机各自生成 REQ-014 撞号事故的根因）。
-- **同步与撞号处理按规则文件执行**：GitHub → GitLab 同步动作序列、REQ 目录 add/add 冲突决策表（远端保号 / 本地挪号 + 字样替换 + 残留验证）、rebase 工作区保护范式，见 [.claude/rules/sync-numbering.md](.claude/rules/sync-numbering.md)，必须逐项执行，不临场发挥。
+- **编号唯一权威源 = 飞书多维表格（2026-11-09 用户裁定）**：demo 进飞书时做「新增编号」操作——取号跑 `python tools/next_req_id.py`（查「UI Demo 记录」表已占编号，取全表 max+1），**demo 是否入 git 与编号无关，禁止以 git 远程/本地 `05_release/` 目录作为取号依据**（多管线共用一张表，占用只在表格里可见：2026-10-16 REQ-014 双机撞号、2026-11-09 REQ-020 跨流程撞号的根因都是只查了 git 侧）。进表时 post-commit 钩子与 sync 脚本内置「先占先得」自动裁定：目标编号被其他生成人先占 → 自动挪 max+1；属本生成人或同 demo → 同号更新。
+- **同步与撞号处理按规则文件执行**：GitHub → GitLab 同步动作序列、REQ 目录 add/add 冲突决策表（表格先占先得保号 / 后到方挪号 + 字样替换 + 残留验证）、rebase 工作区保护范式，见 [.claude/rules/sync-numbering.md](.claude/rules/sync-numbering.md)，必须逐项执行，不临场发挥。
 
 ## 提交信息格式
 

@@ -7,9 +7,11 @@
 ```
 demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 tools/figma-bridge/）
   → 注入序列化脚本 → 无头 Chrome 逐态渲染 → walk DOM + computed style → scene.json 落桌面
-        → serve.py（127.0.0.1:8124，CORS + /api/list 清单 + /api/build 构建，build-scene.js 会自动拉起）
+        → serve.py（127.0.0.1:8124，CORS + /api/list 清单 + /api/build 构建 + /api/feishu-tasks 任务队列 + /api/feishu-done 回写转发，build-scene.js 会自动拉起）
         → 插件面板选 HTML → 生成 scene.json → 落图（图标/控件走库实例，库目录动态找回）
 ```
+
+- **飞书任务（2026-10-31 生产链路；2026-11-01 并入选择下拉单一列表）**：飞书「点击转 Figma」按钮经 server.js `/task`（engine=local）登记任务到 `feishu-tasks.json`；「选择 HTML」下拉为单一列表——飞书任务（**REQ 编号**，置顶，**无状态标识、不区分飞书/本地**；无 demo 源的任务不进下拉）+ 本地 HTML，选中点「生成」即转，转完**面板自动**回写表格「Figma状态=已完成」（serve.py → server.js `/done` → lark-cli）；面板每 15s 轮询任务，开着也能看到新登记的；回写失败状态行报错，下拉重选该任务重新生成即重试。原「飞书任务」管理区（补填链接 / 重试回写）已按用户指令移除——Figma 链接直接到多维表格手填。**名称随任务转过去（2026-11-01）**：任务构建把 REQ 编号经 `outName` 带进 build-scene——桌面参考页名 `REQ-###-export.html`、Figma 主画板名 `REQ-### · <demo 标题>`（标题已含则不重复），与下拉/表格列表命名一致。链路全貌见 `../FIGMA_DESIGN_PIPELINE.md`。
 
 - **图标实例化**：demo 内联的 `MS_ICONS`（Lucide 集）经签名反查识别后，按 `tools/figma-bridge/icon-keys.json` 映射成 **Milesight_IOT_Web 团队库图标组件实例**（颜色按 currentColor 换算成描边覆盖）；无映射/导入失败自动回退矢量 SVG。库映射重建方法见 icon-keys.json 头注释。
 - **颜色令牌绑定（2026-10-30）**：落 Figma 的实色不新建裸色——build-scene 按 tokens.css 令牌名反查（跟随页面主题）产出 `scene.tokVars`，插件按 `tools/figma-bridge/token-vars.json` 注册表 `importVariableByKeyAsync` 导入库「Color Token」变量并 `setBoundVariableForPaint` 绑定（scope 门禁 + 读回校验，库值≠demo 色自动回退裸色）；改库变量全局改稿。完成通知报「令牌绑定 N」，N=0 且有 tokVars 即异常（查注册表 key / 库订阅）。
@@ -17,7 +19,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
 - **蒙版全页三根因收口（2026-10-29）**：库弹窗实例内部蒙版不随根 resize → 强制铺满+卡片重居中（通知报「蒙版铺满 N」）；蒙版透明度做在图层上（非 FILL）→ 双通道识别；DOM 蒙版嵌在有裁切容器内 → 序列化侧提升到状态帧根再全幅。
 - **词干匹配三补（2026-10-29）**：目录名末段归一（去路径前缀/序号）+ 中英文词干桥接（标题/弹窗/导航栏…）+ 权威两库优先（防多库同名命中错误库）。
 - 状态来源：demo 内嵌的 `window.MS_FIGMA_EXPORT` 契约（Tab 各态/弹窗/启用禁用/空态，见仓库 AGENTS.md 生成规范第 7 条）；无契约回退单态。
-- 同时产出 `figma-export.html`（全状态铺开参考页，浏览器打开可与 Figma 结果对照）。
+- 同时产出 `<源名>-export.html`（全状态铺开参考页，浏览器打开可与 Figma 结果对照）。命名随源走（2026-11-01）：飞书任务构建带任务名（`--out-name`，如 `REQ-020-export.html`）；本地构建取源文件名（源叫 `demo.html` 时取上级目录名 `REQ-###`）——不再落泛名 `figma-export.html` 混进「选择 HTML」本地列表。
 
 ## 安装（换电脑一句话）
 
@@ -36,14 +38,14 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
 
 1. 数据服务跑着即可（build-scene.js 检测 8124 端口空闲时会自动拉起；手动：`python3 ~/Desktop/html-to-figma-internal/serve.py`）
 2. Figma 里 **右键 → Plugins → Development → HTML to Figma (Milesight Internal)**，面板两步走：
-   - **① 选择 HTML**：下拉选要转换的 demo（扫描 `05_release/` / `output/` / 桌面，按修改时间排序）；或**把 .html 文件直接拖进面板任意位置**；或在链接框**粘贴 http(s) 链接 / 本地绝对路径**后点「导入链接」（面板空白处粘贴链接会自动填入）。三种入口点后都走「生成 scene.json 并导入」。**入口模式差异（2026-10-30 用户裁定：复制的网页链接不走本地组件）**：粘贴的 http(s) 链接一律按**外部网页模式**导入（serve.py 传 `--ext` → scene.ext）——纯图层转录，跳过本地组件库匹配、组件化、图标库映射、颜色令牌绑定，也不拉库目录，完成通知报「外部网页 · 纯图层（不走本地组件库）」；本地路径（下拉/绝对路径）与拖拽文件仍是自家 demo，组件体系照常全套。**链接多页转录**：链接导入自动发现入口页里的同源页面（导航区链接优先、去重、上限 8，`--pages` 可调），逐页抓取转录，一次落「1. 入口 + 2..N 子页」多帧（帧名取链接文字）；相对 CSS/图片按原始域名解析（补 `<base>`）。仅覆盖带真实 href 的页面，纯 JS 路由与登录后的页面不自动发现。
+   - **① 选择 HTML**：下拉选要转换的 demo（扫描 `05_release/` / `output/` / 桌面，**按最近导入时间排序**——导过的按上次导入新→旧排前，没导过的按文件时间排后，2026-11-01 用户指令）；或**把 .html 文件直接拖进面板任意位置**；或在链接框**粘贴 http(s) 链接 / 本地绝对路径**后点「导入链接」（面板空白处粘贴链接会自动填入）。三种入口点后都走「生成 scene.json 并导入」。**入口模式差异（2026-10-30 用户裁定：复制的网页链接不走本地组件）**：粘贴的 http(s) 链接一律按**外部网页模式**导入（serve.py 传 `--ext` → scene.ext）——纯图层转录，跳过本地组件库匹配、组件化、图标库映射、颜色令牌绑定，也不拉库目录，完成通知报「外部网页 · 纯图层（不走本地组件库）」；本地路径（下拉/绝对路径）与拖拽文件仍是自家 demo，组件体系照常全套。**链接多页转录**：链接导入自动发现入口页里的同源页面（导航区链接优先、去重、上限 8，`--pages` 可调），逐页抓取转录，一次落「1. 入口 + 2..N 子页」多帧（帧名取链接文字）；相对 CSS/图片按原始域名解析（补 `<base>`）。仅覆盖带真实 href 的页面，纯 JS 路由与登录后的页面不自动发现。
    - **PRO 对标四件套（2026-10-30，免费补齐 html.to.design Pro plan 卖点）**：
      - **批量导入（bulk imports）**：链接框多行/逗号分隔粘贴多个 http(s) 链接（面板空白处多链接粘贴同样识别）→ 一次批量抓取转录，显式清单优先于自动发现（不 crawl），上限 20 个。
      - **多视口（multi-viewport）**：链接框下方「多视口」下拉（桌面+手机 1440+390 / 桌面+平板+手机 1440+768+390），入口页按各真实视口各出一帧（帧名带 `·390px`，移动端是真实重排布局，非缩放）。
      - **一键重导（re-import）**：每次导入（下拉/路径/链接/批量）自动记入「最近导入」历史（`figma.clientStorage` 持久化，跨会话保留，上限 12 条），点击历史行即原参数重跑；拖拽全文无持久负载不进历史。
      - **高清图（high-res images）**：图片转录取 `srcset` 最大 w/x 候选（含 `<picture><source>`，替代浏览器按视口选的小图）；懒加载占位图（data:/pixel/placeholder）自动回退 `data-src` 真实源。
    - **Free 层核心全量（2026-10-30，对标 html.to.design free-features）**：
-     - **浏览器捕获（browser capture）**：面板「浏览器捕获」区有一个 📌 书签按钮——**拖到 Chrome 收藏夹栏**，在任意目标页面（登录后内网/本地页/需交互 JS 页）点一下，渲染后的 DOM 全文直传 serve.py（`{capture}` 分支，走 `--ext --site`）——curl 抓不到的页面全走这里；捕获后回面板点「导入当前 scene.json」。
+     - **浏览器捕获（browser capture）**：面板书签按钮已按用户指令移除（2026-11-01「脚本前端，截图部分移除」）；serve.py `{capture}` 分支保留，原书签的 `javascript:` 代码仍可手动调用（渲染后 DOM 直传 → `--ext --site`）。
      - **暗色/亮色双主题（dark & light themes）**：链接/捕获/粘贴代码导入可勾「暗色补帧」，入口页按暗色约定（head 前置 localStorage 主题键 + `.dark`/`data-theme` class）补渲染一帧（帧名 `·暗色`）。**尽力转换**：站点需自带暗色约定，无暗色 CSS 则与亮色同貌。
      - **本地色样式（use local styles）**：外部网页导入时，重复 ≥3 次的不透明实色自动建本地 paint style（名称 = `#HEX`，上限 30 色）并回绑到所有节点——改一处样式全局换色。自家 ms-* demo 不走此路（实色一律绑库 Color Token 变量，契约不变）。
      - **字体映射（replace missing fonts）**：文本按页面真实 font-family 首族映射（系统栈→PingFang SC、Arial/Helvetica/Inter/Roboto/Georgia/Times/Menlo 等直用；表外字体名原样尝试加载），整族加载失败自动回退默认家族，不再全部拍平成一种字体。
@@ -52,7 +54,7 @@ demo 页（含 MS_FIGMA_EXPORT 全状态契约）→ build-scene.js（仓库 too
      - **自动原型连线（automatic linking）**：多页转录时每帧记录来源 URL（cell.u），页面内同源 `<a>` 链接（含 zip 包内页间跳转，键=文件名）自动挂 ON_CLICK → 对应页帧——导入即得可点击站点原型。
      - **滚动支持（overflow scroll）**：裁切且内容超高 >40px 的容器自动设 `overflowDirection: VERTICAL`（Figma 原型里可滚）；position:fixed/sticky 吸顶元素提升为帧直接子节点（`吸顶 N` 计数进完成通知）。
      - **多语言导入（multilingual）**：用批量导入贴多语言 URL（`/zh/` `/en/` 各站约定不同，显式清单比自动猜测可靠）等价实现。
-   - **② 组件匹配（全自动，面板无此区块）**：库匹配零手动步骤、无可选项，面板不再设独立「组件库」区块（2026-10-30 用户指令：没有选择就隐藏），状态收进面板下方状态卡的「库」一行；导入按 HTML 内容自动匹配团队库组件，命中即按组件 key 直接加载成库实例，无权限/未启用自动回退本地重绘。匹配三层（引用优先，不自己生产）：**快路径** component-keys.json / icon-keys.json 映射（含变体 token 与复合块守卫）；**库目录动态找回**（2026-10-29）——key 失效（库重发布 key 轮换）按家族名从 `getTeamLibraryAsync` 库目录找回现 key 重试，未入映射表的原子 `ms-*` 控件按类名词干匹配目录组件名就地实例化（复合容器仍本地编排）；最后才回退重绘。**跨导入复用**：重复块 def 同名同尺寸即引用本文件既有组件（多页面重复不再每次新建组件）。建议在 Figma 资源库面板启用 Milesight_IOT_Web 与（新版本）网关/路由器 通用业务组件库两份库——启用后组件集（Button/Input/Select 等）稳定落成库实例；完成通知里的「库目录动态命中」「复用既有」即两层兜底统计，「库导入失败数」为最终回退（库实例 0 = 异常，查 key / 库订阅 / 库目录）
+   - **② 组件匹配（全自动，面板无此区块）**：库匹配零手动步骤、无可选项，面板不再设独立「组件库」区块（2026-10-30 用户指令：没有选择就隐藏），状态收进面板下方状态卡的「库」一行；导入按 HTML 内容自动匹配团队库组件，命中即按组件 key 直接加载成库实例，无权限/未启用自动回退本地重绘。匹配三层（引用优先，不自己生产）：**快路径** component-keys.json / icon-keys.json 映射（含变体 token 与复合块守卫）；**库目录动态找回**（2026-10-29）——key 失效（库重发布 key 轮换）按家族名从 `getTeamLibraryAsync` 库目录找回现 key 重试，未入映射表的原子 `ms-*` 控件按类名词干匹配目录组件名就地实例化（复合容器仍本地编排）；最后才回退重绘。**跨导入复用（2026-10-31 强化：先判断再建）**：重复块组件化用**去文案结构签名**——同构不同文案的块（表格行/表单项/跨页面侧边栏等）共用一个组件，实例按本块文案逐段改写（右侧面板 TEXT 属性所见即所得）；自建组件写入 `h2d-sig:` 结构指纹（description），再导入时**结构指纹+尺寸**命中既有组件直接引用（同名匹配只作兜底），多页面重复不再每次新建组件。建议在 Figma 资源库面板启用 Milesight_IOT_Web 与（新版本）网关/路由器 通用业务组件库两份库——启用后组件集（Button/Input/Select 等）稳定落成库实例；完成通知里的「库目录动态命中」「复用既有」即两层兜底统计，「库导入失败数」为最终回退（库实例 0 = 异常，查 key / 库订阅 / 库目录）
 3. 高级：终端手动 `node build-scene.js <demo.html>` 生成后面板直接「导入当前 scene.json」，或粘贴 scene.json 全文导入
 
 > HTML 允许范围（serve.py `/api/build`）：`{path}` 仅接受白名单根（仓库 `05_release/`、`output/`、`~/Desktop`）内的 HTML；**拖拽文件**与**链接导入**的内容存 `~/Desktop/_drops/` 再构建（不参与下拉列表扫描）；链接仅 http(s)，单文件上限 20MB；`{capture}` 浏览器书签捕获同上限；`{zip_b64}` 整站包解包后转录。

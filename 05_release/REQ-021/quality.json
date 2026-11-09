@@ -1,0 +1,9 @@
+{
+  "structure": 100,
+  "component": 84,
+  "interaction": 100,
+  "visual": 100,
+  "field": 92,
+  "category": "网关",
+  "reason": "structure 100：脚本分（score_fidelity 骨架 5/5 + 装配健康 245 调用点 + 业务定制度满分，score_fidelity.json）；component 84：脚本分（①命中率 98——11 个自造类为 JS 字符串误提取 ②注册表 99——bc-req020-* 5 个为 §6 允许的页面结构类 ③契约调用 70——9 个疑似手写函数中 7 个为内联 registry 私有助手、2 个页面调度助手内部调 B_*，R2b 零命中 ④壳 100 ⑤令牌 69%——裸 px 全为内联库 CSS 固有值，score_component.json）；interaction 100：零成立扣分（T1-T5 全过：8 条交互链五段/状态集/取消原子回滚/字段逐项/边界；T2-1 空态组件级兜底不可达场景 0 分；C2 冲突走免责条款见 validation §六）；visual 100：零成立扣分（U1-U5 全过；U4-1 表头黑粗未挂共享类——交付前源头修复成立，不落扣分）；field 92：脚本分（①81 系两实体共用 5 去重字段键，PRD 真源即 5 数据字段非缺失，score_fidelity.json）。"
+}
