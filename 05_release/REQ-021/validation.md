@@ -1,8 +1,8 @@
-# REQ-020 校验记录 · 设备库内置库（Data Library · Inbuilt / Custom）
+# REQ-021 校验记录 · 设备库内置库（Data Library · Inbuilt / Custom）
 
 > PRD：飞书 docx `ANsBdqewEosemCxsQL0cRaFWnJg`（`prd-req020.md`）；基础 PRD：【EG71】设备库导入&导出（`prd-req020-base.md`，校验规则/错误表/并发锁真源）。
 > 视觉基准（一级）：Figma 71.0.0.4（file `CVVyZcQHpcu8lipmsXRZIm`，主帧 387:78306）。
-> demo：`05_release/REQ-020/demo.html`（683 KB 单文件，6 内联块）；走查脚本 `output/req020-build/walkthrough.py`（43 项）。
+> demo：`05_release/REQ-021/demo.html`（683 KB 单文件，6 内联块）；走查脚本 `output/req020-build/walkthrough.py`（43 项）。
 
 ## 一、装配完整性自检（assembly-integrity §2）
 
@@ -18,7 +18,7 @@
 
 ## 二、组件映射清单核对（page-assembly §0 / D2）
 
-`04_pages/REQ-020/mapping.md` §一 14 形态逐项落地，全部经注册组件契约调用（`MS_BIZ_INDEX` render ×16 + `MS_EG71_SHELL.render/bind`），零手写业务形态（R2b 复核见 DEV 清单）。随 REQ 升级三个组件：`B_Eg71DeviceLibTable` 2.0.0（major）、`B_ComTitle` 1.2.0（minor）、`B_Eg71LibUploadModal` 1.1.0（minor），SKILL.md 同步。
+`04_pages/REQ-021/mapping.md` §一 14 形态逐项落地，全部经注册组件契约调用（`MS_BIZ_INDEX` render ×16 + `MS_EG71_SHELL.render/bind`），零手写业务形态（R2b 复核见 DEV 清单）。随 REQ 升级三个组件：`B_Eg71DeviceLibTable` 2.0.0（major）、`B_ComTitle` 1.2.0（minor）、`B_Eg71LibUploadModal` 1.1.0（minor），SKILL.md 同步。
 
 ## 三、三角色验收（scoring.md §0.2 → §0.3 证据行）
 
@@ -30,7 +30,7 @@
 | U2 | 模块清点 vs 装配计划 | 过：14 形态全落地（walkthrough 43 项覆盖），无缺失/多出 |
 | U3 | 视觉基准（一级 Figma 主帧） | 过：默认帧截图比对——6 列列头 / Library Version + 1.3.5 Tag + Obtain/Upload / Total 17 / 分页 / view 单眼钮全对齐；上传弹窗、结果弹窗、自定义 Tab 三帧亦对齐 |
 | U4 | EG71 三契约 | 过：标题（B_ComTitle 主标题变体 + Tag 轻量形态 + 独立按钮非 btn-group）；Tab 栏（组件域 CSS 契约值）；Alert（页面无 Alert 场景，上传弹窗内 Alert 置 body 顶部＝④精神） |
-| U5 | 纯净性 | 过：可见 UI 无 PRD 注记 / 交互指引 / REQ-020 / B_ / 映射 / 校验痕迹（walkthrough 5 项全文扫描） |
+| U5 | 纯净性 | 过：可见 UI 无 PRD 注记 / 交互指引 / REQ-021 / B_ / 映射 / 校验痕迹（walkthrough 5 项全文扫描） |
 
 **验收中发现并当场修复（交付前，不成立扣分）**：[U4-1] `.bc-eg71-device-lib-table thead th`｜AGENTS.md 表头黑色加粗（REQ-019 修订 3 全局指令）｜2.0.0 表体未挂 `bc-eg71-table` 结构类，表头呈现 L2 默认 12px 灰大写｜源头修复：`library/business.css` 共享表头规则扩并列选择器 `.bc-eg71-device-lib-table thead th`（不挂裸类免 20px padding 副作用），SKILL §5 同步；重建后 computed 断言 500/14px/rgb(39,46,59)/none 通过。
 
@@ -112,9 +112,9 @@
 
 ## 七、旧形态 × 新规则核验（page-assembly §0 第 5 条）
 
-同页面第三次下发（REQ-004 → REQ-017 → REQ-020），全新重做，旧 demo 仅差异化定位。对照当前规则的关键修订：
+同页面第三次下发（REQ-004 → REQ-017 → REQ-021），全新重做，旧 demo 仅差异化定位。对照当前规则的关键修订：
 
-| 旧形态（REQ-004/017） | 当前规则 | REQ-020 落地 |
+| 旧形态（REQ-004/017） | 当前规则 | REQ-021 落地 |
 |---|---|---|
 | 3 列型号表 | Figma 主帧 6 列 + 表头黑粗指令 | DeviceLibTable 2.0.0 六列 + 共享表头范式选择器 |
 | 标题行按钮页面层手写 | B_ComTitle 1.2.0 按钮区契约 | 组件化（icon/key/disabled + eg71-com-title-btn） |

@@ -247,8 +247,8 @@ EG71 线表格一律左对齐，写死不改：
 
 ## REQ 编号与多机同步（硬性）
 
-- **分配编号前必查远端**：生成新 demo 前，`git fetch origin gitlab` 后取**所有远程** `05_release/` 的最大编号 +1，禁止只看本地目录分配编号（2026-10-16 双机各自生成 REQ-014 撞号事故的根因）。
-- **同步与撞号处理按规则文件执行**：GitHub → GitLab 同步动作序列、REQ 目录 add/add 冲突决策表（远端保号 / 本地挪号 + 字样替换 + 残留验证）、rebase 工作区保护范式，见 [.claude/rules/sync-numbering.md](.claude/rules/sync-numbering.md)，必须逐项执行，不临场发挥。
+- **编号唯一权威源 = 飞书多维表格（2026-11-09 用户裁定）**：demo 进飞书时做「新增编号」操作——取号跑 `python tools/next_req_id.py`（查「UI Demo 记录」表已占编号，取全表 max+1），**demo 是否入 git 与编号无关，禁止以 git 远程/本地 `05_release/` 目录作为取号依据**（多管线共用一张表，占用只在表格里可见：2026-10-16 REQ-014 双机撞号、2026-11-09 REQ-020 跨流程撞号的根因都是只查了 git 侧）。进表时 post-commit 钩子与 sync 脚本内置「先占先得」自动裁定：目标编号被其他生成人先占 → 自动挪 max+1；属本生成人或同 demo → 同号更新。
+- **同步与撞号处理按规则文件执行**：GitHub → GitLab 同步动作序列、REQ 目录 add/add 冲突决策表（表格先占先得保号 / 后到方挪号 + 字样替换 + 残留验证）、rebase 工作区保护范式，见 [.claude/rules/sync-numbering.md](.claude/rules/sync-numbering.md)，必须逐项执行，不临场发挥。
 
 ## 提交信息格式
 

@@ -1,4 +1,4 @@
-# REQ-020 组件映射清单 · 设备库内置库（Data Library · Inbuilt）
+# REQ-021 组件映射清单 · 设备库内置库（Data Library · Inbuilt）
 
 > PRD：`设备库内置库需求 AI测试文档`（飞书 docx ANsBdqewEosemCxsQL0cRaFWnJg，本地 `prd-req020.md`）；
 > 基础 PRD：【EG71】设备库导入&导出（`prd-req020-base.md`，校验规则/错误表/并发锁真源）。
@@ -35,7 +35,7 @@
 - **离线包结果**（第二个可复放链路）：stats {added:2, updated:3}。
 - **英文输出**：PRD 中文、Figma 英文 → demo 按 Figma 英文惯例（REQ-016 先例，对照字段落 validation.md）。
 
-## 三、组件契约升级（本次随 REQ-020 落库）
+## 三、组件契约升级（本次随 REQ-021 落库）
 
 | 组件 | 版本 | 变更 | 影响评估 |
 |---|---|---|---|

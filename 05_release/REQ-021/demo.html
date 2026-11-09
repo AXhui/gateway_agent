@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Library · EG71 · REQ-020</title>
+<title>Data Library · EG71 · REQ-021</title>
 <style>
 /* ==========================================================================
    L1 · 设计令牌层 (Design Tokens) —— 唯一真源 (Single Source of Truth)
@@ -2104,7 +2104,7 @@ body {
 /* bc-eg71-device-lib-page · Data Library 页脚手架（tabs→卡片间距，B_Eg71DeviceLibTable 域） */
 .bc-eg71-device-lib-page { margin-top: var(--spacing-16); }
 
-/* ===== REQ-020 · 页面层结构类（只编排布局/显隐，视觉值一律 L1 令牌） ===== */
+/* ===== REQ-021 · 页面层结构类（只编排布局/显隐，视觉值一律 L1 令牌） ===== */
 .bc-req020-card { flex: 1; display: flex; flex-direction: column; min-width: 0; margin-bottom: 0; }
 .bc-req020-card .ms-card-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .bc-req020-body { padding: 0 var(--spacing-20) var(--spacing-16); }
@@ -5616,7 +5616,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-com-title', cn: '标题', cat: '通用',
-      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。v1.2.0（REQ-020）：按钮区 buttons 增可选 icon/key/disabled，bind 分发 eg71-com-title-btn（detail.key），向后兼容。',
+      desc: '跨产品线通用标题编排（Figma 业务组件库「标题」页 · EG71 标题契约）：按 level（page/tab/card/group）× variant（main 16px/500/sub 14px/500）双维度决定形态；标题行左组 = 标题→Tag(轻量)→备注(inline 同行)→提示图标(18px)→开关(紧跟左组)，右组 = 独立按钮 gap12；describe 分 inline(同行)/below(下一行)/tip(tooltip) 三模式；只编排不写样式常量。v1.2.0（REQ-021）：按钮区 buttons 增可选 icon/key/disabled，bind 分发 eg71-com-title-btn（detail.key），向后兼容。',
       atoms: ['typography', 'form', 'tag', 'icon', 'tooltip', 'switch', 'button', 'text'],
       entityHint: 'com',
       tags: ['标题', '页面', 'Tab', '卡片', '分组', 'Tag', '开关', '按钮'],
@@ -9788,7 +9788,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-device-lib-table', cn: '设备库型号表', cat: '数据服务',
-      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库主帧 6 列 · EG71 表格左对齐契约硬性落地）：Device Model / Vendor / Protocol Type / Number of Objects（bc-num）/ Device Reference Count（bc-num 计数下钻链接）/ Operation（opsMode=view 单 eye 钮；manage 追加 edit/trash 钮，bc-eg71-table-ops 仅 nowrap）全列左对齐，表尾 Total N + 分页（pageSize/page 派生页码，点击翻页）；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count / eg71-devicelib-view / eg71-devicelib-edit / eg71-devicelib-delete（detail.model）/ eg71-devicelib-page（detail.page）。v2.0.0（REQ-020）：3 列升 6 列（rows 增 vendor/protocol/objects，列头默认随 Figma 主帧），Operation 增 manage 形态与翻页。',
+      desc: '内置库/自定义库共用型号表（Figma 71.0.0.4 内置库主帧 6 列 · EG71 表格左对齐契约硬性落地）：Device Model / Vendor / Protocol Type / Number of Objects（bc-num）/ Device Reference Count（bc-num 计数下钻链接）/ Operation（opsMode=view 单 eye 钮；manage 追加 edit/trash 钮，bc-eg71-table-ops 仅 nowrap）全列左对齐，表尾 Total N + 分页（pageSize/page 派生页码，点击翻页）；rows 为空渲染 ms-empty 空态。事件：eg71-devicelib-count / eg71-devicelib-view / eg71-devicelib-edit / eg71-devicelib-delete（detail.model）/ eg71-devicelib-page（detail.page）。v2.0.0（REQ-021）：3 列升 6 列（rows 增 vendor/protocol/objects，列头默认随 Figma 主帧），Operation 增 manage 形态与翻页。',
       atoms: ['table', 'button', 'icon', 'pagination', 'empty'],
       entityHint: 'gateway',
       tags: ['内置库', '自定义库', '设备库', '型号', '表格', '左对齐', '厂商', '协议', 'EG71'],
@@ -10155,7 +10155,7 @@ window.MS_ENTITIES = {
 
 </script>
 <script>
-/* ---- REQ-020 · 设备库内置库（页面层：模块编排 + ctx 注入；一切业务形态经 B_* 组件） ---- */
+/* ---- REQ-021 · 设备库内置库（页面层：模块编排 + ctx 注入；一切业务形态经 B_* 组件） ---- */
 
 (function () {
   var B = window.MS_BIZ_INDEX;
