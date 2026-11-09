@@ -217,6 +217,8 @@ demo.html 生成
 |---|---|
 | R1–R5（K_validation） | 本文件的证据源：R4→structure、R2b→component、R5 / 缺口清单→interaction、R1 / 红线→visual |
 | score_component.py | component 维唯一权威，`--write` 覆盖 + `--report` 作 DEV 证据 |
+| score_fidelity.py | structure / field 维脚本权威，`--write` 覆盖 |
+| score_interaction_visual.py | interaction / visual 维脚本权威（§4.③④ 静态可检测子集），`--write` 覆盖；Figma 偏差、主色语义色、语义级交互条款仍归人工（L2/L3） |
 | 80 分综合门槛（sync_demo_to_feishu.py） | 分数真实性由 §0.4 反推校验保障，门槛拦截低质入表 |
 | UED 复核（飞书表格「校验状态」） | UED 改分与 AI 分差 >10 的维度，把判例回写本文件 §4 补锚点案例——评分标准随复核进化 |
 
