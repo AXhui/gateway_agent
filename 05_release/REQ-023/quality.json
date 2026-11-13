@@ -5,5 +5,5 @@
   "visual": 90,
   "field": 90,
   "category": "网关",
-  "reason": "更新轮（单表格页免标题，2026-11-13）：structure 90：score_fidelity 脚本分覆写后按 §0.6 钳制；component 84：score_component 脚本分（①98 ②100 ③70——疑似手写函数为 registry 内部源码/页面编排助手的脚本近似误报，validation.md D1-1/D2-2 归因 ④100 ⑤62——令牌裸值多为内联 runtime 源码固有 px）；interaction 90：本轮 T1-6/T2-6 证据行 0 扣分（三页导航 + Stream 筛选闭环 19 行实测过），原始 100 写 90（§0.6）；visual 90：本轮 U2-6/U2-7/U3-6/U5-3 证据行 0 扣分（fleet/stream 标题移除 + radio 反例保留 + 32px 档核验 + AI 视觉核验），原始 100 写 90（§0.6）；field 90：score_fidelity 脚本分覆写后按 §0.6 钳制。"
+  "reason": "更新轮二（控制器形态 43:12085 + 删除弹窗 127:8693，2026-11-13）：structure 90：score_fidelity 脚本分 100（①壳 ②骨架 ③装配 ④定制满），按 §0.6 钳制写 90；component 84：score_component 脚本分（①98 ②100 ③70——registry 内部源码/页面编排助手的脚本近似误报，validation.md D1-1/D2-2 归因 ④100 ⑤62——令牌裸值多为内联 runtime 源码固有 px）；interaction 90：本轮 T1-7/T3-3/T5-3 证据行 0 扣分（49 项浏览器检查全绿含删除弹窗结构断言、删除闭环 392→391、Esc/遮罩可达），原始 100 写 90（§0.6）；visual 90：本轮 U3-7/U3-8/U3-9 证据行 0 扣分（AI 视觉核验两处 Figma 真源逐项对齐；弹窗标题 18px 为 Figma 真源值，基准一级优先不扣分），原始 100 写 90（§0.6）；field 90：score_fidelity 脚本分 100（①实体 ②活跃 ③静态），按 §0.6 钳制写 90。"
 }

@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshForwardCard
-version: 1.0.0
+version: 1.0.1
 description: Mesh 转发目的卡（业务组件）
 ---
 
@@ -33,7 +33,7 @@ EG71 LoRa General 页的 Forwarding Destination 区块卡：Type 单选（ChirpS
 | `S_Upload` | `ms-btn`（upload 图标） | 证书三件套导入钮 |
 | `S_Card` | `ms-card` | 区块卡 |
 | `S_Tag` | `ms-tag--success/error/warm` | 连接状态、锁定标注 |
-| `S_Icon` | `MS_ICONS` | 标题/上传图标 |
+| `S_Icon` | `MS_ICONS` | 上传图标（标题无图标，控件 32px 档） |
 
 ### ctx 上下文契约（只读）
 | 字段 | 类型 | 默认 | 说明 |

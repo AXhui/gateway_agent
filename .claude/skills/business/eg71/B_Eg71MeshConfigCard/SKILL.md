@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshConfigCard
-version: 1.1.0
+version: 1.1.1
 description: Mesh 配置卡（业务组件）
 ---
 
@@ -31,7 +31,7 @@ EG71 LoRa General 页的 Mesh Configuration 区块卡：顶部双列（签名密
 | `S_Select` | `ms-select(--error)` | SF / BW / CR |
 | `S_Checkbox` | `ms-checkbox-box` | 频段 chip、忽略直连上行 |
 | `S_Card` | `ms-card` | 区块卡 |
-| `S_Icon` | `MS_ICONS` | 标题图标、折叠箭头、告警图标 |
+| `S_Icon` | `MS_ICONS` | 折叠箭头、告警图标（标题无图标，32px 控件档） |
 | `S_Alert` | `ms-alert--error` | 频段被禁用告警（可点击跳转） |
 
 ### ctx 上下文契约（只读）

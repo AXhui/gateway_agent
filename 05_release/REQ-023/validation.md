@@ -145,3 +145,50 @@ score_fidelity.py --write 执行记录（初版缺 `MS_ENTITIES` 实体契约，
 | field | 100（T4 沿用初版字段核验，本轮无字段变更） | 100（score_fidelity ①实体 ②活跃 ③静态） | 90 |
 
 综合（0.2/0.2/0.25/0.2/0.15 加权，按写入分）= 90 × 0.2 + 84 × 0.2 + 90 × 0.25 + 90 × 0.2 + 90 × 0.15 = 89.9 ≥ 80，过同步门槛。
+
+## 十、2026-11-13 更新轮二：控制器形态重排（43:12085）+ 删除弹窗 Message 版式（127:8693）
+
+用户原话：「https://www.figma.com/design/yjHZc80XWLZW9jhE4SPH0u/71.0.0.5?node-id=43-12085 样式不对」+「Gateway Fleet 删除的提示词，按照这个样式」。两处均为 Figma 真源驱动的**组件级升级**（改 registry-business.js + library/business.css 源头，非内联修正——与新形态入库同范式，page-assembly §3）。
+
+### 修订行（旧形态 × 新真源）
+
+| 旧形态 | 新真源（Figma） | 本次处理 |
+|---|---|---|
+| Deployment Mode 卡 radio 圆点右上角、卡片双行排布 | 43:12085：radio **内联左置**与卡名同行 | `B_Eg71MeshRoleCard` 1.2.0：render 骨架重排 + `.bc-eg71-mesh-deploy-*` CSS 更新 |
+| 角色提示灰盒（`bc-eg71-mesh-role-hint`） | 43:12085 无灰盒，提示并入下拉分组 | 删除该行结构 |
+| Secure connections 无提示图标、证书链接平铺 | 43:12085：info 图标 16px 尾随；证书链接内缩 20px（`--spacing-xl`，business-specific §6.1 附加内容内缩） | render + CSS 更新 |
+| 通用模块卡平铺行、卡头带图标 | 43:12085：Advanced Setting 可折叠（默认展开、chevron 18px）、内嵌边框 panel、双列 grid、compound 复合行；卡头纯文字 | `B_Eg71MeshModuleCard` 1.0.0→1.1.0：新增 `collapsible`/`open` ctx、`panel`/`grid`/`compound` 行类型、`eg71-mesh-module-fold` 事件 |
+| mesh-config / forward 卡 40px 控件 + 标题图标 | 43:12085：控件统一 32px 档、标题纯文字 | ConfigCard 1.1.1 / ForwardCard 1.0.1 patch |
+| Fleet Edit 抽屉「Identifier」列名 | PRD/真源：Relay ID | FleetTable 1.3.0→1.4.0（上一轮已落） |
+| 删除确认弹窗 = 头/体/尾版式（标题栏 + 右上 × + head 图标圆点） | **127:8693 业务库「弹窗」Error 变体**：无标题栏无关闭钮；24px 实心红圆 ×（`circleXFilled`）与标题 18/500/行高 26 + 正文 14 同排 gap 8；卡 416 宽 / 圆角 8 / padding 24·16；按钮组右对齐 gap 16（Cancel 描边 + Delete 红底） | `B_Eg71Modal` 1.0.0→1.1.0：`action:'delete'` 分支走 Message 版式（`.bc-eg71-modal--msg`），disable/confirm/select 保持原版式；标题「Delete Member」→「Delete Gateway」 |
+
+### 三角色验收证据
+
+- [U3-7] General 页（IP Master 默认态）｜基准一级（Figma 43:12085）｜四卡结构 Deployment Mode / Gateway Role / Frequency Plan / Advanced Setting 与设计稿一致；IP Master 无 Mesh Config / Forward 卡（控制器变体）｜0
+- [U3-8] 删除弹窗｜基准一级（Figma 127:8693）｜AI 视觉核验（截图逐项比对）：无标题栏/无 × ✓ 红圆白× 24px ✓ Delete Gateway 18px/500 ✓ 灰描述 14px ✓ 右对齐 Cancel 描边 + Delete 红底 ✓ 416 窄卡圆角 8 ✓｜0
+- [U3-9] 删除弹窗标题 18px｜spacing §4 字号集合｜**Figma 真源值 18px/500（业务库弹窗 Error 变体规格）**——按 scoring §1.3 基准分级（一级 Figma 真源 > 三级规则红线）不扣分；建议 spacing.md §4 为「弹窗 Error 变体标题 18px」增补阶梯口径，待 UED 复核裁定｜0
+- [D2-3] 组件升级范式｜page-assembly §3 / encapsulation｜新形态走 registry+business.css 组件升级（SKILL 契约同步 bump：Modal 1.1.0 / Role 1.2.0 / Module 1.1.0 / Config 1.1.1 / Forward 1.0.1），非页面层手搓；已交付 demo（REQ-012/016/024）为冻结内联副本不受影响｜0
+- [D4-3] 装配完整性｜assembly-integrity §2｜重建后 8/8 间距修正 + head64 首尾字节 diff 全过 + 43 导出状态｜0
+- [T1-7] 49 项浏览器检查｜interaction §1｜全绿（含新增「delete modal msg layout (Figma 127:8693)」结构断言）+ 0 console errors｜0
+- [T3-3] 删除闭环｜business-specific / interaction §1.1｜行删除 + 批量删除（N selected 提示）→ 确认 → 行消失/Total 392→391 → 搜索空态，链路完整｜0
+- [T5-3] 删除弹窗 Esc/遮罩关闭｜五轴交互 keyboard｜Message 版式无 × 钮，Esc + 遮罩 + Cancel 三通道可达｜0
+
+### 本轮真实性校验
+
+本轮证据行全部 0 扣分（Figma 真源驱动的形态对齐，非缺陷）：interaction / visual 原始分维持 100 → 写 90（§0.6）；structure / field / component 以脚本复测为准（见 §十一 追记）。
+
+### §2.5 差异核对（本轮）
+
+本轮为样式对齐（Figma 真源），无新增 PRD 逻辑差异；「Delete Member→Delete Gateway」措辞随真源，属 UI 细节不发评论。**本轮无逻辑漏洞候选。**
+
+## 十一、更新轮二脚本覆写追记（2026-11-13）
+
+| 维度 | 证据反推原始分 | 脚本分 | 写入分（§0.6 钳制） |
+|---|---|---|---|
+| structure | 100（本轮无结构违规证据行） | 100（score_fidelity ①壳 ②骨架 ③装配 ④定制满） | 90 |
+| component | —（脚本权威） | 84（score_component.json 复测） | 84（区间内） |
+| interaction | 100（T1-7/T3-3/T5-3 零扣分） | —（无脚本） | 90 |
+| visual | 100（U3-7/U3-8/U3-9 零扣分） | —（无脚本） | 90 |
+| field | 100（字段集沿用，本轮无字段变更——仅措辞 Delete Member→Delete Gateway 随真源） | 100（score_fidelity ①实体 ②活跃 ③静态） | 90 |
+
+综合（0.2/0.2/0.25/0.2/0.15 加权，按写入分）= 90 × 0.2 + 84 × 0.2 + 90 × 0.25 + 90 × 0.2 + 90 × 0.15 = 88.8 ≥ 80，过同步门槛。

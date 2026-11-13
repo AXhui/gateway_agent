@@ -662,10 +662,12 @@ body {
 .ms-form-item { display: flex; flex-direction: column; gap: var(--spacing-8); }
 .ms-form-label { font-size: 14px; color: var(--color-text-primary); font-weight: 500; display: flex; align-items: center; gap: var(--spacing-4); }
 .ms-form-label--required::before { content: '*'; color: var(--color-error-normal); }
+/* EG71 表单项标签契约：label 后只挂单位与 tip，单位色 gray 5 钉色阶令牌（AGENTS.md） */
+.ms-form-unit { font-size: 14px; font-weight: 400; color: var(--color-gray-05); }
 .ms-form-item--inline { flex-direction: row; align-items: center; }
 .ms-form-item--inline .ms-form-label { width: 96px; flex: none; color: var(--color-text-secondary); font-weight: 400; }
 .ms-form-item--inline .ms-form-control { flex: 1; }
-.ms-form-help { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-form-help { font-size: 12px; color: var(--color-gray-05); }
 .ms-form-error { font-size: 12px; color: var(--color-error-normal); display: flex; align-items: center; gap: var(--spacing-4); }
 .ms-form-section { display: flex; flex-direction: column; gap: var(--spacing-16); }
 .ms-form-section-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); padding-left: var(--spacing-8); border-left: 3px solid var(--color-primary-normal); }
@@ -1470,6 +1472,15 @@ body {
 .bc-eg71-modal-body-row .ms-result-icon { flex: none; }
 .bc-eg71-modal-body-content { flex: 1; min-width: 0; }
 
+/* 删除确认 · Figma 业务库「弹窗」Error 变体（127:8693）：无标题栏/关闭钮，
+   24px 实心红圆× + 标题 18/500 + 描述 14 同排；416 宽、圆角 8、按钮组右对齐 gap 16 */
+.bc-eg71-modal--msg.ms-modal { width: 416px; max-width: 100%; gap: var(--spacing-16); padding: var(--spacing-16) var(--spacing-24); border-radius: var(--radius-8); }
+.bc-eg71-modal-msg-row { display: flex; gap: var(--spacing-8); align-items: flex-start; }
+.bc-eg71-modal-msg-ic { flex: none; display: inline-flex; width: 24px; height: 24px; }
+.bc-eg71-modal-msg-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-modal-msg-title { font-size: 18px; font-weight: 500; line-height: 26px; color: var(--color-text-primary); }
+.bc-eg71-modal--msg .ms-modal-foot { gap: var(--spacing-16); padding: 0; border-top: 0; background: none; }
+
 /* ---------- EG71 表单单选按钮组（FormItem radio group） ---------- */
 /* 线框单选按钮组占满宽度，横向排布互斥选项；视觉由 L2 .ms-radio-btn 承担，此处仅编排布局 */
 .bc-eg71-form-item-radio-group { width: 100%; }
@@ -1988,7 +1999,6 @@ body {
 
 /* ---- B_Eg71MeshRoleCard / B_Eg71MeshConfigCard / B_Eg71MeshForwardCard / B_Eg71MeshFlowDiagram（bc-eg71-mesh-*，REQ-014 LoRa Mesh 铸造批） ---- */
 .bc-eg71-mesh-role-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
-.bc-eg71-mesh-role-hint { padding: var(--spacing-12); background: var(--color-fill-base-normal); border-radius: var(--radius-4); font-size: 12px; line-height: 20px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-role-relay { display: flex; flex-direction: column; gap: var(--spacing-4); }
 .bc-eg71-mesh-role-relay-label { font-size: 12px; color: var(--color-text-auxiliary); }
 .bc-eg71-mesh-role-relay-value { display: flex; align-items: center; gap: var(--spacing-8); }
@@ -2036,8 +2046,6 @@ body {
 /* ---- B_Eg71MeshFleetTable / B_Eg71MeshFrameList（bc-eg71-mesh-fleet / -frames，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-fleet-body .bc-eg71-form-item-msg,
 .bc-eg71-mesh-frames-body .bc-eg71-form-item-msg { margin-top: var(--spacing-12); }
-/* 单表格页免标题：frames 操作栏升白卡第一行，下沿分隔线与表格分界（AGENTS.md 列表工具栏契约） */
-.bc-eg71-mesh-frames-toolbar { padding-bottom: var(--spacing-12); margin-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
 /* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 追加铸造） + bc-eg71-mesh-deploy 区块 ---- */
 .bc-eg71-mesh-radio-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
 .bc-eg71-mesh-radio-row { display: flex; align-items: center; gap: var(--spacing-12); padding-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-2); }
@@ -2053,6 +2061,15 @@ body {
 .bc-eg71-mesh-module-stat { display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-primary-bg); border-radius: var(--radius-m); }
 .bc-eg71-mesh-module-stat-sub { font-size: 12px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-module-actions { display: flex; gap: var(--spacing-12); }
+/* bc-eg71-mesh-module · Advanced Setting 折叠卡（Figma 43:12085：双箭头 18 折叠钮 + 内嵌边框 panel + 双列 grid + compound 复合行） */
+.bc-eg71-mesh-module-fold { border: none; background: transparent; cursor: pointer; padding: 0; justify-content: flex-start; }
+.bc-eg71-mesh-module-fold .ms-ico { margin-left: var(--spacing-8); color: var(--color-icon-secondary); transition: transform var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-module-fold.is-open .ms-ico { transform: rotate(180deg); }
+.bc-eg71-mesh-module-panel { display: flex; flex-direction: column; gap: var(--spacing-16); padding: var(--spacing-16); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); }
+.bc-eg71-mesh-module-panel-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-mesh-module-compound { display: flex; gap: var(--spacing-8); }
+.bc-eg71-mesh-module-compound .ms-select { width: 87px; flex: none; /* 结构宽：Figma Custom 模式下拉定宽 */ }
+.bc-eg71-mesh-module-compound .ms-input { flex: 1; width: auto; }
 
 /* ===================== 内置库更新域（REQ-017 · Figma 71.0.0.4） ===================== */
 /* bc-eg71-message · 全局消息 Toast */
@@ -2113,21 +2130,27 @@ body {
 
 /* ===================== 内置库更新域（Figma 71.0.0.5 · LoRa Mesh 升级，样式以 Figma 为主） ===================== */
 
-/* bc-eg71-mesh-deploy · Deployment Mode 卡片选择器（B_Eg71MeshRoleCard 域） */
+/* bc-eg71-mesh-deploy · Deployment Mode 卡片选择器（B_Eg71MeshRoleCard 域，Figma 43:12085：radio 左置同行、标题 16/400、描述 14/400 辅助色） */
 .bc-eg71-mesh-deploy-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-12); }
 .bc-eg71-mesh-deploy-cards.is-more-open { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.bc-eg71-mesh-deploy-card { position: relative; display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); cursor: pointer; transition: border-color var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-deploy-card { position: relative; display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-16); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); cursor: pointer; transition: border-color var(--duration-fast) var(--ease); }
 .bc-eg71-mesh-deploy-card:hover { border-color: var(--color-primary-normal); }
 .bc-eg71-mesh-deploy-card.is-selected { border-color: var(--color-primary-normal); background: var(--color-primary-bg); }
 .bc-eg71-mesh-deploy-card input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
-.bc-eg71-mesh-deploy-card-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
-.bc-eg71-mesh-deploy-card-desc { font-size: 12px; line-height: 18px; color: var(--color-text-secondary); }
-.bc-eg71-mesh-deploy-card .ms-radio-dot { position: absolute; top: var(--spacing-12); right: var(--spacing-12); }
+.bc-eg71-mesh-deploy-card-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-deploy-card-title { font-size: 16px; font-weight: 400; color: var(--color-text-primary); }
+.bc-eg71-mesh-deploy-card-desc { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); }
+.bc-eg71-mesh-deploy-card .ms-radio-dot { position: static; flex: none; }
 .bc-eg71-mesh-deploy-more { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: 0; border: none; background: transparent; font-size: 14px; color: var(--color-text-link-normal); cursor: pointer; }
 .bc-eg71-mesh-deploy-more .ms-ico { transition: transform var(--duration-fast) var(--ease); }
 .bc-eg71-mesh-deploy-more.is-open .ms-ico { transform: rotate(180deg); }
 .bc-eg71-mesh-deploy-extra { display: contents; }
 .bc-eg71-mesh-secure { margin-top: var(--spacing-4); }
+.bc-eg71-mesh-secure .ms-ico { color: var(--color-icon-secondary); }
+.bc-eg71-mesh-role-cert-row { padding-left: var(--spacing-24); }
+/* LoRa General 卡片域（Figma 43:12085）：卡标题 16/500、字段 label 辅助色 #6b7785 */
+.bc-eg71-mesh-deploy .ms-card-title, .bc-eg71-mesh-role .ms-card-title, .bc-eg71-mesh-config .ms-card-title, .bc-eg71-mesh-forward .ms-card-title, .bc-eg71-mesh-module .ms-card-title { font-weight: 500; }
+.bc-eg71-mesh-deploy .ms-form-label, .bc-eg71-mesh-role .ms-form-label, .bc-eg71-mesh-config .ms-form-label, .bc-eg71-mesh-forward .ms-form-label, .bc-eg71-mesh-module .ms-form-label { color: var(--color-text-secondary); }
 
 /* bc-eg71-mesh-config · Mesh Configuration 两列结构（B_Eg71MeshConfigCard 域） */
 .bc-eg71-mesh-config-top { margin-bottom: var(--spacing-16); }
@@ -2135,6 +2158,9 @@ body {
 
 /* bc-eg71-mesh-fleet · 工具栏/分页/详情抽屉（B_Eg71MeshFleetTable 域，Figma 71.0.0.5） */
 .bc-eg71-mesh-fleet-toolbar { padding-bottom: var(--spacing-12); margin-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
+/* 单表格页免标题（AGENTS.md 工具栏契约）：操作栏升为白卡第一行，贴卡片顶边 */
+.bc-eg71-mesh-fleet-body--headless { padding-top: 0; }
+.bc-eg71-mesh-fleet-body--headless .bc-eg71-mesh-fleet-toolbar { padding-top: var(--spacing-16); }
 .bc-eg71-mesh-fleet-body .ms-table { margin-bottom: 0; }
 .bc-eg71-mesh-fleet-check { width: 40px; }
 .bc-eg71-mesh-fleet-pager { display: flex; align-items: center; gap: var(--spacing-12); padding-top: var(--spacing-12); }
@@ -4971,6 +4997,7 @@ window.MS_ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  chevronsDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>',
   moreHoriz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -5040,6 +5067,7 @@ window.MS_ICONS = {
   hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></svg>',
   thumbsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /><path d="M7 10v12" /></svg>',
   circleX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>',
+  circleXFilled: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="var(--color-error-normal)" /><path d="m15 9-6 6" stroke="var(--color-text-constant-normal)" stroke-width="2" stroke-linecap="round" /><path d="m9 9 6 6" stroke="var(--color-text-constant-normal)" stroke-width="2" stroke-linecap="round" /></svg>',
   squareMinus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /></svg>',
   squarePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>',
   squareCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" /><path d="m9 11 3 3L22 4" /></svg>',
@@ -5135,7 +5163,7 @@ window.MS_BIZ_UTIL = (function () {
   // EG71 一级侧边导航分组（侧栏与顶栏面包屑共享的唯一源，避免两处各写一份）
   const navGroups = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-    { label: 'LoRa', icon: 'lorawan', route: '/lora', children: ['General', 'Radio', 'Gateway Fleet'] },
+    { label: 'LoRa', icon: 'lorawan', route: '/lora' },
     { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
     { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
     { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
@@ -5162,8 +5190,6 @@ window.MS_BIZ_UTIL = (function () {
     { key: 'ipmesh-master', conn: 'IP & Mesh', cn: 'Master',
       hint: 'Gateways are interconnected via both wired/cellular networks and LoRa Mesh, for hybrid sites where some gateways are online while others are not. Online gateways back each other up or extend coverage; offline gateways send data back via LoRa Mesh relay.' }
   ];
-  const MESH_ROLE_HINT = r => `${esc(r.hint)}${r.cert ? ' <button type="button" class="ms-btn ms-btn--link bc-eg71-mesh-role-cert" data-mesh-role-cert>Download Certificate</button>' : ''}`;
-
   window.MS_BIZ_COMPONENTS = [
     {
       id: 'bc-metric-card', cn: '指标卡组', cat: '概览',
@@ -5935,7 +5961,7 @@ window.MS_BIZ_UTIL = (function () {
             ? `<span class="bc-eg71-crumb-last">${esc(group.label)}</span>`
             : `<a href="${esc(group.route)}">${esc(group.label)}</a>`);
           if (segs[1]) {
-            const childLabel = (group.children || []).find(c => U.slug(c) === segs[1]) || cap(segs[1]);
+            const childLabel = (group.children || []).find(c => U.slug(c) === segs[1]) || segs[1].split('-').map(cap).join(' ');
             crumbs.push(`<span class="bc-eg71-crumb-last">${esc(childLabel)}</span>`);
           }
         } else {
@@ -9031,19 +9057,17 @@ window.MS_BIZ_UTIL = (function () {
         ];
         const dep = ctx.deployment;
         const depHtml = !dep ? '' : `<div class="ms-card bc-eg71-mesh-deploy">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Deployment Mode</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Deployment Mode</div></div>
           <div class="ms-card-body bc-eg71-mesh-role-body">
             <div class="ms-form-item">
-              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Mode</label></div>
               ${(() => {
                 const opts = (dep.options && dep.options.length) ? dep.options : DEPLOY_PRESETS;
                 const card = o => {
                   const on = o.value === dep.value;
                   return `<label class="bc-eg71-mesh-deploy-card${on ? ' is-selected' : ''}" data-mesh-deploy-opt="${esc(o.value)}" role="radio" aria-checked="${on}" tabindex="0">
                     <input type="radio" name="bc-eg71-mesh-deploy"${on ? ' checked' : ''}>
-                    <span class="bc-eg71-mesh-deploy-card-title">${esc(o.label)}</span>
+                    <span class="bc-eg71-mesh-deploy-card-head"><span class="ms-radio-dot" aria-hidden="true"></span><span class="bc-eg71-mesh-deploy-card-title">${esc(o.label)}</span></span>
                     <span class="bc-eg71-mesh-deploy-card-desc">${esc(o.desc || '')}</span>
-                    <span class="ms-radio-dot" aria-hidden="true"></span>
                   </label>`;
                 };
                 const visible = opts.slice(0, 3), more = opts.slice(3);
@@ -9058,18 +9082,17 @@ window.MS_BIZ_UTIL = (function () {
           </div>
         </div>`;
         return `${depHtml}<div class="ms-card bc-eg71-mesh-role" data-mesh-role="${cur.key}">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('gateway', 20)}Gateway Role</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Gateway Role</div></div>
           <div class="ms-card-body bc-eg71-mesh-role-body">
             <div class="ms-form-item">
-              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Role</label></div>
               <span class="ms-select bc-eg71-form-item-select bc-eg71-mesh-role-select">
                 <select data-mesh-role-select aria-label="Gateway role">
                   ${groups.map(g => `<optgroup label="${esc(g.conn)}">${g.items.map(r => `<option value="${r.key}"${r.key === cur.key ? ' selected' : ''}>${esc(r.conn)} - ${esc(r.cn)}</option>`).join('')}</optgroup>`).join('')}
                 </select>
               </span>
             </div>
-            ${cur.cert ? `<label class="ms-checkbox bc-eg71-mesh-secure"><input type="checkbox" data-mesh-secure${ctx.secure === false ? '' : ' checked'}><span class="ms-checkbox-box"></span>Secure connections</label>` : ''}
-            <div class="bc-eg71-mesh-role-hint" data-mesh-role-hint>${MESH_ROLE_HINT(cur)}</div>
+            ${cur.cert ? `<label class="ms-checkbox bc-eg71-mesh-secure"><input type="checkbox" data-mesh-secure${ctx.secure === false ? '' : ' checked'}><span class="ms-checkbox-box"></span>Secure connections${ico('info', 16)}</label>
+            <div class="bc-eg71-mesh-role-cert-row" data-mesh-role-cert-row><button type="button" class="ms-btn ms-btn--link bc-eg71-mesh-role-cert" data-mesh-role-cert>Download Certificate</button></div>` : ''}
             <div class="bc-eg71-mesh-role-relay" data-mesh-role-relay${cur.relay ? '' : ' hidden'}>
               <span class="bc-eg71-mesh-role-relay-label">Relay ID (auto-generated, globally unique)</span>
               <div class="bc-eg71-mesh-role-relay-value"><code class="bc-code">${esc(relayId)}</code><button type="button" class="ms-btn ms-btn--link" data-mesh-role-copy title="Copy">${ico('copy', 16)}</button></div>
@@ -9117,13 +9140,13 @@ window.MS_BIZ_UTIL = (function () {
         const wrap = rootEl.querySelector('.bc-eg71-mesh-role');
         if (!wrap) return;
         const sel = wrap.querySelector('[data-mesh-role-select]');
-        const hint = wrap.querySelector('[data-mesh-role-hint]');
+        const certRow = wrap.querySelector('[data-mesh-role-cert-row]');
         const relayRow = wrap.querySelector('[data-mesh-role-relay]');
         if (sel) sel.addEventListener('change', () => {
           const r = MESH_ROLES.find(x => x.key === sel.value);
           if (!r) return;
           wrap.setAttribute('data-mesh-role', r.key);
-          if (hint) hint.innerHTML = MESH_ROLE_HINT(r);
+          if (certRow) certRow.hidden = !r.cert;
           if (relayRow) relayRow.hidden = !r.relay;
           wrap.dispatchEvent(new CustomEvent('eg71-mesh-role-change', { bubbles: true, detail: { role: r.key, conn: r.conn, roleCn: r.cn } }));
         });
@@ -9164,7 +9187,7 @@ window.MS_BIZ_UTIL = (function () {
           </div>`;
         const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
         return `<div class="ms-card bc-eg71-mesh-config">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('lorawan', 20)}Mesh Configuration</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Mesh Configuration</div></div>
           <div class="ms-card-body bc-eg71-mesh-config-body">
             <div class="ms-grid-2 bc-com-form-grid bc-eg71-mesh-config-top">
               <div class="ms-form-item">
@@ -9172,11 +9195,11 @@ window.MS_BIZ_UTIL = (function () {
                   <label class="ms-form-label ms-form-label--required">Signing Key</label>
                   <button type="button" class="ms-btn ms-btn--link" data-mesh-key-eye>Show</button>
                 </div>
-                <label class="ms-input ms-input--lg${er.key ? ' ms-input--error' : ''}"><input type="password" data-mesh-field="key" value="${esc(v.key)}" placeholder="32-character hex string"></label>
+                <label class="ms-input${er.key ? ' ms-input--error' : ''}"><input type="password" data-mesh-field="key" value="${esc(v.key)}" placeholder="32-character hex string"></label>
                 ${errMsg('key') || '<div class="bc-eg71-form-item-msg">Auto-generated from the two gateway EUIs on Master; copy it directly to Relay gateways.</div>'}
               </div>
               ${fi('Max Relay Hops',
-                `<label class="ms-input ms-input--lg${er.hops ? ' ms-input--error' : ''}"><input data-mesh-field="hops" value="${esc(v.hops)}" inputmode="numeric"></label>`,
+                `<label class="ms-input${er.hops ? ' ms-input--error' : ''}"><input data-mesh-field="hops" value="${esc(v.hops)}" inputmode="numeric"></label>`,
                 errMsg('hops') || '<div class="bc-eg71-form-item-msg">How many gateways a packet may pass through from Relay to Master. More hops extend coverage but increase latency, failure rate and loss risk (gateway is half-duplex). Start from 1 hop.</div>')}
             </div>
             <div class="bc-eg71-mesh-config-risk" data-mesh-risk${ctx.risk ? '' : ' hidden'}>${esc(ctx.risk || '')}</div>
@@ -9191,11 +9214,11 @@ window.MS_BIZ_UTIL = (function () {
               ${isRelay ? `<div class="bc-eg71-mesh-config-cols">
                 <div class="bc-eg71-mesh-config-col">
                   ${fi('TX Power <span class="bc-eg71-form-item-unit">(dBm)</span>',
-                    `<label class="ms-input ms-input--lg${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
+                    `<label class="ms-input${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
                     errMsg('txPower'))}
                   ${fi('Bandwidth', sel('bw', v.bw, ['125 kHz', '250 kHz', '500 kHz'], er.bw), '')}
                   ${fi('Heartbeat Interval <span class="bc-eg71-form-item-unit">(s)</span>',
-                    `<label class="ms-input ms-input--lg${er.heartbeat ? ' ms-input--error' : ''}"><input data-mesh-field="heartbeat" value="${esc(v.heartbeat)}" inputmode="numeric"></label>`,
+                    `<label class="ms-input${er.heartbeat ? ' ms-input--error' : ''}"><input data-mesh-field="heartbeat" value="${esc(v.heartbeat)}" inputmode="numeric"></label>`,
                     errMsg('heartbeat'))}
                 </div>
                 <div class="bc-eg71-mesh-config-col">
@@ -9204,7 +9227,7 @@ window.MS_BIZ_UTIL = (function () {
                 </div>
               </div>` : `<div class="bc-eg71-mesh-config-grid">
                 ${fi('TX Power <span class="bc-eg71-form-item-unit">(dBm)</span>',
-                  `<label class="ms-input ms-input--lg${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
+                  `<label class="ms-input${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
                   errMsg('txPower'))}
                 ${fi('Spreading Factor', sel('sf', v.sf, ['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'], er.sf), '')}
                 ${fi('Bandwidth', sel('bw', v.bw, ['125 kHz', '250 kHz', '500 kHz'], er.bw), '')}
@@ -9258,18 +9281,18 @@ window.MS_BIZ_UTIL = (function () {
         const v = Object.assign({ topic: '/gateway/{gateway_id}/event/up', server: '', port: '', useCreds: false, user: '', pass: '', useTls: false, certType: 'CA Signed Server Certificate', caFile: '', certFile: '', keyFile: '', upPort: '1700', downPort: '1700' }, ctx.values || {});
         const er = ctx.errors || {};
         const selfSigned = /self/i.test(v.certType);
-        const ti = (name, val, ph, err, pwd) => `<label class="ms-input ms-input--lg${err ? ' ms-input--error' : ''}"><input${pwd ? ' type="password"' : ''} data-mesh-fwd="${name}" value="${esc(val == null ? '' : val)}" placeholder="${esc(ph || '')}"></label>`;
+        const ti = (name, val, ph, err, pwd) => `<label class="ms-input${err ? ' ms-input--error' : ''}"><input${pwd ? ' type="password"' : ''} data-mesh-fwd="${name}" value="${esc(val == null ? '' : val)}" placeholder="${esc(ph || '')}"></label>`;
         const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
         const fi = (label, inner, msgHtml) => `<div class="ms-form-item">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${label ? ' ms-form-label--required' : ''}">${label || '&nbsp;'}</label></div>
             ${inner}${msgHtml || ''}
           </div>`;
         const upload = (name, file) => `<div class="bc-eg71-mesh-forward-upload">
-            <button type="button" class="ms-btn ms-btn--lg" data-mesh-fwd-upload="${name}">${ico('upload', 16)}Import</button>
+            <button type="button" class="ms-btn" data-mesh-fwd-upload="${name}">${ico('upload', 16)}Import</button>
             <span class="bc-eg71-mesh-forward-file${er[name] ? ' bc-eg71-mesh-forward-file--error' : ''}">${er[name] ? esc(er[name]) : (file ? esc(file) : 'No file selected')}</span>
           </div>`;
         return `<div class="ms-card bc-eg71-mesh-forward">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Forwarding Destination</div>${ctx.locked ? '<span class="ms-tag ms-tag--warm">IP &amp; Mesh: Embedded NS only</span>' : ''}</div>
+          <div class="ms-card-head"><div class="ms-card-title">Forwarding Destination</div>${ctx.locked ? '<span class="ms-tag ms-tag--warm">IP &amp; Mesh: Embedded NS only</span>' : ''}</div>
           <div class="ms-card-body bc-eg71-mesh-forward-body">
             <div class="ms-form-item">
               <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Type</label></div>
@@ -9415,7 +9438,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-mesh-fleet', cn: 'Mesh 成员/邻居表', cat: 'LoRa 设置',
-      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Identifier/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
+      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Relay ID/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
       atoms: ['table', 'tag', 'button', 'icon', 'empty', 'checkbox', 'input', 'select', 'pagination', 'drawer'],
       entityHint: 'gateway',
       tags: ['LoRa', 'Mesh', '成员', '邻居', 'Fleet', '网关', '列表', 'Relay', 'Agent', 'EG71'],
@@ -9430,7 +9453,7 @@ window.MS_BIZ_UTIL = (function () {
         }).join('')}</span>`;
         const head = view === 'neighbors'
           ? ['ID', 'Name', 'Last Updated']
-          : ['Identifier', 'Name', 'Status', 'Last Updated'];
+          : ['Relay ID', 'Name', 'Status', 'Last Updated'];
         const body = rows.length ? rows.map((r, i) => `<tr>
             ${view === 'members' ? `<td class="bc-eg71-mesh-fleet-check"><label class="ms-checkbox"><input type="checkbox" data-mesh-fleet-check="${i}" aria-label="Select row"><span class="ms-checkbox-box"></span></label></td>` : ''}
             <td><span class="ms-text bc-num">${esc(r.id)}</span>${r.kind ? `<span class="ms-text ms-text--auxiliary"> (${esc(r.kind)})</span>` : ''}</td>
@@ -9472,11 +9495,11 @@ window.MS_BIZ_UTIL = (function () {
               <div class="ms-drawer-body">
                 <div class="ms-form">
                   <div class="ms-form-item">
-                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Identifier</label></div>
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Relay ID</label></div>
                     <label class="ms-input ms-input--disabled"><input value="${esc(ed.id || '')}" readonly></label>
                   </div>
                   <div class="ms-form-item">
-                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Name</label><span class="bc-eg71-form-item-unit">(letters, digits, - or _; starts with a letter; up to 20 characters)</span></div>
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Name</label></div>
                     <label class="ms-input${ed.nameError ? ' ms-input--error' : ''}"><input data-mesh-fleet-edit-name value="${esc(ed.name || '')}" maxlength="20"></label>
                     ${ed.nameError ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(ed.nameError)}</div>` : ''}
                   </div>
@@ -9512,9 +9535,9 @@ window.MS_BIZ_UTIL = (function () {
           </div>
         </div>`;
         return `<div class="ms-card bc-eg71-mesh-fleet" data-mesh-fleet-view="${view}">
-          ${(ctx.title || ctx.actionsHtml) ? `<div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
+          ${ctx.title || ctx.actionsHtml ? `<div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
             <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>` : ''}
-          <div class="ms-card-body bc-eg71-mesh-fleet-body">
+          <div class="ms-card-body bc-eg71-mesh-fleet-body${ctx.title || ctx.actionsHtml ? '' : ' bc-eg71-mesh-fleet-body--headless'}">
             ${toolbarHtml}
             <table class="ms-table">
               <thead><tr>${view === 'members' ? `<th class="bc-eg71-mesh-fleet-check"><label class="ms-checkbox"><input type="checkbox" data-mesh-fleet-checkall aria-label="Select all on page"><span class="ms-checkbox-box"></span></label></th>` : ''}${head.map(h => `<th>${esc(h)}</th>`).join('')}${view === 'neighbors' ? '' : '<th class="bc-eg71-table-ops">Operations</th>'}</tr></thead>
@@ -9587,7 +9610,7 @@ window.MS_BIZ_UTIL = (function () {
         });
         const edit = wrap.querySelector('.bc-eg71-mesh-fleet-edit');
         if (edit) {
-          const closeEdit = () => { edit.hidden = true; };
+          const closeEdit = () => { edit.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'edit' } })); };
           edit.querySelectorAll('[data-mesh-fleet-edit-close],[data-mesh-fleet-edit-cancel]').forEach(b => b.addEventListener('click', closeEdit));
           const maskEl = edit.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeEdit(); });
@@ -9601,7 +9624,7 @@ window.MS_BIZ_UTIL = (function () {
         }
         const detail = wrap.querySelector('.bc-eg71-mesh-fleet-detail');
         if (detail) {
-          const closeDetail = () => { detail.hidden = true; };
+          const closeDetail = () => { detail.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'detail' } })); };
           detail.querySelectorAll('[data-mesh-fleet-detail-close]').forEach(b => b.addEventListener('click', closeDetail));
           const maskEl = detail.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeDetail(); });
@@ -9633,12 +9656,12 @@ window.MS_BIZ_UTIL = (function () {
           </tr>`).join('')
           : `<tr><td colspan="${head.length + 1}"><div class="ms-empty"><span class="ms-empty-illu">${ico('log', 32)}</span><div class="ms-empty-text">No mesh frames in the selected period</div></div></td></tr>`;
         return `<div class="ms-card bc-eg71-mesh-frames">
-          <div class="ms-card-body bc-eg71-mesh-frames-body">
-            <div class="bc-eg71-toolbar bc-eg71-mesh-frames-toolbar">
-              <span class="ms-select bc-eg71-toolbar-select"><select data-mesh-frame-filter aria-label="Filter by direction"><option>All Directions</option><option>Up</option><option>Dn</option></select></span>
-              <span class="bc-eg71-toolbar-spacer"></span>
+          <div class="ms-card-head"><div class="ms-card-title">${ico('log', 20)}Mesh Frames</div>
+            <div class="ms-space ms-space--12">
+              <span class="ms-select bc-eg71-form-item-select"><select data-mesh-frame-filter aria-label="Filter by direction"><option>All Directions</option><option>Up</option><option>Dn</option></select></span>
               <button type="button" class="ms-btn ms-btn--sm" data-mesh-frame-refresh aria-label="Refresh" title="Refresh">${ico('refresh', 16)}</button>
-            </div>
+            </div></div>
+          <div class="ms-card-body bc-eg71-mesh-frames-body">
             <table class="ms-table">
               <thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}<th class="bc-eg71-table-ops">Operations</th></tr></thead>
               <tbody>${body}</tbody>
@@ -9693,7 +9716,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-mesh-module', cn: 'Mesh 通用设置模块卡', cat: 'LoRa 设置',
-      desc: 'LoRa General 的通用被动设置模块卡：Frequency Plan / Packet Filter / Data Retransmission / Network Server Parameters 等按角色显隐的参数区块，行级字段（input/select/switch/text）由宿主注入，字段变更统一 eg71-mesh-module-field 冒泡。',
+      desc: 'LoRa General 的通用被动设置模块卡：Frequency Plan / Advanced Setting（可折叠 + 内嵌边框 panel / 双列 grid / compound 复合行）/ Packet Filter / Data Retransmission 等按角色显隐的参数区块，行级字段（input/select/switch/text/panel/grid/compound）由宿主注入，字段变更统一 eg71-mesh-module-field、折叠统一 eg71-mesh-module-fold 冒泡。',
       atoms: ['form', 'input', 'select', 'switch', 'card', 'icon', 'text'],
       entityHint: 'gateway',
       tags: ['LoRa', 'Mesh', '设置', 'Frequency Plan', 'Packet Filter', 'Data Retransmission', 'Network Server', '模块', 'EG71'],
@@ -9701,11 +9724,18 @@ window.MS_BIZ_UTIL = (function () {
         const rows = ctx.rows || [];
         const hs = ctx.headSwitch || null;
         const errs = ctx.errors || {};
+        const collapsible = !!ctx.collapsible;
+        const open = collapsible ? ctx.open !== false : true;
         const stats = rows.filter(r => r.type === 'stat');
         const normal = rows.filter(r => r.type !== 'stat');
         const rowHtml = r => {
           const msg = errs[r.key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(errs[r.key])}</div>`
             : (r.msg ? `<div class="bc-eg71-form-item-msg">${r.msg}</div>` : '');
+          if (r.type === 'panel') return `<div class="bc-eg71-mesh-module-panel">
+              ${r.title ? `<div class="bc-eg71-mesh-module-panel-title">${esc(r.title)}</div>` : ''}
+              ${(r.rows || []).map(rowHtml).join('')}
+            </div>`;
+          if (r.type === 'grid') return `<div class="ms-grid-2 bc-com-form-grid">${(r.rows || []).map(rowHtml).join('')}</div>`;
           if (r.type === 'button') return `<div class="bc-eg71-mesh-module-actions">
             <button type="button" class="ms-btn${r.kind === 'filled' ? ' ms-btn--filled' : r.kind === 'danger' ? ' ms-btn--danger' : ''}" data-mesh-module-btn="${esc(r.key)}" aria-label="${esc(r.label)}">${r.icon ? ico(r.icon, 16) : ''}${esc(r.label)}</button>
           </div>`;
@@ -9718,13 +9748,20 @@ window.MS_BIZ_UTIL = (function () {
               <label class="ms-switch"><input type="checkbox" data-mesh-module-switch="${esc(r.key)}"${r.on ? ' checked' : ''} aria-label="${esc(r.label)}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
             </div>${msg}
           </div>`;
+          if (r.type === 'compound') return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}</label></div>
+            <div class="bc-eg71-mesh-module-compound">
+              <span class="ms-select${errs[r.selectKey] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.selectKey)}" aria-label="${esc(r.label)} mode">${(r.selectOptions || []).map(o => `<option${o === r.selectValue ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+              <label class="ms-input${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}></label>
+            </div>${msg}
+          </div>`;
           if (r.type === 'select') return `<div class="ms-form-item bc-eg71-mesh-module-row">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
-            <span class="ms-select ms-select--lg${errs[r.key] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.key)}">${(r.options || []).map(o => `<option${o === r.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>${msg}
+            <span class="ms-select${errs[r.key] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.key)}">${(r.options || []).map(o => `<option${o === r.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>${msg}
           </div>`;
           return `<div class="ms-form-item bc-eg71-mesh-module-row">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
-            <label class="ms-input ms-input--lg${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}${r.readonly ? ' readonly' : ''}></label>${msg}
+            <label class="ms-input${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}${r.readonly ? ' readonly' : ''}></label>${msg}
           </div>`;
         };
         const statsHtml = stats.length ? `<div class="bc-eg71-mesh-module-stats">${stats.map(s => `<div class="bc-eg71-mesh-module-stat">
@@ -9732,11 +9769,14 @@ window.MS_BIZ_UTIL = (function () {
             <div class="ms-stat-value">${esc(s.value)}${s.suffix ? `<span class="ms-stat-suffix">${esc(s.suffix)}</span>` : ''}</div>
             ${s.sub ? `<div class="bc-eg71-mesh-module-stat-sub">${esc(s.sub)}</div>` : ''}
           </div>`).join('')}</div>` : '';
+        const titleHtml = collapsible
+          ? `<button type="button" class="ms-card-title bc-eg71-mesh-module-fold${open ? ' is-open' : ''}" data-mesh-module-toggle aria-expanded="${open ? 'true' : 'false'}">${esc(ctx.title || '')}${ico('chevronsDown', 18)}</button>`
+          : `<div class="ms-card-title">${esc(ctx.title || '')}</div>`;
         return `<div class="ms-card bc-eg71-mesh-module">
-          <div class="ms-card-head"><div class="ms-card-title">${ico(ctx.icon || 'settings', 20)}${esc(ctx.title || '')}</div>
+          <div class="ms-card-head">${titleHtml}
             ${hs ? `<label class="ms-switch"><input type="checkbox" data-mesh-module-head"${hs.on ? ' checked' : ''} aria-label="${esc(hs.label || '')}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>` : ''}
           </div>
-          <div class="ms-card-body bc-eg71-mesh-module-body">
+          <div class="ms-card-body bc-eg71-mesh-module-body"${open ? '' : ' hidden'}>
             ${ctx.desc ? `<div class="bc-section-desc">${esc(ctx.desc)}</div>` : ''}
             ${statsHtml}
             ${normal.map(rowHtml).join('')}
@@ -9749,6 +9789,15 @@ window.MS_BIZ_UTIL = (function () {
         const wrap = rootEl.querySelector('.bc-eg71-mesh-module');
         if (!wrap) return;
         wrap.addEventListener('click', e => {
+          const tg = e.target.closest('[data-mesh-module-toggle]');
+          if (tg) {
+            const body = wrap.querySelector('.ms-card-body');
+            const isOpen = tg.classList.toggle('is-open');
+            tg.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (body) body.hidden = !isOpen;
+            wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-fold', { bubbles: true, detail: { open: isOpen } }));
+            return;
+          }
           const btn = e.target.closest('[data-mesh-module-btn]');
           if (btn) wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: btn.getAttribute('data-mesh-module-btn'), value: 'click' } }));
         });
@@ -10166,6 +10215,27 @@ window.MS_BIZ_UTIL = (function () {
     const cancelText = ctx.cancelText || '取消';
     const okText = ctx.okText || variant.okText;
     const needKeyword = ctx.action === 'delete' && ctx.confirmKeyword;
+    if (ctx.action === 'delete') {
+      /* Figma 业务库「弹窗」Error 变体（127:8693）：无标题栏/关闭钮，
+         24px 实心红圆×图标 + 标题 18/500 + 描述 14 同排，按钮组右对齐 gap 16。 */
+      return `<div class="bc-eg71-modal" hidden>
+        <div class="ms-mask">
+          <div class="ms-modal bc-eg71-modal--msg" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-modal-title">
+            <div class="bc-eg71-modal-msg-row">
+              <span class="bc-eg71-modal-msg-ic">${ico('circleXFilled', 24)}</span>
+              <div class="bc-eg71-modal-msg-text">
+                <div class="bc-eg71-modal-msg-title" id="bc-eg71-modal-title">${esc(title)}</div>
+                ${eg71ModalBody(ctx, variant)}
+              </div>
+            </div>
+            <div class="ms-modal-foot">
+              <button type="button" class="ms-btn" data-modal-cancel>${esc(cancelText)}</button>
+              <button type="button" class="ms-btn ${variant.okClass}" data-modal-ok${needKeyword ? ' disabled' : ''}>${esc(okText)}</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
     return `<div class="bc-eg71-modal" hidden>
       <div class="ms-mask">
         <div class="ms-modal${variant.size ? ' ms-modal' + variant.size : ''}" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-modal-title">
@@ -10324,7 +10394,7 @@ window.MS_ENTITIES = {
   fleetMember: {
     key: 'fleetMember', cn: 'Fleet 成员网关', aliases: ['成员表', 'gateway fleet', 'member', '成员网关'],
     fields: [
-      { key: 'eui', cn: 'Identifier', type: 'code', w: 190 },
+      { key: 'eui', cn: 'Relay ID', type: 'code', w: 190 },
       { key: 'name', cn: 'Name', type: 'text', w: 170 },
       { key: 'status', cn: 'Status', type: 'tag', w: 110 },
       { key: 'updated', cn: 'Last Updated', type: 'text', w: 170 }
@@ -10386,7 +10456,10 @@ window.MS_ENTITIES = {
   var FREQ_PLANS = ['CN470', 'EU868', 'US915', 'AS923', 'AU915', 'KR920', 'IN865'];
 
   var MESH_ROLES_VISIBLE = { 'mesh-master': 1, 'mesh-relay': 1, 'ipmesh-master': 1 };
-  var FORWARD_VISIBLE = { 'ip-master': 1, 'mesh-master': 1, 'ipmesh-master': 1 };
+  /* Figma 43:12085：controller（Fleet + IP Master）无转发卡——转发属 Networking Mode 变体（deployment=forwarding）与 Mesh Master 外发 */
+  var FORWARD_VISIBLE = { 'mesh-master': 1, 'ipmesh-master': 1 };
+  var ADV_VISIBLE = { 'ip-master': 1, 'ip-agent': 1 };
+  var ADV_KEYS = { advChannelMode: 'channelMode', advChannelInput: 'channelInput', advNetId: 'netId', advJoinInterval: 'joinInterval', advRx1Delay: 'rx1Delay', advLeaseTime: 'leaseTime' };
   var FLEET_VIEW = { 'ip-master': 'members', 'mesh-master': 'members', 'ipmesh-master': 'members', 'mesh-relay': 'neighbors' };
 
   /* ---------- 状态 ---------- */
@@ -10403,6 +10476,7 @@ window.MS_ENTITIES = {
       ignoreDirect: false, heartbeat: '300'
     },
     freqPlan: 'CN470',
+    adv: { channelMode: 'Custom', channelInput: '', netId: '010203', joinInterval: '5', rx1Delay: '1', leaseTime: '8760-0-0' },
     fwd: {
       type: 'chirpstack', conn: 'connected',
       values: {
@@ -10413,7 +10487,7 @@ window.MS_ENTITIES = {
       }
     },
     radio: { '868.1': true, '868.3': true, '868.5': true, '868.7': true, '868.9': true, '869.1': true, '869.3': true, '869.5': false },
-    advOpen: false,
+    advOpen: true,
     deployMoreOpen: false,
     errors: {},
     fleet: { page: 1, size: 10, search: '', checked: [], edit: null, detail: null, deleted: {} },
@@ -10427,6 +10501,7 @@ window.MS_ENTITIES = {
       role: S.role, deployment: S.deployment, secure: S.secure,
       cfg: JSON.parse(JSON.stringify(S.cfg)),
       freqPlan: S.freqPlan,
+      adv: JSON.parse(JSON.stringify(S.adv)),
       fwd: { type: S.fwd.type, conn: S.fwd.conn, values: JSON.parse(JSON.stringify(S.fwd.values)) },
       radio: JSON.parse(JSON.stringify(S.radio))
     };
@@ -10446,7 +10521,6 @@ window.MS_ENTITIES = {
         id: id,
         kind: isAgent ? 'Agent EUI' : 'Relay ID',
         name: i < 12 ? (isAgent ? 'Agent-Site-' + pad2(i + 1) : 'Relay-Warehouse-' + pad2(i + 1)) : id,
-        gps: { lat: (24.48 + (i % 30) * 0.001).toFixed(4), lng: (118.08 + (i % 17) * 0.002).toFixed(4), alt: 10 + (i % 40) },
         status: offline ? 'Offline' : 'Online',
         updated: offline
           ? '2026-11-0' + ((i % 3) + 1) + ' 1' + (i % 9) + ':' + pad2((i * 7) % 60)
@@ -10559,7 +10633,7 @@ window.MS_ENTITIES = {
       deployment: { value: S.deployment }
     });
     if (MESH_ROLES_VISIBLE[S.role]) h += B['bc-eg71-mesh-config'].render(meshConfigCtx());
-    if (FORWARD_VISIBLE[S.role]) {
+    if (FORWARD_VISIBLE[S.role] || S.deployment === 'forwarding') {
       h += B['bc-eg71-mesh-forward'].render({
         type: S.fwd.type,
         locked: S.role === 'ipmesh-master',
@@ -10569,9 +10643,29 @@ window.MS_ENTITIES = {
       });
     }
     h += B['bc-eg71-mesh-module'].render({
-      icon: 'settings', title: 'Frequency Plan',
-      rows: [{ type: 'select', key: 'freqPlan', label: 'Frequency Plan', required: true, value: S.freqPlan, options: FREQ_PLANS }]
+      title: 'Frequency Plan',
+      rows: [{ type: 'select', key: 'freqPlan', label: '频段', required: true, value: S.freqPlan, options: FREQ_PLANS }]
     });
+    if (ADV_VISIBLE[S.role]) {
+      h += B['bc-eg71-mesh-module'].render({
+        title: 'Advanced Setting', collapsible: true, open: S.advOpen, errors: S.errors,
+        rows: [
+          { type: 'panel', rows: [
+            { type: 'compound', label: 'Default Channels', required: true,
+              selectKey: 'advChannelMode', selectOptions: ['Custom', 'All Channels'], selectValue: S.adv.channelMode,
+              key: 'advChannelInput', value: S.adv.channelMode === 'Custom' ? S.adv.channelInput : '', placeholder: 'Channel list' }
+          ] },
+          { type: 'panel', title: 'Frequency Plan', rows: [
+            { type: 'grid', rows: [
+              { type: 'input', key: 'advNetId', label: '网络ID', required: true, value: S.adv.netId },
+              { type: 'input', key: 'advJoinInterval', label: '入网请求间隔', unit: 's', required: true, value: S.adv.joinInterval },
+              { type: 'input', key: 'advRx1Delay', label: 'RX1接收间隔', unit: 's', required: true, value: S.adv.rx1Delay },
+              { type: 'input', key: 'advLeaseTime', label: '租约时间', unit: 'hh-mm-ss', required: true, value: S.adv.leaseTime }
+            ] }
+          ] }
+        ]
+      });
+    }
     h += '</div>';
     return h;
   }
@@ -10601,12 +10695,7 @@ window.MS_ENTITIES = {
       var row = fd.pool.find(function (r) { return r.id === S.fleet.edit.id; });
       if (row) {
         ctx.editDrawer = {
-          id: row.id, name: S.fleet.edit.name, nameError: S.fleet.edit.nameError || '', open: true,
-          info: [
-            { label: 'GPS Latitude', value: row.gps.lat + '°' },
-            { label: 'GPS Longitude', value: row.gps.lng + '°' },
-            { label: 'Altitude (m)', value: String(row.gps.alt) }
-          ]
+          id: row.id, name: S.fleet.edit.name, nameError: S.fleet.edit.nameError || '', open: true
         };
       }
     }
@@ -10698,7 +10787,7 @@ window.MS_ENTITIES = {
     if (S.modal.kind === 'delete-row' || S.modal.kind === 'delete-batch') {
       return B['bc-eg71-modal'].render({
         action: 'delete',
-        title: 'Delete Member',
+        title: 'Delete Gateway',
         desc: S.modal.desc,
         cancelText: 'Cancel', okText: 'Delete'
       });
@@ -10726,7 +10815,7 @@ window.MS_ENTITIES = {
   }
   function footerHtml() {
     return S.route === '/lora/general'
-      ? B['bc-eg71-form-footer'].render({ buttons: [{ label: 'Reset', action: 'reset' }, { label: 'Save', kind: 'filled', action: 'save' }] })
+      ? B['bc-eg71-form-footer'].render({ buttons: [{ label: 'Cancel', action: 'reset' }, { label: 'Save', kind: 'filled', action: 'save' }] })
       : '';
   }
 
@@ -10758,6 +10847,10 @@ window.MS_ENTITIES = {
     }
     var planEl = $app.querySelector('[data-mesh-module-field="freqPlan"]');
     if (planEl) S.freqPlan = planEl.value;
+    Object.keys(ADV_KEYS).forEach(function (k) {
+      var el = $app.querySelector('[data-mesh-module-field="' + k + '"]');
+      if (el) S.adv[ADV_KEYS[k]] = el.value;
+    });
   }
 
   /* ---------- 渲染主流程（全壳重渲染） ---------- */
@@ -10820,6 +10913,19 @@ window.MS_ENTITIES = {
         if (isNaN(hb) || hb < 30 || hb > 300) errs.heartbeat = 'Please enter a valid value. Range: 30 to 300.';
       }
     }
+    if (ADV_VISIBLE[S.role]) {
+      if (!S.adv.netId) errs.advNetId = 'This field is required.';
+      else if (!/^[0-9a-fA-F]{1,8}$/.test(S.adv.netId)) errs.advNetId = 'Please enter a valid value. Hex characters only (max 8).';
+      var ji = parseInt(S.adv.joinInterval, 10);
+      if (!S.adv.joinInterval) errs.advJoinInterval = 'This field is required.';
+      else if (isNaN(ji) || ji < 1 || ji > 65535) errs.advJoinInterval = 'Please enter a valid value. Range: 1 to 65535.';
+      var rd = parseInt(S.adv.rx1Delay, 10);
+      if (!S.adv.rx1Delay) errs.advRx1Delay = 'This field is required.';
+      else if (isNaN(rd) || rd < 1 || rd > 15) errs.advRx1Delay = 'Please enter a valid value. Range: 1 to 15.';
+      if (!S.adv.leaseTime) errs.advLeaseTime = 'This field is required.';
+      else if (!/^\d{1,5}-\d{1,2}-\d{1,2}$/.test(S.adv.leaseTime)) errs.advLeaseTime = 'Please enter a valid value. Format: hh-mm-ss.';
+      if (S.adv.channelMode === 'Custom' && !S.adv.channelInput) errs.advChannelInput = 'This field is required.';
+    }
     if (FORWARD_VISIBLE[S.role] && S.role !== 'ipmesh-master' && S.fwd.type !== 'embedded') {
       if (S.fwd.type === 'chirpstack') {
         if (!S.fwd.values.topic) errs.topic = 'This field is required.';
@@ -10866,6 +10972,7 @@ window.MS_ENTITIES = {
     var errs = validate();
     if (Object.keys(errs).length) {
       S.errors = errs;
+      if (Object.keys(errs).some(function (k) { return k.indexOf('adv') === 0; })) S.advOpen = true;
       render();
       toast('Please correct the highlighted fields.', 'error');
       return;
@@ -10934,6 +11041,10 @@ window.MS_ENTITIES = {
     });
     $app.addEventListener('eg71-mesh-module-field', function (e) {
       if (e.detail.key === 'freqPlan') S.freqPlan = e.detail.value;
+      if (ADV_KEYS[e.detail.key]) S.adv[ADV_KEYS[e.detail.key]] = e.detail.value;
+    });
+    $app.addEventListener('eg71-mesh-module-fold', function (e) {
+      S.advOpen = e.detail.open;
     });
     $app.addEventListener('eg71-mesh-radio-toggle', function (e) {
       var i = FREQ_IDS.indexOf(e.detail.id);
@@ -11109,6 +11220,7 @@ window.MS_ENTITIES = {
   }
   function go(route) {
     if (!route || route === S.route) return;
+    if (route === '/lora') route = '/lora/general'; /* 扁平 LoRa 入口（REQ-024 navGroups）归一到 General Tab */
     harvestGeneral();
     S.route = route;
     S.fleet.edit = null;
@@ -11118,15 +11230,16 @@ window.MS_ENTITIES = {
   }
 
   /* ---------- 全状态导出契约 ---------- */
-  var PRISTINE = JSON.parse(JSON.stringify({ cfg: S.cfg, radio: S.radio, freqPlan: S.freqPlan, fwd: S.fwd, role: S.role, deployment: S.deployment, secure: S.secure }));
+  var PRISTINE = JSON.parse(JSON.stringify({ cfg: S.cfg, radio: S.radio, freqPlan: S.freqPlan, adv: S.adv, fwd: S.fwd, role: S.role, deployment: S.deployment, secure: S.secure }));
   function restorePristine() {
     S.role = PRISTINE.role; S.deployment = PRISTINE.deployment; S.secure = PRISTINE.secure;
     S.cfg = JSON.parse(JSON.stringify(PRISTINE.cfg));
     S.radio = JSON.parse(JSON.stringify(PRISTINE.radio));
     S.freqPlan = PRISTINE.freqPlan;
+    S.adv = JSON.parse(JSON.stringify(PRISTINE.adv));
     S.fwd = JSON.parse(JSON.stringify(PRISTINE.fwd));
     S.saved = snapshot();
-    S.errors = {}; S.advOpen = false; S.deployMoreOpen = false;
+    S.errors = {}; S.advOpen = true; S.deployMoreOpen = false;
     S.fleet = { page: 1, size: 10, search: '', checked: [], edit: null, detail: null, deleted: {} };
     S.frameFilter = 'All Directions';
     S.modal = null;
@@ -11149,7 +11262,10 @@ window.MS_ENTITIES = {
       { name: 'General · LoRa Mesh Relay 角色', setup: function () { withRole('mesh-relay'); S.route = '/lora/general'; render(); } },
       { name: 'General · LoRa Mesh Master（Embedded NS）', setup: function () { withRole('mesh-master', 'embedded'); S.route = '/lora/general'; render(); } },
       { name: 'General · IP & Mesh Master（转发锁定）', setup: function () { withRole('ipmesh-master'); S.route = '/lora/general'; render(); } },
-      { name: 'General · Advanced 展开', setup: function () { restorePristine(); S.route = '/lora/general'; S.advOpen = true; render(); } },
+      { name: 'General · Advanced 收起', setup: function () { restorePristine(); S.route = '/lora/general'; S.advOpen = false; render(); } },
+      { name: 'General · Advanced 校验错误', setup: function () { restorePristine(); S.route = '/lora/general'; S.adv.netId = ''; S.adv.channelInput = ''; render();
+          var sv = document.querySelector('[data-footer-btn="save"]') || Array.prototype.slice.call(document.querySelectorAll('button')).find(function (b) { return b.textContent.trim() === 'Save'; });
+          if (sv) sv.click(); } },
       { name: 'General · 跳数风险提示', setup: function () { restorePristine(); S.route = '/lora/general'; withRole('mesh-master', 'embedded'); S.cfg.hops = '3'; render(); } },
       { name: 'General · 频段禁用告警', setup: function () { restorePristine(); S.route = '/lora/general'; withRole('mesh-master', 'embedded'); S.radio['868.3'] = false; render(); } },
       { name: 'Radio · 频段开关', setup: function () { restorePristine(); S.route = '/lora/radio'; S.radio['869.1'] = false; render(); } },

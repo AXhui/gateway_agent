@@ -4513,7 +4513,7 @@ window.MS_BIZ_UTIL = (function () {
           </div>`;
         const pagerHtml = !ctx.pager ? '' : (() => {
           const p = ctx.pager, cur = p.page || 1, pages = Math.max(1, p.pages || 1);
-          const item = (n, label, dis) => `<button type="button" class="ms-page-item${n === cur ? ' ms-page-item--active' : ''}" data-mesh-fleet-page="${n}"${dis ? ' disabled' : ''}>${label != null ? label : n}</button>`;
+          const item = (n, label, dis) => `<button type="button" class="ms-page-item${label == null && n === cur ? ' ms-page-item--active' : ''}" data-mesh-fleet-page="${n}"${dis ? ' disabled' : ''}>${label != null ? label : n}</button>`;
           const win = [];
           for (let n = 1; n <= pages; n++) {
             if (n === 1 || n === pages || Math.abs(n - cur) <= 1) win.push(n);
@@ -4542,7 +4542,7 @@ window.MS_BIZ_UTIL = (function () {
                     <label class="ms-input ms-input--disabled"><input value="${esc(ed.id || '')}" readonly></label>
                   </div>
                   <div class="ms-form-item">
-                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Name</label><span class="bc-eg71-form-item-unit">(letters, digits, - or _; starts with a letter; up to 20 characters)</span></div>
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Name</label></div>
                     <label class="ms-input${ed.nameError ? ' ms-input--error' : ''}"><input data-mesh-fleet-edit-name value="${esc(ed.name || '')}" maxlength="20"></label>
                     ${ed.nameError ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(ed.nameError)}</div>` : ''}
                   </div>

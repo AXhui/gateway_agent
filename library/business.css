@@ -337,6 +337,15 @@
 .bc-eg71-modal-body-row .ms-result-icon { flex: none; }
 .bc-eg71-modal-body-content { flex: 1; min-width: 0; }
 
+/* 删除确认 · Figma 业务库「弹窗」Error 变体（127:8693）：无标题栏/关闭钮，
+   24px 实心红圆× + 标题 18/500 + 描述 14 同排；416 宽、圆角 8、按钮组右对齐 gap 16 */
+.bc-eg71-modal--msg.ms-modal { width: 416px; max-width: 100%; gap: var(--spacing-16); padding: var(--spacing-16) var(--spacing-24); border-radius: var(--radius-8); }
+.bc-eg71-modal-msg-row { display: flex; gap: var(--spacing-8); align-items: flex-start; }
+.bc-eg71-modal-msg-ic { flex: none; display: inline-flex; width: 24px; height: 24px; }
+.bc-eg71-modal-msg-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-modal-msg-title { font-size: 18px; font-weight: 500; line-height: 26px; color: var(--color-text-primary); }
+.bc-eg71-modal--msg .ms-modal-foot { gap: var(--spacing-16); padding: 0; border-top: 0; background: none; }
+
 /* ---------- EG71 表单单选按钮组（FormItem radio group） ---------- */
 /* 线框单选按钮组占满宽度，横向排布互斥选项；视觉由 L2 .ms-radio-btn 承担，此处仅编排布局 */
 .bc-eg71-form-item-radio-group { width: 100%; }
@@ -855,7 +864,6 @@
 
 /* ---- B_Eg71MeshRoleCard / B_Eg71MeshConfigCard / B_Eg71MeshForwardCard / B_Eg71MeshFlowDiagram（bc-eg71-mesh-*，REQ-014 LoRa Mesh 铸造批） ---- */
 .bc-eg71-mesh-role-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
-.bc-eg71-mesh-role-hint { padding: var(--spacing-12); background: var(--color-fill-base-normal); border-radius: var(--radius-4); font-size: 12px; line-height: 20px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-role-relay { display: flex; flex-direction: column; gap: var(--spacing-4); }
 .bc-eg71-mesh-role-relay-label { font-size: 12px; color: var(--color-text-auxiliary); }
 .bc-eg71-mesh-role-relay-value { display: flex; align-items: center; gap: var(--spacing-8); }
@@ -918,6 +926,15 @@
 .bc-eg71-mesh-module-stat { display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-primary-bg); border-radius: var(--radius-m); }
 .bc-eg71-mesh-module-stat-sub { font-size: 12px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-module-actions { display: flex; gap: var(--spacing-12); }
+/* bc-eg71-mesh-module · Advanced Setting 折叠卡（Figma 43:12085：双箭头 18 折叠钮 + 内嵌边框 panel + 双列 grid + compound 复合行） */
+.bc-eg71-mesh-module-fold { border: none; background: transparent; cursor: pointer; padding: 0; justify-content: flex-start; }
+.bc-eg71-mesh-module-fold .ms-ico { margin-left: var(--spacing-8); color: var(--color-icon-secondary); transition: transform var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-module-fold.is-open .ms-ico { transform: rotate(180deg); }
+.bc-eg71-mesh-module-panel { display: flex; flex-direction: column; gap: var(--spacing-16); padding: var(--spacing-16); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); }
+.bc-eg71-mesh-module-panel-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-mesh-module-compound { display: flex; gap: var(--spacing-8); }
+.bc-eg71-mesh-module-compound .ms-select { width: 87px; flex: none; /* 结构宽：Figma Custom 模式下拉定宽 */ }
+.bc-eg71-mesh-module-compound .ms-input { flex: 1; width: auto; }
 
 /* ===================== 内置库更新域（REQ-017 · Figma 71.0.0.4） ===================== */
 /* bc-eg71-message · 全局消息 Toast */
@@ -978,21 +995,27 @@
 
 /* ===================== 内置库更新域（Figma 71.0.0.5 · LoRa Mesh 升级，样式以 Figma 为主） ===================== */
 
-/* bc-eg71-mesh-deploy · Deployment Mode 卡片选择器（B_Eg71MeshRoleCard 域） */
+/* bc-eg71-mesh-deploy · Deployment Mode 卡片选择器（B_Eg71MeshRoleCard 域，Figma 43:12085：radio 左置同行、标题 16/400、描述 14/400 辅助色） */
 .bc-eg71-mesh-deploy-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-12); }
 .bc-eg71-mesh-deploy-cards.is-more-open { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.bc-eg71-mesh-deploy-card { position: relative; display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); cursor: pointer; transition: border-color var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-deploy-card { position: relative; display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-16); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); cursor: pointer; transition: border-color var(--duration-fast) var(--ease); }
 .bc-eg71-mesh-deploy-card:hover { border-color: var(--color-primary-normal); }
 .bc-eg71-mesh-deploy-card.is-selected { border-color: var(--color-primary-normal); background: var(--color-primary-bg); }
 .bc-eg71-mesh-deploy-card input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
-.bc-eg71-mesh-deploy-card-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
-.bc-eg71-mesh-deploy-card-desc { font-size: 12px; line-height: 18px; color: var(--color-text-secondary); }
-.bc-eg71-mesh-deploy-card .ms-radio-dot { position: absolute; top: var(--spacing-12); right: var(--spacing-12); }
+.bc-eg71-mesh-deploy-card-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-deploy-card-title { font-size: 16px; font-weight: 400; color: var(--color-text-primary); }
+.bc-eg71-mesh-deploy-card-desc { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); }
+.bc-eg71-mesh-deploy-card .ms-radio-dot { position: static; flex: none; }
 .bc-eg71-mesh-deploy-more { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: 0; border: none; background: transparent; font-size: 14px; color: var(--color-text-link-normal); cursor: pointer; }
 .bc-eg71-mesh-deploy-more .ms-ico { transition: transform var(--duration-fast) var(--ease); }
 .bc-eg71-mesh-deploy-more.is-open .ms-ico { transform: rotate(180deg); }
 .bc-eg71-mesh-deploy-extra { display: contents; }
 .bc-eg71-mesh-secure { margin-top: var(--spacing-4); }
+.bc-eg71-mesh-secure .ms-ico { color: var(--color-icon-secondary); }
+.bc-eg71-mesh-role-cert-row { padding-left: var(--spacing-24); }
+/* LoRa General 卡片域（Figma 43:12085）：卡标题 16/500、字段 label 辅助色 #6b7785 */
+.bc-eg71-mesh-deploy .ms-card-title, .bc-eg71-mesh-role .ms-card-title, .bc-eg71-mesh-config .ms-card-title, .bc-eg71-mesh-forward .ms-card-title, .bc-eg71-mesh-module .ms-card-title { font-weight: 500; }
+.bc-eg71-mesh-deploy .ms-form-label, .bc-eg71-mesh-role .ms-form-label, .bc-eg71-mesh-config .ms-form-label, .bc-eg71-mesh-forward .ms-form-label, .bc-eg71-mesh-module .ms-form-label { color: var(--color-text-secondary); }
 
 /* bc-eg71-mesh-config · Mesh Configuration 两列结构（B_Eg71MeshConfigCard 域） */
 .bc-eg71-mesh-config-top { margin-bottom: var(--spacing-16); }
@@ -1005,7 +1028,8 @@
 .bc-eg71-mesh-fleet-pager { display: flex; align-items: center; gap: var(--spacing-12); padding-top: var(--spacing-12); }
 .bc-eg71-mesh-fleet-total { font-size: 12px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-fleet-pager .ms-pagination { flex: 1 1 auto; justify-content: center; }
-.bc-eg71-mesh-fleet-size { flex: 0 0 auto; }
+/* width:auto 覆写 L2 .ms-select 的 width:100%（表单语义）——页码条内不限宽会把下拉撑成容器全宽，挤压整条分页 */
+.bc-eg71-mesh-fleet-size { flex: 0 0 auto; width: auto; }
 .bc-eg71-mesh-fleet-detail-panel { width: 400px; max-width: 90vw; }
 .bc-eg71-mesh-fleet-detail-section { margin-bottom: var(--spacing-12); }
 .bc-eg71-mesh-fleet-detail-rows { display: flex; flex-direction: column; gap: var(--spacing-8); margin-bottom: var(--spacing-20); }

@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshRoleCard
-version: 1.1.0
+version: 1.2.0
 description: Mesh 角色级联卡（业务组件）
 ---
 
@@ -17,7 +17,7 @@ description: Mesh 角色级联卡（业务组件）
 
 ## 一、描述
 
-EG71 LoRa General 页的 Gateway Role 区块卡：组网方式 × 角色级联单选（5 组合 optgroup）、角色提示文案联动、Relay 角色自动生成 Relay ID（8 位示例 + 复制）、IP Master 的证书下载链接钮。
+EG71 LoRa General 页的 Gateway Role 区块卡：组网方式 × 角色级联单选（5 组合 optgroup，32px 档）、Relay 角色自动生成 Relay ID（8 位示例 + 复制）、IP Master 的 Secure connections（info 提示图标）与证书下载链接钮（内缩 20px）。
 
 **不是**：通用角色选择器（角色文案与 LoRa Mesh 业务强绑定，见 `MESH_ROLES` 唯一源）。
 
@@ -30,7 +30,7 @@ EG71 LoRa General 页的 Gateway Role 区块卡：组网方式 × 角色级联�
 | `S_Select` | `ms-select`（`.bc-eg71-mesh-role-select`） | 角色级联单选（optgroup 按组网方式分组） |
 | `S_Card` | `ms-card` | 区块卡 |
 | `S_Icon` | `MS_ICONS` | 标题 gateway 图标、复制/chevron 图标 |
-| `S_Radio` | `ms-radio-dot` | Deployment Mode 卡片右上选中态圆点 |
+| `S_Radio` | `ms-radio-dot` | Deployment Mode 卡片选中态圆点（**内联左置**——与卡名同行、图标位左侧，Figma 43:12085） |
 | `S_Checkbox` | `ms-checkbox` | Secure connections（IP Connection Master） |
 | `S_Button` | `ms-btn--link` | 证书下载 / 复制 / More |
 
@@ -55,11 +55,11 @@ EG71 LoRa General 页的 Gateway Role 区块卡：组网方式 × 角色级联�
 
 | 状态 | 表现 |
 |---|---|
-| 默认 | 卡片 + Deployment Mode 卡片选择器（前 3 卡 + More 展开）+ 角色下拉 |
-| 展开更多 | More 钮切换 extra 区（`is-more-open`，4 卡网格），chevron 旋转 |
-| 卡片选中 | `is-selected`（主色描边 + primary-bg 底 + 右上 radio-dot 实心） |
+| 默认 | 卡片 + Deployment Mode 卡片选择器（前 3 卡 + More 展开第 4）+ 角色下拉（32px 小号档）；无灰底角色提示盒（角色提示并入级联下拉选项分组） |
+| 展开更多 | More 钮切换 extra 区（`is-more-open`，第 4 卡 hybird 收纳于 `.bc-eg71-mesh-deploy-extra`），chevron 旋转 |
+| 卡片选中 | `is-selected`（主色描边 + 左置 radio-dot 实心） |
 | relay 角色 | Relay ID 行显示（`hidden` 属性切换） |
-| cert 角色 | 提示文案尾随 Download Certificate 链接钮；角色下拉下带 Secure connections 复选框 |
+| cert 角色 | Secure connections 复选框行（尾随 16px info 提示图标）+ 提示文案下**内缩 20px**（`--spacing-xl`）的 Download Certificate 链接钮 |
 
 ## 四、场景
 
@@ -72,7 +72,7 @@ EG71 LoRa General 页的 Gateway Role 区块卡：组网方式 × 角色级联�
 
 ## 五、Token
 
-`--color-fill-base-normal`、`--color-primary-bg`、`--color-primary-normal`、`--color-border-base`、`--radius-8`、`--duration-fast`、`--ease`、`--spacing-4/8/12/16`、`--color-text-secondary`、`--color-text-auxiliary`、`--color-text-link-normal`（Deployment Mode 卡片选择器样式以 Figma 71.0.0.5 为准）。
+`--color-fill-base-normal`、`--color-primary-bg`、`--color-primary-normal`、`--color-border-base`、`--radius-8`、`--duration-fast`、`--ease`、`--spacing-4/8/12/16/20`、`--color-text-secondary`、`--color-text-auxiliary`、`--color-text-link-normal`、`--color-icon-*`（info 图标）（Deployment Mode 卡片选择器样式以 Figma 71.0.0.5 node 43:12085 为准）。
 
 ## 六、依赖
 
