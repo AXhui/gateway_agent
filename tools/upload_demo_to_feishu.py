@@ -65,6 +65,29 @@ def run_cmd(args, capture_output=True):
         return -1, "", str(e)
 
 
+def find_existing_file_token(lark_cli_path, folder_token, file_name):
+    """在目标文件夹里查同名文件，返回 file_token（没有则返回空串）。
+
+    固定文件名 REQ-XXX.html（不带版本号）：同需求只保留一个文件、一个链接，
+    后续版本覆盖上传，测试/表格里的旧链接永远看到最新版。
+    """
+    rc, stdout, _stderr = run_cmd([
+        lark_cli_path, "drive", "files", "list",
+        "--params", json.dumps({"folder_token": folder_token, "page_size": 200}),
+        "--format", "json", "--as", "user",
+    ])
+    if rc != 0:
+        return ""
+    try:
+        result = json.loads(stdout)
+        for f in result.get("data", {}).get("files", []):
+            if f.get("name") == file_name:
+                return f.get("token", "")
+    except Exception:
+        pass
+    return ""
+
+
 def main():
     parser = argparse.ArgumentParser(description="上传 demo 到飞书云空间")
     parser.add_argument("--demo-file", required=True, help="本地 demo.html 路径")
@@ -84,8 +107,9 @@ def main():
         print(f"[upload] 错误：文件不存在 {args.demo_file}", file=sys.stderr)
         return ""
 
-    # 1. 复制到临时目录，重命名为 REQ-XXX_vYY.html
-    file_name = f"{args.req_id}_v{args.version}.html"
+    # 1. 复制到临时目录，重命名为 REQ-XXX.html（固定文件名，不带版本号；
+    # --version 参数保留仅用于清单记录，不再影响云盘文件名与链接）
+    file_name = f"{args.req_id}.html"
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, file_name)
     try:
@@ -94,14 +118,18 @@ def main():
         print(f"[upload] 错误：复制到临时目录失败 {e}", file=sys.stderr)
         return ""
 
-    # 2. 上传到飞书云空间
+    # 2. 上传到飞书云空间：同名文件已存在则覆盖（链接不变，云盘自带版本历史），否则新建
+    existing_token = find_existing_file_token(lark_cli_path, args.folder_token, file_name)
     upload_cmd = [
         lark_cli_path, "drive", "+upload",
         "--file", temp_path,
-        "--folder-token", args.folder_token,
-        "--name", file_name,
         "--as", "user",
     ]
+    if existing_token:
+        upload_cmd += ["--file-token", existing_token]
+        print(f"[upload] 调试：发现同名文件 {file_name}（{existing_token}），走覆盖上传", file=sys.stderr)
+    else:
+        upload_cmd += ["--folder-token", args.folder_token, "--name", file_name]
     print(f"[upload] 调试：执行命令 = {' '.join(upload_cmd)}", file=sys.stderr)
     rc, stdout, stderr = run_cmd(upload_cmd)
     if rc != 0:
@@ -129,13 +157,16 @@ def main():
         return ""
 
     # 3. 设置链接分享权限为"组织内获得链接的人可阅读"
-    perm_json = os.path.join(temp_dir, f"perm_{file_token}.json")
-    try:
-        with open(perm_json, "w", encoding="utf-8") as f:
-            json.dump({"link_share_entity": "tenant_readable"}, f)
-    except Exception as e:
-        print(f"[upload] 警告：写权限 JSON 失败 {e}", file=sys.stderr)
-        perm_json = None
+    # 只在新建时设置；覆盖上传不动权限（沿用首次设置，CLI 覆盖语义本身也不改权限）
+    perm_json = None
+    if not existing_token:
+        perm_json = os.path.join(temp_dir, f"perm_{file_token}.json")
+        try:
+            with open(perm_json, "w", encoding="utf-8") as f:
+                json.dump({"link_share_entity": "tenant_readable"}, f)
+        except Exception as e:
+            print(f"[upload] 警告：写权限 JSON 失败 {e}", file=sys.stderr)
+            perm_json = None
 
     if perm_json:
         perm_cmd = [
