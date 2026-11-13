@@ -2036,6 +2036,8 @@ body {
 /* ---- B_Eg71MeshFleetTable / B_Eg71MeshFrameList（bc-eg71-mesh-fleet / -frames，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-fleet-body .bc-eg71-form-item-msg,
 .bc-eg71-mesh-frames-body .bc-eg71-form-item-msg { margin-top: var(--spacing-12); }
+/* 单表格页免标题：frames 操作栏升白卡第一行，下沿分隔线与表格分界（AGENTS.md 列表工具栏契约） */
+.bc-eg71-mesh-frames-toolbar { padding-bottom: var(--spacing-12); margin-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
 /* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 追加铸造） + bc-eg71-mesh-deploy 区块 ---- */
 .bc-eg71-mesh-radio-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
 .bc-eg71-mesh-radio-row { display: flex; align-items: center; gap: var(--spacing-12); padding-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-2); }
@@ -9510,8 +9512,8 @@ window.MS_BIZ_UTIL = (function () {
           </div>
         </div>`;
         return `<div class="ms-card bc-eg71-mesh-fleet" data-mesh-fleet-view="${view}">
-          <div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
-            <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>
+          ${(ctx.title || ctx.actionsHtml) ? `<div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
+            <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>` : ''}
           <div class="ms-card-body bc-eg71-mesh-fleet-body">
             ${toolbarHtml}
             <table class="ms-table">
@@ -9631,12 +9633,12 @@ window.MS_BIZ_UTIL = (function () {
           </tr>`).join('')
           : `<tr><td colspan="${head.length + 1}"><div class="ms-empty"><span class="ms-empty-illu">${ico('log', 32)}</span><div class="ms-empty-text">No mesh frames in the selected period</div></div></td></tr>`;
         return `<div class="ms-card bc-eg71-mesh-frames">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('log', 20)}Mesh Frames</div>
-            <div class="ms-space ms-space--12">
-              <span class="ms-select bc-eg71-form-item-select"><select data-mesh-frame-filter aria-label="Filter by direction"><option>All Directions</option><option>Up</option><option>Dn</option></select></span>
-              <button type="button" class="ms-btn ms-btn--sm" data-mesh-frame-refresh aria-label="Refresh" title="Refresh">${ico('refresh', 16)}</button>
-            </div></div>
           <div class="ms-card-body bc-eg71-mesh-frames-body">
+            <div class="bc-eg71-toolbar bc-eg71-mesh-frames-toolbar">
+              <span class="ms-select bc-eg71-toolbar-select"><select data-mesh-frame-filter aria-label="Filter by direction"><option>All Directions</option><option>Up</option><option>Dn</option></select></span>
+              <span class="bc-eg71-toolbar-spacer"></span>
+              <button type="button" class="ms-btn ms-btn--sm" data-mesh-frame-refresh aria-label="Refresh" title="Refresh">${ico('refresh', 16)}</button>
+            </div>
             <table class="ms-table">
               <thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}<th class="bc-eg71-table-ops">Operations</th></tr></thead>
               <tbody>${body}</tbody>

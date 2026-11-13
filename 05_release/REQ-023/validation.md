@@ -106,3 +106,42 @@ score_fidelity.py --write 执行记录（初版缺 `MS_ENTITIES` 实体契约，
 | field | 100（T4-T5 零扣分） | 100（①实体 10 字段 ②活跃 53 处 ③静态校验） | 90 |
 
 - 修复过程：首测 field 60（缺 MS_ENTITIES）→ 按 REQ-021 范式补实体契约（fleetMember/neighbor/meshFrame 三实体）→ 复测 field 100；中途实体块误并入页面 JS 致「独立业务块」检测落空（structure ② 80/④ 50），拆为独立 `<script>` 块（脚本 split_biz_blocks 按 MS_ENTITIES 模式划资产块）后 structure 复测 100。全量回归：41/41 浏览器检查 + 0 console errors + 装配完整性 7 块 head64 OK。
+
+## 八、2026-11-13 更新轮：单表格页免标题（用户裁定 → AGENTS.md 列表工具栏契约新增小节）
+
+用户原话：「全局只有一个table的页面，不需要有标题。这个你要整理成规则。并且优化023这条需求」。规则已固化至 AGENTS.md「EG71 列表工具栏契约 · 单表格页免标题（用户裁定 2026-11-13，硬性）」，本节为该轮 demo 修订的验收证据。
+
+### 修订行（旧形态 × 新规则）
+
+| 旧形态 | 新规则 | 本次处理 |
+|---|---|---|
+| Fleet 卡默认兜底标题行「Member Gateways」（registry 源未传 title 也渲染） | AGENTS.md 单表格页免标题 + runtime 偏差条款 | 内联副本改「未显式传 `title`/`actionsHtml` 不渲染标题行」，`fleetPage()` 两视图均不传 → 头部整行消失，registry 源头不动 |
+| Frames 卡标题行「Mesh Frames」+ 行内筛选/刷新控件 | 同上 + 「标题行功能控件下沉操作栏行」条款 | 标题行删除；筛选下拉 + 刷新图标钮下沉 `.bc-eg71-toolbar` 行（左筛选组 + spacer + 右工具组），新增 `.bc-eg71-mesh-frames-toolbar` 结构类仅表达贴顶分隔线（padding/margin 12 + 1px `--color-divider-base-1`，值全令牌） |
+
+### 三角色验收证据
+
+- [U2-6] Fleet 页（Gateway Fleet 卡）｜AGENTS.md 列表工具栏契约·单表格页免标题｜标题行移除后操作栏升白卡第一行、下沿 1px 分隔线与表格分界（实测 card-head 0 / toolbar 1 / 分隔线 1px）｜0
+- [U2-7] Radio 页（Network · Radio 卡）｜同上·反例条款｜配置语义卡（无 ms-table、含开关/选择）标题照常保留（实测 card-head 1），不误伤反例｜0
+- [U3-6] Stream 页（Data Stream · Mesh Frames 卡）｜同上 + 控件下沉条款｜工具栏 32px 档（select 实测高 32px、14px——避开 `--sm` 的 28px/13px 违规档，spacing §4 禁 13px）；AI 视觉核验截图：标题行已消、下拉/刷新/表头对齐、无重叠错位｜0
+- [U5-3] 全局｜page-assembly §5 纯净性｜标题移除后可见 UI 无注记/指引残留｜0
+- [D2-2] demo.html fleet 渲染｜runtime 偏差范式（AGENTS.md）｜按契约就地修正内联副本，registry 源头不动（与 Tab 栏契约偏差处理同范式）｜0
+- [D3-2] demo.html frames 渲染｜naming / R2｜控件下沉复用既有 `.bc-eg71-toolbar`/`.bc-eg71-toolbar-spacer`/`.bc-eg71-toolbar-select` 基建类，无新自造视觉类｜0
+- [D4-2] 装配完整性｜assembly-integrity §2｜令牌活性断言 `--spacing-24` 有值、抽查分隔线 computed 1px、0 console errors、node --check 通过｜0
+- [T1-6] 三页导航｜interaction §1｜LoRa 组展开 → Fleet（5 行）/ Data Stream（13 行）/ Radio 全可达渲染正常｜0
+- [T2-6] Stream 筛选闭环｜interaction §1.1 列表类｜All Directions → Up 过滤后 19 行 Up 数据、刷新钮在位，交互链完整｜0
+
+### 本轮真实性校验
+
+本轮证据行全部 0 扣分（规则驱动修订，非缺陷修复）：interaction / visual 原始分维持 100 → 写 90（§0.6）；structure / field / component 以脚本复测为准（见 §九 追记）。
+
+## 九、更新轮脚本覆写追记（2026-11-13）
+
+| 维度 | 证据反推原始分 | 脚本分 | 写入分（§0.6 钳制） |
+|---|---|---|---|
+| structure | 100（本轮 U2-6/U2-7 零扣分） | 100（score_fidelity ①壳 ②骨架 ③装配 ④定制） | 90 |
+| component | —（脚本权威） | 84（score_component.json 复测同初版） | 84（区间内） |
+| interaction | 100（T1-6/T2-6 零扣分） | —（无脚本） | 90 |
+| visual | 100（U3-6/U5-3 零扣分） | —（无脚本） | 90 |
+| field | 100（T4 沿用初版字段核验，本轮无字段变更） | 100（score_fidelity ①实体 ②活跃 ③静态） | 90 |
+
+综合（0.2/0.2/0.25/0.2/0.15 加权，按写入分）= 90 × 0.2 + 84 × 0.2 + 90 × 0.25 + 90 × 0.2 + 90 × 0.15 = 89.9 ≥ 80，过同步门槛。
