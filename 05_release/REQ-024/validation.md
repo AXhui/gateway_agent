@@ -126,3 +126,34 @@
 ### 落分（第三轮）
 
 - structure/interaction/visual/field 证据行零扣分：反推 100 写 90（§0.6）；component/structure/field 以第三轮脚本 --write 分为准（原始分见两脚本 JSON，写入值按 §0.6 钳制 [80,90]）。
+
+## 三角色验收 · 第三轮 A（2026-11-16 页码条修复 + 编辑抽屉提示删除，与第三轮 B 并行交付）
+
+> 本轮与 mesh-radio v2 轮（第三轮 B）由两个并行会话协作交付：本轮先提交页码条修复与编辑提示删除，B 轮随后基于本轮提交落 mesh 工作。浏览器实测（Playwright/Chromium 1440×900，MS_FIGMA_EXPORT states 驱动 `Fleet · 成员表勾选` / `Fleet · 编辑抽屉`）。
+
+### 缺陷与修复
+
+1. **页码条溢出**：`.bc-eg71-mesh-fleet-size` 未限宽，L2 `.ms-select` 基类 `width:100%`（表单语义）解析成容器全宽 → 整条分页溢出。修复：组件域 `width:auto` 覆写（与 REQ-023 同款，源头已同步）。
+2. **‹/› 箭头误挂 active**：`item(n,label)` 对翻页钮也按 `n===cur` 判 active（第 1 页时 ‹ 蓝底）。修复：`label == null && n === cur` 才挂 active（registry 源头同步）。
+3. **13px 字号红线**：`.ms-pagination` / `.ms-page-jump input` 13px（spacing §4 全场景禁用）→ 内联改 14px；spacing.md §7 偏差清单已登记（随 REQ-023 轮 90bcd98 入库）。
+4. **编辑抽屉 Name 规则提示删除**（用户裁定）：label 行 `(letters, digits, - or _; ...)` span 移除；非法输入的运行时校验错误反馈保留（交互链完整性要求）。
+
+### UED
+
+- [U3-5] 页码条｜spacing §4｜分页与跳页输入 computed 14px，无 13px 残留｜0
+- [U4-5] 页码条布局｜组件契约｜刷新+Total+页码窗口（居中）+每页条数+跳页同行，`Fleet · 成员表勾选` 态卡片 scrollWidth−clientWidth = 0（零溢出），select 实宽 105px｜0
+- [U4-6] 编辑抽屉 label 行｜用户裁定｜`.bc-eg71-form-item-unit` 计数 0，抽屉字段仅 Relay ID + Name｜0
+
+### DEV
+
+- [D3-5] 自造类复核｜naming/R2｜无新增类名；4 处修复均与 REQ-023 同款且 registry/business.css 源头已同步｜0
+- [D4-5] 装配完整性｜assembly-integrity §2｜两态实测零 console error / 零 pageerror｜0
+
+### TEST
+
+- [T1-5] 分页交互｜interaction-completeness §1｜页码点击/翻页/每页条数/跳页链路保持；‹ 第 1 页 `disabled` 且 class 无 active，仅数字项 "1" 高亮（active 唯一）｜0
+- [T5-5] 边界｜五轴交互｜首/末页箭头禁用态、当前页高亮唯一；编辑抽屉非法输入仍有校验错误反馈｜0
+
+### 落分（第三轮 A）
+
+- 五维脚本分（对提交版运行）：component 84、structure/field/interaction/visual 100；证据行零扣分。写入值按 §0.6 钳制：100 → 90，component 84 在 [80,90] 区间不动。
