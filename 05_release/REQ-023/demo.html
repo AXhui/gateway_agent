@@ -913,13 +913,13 @@ body {
 .ms-tabs--card .ms-tab { padding: var(--spacing-8) var(--spacing-16); border-radius: var(--radius-6); }
 .ms-tabs--card .ms-tab--active { background: var(--color-bg-card); box-shadow: var(--shadow-1); }
 .ms-tabs--card .ms-tab--active::after { display: none; }
-.ms-pagination { display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-secondary); }
+.ms-pagination { display: flex; align-items: center; gap: var(--spacing-8); font-size: 14px; color: var(--color-text-secondary); }
 .ms-page-item { min-width: 30px; height: 30px; padding: 0 var(--spacing-8); display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); background: var(--color-bg-card); color: var(--color-text-primary); cursor: pointer; font-variant-numeric: tabular-nums; }
 .ms-page-item:hover { border-color: var(--color-primary-normal); color: var(--color-primary-normal); }
 .ms-page-item--active { background: var(--color-primary-normal); border-color: var(--color-primary-normal); color: var(--color-text-constant-normal); }
 .ms-page-item[disabled] { opacity: 0.4; cursor: not-allowed; }
 .ms-page-jump { display: inline-flex; align-items: center; gap: var(--spacing-4); margin-left: var(--spacing-8); }
-.ms-page-jump input { width: 48px; height: 30px; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); text-align: center; font: 400 13px/1 var(--font-sans); color: var(--color-text-primary); background: var(--color-bg-card); outline: 0; }
+.ms-page-jump input { width: 48px; height: 30px; border: 1px solid var(--color-border-base); border-radius: var(--radius-6); text-align: center; font: 400 14px/1 var(--font-sans); color: var(--color-text-primary); background: var(--color-bg-card); outline: 0; }
 .ms-breadcrumb { display: flex; align-items: center; gap: var(--spacing-8); font-size: 13px; color: var(--color-text-auxiliary); }
 .ms-breadcrumb a { color: var(--color-text-secondary); text-decoration: none; cursor: pointer; }
 .ms-breadcrumb a:hover { color: var(--color-primary-normal); }
@@ -2166,7 +2166,8 @@ body {
 .bc-eg71-mesh-fleet-pager { display: flex; align-items: center; gap: var(--spacing-12); padding-top: var(--spacing-12); }
 .bc-eg71-mesh-fleet-total { font-size: 12px; color: var(--color-text-secondary); }
 .bc-eg71-mesh-fleet-pager .ms-pagination { flex: 1 1 auto; justify-content: center; }
-.bc-eg71-mesh-fleet-size { flex: 0 0 auto; }
+/* width:auto 覆写 L2 .ms-select width:100%（表单语义）——分页条内不限宽会把下拉撑成容器全宽 */
+.bc-eg71-mesh-fleet-size { flex: 0 0 auto; width: auto; }
 .bc-eg71-mesh-fleet-detail-panel { width: 400px; max-width: 90vw; }
 .bc-eg71-mesh-fleet-detail-section { margin-bottom: var(--spacing-12); }
 .bc-eg71-mesh-fleet-detail-rows { display: flex; flex-direction: column; gap: var(--spacing-8); margin-bottom: var(--spacing-20); }
@@ -9470,7 +9471,7 @@ window.MS_BIZ_UTIL = (function () {
           </div>`;
         const pagerHtml = !ctx.pager ? '' : (() => {
           const p = ctx.pager, cur = p.page || 1, pages = Math.max(1, p.pages || 1);
-          const item = (n, label, dis) => `<button type="button" class="ms-page-item${n === cur ? ' ms-page-item--active' : ''}" data-mesh-fleet-page="${n}"${dis ? ' disabled' : ''}>${label != null ? label : n}</button>`;
+          const item = (n, label, dis) => `<button type="button" class="ms-page-item${label == null && n === cur ? ' ms-page-item--active' : ''}" data-mesh-fleet-page="${n}"${dis ? ' disabled' : ''}>${label != null ? label : n}</button>`;
           const win = [];
           for (let n = 1; n <= pages; n++) {
             if (n === 1 || n === pages || Math.abs(n - cur) <= 1) win.push(n);
