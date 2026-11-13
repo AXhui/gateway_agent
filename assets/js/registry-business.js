@@ -40,6 +40,7 @@ window.MS_ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  chevronsDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>',
   moreHoriz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -109,6 +110,7 @@ window.MS_ICONS = {
   hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></svg>',
   thumbsUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /><path d="M7 10v12" /></svg>',
   circleX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>',
+  circleXFilled: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="var(--color-error-normal)" /><path d="m15 9-6 6" stroke="var(--color-text-constant-normal)" stroke-width="2" stroke-linecap="round" /><path d="m9 9 6 6" stroke="var(--color-text-constant-normal)" stroke-width="2" stroke-linecap="round" /></svg>',
   squareMinus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /></svg>',
   squarePlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>',
   squareCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" /><path d="m9 11 3 3L22 4" /></svg>',
@@ -231,8 +233,6 @@ window.MS_BIZ_UTIL = (function () {
     { key: 'ipmesh-master', conn: 'IP & Mesh', cn: 'Master',
       hint: 'Gateways are interconnected via both wired/cellular networks and LoRa Mesh, for hybrid sites where some gateways are online while others are not. Online gateways back each other up or extend coverage; offline gateways send data back via LoRa Mesh relay.' }
   ];
-  const MESH_ROLE_HINT = r => `${esc(r.hint)}${r.cert ? ' <button type="button" class="ms-btn ms-btn--link bc-eg71-mesh-role-cert" data-mesh-role-cert>Download Certificate</button>' : ''}`;
-
   window.MS_BIZ_COMPONENTS = [
     {
       id: 'bc-metric-card', cn: '指标卡组', cat: '概览',
@@ -4100,19 +4100,17 @@ window.MS_BIZ_UTIL = (function () {
         ];
         const dep = ctx.deployment;
         const depHtml = !dep ? '' : `<div class="ms-card bc-eg71-mesh-deploy">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Deployment Mode</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Deployment Mode</div></div>
           <div class="ms-card-body bc-eg71-mesh-role-body">
             <div class="ms-form-item">
-              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Mode</label></div>
               ${(() => {
                 const opts = (dep.options && dep.options.length) ? dep.options : DEPLOY_PRESETS;
                 const card = o => {
                   const on = o.value === dep.value;
                   return `<label class="bc-eg71-mesh-deploy-card${on ? ' is-selected' : ''}" data-mesh-deploy-opt="${esc(o.value)}" role="radio" aria-checked="${on}" tabindex="0">
                     <input type="radio" name="bc-eg71-mesh-deploy"${on ? ' checked' : ''}>
-                    <span class="bc-eg71-mesh-deploy-card-title">${esc(o.label)}</span>
+                    <span class="bc-eg71-mesh-deploy-card-head"><span class="ms-radio-dot" aria-hidden="true"></span><span class="bc-eg71-mesh-deploy-card-title">${esc(o.label)}</span></span>
                     <span class="bc-eg71-mesh-deploy-card-desc">${esc(o.desc || '')}</span>
-                    <span class="ms-radio-dot" aria-hidden="true"></span>
                   </label>`;
                 };
                 const visible = opts.slice(0, 3), more = opts.slice(3);
@@ -4127,18 +4125,17 @@ window.MS_BIZ_UTIL = (function () {
           </div>
         </div>`;
         return `${depHtml}<div class="ms-card bc-eg71-mesh-role" data-mesh-role="${cur.key}">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('gateway', 20)}Gateway Role</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Gateway Role</div></div>
           <div class="ms-card-body bc-eg71-mesh-role-body">
             <div class="ms-form-item">
-              <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label ms-form-label--required">Role</label></div>
               <span class="ms-select bc-eg71-form-item-select bc-eg71-mesh-role-select">
                 <select data-mesh-role-select aria-label="Gateway role">
                   ${groups.map(g => `<optgroup label="${esc(g.conn)}">${g.items.map(r => `<option value="${r.key}"${r.key === cur.key ? ' selected' : ''}>${esc(r.conn)} - ${esc(r.cn)}</option>`).join('')}</optgroup>`).join('')}
                 </select>
               </span>
             </div>
-            ${cur.cert ? `<label class="ms-checkbox bc-eg71-mesh-secure"><input type="checkbox" data-mesh-secure${ctx.secure === false ? '' : ' checked'}><span class="ms-checkbox-box"></span>Secure connections</label>` : ''}
-            <div class="bc-eg71-mesh-role-hint" data-mesh-role-hint>${MESH_ROLE_HINT(cur)}</div>
+            ${cur.cert ? `<label class="ms-checkbox bc-eg71-mesh-secure"><input type="checkbox" data-mesh-secure${ctx.secure === false ? '' : ' checked'}><span class="ms-checkbox-box"></span>Secure connections${ico('info', 16)}</label>
+            <div class="bc-eg71-mesh-role-cert-row" data-mesh-role-cert-row><button type="button" class="ms-btn ms-btn--link bc-eg71-mesh-role-cert" data-mesh-role-cert>Download Certificate</button></div>` : ''}
             <div class="bc-eg71-mesh-role-relay" data-mesh-role-relay${cur.relay ? '' : ' hidden'}>
               <span class="bc-eg71-mesh-role-relay-label">Relay ID (auto-generated, globally unique)</span>
               <div class="bc-eg71-mesh-role-relay-value"><code class="bc-code">${esc(relayId)}</code><button type="button" class="ms-btn ms-btn--link" data-mesh-role-copy title="Copy">${ico('copy', 16)}</button></div>
@@ -4186,13 +4183,13 @@ window.MS_BIZ_UTIL = (function () {
         const wrap = rootEl.querySelector('.bc-eg71-mesh-role');
         if (!wrap) return;
         const sel = wrap.querySelector('[data-mesh-role-select]');
-        const hint = wrap.querySelector('[data-mesh-role-hint]');
+        const certRow = wrap.querySelector('[data-mesh-role-cert-row]');
         const relayRow = wrap.querySelector('[data-mesh-role-relay]');
         if (sel) sel.addEventListener('change', () => {
           const r = MESH_ROLES.find(x => x.key === sel.value);
           if (!r) return;
           wrap.setAttribute('data-mesh-role', r.key);
-          if (hint) hint.innerHTML = MESH_ROLE_HINT(r);
+          if (certRow) certRow.hidden = !r.cert;
           if (relayRow) relayRow.hidden = !r.relay;
           wrap.dispatchEvent(new CustomEvent('eg71-mesh-role-change', { bubbles: true, detail: { role: r.key, conn: r.conn, roleCn: r.cn } }));
         });
@@ -4233,7 +4230,7 @@ window.MS_BIZ_UTIL = (function () {
           </div>`;
         const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
         return `<div class="ms-card bc-eg71-mesh-config">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('lorawan', 20)}Mesh Configuration</div></div>
+          <div class="ms-card-head"><div class="ms-card-title">Mesh Configuration</div></div>
           <div class="ms-card-body bc-eg71-mesh-config-body">
             <div class="ms-grid-2 bc-com-form-grid bc-eg71-mesh-config-top">
               <div class="ms-form-item">
@@ -4241,11 +4238,11 @@ window.MS_BIZ_UTIL = (function () {
                   <label class="ms-form-label ms-form-label--required">Signing Key</label>
                   <button type="button" class="ms-btn ms-btn--link" data-mesh-key-eye>Show</button>
                 </div>
-                <label class="ms-input ms-input--lg${er.key ? ' ms-input--error' : ''}"><input type="password" data-mesh-field="key" value="${esc(v.key)}" placeholder="32-character hex string"></label>
+                <label class="ms-input${er.key ? ' ms-input--error' : ''}"><input type="password" data-mesh-field="key" value="${esc(v.key)}" placeholder="32-character hex string"></label>
                 ${errMsg('key') || '<div class="bc-eg71-form-item-msg">Auto-generated from the two gateway EUIs on Master; copy it directly to Relay gateways.</div>'}
               </div>
               ${fi('Max Relay Hops',
-                `<label class="ms-input ms-input--lg${er.hops ? ' ms-input--error' : ''}"><input data-mesh-field="hops" value="${esc(v.hops)}" inputmode="numeric"></label>`,
+                `<label class="ms-input${er.hops ? ' ms-input--error' : ''}"><input data-mesh-field="hops" value="${esc(v.hops)}" inputmode="numeric"></label>`,
                 errMsg('hops') || '<div class="bc-eg71-form-item-msg">How many gateways a packet may pass through from Relay to Master. More hops extend coverage but increase latency, failure rate and loss risk (gateway is half-duplex). Start from 1 hop.</div>')}
             </div>
             <div class="bc-eg71-mesh-config-risk" data-mesh-risk${ctx.risk ? '' : ' hidden'}>${esc(ctx.risk || '')}</div>
@@ -4260,11 +4257,11 @@ window.MS_BIZ_UTIL = (function () {
               ${isRelay ? `<div class="bc-eg71-mesh-config-cols">
                 <div class="bc-eg71-mesh-config-col">
                   ${fi('TX Power <span class="bc-eg71-form-item-unit">(dBm)</span>',
-                    `<label class="ms-input ms-input--lg${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
+                    `<label class="ms-input${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
                     errMsg('txPower'))}
                   ${fi('Bandwidth', sel('bw', v.bw, ['125 kHz', '250 kHz', '500 kHz'], er.bw), '')}
                   ${fi('Heartbeat Interval <span class="bc-eg71-form-item-unit">(s)</span>',
-                    `<label class="ms-input ms-input--lg${er.heartbeat ? ' ms-input--error' : ''}"><input data-mesh-field="heartbeat" value="${esc(v.heartbeat)}" inputmode="numeric"></label>`,
+                    `<label class="ms-input${er.heartbeat ? ' ms-input--error' : ''}"><input data-mesh-field="heartbeat" value="${esc(v.heartbeat)}" inputmode="numeric"></label>`,
                     errMsg('heartbeat'))}
                 </div>
                 <div class="bc-eg71-mesh-config-col">
@@ -4273,7 +4270,7 @@ window.MS_BIZ_UTIL = (function () {
                 </div>
               </div>` : `<div class="bc-eg71-mesh-config-grid">
                 ${fi('TX Power <span class="bc-eg71-form-item-unit">(dBm)</span>',
-                  `<label class="ms-input ms-input--lg${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
+                  `<label class="ms-input${er.txPower ? ' ms-input--error' : ''}"><input data-mesh-field="txPower" value="${esc(v.txPower)}" inputmode="numeric"></label>`,
                   errMsg('txPower'))}
                 ${fi('Spreading Factor', sel('sf', v.sf, ['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'], er.sf), '')}
                 ${fi('Bandwidth', sel('bw', v.bw, ['125 kHz', '250 kHz', '500 kHz'], er.bw), '')}
@@ -4327,18 +4324,18 @@ window.MS_BIZ_UTIL = (function () {
         const v = Object.assign({ topic: '/gateway/{gateway_id}/event/up', server: '', port: '', useCreds: false, user: '', pass: '', useTls: false, certType: 'CA Signed Server Certificate', caFile: '', certFile: '', keyFile: '', upPort: '1700', downPort: '1700' }, ctx.values || {});
         const er = ctx.errors || {};
         const selfSigned = /self/i.test(v.certType);
-        const ti = (name, val, ph, err, pwd) => `<label class="ms-input ms-input--lg${err ? ' ms-input--error' : ''}"><input${pwd ? ' type="password"' : ''} data-mesh-fwd="${name}" value="${esc(val == null ? '' : val)}" placeholder="${esc(ph || '')}"></label>`;
+        const ti = (name, val, ph, err, pwd) => `<label class="ms-input${err ? ' ms-input--error' : ''}"><input${pwd ? ' type="password"' : ''} data-mesh-fwd="${name}" value="${esc(val == null ? '' : val)}" placeholder="${esc(ph || '')}"></label>`;
         const errMsg = key => er[key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(er[key])}</div>` : '';
         const fi = (label, inner, msgHtml) => `<div class="ms-form-item">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${label ? ' ms-form-label--required' : ''}">${label || '&nbsp;'}</label></div>
             ${inner}${msgHtml || ''}
           </div>`;
         const upload = (name, file) => `<div class="bc-eg71-mesh-forward-upload">
-            <button type="button" class="ms-btn ms-btn--lg" data-mesh-fwd-upload="${name}">${ico('upload', 16)}Import</button>
+            <button type="button" class="ms-btn" data-mesh-fwd-upload="${name}">${ico('upload', 16)}Import</button>
             <span class="bc-eg71-mesh-forward-file${er[name] ? ' bc-eg71-mesh-forward-file--error' : ''}">${er[name] ? esc(er[name]) : (file ? esc(file) : 'No file selected')}</span>
           </div>`;
         return `<div class="ms-card bc-eg71-mesh-forward">
-          <div class="ms-card-head"><div class="ms-card-title">${ico('topology', 20)}Forwarding Destination</div>${ctx.locked ? '<span class="ms-tag ms-tag--warm">IP &amp; Mesh: Embedded NS only</span>' : ''}</div>
+          <div class="ms-card-head"><div class="ms-card-title">Forwarding Destination</div>${ctx.locked ? '<span class="ms-tag ms-tag--warm">IP &amp; Mesh: Embedded NS only</span>' : ''}</div>
           <div class="ms-card-body bc-eg71-mesh-forward-body">
             <div class="ms-form-item">
               <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Type</label></div>
@@ -4484,7 +4481,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-mesh-fleet', cn: 'Mesh 成员/邻居表', cat: 'LoRa 设置',
-      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Identifier/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
+      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Relay ID/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
       atoms: ['table', 'tag', 'button', 'icon', 'empty', 'checkbox', 'input', 'select', 'pagination', 'drawer'],
       entityHint: 'gateway',
       tags: ['LoRa', 'Mesh', '成员', '邻居', 'Fleet', '网关', '列表', 'Relay', 'Agent', 'EG71'],
@@ -4499,7 +4496,7 @@ window.MS_BIZ_UTIL = (function () {
         }).join('')}</span>`;
         const head = view === 'neighbors'
           ? ['ID', 'Name', 'Last Updated']
-          : ['Identifier', 'Name', 'Status', 'Last Updated'];
+          : ['Relay ID', 'Name', 'Status', 'Last Updated'];
         const body = rows.length ? rows.map((r, i) => `<tr>
             ${view === 'members' ? `<td class="bc-eg71-mesh-fleet-check"><label class="ms-checkbox"><input type="checkbox" data-mesh-fleet-check="${i}" aria-label="Select row"><span class="ms-checkbox-box"></span></label></td>` : ''}
             <td><span class="ms-text bc-num">${esc(r.id)}</span>${r.kind ? `<span class="ms-text ms-text--auxiliary"> (${esc(r.kind)})</span>` : ''}</td>
@@ -4541,7 +4538,7 @@ window.MS_BIZ_UTIL = (function () {
               <div class="ms-drawer-body">
                 <div class="ms-form">
                   <div class="ms-form-item">
-                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Identifier</label></div>
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Relay ID</label></div>
                     <label class="ms-input ms-input--disabled"><input value="${esc(ed.id || '')}" readonly></label>
                   </div>
                   <div class="ms-form-item">
@@ -4656,7 +4653,7 @@ window.MS_BIZ_UTIL = (function () {
         });
         const edit = wrap.querySelector('.bc-eg71-mesh-fleet-edit');
         if (edit) {
-          const closeEdit = () => { edit.hidden = true; };
+          const closeEdit = () => { edit.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'edit' } })); };
           edit.querySelectorAll('[data-mesh-fleet-edit-close],[data-mesh-fleet-edit-cancel]').forEach(b => b.addEventListener('click', closeEdit));
           const maskEl = edit.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeEdit(); });
@@ -4670,7 +4667,7 @@ window.MS_BIZ_UTIL = (function () {
         }
         const detail = wrap.querySelector('.bc-eg71-mesh-fleet-detail');
         if (detail) {
-          const closeDetail = () => { detail.hidden = true; };
+          const closeDetail = () => { detail.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'detail' } })); };
           detail.querySelectorAll('[data-mesh-fleet-detail-close]').forEach(b => b.addEventListener('click', closeDetail));
           const maskEl = detail.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeDetail(); });
@@ -4762,7 +4759,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-mesh-module', cn: 'Mesh 通用设置模块卡', cat: 'LoRa 设置',
-      desc: 'LoRa General 的通用被动设置模块卡：Frequency Plan / Packet Filter / Data Retransmission / Network Server Parameters 等按角色显隐的参数区块，行级字段（input/select/switch/text）由宿主注入，字段变更统一 eg71-mesh-module-field 冒泡。',
+      desc: 'LoRa General 的通用被动设置模块卡：Frequency Plan / Advanced Setting（可折叠 + 内嵌边框 panel / 双列 grid / compound 复合行）/ Packet Filter / Data Retransmission 等按角色显隐的参数区块，行级字段（input/select/switch/text/panel/grid/compound）由宿主注入，字段变更统一 eg71-mesh-module-field、折叠统一 eg71-mesh-module-fold 冒泡。',
       atoms: ['form', 'input', 'select', 'switch', 'card', 'icon', 'text'],
       entityHint: 'gateway',
       tags: ['LoRa', 'Mesh', '设置', 'Frequency Plan', 'Packet Filter', 'Data Retransmission', 'Network Server', '模块', 'EG71'],
@@ -4770,11 +4767,18 @@ window.MS_BIZ_UTIL = (function () {
         const rows = ctx.rows || [];
         const hs = ctx.headSwitch || null;
         const errs = ctx.errors || {};
+        const collapsible = !!ctx.collapsible;
+        const open = collapsible ? ctx.open !== false : true;
         const stats = rows.filter(r => r.type === 'stat');
         const normal = rows.filter(r => r.type !== 'stat');
         const rowHtml = r => {
           const msg = errs[r.key] ? `<div class="bc-eg71-form-item-msg bc-eg71-form-item-msg--error">${esc(errs[r.key])}</div>`
             : (r.msg ? `<div class="bc-eg71-form-item-msg">${r.msg}</div>` : '');
+          if (r.type === 'panel') return `<div class="bc-eg71-mesh-module-panel">
+              ${r.title ? `<div class="bc-eg71-mesh-module-panel-title">${esc(r.title)}</div>` : ''}
+              ${(r.rows || []).map(rowHtml).join('')}
+            </div>`;
+          if (r.type === 'grid') return `<div class="ms-grid-2 bc-com-form-grid">${(r.rows || []).map(rowHtml).join('')}</div>`;
           if (r.type === 'button') return `<div class="bc-eg71-mesh-module-actions">
             <button type="button" class="ms-btn${r.kind === 'filled' ? ' ms-btn--filled' : r.kind === 'danger' ? ' ms-btn--danger' : ''}" data-mesh-module-btn="${esc(r.key)}" aria-label="${esc(r.label)}">${r.icon ? ico(r.icon, 16) : ''}${esc(r.label)}</button>
           </div>`;
@@ -4787,13 +4791,20 @@ window.MS_BIZ_UTIL = (function () {
               <label class="ms-switch"><input type="checkbox" data-mesh-module-switch="${esc(r.key)}"${r.on ? ' checked' : ''} aria-label="${esc(r.label)}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>
             </div>${msg}
           </div>`;
+          if (r.type === 'compound') return `<div class="ms-form-item bc-eg71-mesh-module-row">
+            <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}</label></div>
+            <div class="bc-eg71-mesh-module-compound">
+              <span class="ms-select${errs[r.selectKey] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.selectKey)}" aria-label="${esc(r.label)} mode">${(r.selectOptions || []).map(o => `<option${o === r.selectValue ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>
+              <label class="ms-input${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}></label>
+            </div>${msg}
+          </div>`;
           if (r.type === 'select') return `<div class="ms-form-item bc-eg71-mesh-module-row">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
-            <span class="ms-select ms-select--lg${errs[r.key] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.key)}">${(r.options || []).map(o => `<option${o === r.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>${msg}
+            <span class="ms-select${errs[r.key] ? ' ms-select--error' : ''}"><select data-mesh-module-field="${esc(r.key)}">${(r.options || []).map(o => `<option${o === r.value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></span>${msg}
           </div>`;
           return `<div class="ms-form-item bc-eg71-mesh-module-row">
             <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label${r.required ? ' ms-form-label--required' : ''}">${r.label}${r.unit ? ` <span class="bc-eg71-form-item-unit">(${esc(r.unit)})</span>` : ''}</label></div>
-            <label class="ms-input ms-input--lg${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}${r.readonly ? ' readonly' : ''}></label>${msg}
+            <label class="ms-input${errs[r.key] ? ' ms-input--error' : ''}"><input data-mesh-module-field="${esc(r.key)}" value="${esc(r.value == null ? '' : r.value)}"${r.placeholder ? ` placeholder="${esc(r.placeholder)}"` : ''}${r.readonly ? ' readonly' : ''}></label>${msg}
           </div>`;
         };
         const statsHtml = stats.length ? `<div class="bc-eg71-mesh-module-stats">${stats.map(s => `<div class="bc-eg71-mesh-module-stat">
@@ -4801,11 +4812,14 @@ window.MS_BIZ_UTIL = (function () {
             <div class="ms-stat-value">${esc(s.value)}${s.suffix ? `<span class="ms-stat-suffix">${esc(s.suffix)}</span>` : ''}</div>
             ${s.sub ? `<div class="bc-eg71-mesh-module-stat-sub">${esc(s.sub)}</div>` : ''}
           </div>`).join('')}</div>` : '';
+        const titleHtml = collapsible
+          ? `<button type="button" class="ms-card-title bc-eg71-mesh-module-fold${open ? ' is-open' : ''}" data-mesh-module-toggle aria-expanded="${open ? 'true' : 'false'}">${esc(ctx.title || '')}${ico('chevronsDown', 18)}</button>`
+          : `<div class="ms-card-title">${esc(ctx.title || '')}</div>`;
         return `<div class="ms-card bc-eg71-mesh-module">
-          <div class="ms-card-head"><div class="ms-card-title">${ico(ctx.icon || 'settings', 20)}${esc(ctx.title || '')}</div>
+          <div class="ms-card-head">${titleHtml}
             ${hs ? `<label class="ms-switch"><input type="checkbox" data-mesh-module-head"${hs.on ? ' checked' : ''} aria-label="${esc(hs.label || '')}"><span class="ms-switch-track"></span><span class="ms-switch-thumb"></span></label>` : ''}
           </div>
-          <div class="ms-card-body bc-eg71-mesh-module-body">
+          <div class="ms-card-body bc-eg71-mesh-module-body"${open ? '' : ' hidden'}>
             ${ctx.desc ? `<div class="bc-section-desc">${esc(ctx.desc)}</div>` : ''}
             ${statsHtml}
             ${normal.map(rowHtml).join('')}
@@ -4818,6 +4832,15 @@ window.MS_BIZ_UTIL = (function () {
         const wrap = rootEl.querySelector('.bc-eg71-mesh-module');
         if (!wrap) return;
         wrap.addEventListener('click', e => {
+          const tg = e.target.closest('[data-mesh-module-toggle]');
+          if (tg) {
+            const body = wrap.querySelector('.ms-card-body');
+            const isOpen = tg.classList.toggle('is-open');
+            tg.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (body) body.hidden = !isOpen;
+            wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-fold', { bubbles: true, detail: { open: isOpen } }));
+            return;
+          }
           const btn = e.target.closest('[data-mesh-module-btn]');
           if (btn) wrap.dispatchEvent(new CustomEvent('eg71-mesh-module-field', { bubbles: true, detail: { key: btn.getAttribute('data-mesh-module-btn'), value: 'click' } }));
         });
@@ -5235,6 +5258,27 @@ window.MS_BIZ_UTIL = (function () {
     const cancelText = ctx.cancelText || '取消';
     const okText = ctx.okText || variant.okText;
     const needKeyword = ctx.action === 'delete' && ctx.confirmKeyword;
+    if (ctx.action === 'delete') {
+      /* Figma 业务库「弹窗」Error 变体（127:8693）：无标题栏/关闭钮，
+         24px 实心红圆×图标 + 标题 18/500 + 描述 14 同排，按钮组右对齐 gap 16。 */
+      return `<div class="bc-eg71-modal" hidden>
+        <div class="ms-mask">
+          <div class="ms-modal bc-eg71-modal--msg" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-modal-title">
+            <div class="bc-eg71-modal-msg-row">
+              <span class="bc-eg71-modal-msg-ic">${ico('circleXFilled', 24)}</span>
+              <div class="bc-eg71-modal-msg-text">
+                <div class="bc-eg71-modal-msg-title" id="bc-eg71-modal-title">${esc(title)}</div>
+                ${eg71ModalBody(ctx, variant)}
+              </div>
+            </div>
+            <div class="ms-modal-foot">
+              <button type="button" class="ms-btn" data-modal-cancel>${esc(cancelText)}</button>
+              <button type="button" class="ms-btn ${variant.okClass}" data-modal-ok${needKeyword ? ' disabled' : ''}>${esc(okText)}</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
     return `<div class="bc-eg71-modal" hidden>
       <div class="ms-mask">
         <div class="ms-modal${variant.size ? ' ms-modal' + variant.size : ''}" role="dialog" aria-modal="true" aria-labelledby="bc-eg71-modal-title">

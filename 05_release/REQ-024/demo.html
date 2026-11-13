@@ -665,7 +665,9 @@ body {
 .ms-form-item--inline { flex-direction: row; align-items: center; }
 .ms-form-item--inline .ms-form-label { width: 96px; flex: none; color: var(--color-text-secondary); font-weight: 400; }
 .ms-form-item--inline .ms-form-control { flex: 1; }
-.ms-form-help { font-size: 12px; color: var(--color-text-auxiliary); }
+/* 表单项标签契约（AGENTS.md）：单位载体 ms-form-unit 与底部提示词 ms-form-help 色 gray 5 写死（钉色阶令牌） */
+.ms-form-unit { font-size: 14px; font-weight: 400; color: var(--color-gray-05); }
+.ms-form-help { font-size: 12px; color: var(--color-gray-05); }
 .ms-form-error { font-size: 12px; color: var(--color-error-normal); display: flex; align-items: center; gap: var(--spacing-4); }
 .ms-form-section { display: flex; flex-direction: column; gap: var(--spacing-16); }
 .ms-form-section-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); padding-left: var(--spacing-8); border-left: 3px solid var(--color-primary-normal); }
@@ -1443,7 +1445,7 @@ body {
 /* 标签行：必填星号/标签/单位/info 图标靠左，字数统计靠右；错误态文案走 error-normal 令牌 */
 .bc-eg71-form-item-labelrow { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-8); }
 .bc-eg71-form-item-labelrow .ms-form-label { color: var(--color-text-secondary); font-weight: 400; }
-.bc-eg71-form-item-unit { color: var(--color-text-auxiliary); }
+.bc-eg71-form-item-unit { color: var(--color-gray-05); }
 .bc-eg71-form-item-count { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); white-space: nowrap; }
 .bc-eg71-form-item-msg { font-size: 14px; line-height: 22px; color: var(--color-text-auxiliary); }
 .bc-eg71-form-item-msg--error { color: var(--color-text-error-normal); }
@@ -2036,12 +2038,21 @@ body {
 /* ---- B_Eg71MeshFleetTable / B_Eg71MeshFrameList（bc-eg71-mesh-fleet / -frames，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-fleet-body .bc-eg71-form-item-msg,
 .bc-eg71-mesh-frames-body .bc-eg71-form-item-msg { margin-top: var(--spacing-12); }
-/* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 追加铸造） + bc-eg71-mesh-deploy 区块 ---- */
-.bc-eg71-mesh-radio-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
-.bc-eg71-mesh-radio-row { display: flex; align-items: center; gap: var(--spacing-12); padding-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-2); }
-.bc-eg71-mesh-radio-row:last-of-type { border-bottom: none; padding-bottom: 0; }
-.bc-eg71-mesh-radio-id { font-size: 14px; color: var(--color-text-primary); }
-.bc-eg71-mesh-radio-mhz { flex: 1; font-size: 14px; color: var(--color-text-secondary); }
+/* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 铸造 / v2.0.0 对齐线上真机形态） ---- */
+/* 卡组编排：Antenna Settings / Channel Settings（子区）/ Advanced Settings（子区）/ Custom Configuration */
+.bc-eg71-mesh-radio { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-radio-cardbody { display: flex; flex-direction: column; gap: var(--spacing-16); }
+/* 子区头：次标题（14/500/22）+ 开关总闸紧跟标题右侧（启用禁用契约 §6.1 载体分工） */
+.bc-eg71-mesh-radio-sec-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-radio-sec-title { font-size: 14px; font-weight: 500; line-height: 22px; color: var(--color-text-primary); }
+/* 子区总闸 off → 管辖区块灰显保持（opacity 0.45 + pointer-events none，范式同 bc-eg71-snmp-fields--disabled） */
+.bc-eg71-mesh-radio-sec-body--disabled { opacity: 0.45; pointer-events: none; }
+/* 表单项标签契约：label 行只挂单位 + tip（自左向右 gap 8，tip 热区 24×24） */
+.bc-eg71-mesh-radio-labelrow { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-form-item-tip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; }
+.bc-eg71-mesh-radio-chtable { width: 100%; }
+.bc-eg71-mesh-radio-chtable th, .bc-eg71-mesh-radio-chtable td { padding: var(--spacing-8) var(--spacing-12); }
+.bc-eg71-mesh-radio-chtable .ms-input { width: 160px; }
 .bc-eg71-mesh-radio-body .bc-eg71-form-item-msg { margin-top: var(--spacing-4); }
 /* ---- B_Eg71MeshModuleCard（bc-eg71-mesh-module，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-module-body { display: flex; flex-direction: column; gap: var(--spacing-20); }
@@ -2133,6 +2144,9 @@ body {
 
 /* bc-eg71-mesh-fleet · 工具栏/分页/详情抽屉（B_Eg71MeshFleetTable 域，Figma 71.0.0.5） */
 .bc-eg71-mesh-fleet-toolbar { padding-bottom: var(--spacing-12); margin-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
+/* 单表格页免标题（AGENTS.md 工具栏契约）：操作栏升为白卡第一行，贴卡片顶边 */
+.bc-eg71-mesh-fleet-body--headless { padding-top: 0; }
+.bc-eg71-mesh-fleet-body--headless .bc-eg71-mesh-fleet-toolbar { padding-top: var(--spacing-16); }
 .bc-eg71-mesh-fleet-body .ms-table { margin-bottom: 0; }
 .bc-eg71-mesh-fleet-check { width: 40px; }
 .bc-eg71-mesh-fleet-pager { display: flex; align-items: center; gap: var(--spacing-12); padding-top: var(--spacing-12); }
@@ -9413,7 +9427,7 @@ window.MS_BIZ_UTIL = (function () {
     },
     {
       id: 'bc-eg71-mesh-fleet', cn: 'Mesh 成员/邻居表', cat: 'LoRa 设置',
-      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Identifier/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
+      desc: 'LoRa Gateway Fleet 的成员/邻居单卡列表：members 视角（勾选列/Relay ID/Name/Status/Last Updated/操作，仅离线行可删，卡片顶部工具栏=批量 Delete+搜索，底部分页=刷新+Total+页码+每页条数+跳页，行级 Edit/Detail 抽屉）与 neighbors 视角（ID/Name/Last Updated，无状态无操作，仅搜索）；EG71 左对齐契约（bc-num + bc-eg71-table-ops）；空态保留表头。',
       atoms: ['table', 'tag', 'button', 'icon', 'empty', 'checkbox', 'input', 'select', 'pagination', 'drawer'],
       entityHint: 'gateway',
       tags: ['LoRa', 'Mesh', '成员', '邻居', 'Fleet', '网关', '列表', 'Relay', 'Agent', 'EG71'],
@@ -9428,7 +9442,7 @@ window.MS_BIZ_UTIL = (function () {
         }).join('')}</span>`;
         const head = view === 'neighbors'
           ? ['ID', 'Name', 'Last Updated']
-          : ['Identifier', 'Name', 'Status', 'Last Updated'];
+          : ['Relay ID', 'Name', 'Status', 'Last Updated'];
         const body = rows.length ? rows.map((r, i) => `<tr>
             ${view === 'members' ? `<td class="bc-eg71-mesh-fleet-check"><label class="ms-checkbox"><input type="checkbox" data-mesh-fleet-check="${i}" aria-label="Select row"><span class="ms-checkbox-box"></span></label></td>` : ''}
             <td><span class="ms-text bc-num">${esc(r.id)}</span>${r.kind ? `<span class="ms-text ms-text--auxiliary"> (${esc(r.kind)})</span>` : ''}</td>
@@ -9470,7 +9484,7 @@ window.MS_BIZ_UTIL = (function () {
               <div class="ms-drawer-body">
                 <div class="ms-form">
                   <div class="ms-form-item">
-                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Identifier</label></div>
+                    <div class="bc-eg71-form-item-labelrow"><label class="ms-form-label">Relay ID</label></div>
                     <label class="ms-input ms-input--disabled"><input value="${esc(ed.id || '')}" readonly></label>
                   </div>
                   <div class="ms-form-item">
@@ -9510,9 +9524,9 @@ window.MS_BIZ_UTIL = (function () {
           </div>
         </div>`;
         return `<div class="ms-card bc-eg71-mesh-fleet" data-mesh-fleet-view="${view}">
-          <div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
-            <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>
-          <div class="ms-card-body bc-eg71-mesh-fleet-body">
+          ${ctx.title || ctx.actionsHtml ? `<div class="ms-card-head"><div class="ms-card-title">${ico(view === 'neighbors' ? 'topology' : 'gateway', 20)}${esc(ctx.title || (view === 'neighbors' ? 'Neighbor Relays (Last 24h)' : 'Member Gateways'))}</div>
+            <div class="ms-space ms-space--12">${ctx.actionsHtml || ''}</div></div>` : ''}
+          <div class="ms-card-body bc-eg71-mesh-fleet-body${ctx.title || ctx.actionsHtml ? '' : ' bc-eg71-mesh-fleet-body--headless'}">
             ${toolbarHtml}
             <table class="ms-table">
               <thead><tr>${view === 'members' ? `<th class="bc-eg71-mesh-fleet-check"><label class="ms-checkbox"><input type="checkbox" data-mesh-fleet-checkall aria-label="Select all on page"><span class="ms-checkbox-box"></span></label></th>` : ''}${head.map(h => `<th>${esc(h)}</th>`).join('')}${view === 'neighbors' ? '' : '<th class="bc-eg71-table-ops">Operations</th>'}</tr></thead>
@@ -9585,7 +9599,7 @@ window.MS_BIZ_UTIL = (function () {
         });
         const edit = wrap.querySelector('.bc-eg71-mesh-fleet-edit');
         if (edit) {
-          const closeEdit = () => { edit.hidden = true; };
+          const closeEdit = () => { edit.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'edit' } })); };
           edit.querySelectorAll('[data-mesh-fleet-edit-close],[data-mesh-fleet-edit-cancel]').forEach(b => b.addEventListener('click', closeEdit));
           const maskEl = edit.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeEdit(); });
@@ -9599,7 +9613,7 @@ window.MS_BIZ_UTIL = (function () {
         }
         const detail = wrap.querySelector('.bc-eg71-mesh-fleet-detail');
         if (detail) {
-          const closeDetail = () => { detail.hidden = true; };
+          const closeDetail = () => { detail.hidden = true; wrap.dispatchEvent(new CustomEvent('eg71-mesh-fleet-drawer-close', { bubbles: true, detail: { drawer: 'detail' } })); };
           detail.querySelectorAll('[data-mesh-fleet-detail-close]').forEach(b => b.addEventListener('click', closeDetail));
           const maskEl = detail.querySelector('.ms-mask');
           if (maskEl) maskEl.addEventListener('click', e => { if (e.target === maskEl) closeDetail(); });
@@ -10322,7 +10336,7 @@ window.MS_ENTITIES = {
   fleetMember: {
     key: 'fleetMember', cn: 'Fleet 成员网关', aliases: ['成员表', 'gateway fleet', 'member', '成员网关'],
     fields: [
-      { key: 'eui', cn: 'Identifier', type: 'code', w: 190 },
+      { key: 'eui', cn: 'Relay ID', type: 'code', w: 190 },
       { key: 'name', cn: 'Name', type: 'text', w: 170 },
       { key: 'status', cn: 'Status', type: 'tag', w: 110 },
       { key: 'updated', cn: 'Last Updated', type: 'text', w: 170 }
@@ -10444,7 +10458,6 @@ window.MS_ENTITIES = {
         id: id,
         kind: isAgent ? 'Agent EUI' : 'Relay ID',
         name: i < 12 ? (isAgent ? 'Agent-Site-' + pad2(i + 1) : 'Relay-Warehouse-' + pad2(i + 1)) : id,
-        gps: { lat: (24.48 + (i % 30) * 0.001).toFixed(4), lng: (118.08 + (i % 17) * 0.002).toFixed(4), alt: 10 + (i % 40) },
         status: offline ? 'Offline' : 'Online',
         updated: offline
           ? '2026-11-0' + ((i % 3) + 1) + ' 1' + (i % 9) + ':' + pad2((i * 7) % 60)
@@ -10599,12 +10612,7 @@ window.MS_ENTITIES = {
       var row = fd.pool.find(function (r) { return r.id === S.fleet.edit.id; });
       if (row) {
         ctx.editDrawer = {
-          id: row.id, name: S.fleet.edit.name, nameError: S.fleet.edit.nameError || '', open: true,
-          info: [
-            { label: 'GPS Latitude', value: row.gps.lat + '°' },
-            { label: 'GPS Longitude', value: row.gps.lng + '°' },
-            { label: 'Altitude (m)', value: String(row.gps.alt) }
-          ]
+          id: row.id, name: S.fleet.edit.name, nameError: S.fleet.edit.nameError || '', open: true
         };
       }
     }
@@ -10958,15 +10966,21 @@ window.MS_ENTITIES = {
       S.modal = { kind: 'delete-batch', desc: 'Are you sure you want to delete the ' + sel.length + ' selected member gateway(s)? This cannot be undone.', ids: sel.map(function (r) { return r.id; }) };
       render();
     });
+    $app.addEventListener('eg71-mesh-fleet-drawer-close', function (e) {
+      if (e.detail.drawer === 'edit') S.fleet.edit = null;
+      else if (e.detail.drawer === 'detail') S.fleet.detail = null;
+    });
     $app.addEventListener('eg71-mesh-fleet-op', function (e) {
       var fd = fleetData();
       var start = (S.fleet.page - 1) * S.fleet.size;
       var row = fd.rows[start + e.detail.index];
       if (!row) return;
       if (e.detail.op === 'edit') {
+        S.fleet.detail = null;
         S.fleet.edit = { id: row.id, name: row.name, nameError: '' };
         render();
       } else if (e.detail.op === 'detail') {
+        S.fleet.edit = null;
         S.fleet.detail = { id: row.id };
         render();
       } else if (e.detail.op === 'delete') {

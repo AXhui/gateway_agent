@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshFleetTable
-version: 1.3.0
+version: 1.4.0
 description: Mesh 成员/邻居表（业务组件）
 ---
 
@@ -17,7 +17,7 @@ description: Mesh 成员/邻居表（业务组件）
 
 ## 一、描述
 
-LoRa → Gateway Fleet 的成员/邻居单卡列表：`members` 视角（勾选列 / Identifier / Name / Status / Last Updated / 操作，仅离线行可删——在线行 Delete 禁用；卡体顶部工具栏 = 批量 Delete（禁用态直至勾选）+ 右侧搜索；表底分页 = 刷新钮 + Total + 页码窗口 + 每页条数 + 跳页）与 `neighbors` 视角（ID / Name / Last Updated，无状态无操作，仅搜索）。行级 Edit / Detail 抽屉（Detail 含 Basic Info + Signal Quality RSSI/SNR(avg)，刷新即重取）。遵守 EG71 表格左对齐契约（数字列 `bc-num`、操作列 `bc-eg71-table-ops`）。
+LoRa → Gateway Fleet 的成员/邻居单卡列表：`members` 视角（勾选列 / Relay ID / Name / Status / Last Updated / 操作，仅离线行可删——在线行 Delete 禁用；卡体顶部工具栏 = 批量 Delete（禁用态直至勾选）+ 右侧搜索；表底分页 = 刷新钮 + Total + 页码窗口 + 每页条数 + 跳页）与 `neighbors` 视角（ID / Name / Last Updated，无状态无操作，仅搜索）。行级 Edit / Detail 抽屉（Detail 含 Basic Info + Signal Quality RSSI/SNR(avg)，刷新即重取）。遵守 EG71 表格左对齐契约（数字列 `bc-num`、操作列 `bc-eg71-table-ops`）。
 
 **不是**：通用设备列表（`bc-eg71-device-list` 管数采设备；本表管 Mesh 成员/邻居网关）。
 
@@ -42,13 +42,13 @@ LoRa → Gateway Fleet 的成员/邻居单卡列表：`members` 视角（勾选�
 |---|---|---|---|
 | `view` | `'members'\|'neighbors'` | `'members'` | 视角切换（列集/操作随之变化） |
 | `rows` | array | `[]` | `{id, kind?, name, status?, updated}` |
-| `title` | string | 按视角 | 卡头标题覆写 |
+| `title` | string | 按视角 | 卡头标题覆写；单表格页（内容区全局仅一张表）不传 `title`/`actionsHtml`，A4 内联按 AGENTS.md「单表格页免标题」免渲染标题行、操作栏贴卡顶 |
 | `actionsHtml` | string | `''` | 卡头右侧操作区（宿主注入，如 Refresh 钮） |
 | `tip` | string | — | 表底说明（如「仅离线成员可删除」） |
 | `toolbar` | boolean | `true` | `false` 时不渲染工具栏（neighbors 亦只有搜索） |
 | `search` / `searchPlaceholder` | string | — / 按视角 | 工具栏搜索初值与占位文案 |
 | `pager` | `{total, page, pages, size}` | 无 | 传入即渲染表底分页 |
-| `editDrawer` | `{id, name, nameError?, open?, info?, idLabel?}` | 无 | 传入即渲染内置 Edit 抽屉（Identifier 只读 + Name 可编辑，名称规则提示与行级错误；`info?: [{label,value}]` 追加只读展示行；`idLabel` 覆写首行标签，如 neighbors 视角 'ID'），`open:true` 时打开 |
+| `editDrawer` | `{id, name, nameError?, open?, info?, idLabel?}` | 无 | 传入即渲染内置 Edit 抽屉（Relay ID 只读 + Name 可编辑，名称规则提示与行级错误；`info?: [{label,value}]` 追加只读展示行；`idLabel` 覆写首行标签），`open:true` 时打开 |
 | `detailDrawer` | `{open, basics:[{label,value}], signal:{rssi,snr}, tip?}` | 无 | 传入即渲染内置 Detail 抽屉（400px；Basic Info 行 + Signal Quality (Last 1h) RSSI/SNR(avg)） |
 
 ### 事件（CustomEvent，bubbles）
@@ -62,6 +62,7 @@ LoRa → Gateway Fleet 的成员/邻居单卡列表：`members` 视角（勾选�
 | `eg71-mesh-fleet-refresh` | — | 分页区刷新钮 |
 | `eg71-mesh-fleet-page` | `{page}` | 页码点击 / 跳页回车 |
 | `eg71-mesh-fleet-size` | `{size}` | 每页条数切换 |
+| `eg71-mesh-fleet-drawer-close` | `{drawer:'edit'\|'detail'}` | Edit/Detail 抽屉经关闭钮 / 蒙版点击关闭时（宿主应清对应状态，防止下次渲染复活叠加；抽屉 DOM 由组件就地隐藏，宿主无需重渲染） |
 
 ## 三、状态
 
