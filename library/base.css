@@ -248,10 +248,12 @@ body {
 .ms-form-item { display: flex; flex-direction: column; gap: var(--spacing-8); }
 .ms-form-label { font-size: 14px; color: var(--color-text-primary); font-weight: 500; display: flex; align-items: center; gap: var(--spacing-4); }
 .ms-form-label--required::before { content: '*'; color: var(--color-error-normal); }
+/* EG71 表单项标签契约：label 后只挂单位与 tip，单位色 gray 5 钉色阶令牌（AGENTS.md） */
+.ms-form-unit { font-size: 14px; font-weight: 400; color: var(--color-gray-05); }
 .ms-form-item--inline { flex-direction: row; align-items: center; }
 .ms-form-item--inline .ms-form-label { width: 96px; flex: none; color: var(--color-text-secondary); font-weight: 400; }
 .ms-form-item--inline .ms-form-control { flex: 1; }
-.ms-form-help { font-size: 12px; color: var(--color-text-auxiliary); }
+.ms-form-help { font-size: 12px; color: var(--color-gray-05); }
 .ms-form-error { font-size: 12px; color: var(--color-error-normal); display: flex; align-items: center; gap: var(--spacing-4); }
 .ms-form-section { display: flex; flex-direction: column; gap: var(--spacing-16); }
 .ms-form-section-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); padding-left: var(--spacing-8); border-left: 3px solid var(--color-primary-normal); }
