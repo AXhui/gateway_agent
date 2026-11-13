@@ -1,0 +1,9 @@
+{
+  "structure": 90,
+  "component": 84,
+  "interaction": 90,
+  "visual": 90,
+  "field": 90,
+  "category": "网关",
+  "reason": "structure 90：脚本分 100，按落分区间控制写 90（scoring.md §0.6）；component 84：脚本分（③疑似手写函数 9 个·70 分 + ⑤令牌占比 69%·62 分拉低，明细见 score_component.json），在 [80,90] 区间内不钳制；interaction 90：证据反推 100 写 90（T1-T5 零扣分，Tab 切换链浏览器实测通过）；visual 90：证据反推 100 写 90（U3-U5 零扣分）；field 90：脚本分 100，按 §0.6 写 90。原始分均可由 validation.md 证据行与两个脚本 JSON 反推。"
+}

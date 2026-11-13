@@ -204,7 +204,7 @@ window.MS_BIZ_UTIL = (function () {
   // EG71 一级侧边导航分组（侧栏与顶栏面包屑共享的唯一源，避免两处各写一份）
   const navGroups = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-    { label: 'LoRa', icon: 'lorawan', route: '/lora', children: ['General', 'Radio', 'Gateway Fleet'] },
+    { label: 'LoRa', icon: 'lorawan', route: '/lora' },
     { label: 'Data Services', icon: 'data', route: '/data-services', children: ['Data Acquisition', 'Data Forwarding', 'Data Library', 'Data Stream'] },
     { label: 'Network', icon: 'topology', route: '/network', children: ['Network Interface', 'Firewall Management', 'DHCP', 'DDNS', 'Link Failover', 'VPN'] },
     { label: 'Platform', icon: 'layers', route: '/platform', children: ['Location Rules'] },
@@ -1004,7 +1004,7 @@ window.MS_BIZ_UTIL = (function () {
             ? `<span class="bc-eg71-crumb-last">${esc(group.label)}</span>`
             : `<a href="${esc(group.route)}">${esc(group.label)}</a>`);
           if (segs[1]) {
-            const childLabel = (group.children || []).find(c => U.slug(c) === segs[1]) || cap(segs[1]);
+            const childLabel = (group.children || []).find(c => U.slug(c) === segs[1]) || segs[1].split('-').map(cap).join(' ');
             crumbs.push(`<span class="bc-eg71-crumb-last">${esc(childLabel)}</span>`);
           }
         } else {
