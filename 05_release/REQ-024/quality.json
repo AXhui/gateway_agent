@@ -1,9 +1,9 @@
 {
   "structure": 90,
-  "component": 84,
+  "component": 83,
   "interaction": 90,
   "visual": 90,
   "field": 90,
   "category": "网关",
-  "reason": "structure 90：脚本分 100，按落分区间控制写 90（scoring.md §0.6，第三轮A U4-5 页码条零溢出）；component 84：脚本分（对提交版运行：③疑似手写函数 9 个·70 分为 modal/drawer 基建同集 + ⑤令牌占比 69%·62 分，明细 score_component.json），在 [80,90] 区间内不钳制；interaction 90：证据反推 100 写 90（第三轮A T1-5/T5-5 零扣分：分页交互链、首末页禁用态、active 唯一，Playwright 实测通过）；visual 90：证据反推 100 写 90（第三轮A U3-5/U4-5/U4-6 零扣分：14px 红线、零溢出、抽屉仅 Relay ID + Name）；field 90：脚本分 100，按 §0.6 写 90。第三轮B（mesh-radio v2）质量数据由该轮提交随后覆盖。原始分均可由 validation.md 证据行与脚本 JSON 反推。"
+  "reason": "structure 90：脚本分 100，按落分区间控制写 90（scoring.md §0.6，第三轮 U2-3 四卡结构对齐线上真机）；component 83：脚本分（③疑似手写函数 9 个·70 分为 modal/drawer 基建与上轮同集 + ⑤令牌占比 69%·62 分，明细 score_component.json），在 [80,90] 区间内不钳制；interaction 90：证据反推 100 写 90（第三轮 T1-3/T2-3/T3-4/T5-4 零扣分：交互链五段、启停状态保持、频段 chips 联动，Playwright 24/24 实测通过）；visual 90：证据反推 100 写 90（第三轮 U3-3/U3-5/U3-6/U4-3/U5-2 零扣分：label 契约单位 gray-05、Alert 位置④、双列按 §5.2）；field 90：脚本分 100，按 §0.6 写 90（第三轮 T4-4 字段全量对齐线上真机清单，线上空值项补合理枚举）。原始分均可由 validation.md 证据行与两个脚本 JSON 反推。"
 }
