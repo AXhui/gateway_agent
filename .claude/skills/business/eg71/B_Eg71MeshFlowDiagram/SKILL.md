@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshFlowDiagram
-version: 1.1.0
+version: 1.2.0
 description: Mesh 工作模式图（业务组件）
 ---
 
@@ -17,7 +17,7 @@ description: Mesh 工作模式图（业务组件）
 
 ## 一、描述
 
-Dashboard 的 LoRa 工作模式数据流示意图（`flow` 模式，4 变体）+ Gateway Status 的级联网关摘要卡（`cascade` 模式），一组件双模式。flow 模式：节点（End Devices / Relay / Master / NS / 南向协议）+ 连线标签（LoRa / LoRa Mesh / IP / Data）+ NS 连接状态 tag + 在线设备数标注 + PRD 逐字英文说明；cascade 模式：按角色汇总行（名称/数量/状态 tag/View 钮）+ 空态。
+Dashboard 的 LoRa 工作模式数据流示意图（`flow` 模式，4 变体）+ Gateway Status 的级联网关摘要卡（`cascade` 模式），一组件双模式。flow 模式：节点（End Devices / Relay / Master / NS / 南向协议）+ 连线标签（LoRa / LoRa Mesh / IP / Data）+ NS 连接状态 tag + 在线设备数标注 + PRD 逐字英文说明；cascade 模式：按角色汇总行（名称/数量/状态 tag，**纯展示无 View 钮**——Figma 71.0.0.5 形态）+ 空态。
 
 **不是**：通用拓扑图组件——节点文案与变体集合为 LoRa Mesh 契约。
 
@@ -45,7 +45,6 @@ Dashboard 的 LoRa 工作模式数据流示意图（`flow` 模式，4 变体）+
 ### 事件（CustomEvent，bubbles）
 | 事件 | detail | 触发 |
 |---|---|---|
-| `eg71-mesh-cascade-view` | `{key}` | cascade 行 View（宿主开抽屉或跳转） |
 | `eg71-mesh-cascade-config` | `{}` | cascade 卡头 Configuration 钮（宿主跳配置页） |
 
 ## 三、状态

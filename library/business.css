@@ -975,3 +975,40 @@
 
 /* bc-eg71-device-lib-page · Data Library 页脚手架（tabs→卡片间距，B_Eg71DeviceLibTable 域） */
 .bc-eg71-device-lib-page { margin-top: var(--spacing-16); }
+
+/* ===================== 内置库更新域（Figma 71.0.0.5 · LoRa Mesh 升级，样式以 Figma 为主） ===================== */
+
+/* bc-eg71-mesh-deploy · Deployment Mode 卡片选择器（B_Eg71MeshRoleCard 域） */
+.bc-eg71-mesh-deploy-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-12); }
+.bc-eg71-mesh-deploy-cards.is-more-open { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.bc-eg71-mesh-deploy-card { position: relative; display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-12) var(--spacing-16); background: var(--color-fill-base-normal); border: 1px solid var(--color-border-base); border-radius: var(--radius-8); cursor: pointer; transition: border-color var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-deploy-card:hover { border-color: var(--color-primary-normal); }
+.bc-eg71-mesh-deploy-card.is-selected { border-color: var(--color-primary-normal); background: var(--color-primary-bg); }
+.bc-eg71-mesh-deploy-card input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.bc-eg71-mesh-deploy-card-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.bc-eg71-mesh-deploy-card-desc { font-size: 12px; line-height: 18px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-deploy-card .ms-radio-dot { position: absolute; top: var(--spacing-12); right: var(--spacing-12); }
+.bc-eg71-mesh-deploy-more { display: inline-flex; align-items: center; gap: var(--spacing-4); padding: 0; border: none; background: transparent; font-size: 14px; color: var(--color-text-link-normal); cursor: pointer; }
+.bc-eg71-mesh-deploy-more .ms-ico { transition: transform var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-deploy-more.is-open .ms-ico { transform: rotate(180deg); }
+.bc-eg71-mesh-deploy-extra { display: contents; }
+.bc-eg71-mesh-secure { margin-top: var(--spacing-4); }
+
+/* bc-eg71-mesh-config · Mesh Configuration 两列结构（B_Eg71MeshConfigCard 域） */
+.bc-eg71-mesh-config-top { margin-bottom: var(--spacing-16); }
+.bc-eg71-mesh-config-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) var(--spacing-24); }
+
+/* bc-eg71-mesh-fleet · 工具栏/分页/详情抽屉（B_Eg71MeshFleetTable 域，Figma 71.0.0.5） */
+.bc-eg71-mesh-fleet-toolbar { padding-bottom: var(--spacing-12); margin-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-1); }
+.bc-eg71-mesh-fleet-body .ms-table { margin-bottom: 0; }
+.bc-eg71-mesh-fleet-check { width: 40px; }
+.bc-eg71-mesh-fleet-pager { display: flex; align-items: center; gap: var(--spacing-12); padding-top: var(--spacing-12); }
+.bc-eg71-mesh-fleet-total { font-size: 12px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-fleet-pager .ms-pagination { flex: 1 1 auto; justify-content: center; }
+.bc-eg71-mesh-fleet-size { flex: 0 0 auto; }
+.bc-eg71-mesh-fleet-detail-panel { width: 400px; max-width: 90vw; }
+.bc-eg71-mesh-fleet-detail-section { margin-bottom: var(--spacing-12); }
+.bc-eg71-mesh-fleet-detail-rows { display: flex; flex-direction: column; gap: var(--spacing-8); margin-bottom: var(--spacing-20); }
+.bc-eg71-mesh-fleet-detail-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--spacing-16); }
+.bc-eg71-mesh-fleet-detail-label { font-size: 14px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-fleet-detail-tip { margin-top: var(--spacing-12); }

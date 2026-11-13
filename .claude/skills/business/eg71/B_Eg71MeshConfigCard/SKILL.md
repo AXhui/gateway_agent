@@ -1,6 +1,6 @@
 ---
 name: B_Eg71MeshConfigCard
-version: 1.0.0
+version: 1.1.0
 description: Mesh 配置卡（业务组件）
 ---
 
@@ -17,7 +17,7 @@ description: Mesh 配置卡（业务组件）
 
 ## 一、描述
 
-EG71 LoRa General 页的 Mesh Configuration 区块卡：签名密钥（密码框 + Show/Hide 链接钮）、最大中继跳数（实时风险提示区）、Mesh 频段多选 chip（含被禁用频段告警条）、Advanced 折叠区（TX Power / SF / BW / CR + Master 侧 Ignore Direct Uplink + Relay 侧 Heartbeat Interval），按角色出字段变体。
+EG71 LoRa General 页的 Mesh Configuration 区块卡：顶部双列（签名密钥（密码框 + Show/Hide 链接钮）+ 最大中继跳数（实时风险提示区），`ms-grid-2` + `bc-com-form-grid`）、Mesh 频段多选 chip（含被禁用频段告警条）、Advanced 折叠区（Master 侧四字段双列网格 / Relay 侧两列结构：TX Power / Bandwidth / Heartbeat Interval 左列 + Spreading Factor / Code Rate 右列 + Master 的 Ignore Direct Uplink），按角色出字段变体。
 
 **不是**：通用表单卡——字段集合与提示文案为 LoRa Mesh 专属。
 
@@ -55,11 +55,11 @@ EG71 LoRa General 页的 Mesh Configuration 区块卡：签名密钥（密码框
 
 | 状态 | 表现 |
 |---|---|
-| 默认 | 密钥密码框 + 跳数 + 频段 chips + 折叠钮 |
+| 默认 | 顶部双列（密钥 + 跳数，`ms-grid-2 bc-com-form-grid`）+ 频段 chips + 折叠钮 |
 | 字段错误 | `ms-input--error` / `ms-select--error` + 错误文案替换 hint |
 | 风险提示 | `bc-eg71-mesh-config-risk`（warm 底）显示 |
 | 频段禁用 | `ms-alert--error` 告警条（button 重置，可点击） |
-| 高级展开 | `.is-open`（箭头旋转 180° + `aria-expanded` 同步） |
+| 高级展开 | `.is-open`（箭头旋转 180° + `aria-expanded` 同步）；Master 四字段 `bc-eg71-mesh-config-grid` 双列、Relay `bc-eg71-mesh-config-cols` 两列结构 |
 | 密钥可见 | Show/Hide 链接钮切换 input type |
 
 ## 四、场景

@@ -1,0 +1,9 @@
+{
+  "structure": 90,
+  "component": 84,
+  "interaction": 90,
+  "visual": 90,
+  "field": 90,
+  "category": "网关",
+  "reason": "structure 90：score_fidelity 脚本分 100（①统一壳 ②骨架 5/5 ③装配健康 269 调用点 ④业务定制度），按落分区间控制写 90（scoring.md §0.6）；component 84：score_component 脚本分（①98 ②100 ③70——9 个疑似手写函数经 validation.md D1-1 归因为 registry 内部源码/页面编排助手的脚本近似误报 ④100 ⑤62——令牌 69% 为内联 runtime 源码固有 px）；interaction 90：原始 100 零扣分（T1-T5：角色切换/Fleet 编辑删除/搜索空态/校验/键盘，41 项浏览器实测全过 + 0 console errors），写 90（§0.6）；visual 90：原始 100 零扣分（U3-U5：3 张截图 AI 视觉核验 + 纯净性 grep 零命中 + 标题/Tab/Alert 三契约全过），写 90（§0.6）；field 90：score_fidelity 脚本分 100（①实体定义完整——MS_ENTITIES 三实体 10 字段 ②装配活跃度 53 处 ③静态字段校验），写 90（§0.6）。"
+}
