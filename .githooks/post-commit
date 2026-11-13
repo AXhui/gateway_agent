@@ -158,14 +158,37 @@ echo "$DEMO_FILES" | while IFS= read -r DEMO_PATH; do
   # 上传 demo 到飞书云空间，生成可在线预览的链接（优先使用，失败则回退到 NAS 路径）。
   # 注意：Windows 上 lark-cli 的 user token 由 Git Bash/PowerShell 直接调用可读取，
   # 但经 Python subprocess 启动会读不到 Keychain token，因此这里在 Bash 钩子内直接调用 lark-cli。
+  # 固定文件名 REQ-XXX.html（不带版本号）：同需求覆盖上传、链接不变，测试/表格里的旧链接永远看到最新版；
+  # 旧版本回溯走云盘文件自带的版本历史，不再靠 v01/v02 文件名。版本统计由表格记录 + Git 历史承担。
   FEISHU_FOLDER_TOKEN="${FEISHU_DEMO_FOLDER_TOKEN:-JZeofZysclhJKbd2UCzcAiKDn5d}"
-  FEISHU_FILE_NAME="${REQ_ID}_v${VERSION_NO}.html"
+  FEISHU_FILE_NAME="${REQ_ID}.html"
+  # 查文件夹里是否已有同名文件（固定文件名后文件数=需求数，page_size 200 足够）
+  FEISHU_EXISTING_TOKEN=$(lark-cli drive files list \
+    --params "{\"folder_token\":\"$FEISHU_FOLDER_TOKEN\",\"page_size\":200}" \
+    --format json --as user 2>/dev/null | python3 -c "import json,sys
+try:
+ r=json.load(sys.stdin)
+ for f in r.get('data',{}).get('files',[]):
+  if f.get('name')=='$FEISHU_FILE_NAME':
+   print(f.get('token',''))
+   break
+except Exception:
+ print('')" 2>/dev/null || true)
   FEISHU_UPLOAD_ERR=$(mktemp 2>/dev/null || echo "")
-  FEISHU_UPLOAD_JSON=$(lark-cli drive +upload \
-    --file "$DEMO_PATH" \
-    --folder-token "$FEISHU_FOLDER_TOKEN" \
-    --name "$FEISHU_FILE_NAME" \
-    --as user 2>"$FEISHU_UPLOAD_ERR" || true)
+  if [ -n "$FEISHU_EXISTING_TOKEN" ]; then
+    # 同名文件已存在：覆盖上传（保留 file_token 与链接，云盘自动记一个新版本）
+    FEISHU_UPLOAD_JSON=$(lark-cli drive +upload \
+      --file "$DEMO_PATH" \
+      --file-token "$FEISHU_EXISTING_TOKEN" \
+      --as user 2>"$FEISHU_UPLOAD_ERR" || true)
+  else
+    # 首次：新建上传
+    FEISHU_UPLOAD_JSON=$(lark-cli drive +upload \
+      --file "$DEMO_PATH" \
+      --folder-token "$FEISHU_FOLDER_TOKEN" \
+      --name "$FEISHU_FILE_NAME" \
+      --as user 2>"$FEISHU_UPLOAD_ERR" || true)
+  fi
   FEISHU_PREVIEW_URL=$(printf '%s' "$FEISHU_UPLOAD_JSON" | python3 -c "import json,sys; data=sys.stdin.read();
 try:
  r=json.loads(data); print(r.get('data',{}).get('url','') if r.get('ok') else '')
@@ -177,7 +200,8 @@ try:
 except Exception:
  print('')" 2>/dev/null || true)
   if [ -n "$FEISHU_PREVIEW_URL" ]; then
-    if [ -n "$FEISHU_FILE_TOKEN" ]; then
+    if [ -n "$FEISHU_FILE_TOKEN" ] && [ -z "$FEISHU_EXISTING_TOKEN" ]; then
+      # 分享权限只在新建时设置；覆盖上传不动权限（沿用首次设置）
       FEISHU_PERM_JSON=$(mktemp 2>/dev/null || echo "")
       if [ -n "$FEISHU_PERM_JSON" ]; then
         printf '{"link_share_entity":"tenant_readable"}' > "$FEISHU_PERM_JSON"
@@ -190,7 +214,11 @@ except Exception:
         rm -f "$FEISHU_PERM_JSON" 2>/dev/null || true
       fi
     fi
-    echo "[post-commit] 已上传飞书云空间：$FEISHU_PREVIEW_URL"
+    if [ -n "$FEISHU_EXISTING_TOKEN" ]; then
+      echo "[post-commit] 已覆盖上传飞书云空间（链接不变）：$FEISHU_PREVIEW_URL"
+    else
+      echo "[post-commit] 已上传飞书云空间：$FEISHU_PREVIEW_URL"
+    fi
     PREVIEW_URL="$FEISHU_PREVIEW_URL"
   else
     if [ -n "$FEISHU_UPLOAD_ERR" ] && [ -s "$FEISHU_UPLOAD_ERR" ]; then
