@@ -1,9 +1,9 @@
 {
   "structure": 90,
-  "component": 83,
+  "component": 84,
   "interaction": 90,
   "visual": 90,
   "field": 90,
   "category": "网关",
-  "reason": "structure 90：脚本分 100，按落分区间控制写 90（scoring.md §0.6，第三轮 U2-3 四卡结构对齐线上真机）；component 83：脚本分（③疑似手写函数 9 个·70 分为 modal/drawer 基建与上轮同集 + ⑤令牌占比 69%·62 分，明细 score_component.json），在 [80,90] 区间内不钳制；interaction 90：证据反推 100 写 90（第三轮 T1-3/T2-3/T3-4/T5-4 零扣分：交互链五段、启停状态保持、频段 chips 联动，Playwright 24/24 实测通过）；visual 90：证据反推 100 写 90（第三轮 U3-3/U3-5/U3-6/U4-3/U5-2 零扣分：label 契约单位 gray-05、Alert 位置④、双列按 §5.2）；field 90：脚本分 100，按 §0.6 写 90（第三轮 T4-4 字段全量对齐线上真机清单，线上空值项补合理枚举）。原始分均可由 validation.md 证据行与两个脚本 JSON 反推。"
+  "reason": "structure 90：脚本分 100，按落分区间控制写 90（scoring.md §0.6，第三轮 B 铸造后 demo 运行 score_fidelity）；component 84：脚本分（score_component.py 第三轮 B 对 msg 弹窗版式后 demo 运行：③疑似手写函数·modal/drawer 基建同集 + ⑤令牌占比，明细 score_component.json），在 [80,90] 区间内不钳制；interaction 90：证据反推 100 写 90（§0.6，第三轮 B T1-6/T2-4/T3-5/T5-6 零扣分：删除链五段含分页回填实证、全部导出态零异常，Playwright 实测）；visual 90：证据反推 100 写 90（§0.6，第三轮 B U3-7/U3-8/U5-3 零扣分：msg 弹窗 416px/18px·500/无标题栏对齐 Figma 127:8693）；field 90：脚本分 100 写 90（§0.6，第三轮 B 未改动字段面）。原始分均可由 validation.md 第三轮 B 证据行与各脚本 JSON 反推。"
 }

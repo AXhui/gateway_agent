@@ -999,7 +999,7 @@
     },
     "B_Eg71MeshRadioCard": {
       "id": "bc-eg71-mesh-radio",
-      "cn": "Mesh 多信道设置卡",
+      "cn": "LoRa Radio 设置页卡组",
       "dir": ".claude/skills/business/eg71/B_Eg71MeshRadioCard",
       "src": "assets/js/registry-business.js#bc-eg71-mesh-radio",
       "status": "已固化"
@@ -1009,6 +1009,34 @@
       "cn": "Mesh 通用设置模块卡",
       "dir": ".claude/skills/business/eg71/B_Eg71MeshModuleCard",
       "src": "assets/js/registry-business.js#bc-eg71-mesh-module",
+      "status": "已固化"
+    },
+    "B_Eg71MeshAdvCard": {
+      "id": "bc-eg71-mesh-adv",
+      "cn": "Mesh 高级设置卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshAdvCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-adv",
+      "status": "已固化"
+    },
+    "B_Eg71MeshDestCard": {
+      "id": "bc-eg71-mesh-dest",
+      "cn": "Mesh 主网关目的地卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshDestCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-dest",
+      "status": "已固化"
+    },
+    "B_Eg71MeshFilterCard": {
+      "id": "bc-eg71-mesh-filter",
+      "cn": "Mesh 包过滤器卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshFilterCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-filter",
+      "status": "已固化"
+    },
+    "B_Eg71MeshRetransCard": {
+      "id": "bc-eg71-mesh-retrans",
+      "cn": "Mesh 数据重传卡",
+      "dir": ".claude/skills/business/eg71/B_Eg71MeshRetransCard",
+      "src": "assets/js/registry-business.js#bc-eg71-mesh-retrans",
       "status": "已固化"
     },
     "B_Eg71Message": {

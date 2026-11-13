@@ -911,13 +911,33 @@
 /* ---- B_Eg71MeshFleetTable / B_Eg71MeshFrameList（bc-eg71-mesh-fleet / -frames，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-fleet-body .bc-eg71-form-item-msg,
 .bc-eg71-mesh-frames-body .bc-eg71-form-item-msg { margin-top: var(--spacing-12); }
-/* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 追加铸造） + bc-eg71-mesh-deploy 区块 ---- */
-.bc-eg71-mesh-radio-body { display: flex; flex-direction: column; gap: var(--spacing-12); }
-.bc-eg71-mesh-radio-row { display: flex; align-items: center; gap: var(--spacing-12); padding-bottom: var(--spacing-12); border-bottom: 1px solid var(--color-divider-base-2); }
-.bc-eg71-mesh-radio-row:last-of-type { border-bottom: none; padding-bottom: 0; }
-.bc-eg71-mesh-radio-id { font-size: 14px; color: var(--color-text-primary); }
-.bc-eg71-mesh-radio-mhz { flex: 1; font-size: 14px; color: var(--color-text-secondary); }
-.bc-eg71-mesh-radio-body .bc-eg71-form-item-msg { margin-top: var(--spacing-4); }
+/* ---- B_Eg71MeshRadioCard（bc-eg71-mesh-radio，REQ-014 铸造 / v2.0.0 对齐线上真机形态） ---- */
+/* 卡组编排：Antenna Settings / Channel Settings（子区）/ Advanced Settings（子区）/ Custom Configuration */
+.bc-eg71-mesh-radio { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-radio-cardbody { display: flex; flex-direction: column; gap: var(--spacing-16); }
+/* 子区头：次标题（14/500/22）+ 开关总闸紧跟标题右侧（启用禁用契约 §6.1 载体分工） */
+.bc-eg71-mesh-radio-sec-head { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-radio-sec-title { font-size: 14px; font-weight: 500; line-height: 22px; color: var(--color-text-primary); }
+/* 子区总闸 off → 管辖区块灰显保持（opacity 0.45 + pointer-events none，范式同 bc-eg71-snmp-fields--disabled） */
+.bc-eg71-mesh-radio-sec-body--disabled { opacity: 0.45; pointer-events: none; }
+/* 表单项标签契约：label 行只挂单位 + tip（自左向右 gap 8，tip 热区 24×24） */
+.bc-eg71-mesh-radio-labelrow { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-form-item-tip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; }
+.bc-eg71-mesh-radio-chtable { width: 100%; }
+.bc-eg71-mesh-radio-chtable th, .bc-eg71-mesh-radio-chtable td { padding: var(--spacing-8) var(--spacing-12); }
+.bc-eg71-mesh-radio-chtable .ms-input { width: 160px; }
+.bc-eg71-mesh-radio .bc-eg71-form-item-msg { margin-top: var(--spacing-4); }
+/* 表单控件宽：双列栅格内统一 100% 填列、整行场景封顶 320px */
+.bc-eg71-mesh-radio .ms-form-item > .ms-input:not(.ms-input--textarea), .bc-eg71-mesh-radio .ms-form-item > .ms-select { width: 100%; max-width: 320px; }
+/* Advanced Settings 整卡折叠（线上默认收起，aria-expanded 驱动） */
+.bc-eg71-mesh-radio-adv-toggle { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; }
+.bc-eg71-mesh-radio-advbody { display: none; }
+.bc-eg71-mesh-radio-advbody--open { display: flex; }
+/* label 行 tip 钮点开的补充说明（默认收起） */
+.bc-eg71-mesh-radio-tipnote { display: none; font-size: 12px; color: var(--color-gray-05); max-width: 480px; }
+.bc-eg71-mesh-radio-tipnote--open { display: block; }
+/* Forward CRC 三勾选同行（集合类取值控件，§6.4 不受单行同类唯一约束） */
+.bc-eg71-mesh-radio-crcrow { display: flex; align-items: center; gap: var(--spacing-3xl); }
 /* ---- B_Eg71MeshModuleCard（bc-eg71-mesh-module，REQ-014 追加铸造） ---- */
 .bc-eg71-mesh-module-body { display: flex; flex-direction: column; gap: var(--spacing-20); }
 .bc-eg71-mesh-module-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.6; }
@@ -936,6 +956,45 @@
 .bc-eg71-mesh-module-compound .ms-select { width: 87px; flex: none; /* 结构宽：Figma Custom 模式下拉定宽 */ }
 .bc-eg71-mesh-module-compound .ms-input { flex: 1; width: auto; }
 
+/* ---- B_Eg71MeshAdvCard（bc-eg71-mesh-adv，REQ-024 铸造：IP Master Advanced Setting，Figma 71.0.0.5 · 43:12085） ---- */
+.bc-eg71-mesh-adv-toggle { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--color-icon-auxiliary); cursor: pointer; }
+.bc-eg71-mesh-adv-toggle .ms-ico { transition: transform var(--duration-fast) var(--ease); }
+.bc-eg71-mesh-adv-toggle.is-open .ms-ico { transform: rotate(180deg); }
+.bc-eg71-mesh-adv-box { display: flex; flex-direction: column; gap: var(--spacing-20); padding: var(--spacing-20); border: 1px solid var(--color-border-base); border-radius: var(--radius-4); }
+.bc-eg71-mesh-adv-channels { display: flex; gap: var(--spacing-8); }
+.bc-eg71-mesh-adv-channels .ms-select, .bc-eg71-mesh-adv-channels .ms-input { flex: 1; width: auto; min-width: 0; }
+.bc-eg71-mesh-adv-nested { display: flex; flex-direction: column; gap: var(--spacing-16); padding: var(--spacing-20); background: var(--color-fill-base-normal); border-radius: var(--radius-4); }
+.bc-eg71-mesh-adv-nested-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-16) var(--spacing-24); }
+
+/* ---- B_Eg71MeshDestCard（bc-eg71-mesh-dest，REQ-024 铸造：IP Agent Master Gateway Destination，Figma 71.0.0.5 · 43:11788） ---- */
+.bc-eg71-mesh-dest-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+.bc-eg71-mesh-dest-status { display: flex; align-items: center; gap: var(--spacing-8); margin-top: var(--spacing-4); }
+.bc-eg71-mesh-dest-status span:last-child { flex: 1; }
+.bc-eg71-mesh-dest-ca { display: flex; gap: var(--spacing-8); }
+.bc-eg71-mesh-dest-ca .ms-input { flex: 1; min-width: 0; }
+
+/* ---- B_Eg71MeshFilterCard（bc-eg71-mesh-filter，REQ-024 铸造：IP Agent Packet Filter，Figma 71.0.0.5 · 43:11788） ---- */
+.bc-eg71-mesh-filter-body { display: flex; flex-direction: column; gap: var(--spacing-20); }
+.bc-eg71-mesh-filter-sub { font-size: 14px; font-weight: 500; line-height: 22px; color: var(--color-text-primary); }
+/* 专有消息过滤总闸 off → 三过滤表灰显保持（§6.2，范式同 bc-eg71-mesh-radio-sec-body--disabled） */
+.bc-eg71-mesh-filter-groups--disabled { opacity: 0.45; pointer-events: none; }
+.bc-eg71-mesh-filter-group { display: flex; flex-direction: column; gap: var(--spacing-12); }
+.bc-eg71-mesh-filter-table { width: 100%; }
+.bc-eg71-mesh-filter-table th:first-child { width: 180px; }
+.bc-eg71-mesh-filter-table th:last-child { width: 56px; }
+.bc-eg71-mesh-filter-table .ms-select { width: 100%; }
+.bc-eg71-mesh-filter-range { display: flex; align-items: center; gap: var(--spacing-8); }
+.bc-eg71-mesh-filter-range .ms-input { flex: 1; min-width: 0; }
+.bc-eg71-mesh-filter-range-to { font-size: 14px; color: var(--color-text-secondary); white-space: nowrap; }
+.bc-eg71-mesh-filter-add { align-self: center; }
+
+/* ---- B_Eg71MeshRetransCard（bc-eg71-mesh-retrans，REQ-024 铸造：IP Agent Data Retransmission，Figma 71.0.0.5 · 43:11788） ---- */
+.bc-eg71-mesh-retrans-body { display: flex; flex-direction: column; gap: var(--spacing-16); }
+/* 重传总闸 off → 面板灰显保持（§6.2） */
+.bc-eg71-mesh-retrans-panel--disabled { opacity: 0.45; pointer-events: none; }
+.bc-eg71-mesh-retrans-panel { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-12); padding: var(--spacing-12) var(--spacing-16); background: var(--color-fill-base-normal); border-radius: var(--radius-4); }
+.bc-eg71-mesh-retrans-text { font-size: 14px; line-height: 22px; color: var(--color-text-secondary); }
+.bc-eg71-mesh-retrans-text b { color: var(--color-text-primary); font-weight: 600; }
 /* ===================== 内置库更新域（REQ-017 · Figma 71.0.0.4） ===================== */
 /* bc-eg71-message · 全局消息 Toast */
 .bc-eg71-message-item--error .ms-ico { color: var(--color-error-normal); }

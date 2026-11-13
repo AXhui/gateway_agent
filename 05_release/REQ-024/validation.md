@@ -157,3 +157,48 @@
 ### 落分（第三轮 A）
 
 - 五维脚本分（对提交版运行）：component 84、structure/field/interaction/visual 100；证据行零扣分。写入值按 §0.6 钳制：100 → 90，component 84 在 [80,90] 区间不动。
+
+## 三角色验收 · 第三轮 B（2026-11-13 mesh agent 变体铸造入库 + 删除弹窗 Message 版式）
+
+> 即第三轮 A 所述「B 轮」。两部分：① General 页 IP 角色四组件（Adv/Dest/Filter/Retrans）与 mesh-radio v2 由 demo 内联形态**铸造回库真源**（page-assembly §3 路径）；② Fleet 删除确认弹窗对齐 Figma 业务库「弹窗」Error 变体（127:8693，与 REQ-023 同源）。
+> 并行协作记录：B 轮库侧工作期间 A 轮提交 20ad0e7 因双窗口竞态误回退 radio v2 工作区，A 轮自查后以 c95a742 恢复（radio v2 内容 + 页码条修复并存），无内容丢失。
+
+### 变更面
+
+1. **铸造入库**：`assets/js/registry-business.js`（5815 行，node --check 通过）——`bc-eg71-mesh-adv/-dest/-filter/-retrans` 四新条目（v1.0.0）+ `bc-eg71-mesh-radio` v1→v2 整条目替换；`library/business.css`（1098 行）补对应结构类族；SKILL.md 五份（4 新组件 8 章节 + RadioCard §六「v2 已回写库真源」修订）；`.claude/_index.json` 登记 4 新组件 + RadioCard cn 刷新「LoRa Radio 设置页卡组」。demo 内联副本与本轮库源同源（行切片移植，脚本断言守卫）。
+2. **删除弹窗 Message 版式**（Figma 127:8693）：`renderEg71Modal` delete 分支改 msg 版式（无标题栏/关闭钮；24px 实心红圆×（新增 `circleXFilled` 图标）+ 标题 18/500 + 描述 14 同排；416 宽、圆角 8、按钮组右对齐 gap 16）；标题 `Delete Member` → `Delete Gateway`（Figma 真源同款，与 REQ-023 一致）。
+3. 浏览器实测（Playwright/Chromium 1440×900，file:// 直开，MS_FIGMA_EXPORT states 驱动）：18 项探针实质全过、零 console error、零 pageerror。
+
+### UED
+
+- [U3-7] 删除弹窗版式｜Figma 127:8693｜`.bc-eg71-modal--msg` computed width 416px；标题 18px/500；无 `.ms-modal-head`/`.ms-modal-close`；错误图标 24px；ok 钮 `ms-btn--danger`｜0
+- [U3-8] 描述文案｜Figma 127:8693 + 交互链｜desc 14px 灰文案同排于标题右侧文本列（`Are you sure you want to delete the member gateway …`）｜0
+- [U5-3] 纯净性｜page-assembly §5｜msg 版式无评审注记/装配痕迹｜0
+
+### DEV
+
+- [D1-6] score_component.py --report｜scoring.md ②｜明细归档 score_component.json｜见脚本分
+- [D2-4] 组件铸造契约｜page-assembly §3｜四组件 + radio v2 库真源（registry/render+bind）↔ SKILL.md §二 ctx/事件契约 ↔ `_index.json` 登记 ↔ demo 内联四处一致；9 个引用图标名（chevronsDown/wrench/repeat/upload/link/trash/plus/info/filter）经 MS_ICONS 核验在位｜0
+- [D3-6] 自造类复核｜naming/R2｜新增 `bc-eg71-mesh-{adv,dest,filter,retrans}-*` 与 `bc-eg71-modal-msg-*` 均为 BEM 范式结构类且随铸造登记进 business.css 源头（非 demo 私有）｜0
+- [D4-6] 装配完整性｜assembly-integrity §2｜令牌活性断言 `--spacing-2xl`=24px；`--msg` 弹窗 416px/圆角 8 计算值生效（CSS 块未被截断）｜0
+
+### TEST
+
+- [T1-6] 删除链五段｜interaction-completeness §1｜入口（行删除钮，离线成员可点）→弹窗（msg 版式）→Cancel 收起→重开→OK 删除（目标行 Agent-Site-04 消失；页码 10→10 为第 2 页回填，非未删）→弹窗关闭｜0
+- [T2-4] 危险确认｜§1.1 列表类｜删除必经确认弹窗，无直删路径；批量删除同走 msg 弹窗｜0
+- [T3-5] 启停保持回归｜business-specific §6.2｜IP Agent Packet Filter 总闸关 → `--disabled` 灰显 + 值保持（导出态复验）｜0
+- [T5-6] 导出契约｜AGENTS.md MS_FIGMA_EXPORT｜全部导出状态（含 Radio×5、Agent×3、删除弹窗、双抽屉、空态）setup() 零异常｜0
+
+### 差异核对（interaction-completeness §2.5）
+
+| 差异点 | 真源形态 | demo 实现 | 归因 |
+|---|---|---|---|
+| 弹窗标题 Member→Gateway | Figma 127:8693「Delete Gateway」 | Delete Gateway | 真源对齐（demo 侧修订，不发评论） |
+| msg 标题 18px 与 spacing §4 字号集合 | Figma 弹窗 Error 变体 18/500 | 18px/500 | Figma 一级基准优先（与 REQ-023 同判例，非新偏差） |
+
+本轮无「需求侧逻辑漏洞」候选（变更均为 Figma 真源对齐与库侧铸造，无 PRD 正文可引）。
+
+### 落分（第三轮 B）
+
+- UED/TEST 证据行零扣分：structure/interaction/visual/field 反推 100 写 90（§0.6）；component/structure/field/interaction/visual 以第三轮 B 脚本 --write 分为准（写入值按 §0.6 钳制 [80,90]，原始分见各脚本 JSON）。
+

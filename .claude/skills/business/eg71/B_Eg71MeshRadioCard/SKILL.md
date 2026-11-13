@@ -97,7 +97,7 @@ tip 钮点击为组件内 DOM 行为（tipnote 显隐 + aria-expanded），不�
 ## 六、依赖
 
 - 基础原子：`card / form / input / select / switch / checkbox / table / alert / icon / text`，不新增基础原子，仅编排。
-- runtime 源：`assets/js/registry-business.js`（库副本 v1 冻结，v2 形态先落 demo 内联，按 spacing §7 范式不回写源头）。
+- runtime 源：`assets/js/registry-business.js`（v2 已回写库真源，结构类同步 `library/business.css`）。
 
 ## 七、示例
 
