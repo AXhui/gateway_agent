@@ -300,13 +300,25 @@ def main():
             if shutil.which("lark-cli"):
                 time.sleep(2)  # webhook 插行后 record-search 索引有滞后
                 repo_root = Path(__file__).resolve().parent.parent
-                cmd = [
-                    "bash", str(repo_root / "tools" / "backfill_demo_components.sh"),
-                    "--demo-file", str(demo_html),
-                    "--req-id", args.req_id,
-                ]
+                # Windows 无 bash（WSL execvpe(/bin/bash) failed）：优先 sh 版，
+                # 无 bash 时 fallback 到 Python 等价版（tools/backfill_demo_components.py），
+                # 保证「使用组件/AI自评/组件清单」回填在任何平台都执行。
+                if shutil.which("bash"):
+                    cmd = [
+                        "bash", str(repo_root / "tools" / "backfill_demo_components.sh"),
+                        "--demo-file", str(demo_html),
+                        "--req-id", args.req_id,
+                    ]
+                else:
+                    cmd = [
+                        sys.executable, str(repo_root / "tools" / "backfill_demo_components.py"),
+                        "--demo-file", str(demo_html),
+                        "--req-id", args.req_id,
+                    ]
                 if args.quality_file:
                     cmd += ["--quality-file", args.quality_file]
+                if args.demo_dir:
+                    cmd += ["--demo-dir", str(Path(args.demo_dir))]
                 res = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
                 lines = (res.stdout or "").strip().splitlines()
                 for ln in lines[-3:] or ["（回填脚本无输出）"]:
