@@ -1,3 +1,1 @@
-https://milesight.feishu.cn/file/MRLLbKCKfoOpvnxmleJcOnX7nzh?from=from_copylink 第一列是Relay ID，membet gateways 标题和图标整行移除
-改024即可
-编辑信息中，之需要保留ID和Name，红框部分删除
+需要你，根据 http://192.168.40.211/lora/radio 线上的版本，帮我优化下https://milesight.feishu.cn/file/MRLLbKCKfoOpvnxmleJcOnX7nzh?from=from_copylink 这条链接的radio 。账号是admin 密码是password1   不允许操作，只读页面

@@ -1,6 +1,6 @@
 {
   "demo": "/Users/youxh/Feishu-competition/05_release/REQ-024/demo.html",
-  "component_score": 84,
+  "component_score": 83,
   "weights": [
     20,
     20,
@@ -15,18 +15,18 @@
       "score": 98,
       "summary": "98 分（权重 20%）",
       "detail": [
-        "检测到组件库类 594 个 / 全部类 605 个，命中率 98%",
-        "自造类 11 个：cr, cur, false, fileType, last, on, page, tab, tool, val, version"
+        "检测到组件库类 623 个 / 全部类 636 个，命中率 98%",
+        "自造类 13 个：cr, cur, false, fileType, last, n, null, on, page, tab, tool, val …"
       ]
     },
     {
       "rule": "② 注册表覆盖",
       "weight": 20,
-      "score": 100,
-      "summary": "100 分（权重 20%）",
+      "score": 91,
+      "summary": "91 分（权重 20%）",
       "detail": [
-        "使用的组件类 594 个，其中 594 个在组件资产中注册（覆盖率 100%）",
-        "全部组件类均已注册"
+        "使用的组件类 623 个，其中 589 个在组件资产中注册（覆盖率 95%）",
+        "未注册类 34 个：bc-eg71-form-item-tip, bc-eg71-mesh-adv, bc-eg71-mesh-adv-body, bc-eg71-mesh-adv-box, bc-eg71-mesh-adv-channels, bc-eg71-mesh-adv-nested, bc-eg71-mesh-adv-nested-grid, bc-eg71-mesh-dest, bc-eg71-mesh-dest-body, bc-eg71-mesh-dest-ca, bc-eg71-mesh-dest-status, bc-eg71-mesh-filter …"
       ]
     },
     {
@@ -35,7 +35,7 @@
       "score": 70,
       "summary": "70 分（权重 25%）",
       "detail": [
-        "按注册表契约调用 render 共 27 处（MS_BIZ_INDEX=2，B[]=25）",
+        "按注册表契约调用 render 共 32 处（MS_BIZ_INDEX=2，B[]=30）",
         "疑似手写组件级函数 9 个（已排除注册表指向）：closeAllPopups, openModal, closeModal, editDrawerHtml, detailDrawerHtml, eg71ModalVariant, eg71ModalBody, bindEg71Modal, roleConfirmDesc"
       ]
     },
@@ -56,7 +56,7 @@
       "score": 62,
       "summary": "62 分（权重 20%）",
       "detail": [
-        "var(--*) 令牌引用 1608 处；裸值 732 处（hex 37 / rgb 0 / px 695）",
+        "var(--*) 令牌引用 1646 处；裸值 751 处（hex 37 / rgb 0 / px 714）",
         "令牌占比 69%",
         "裸值偏多，建议改用 var(--*) 令牌"
       ]
@@ -183,6 +183,7 @@
     "bc-eg71-form-item-radio-group",
     "bc-eg71-form-item-range",
     "bc-eg71-form-item-select",
+    "bc-eg71-form-item-tip",
     "bc-eg71-form-item-unit",
     "bc-eg71-formfooter",
     "bc-eg71-formfooter-spacer",
@@ -249,6 +250,12 @@
     "bc-eg71-maint-msg-content",
     "bc-eg71-maint-msg-title",
     "bc-eg71-maintenance-tabs",
+    "bc-eg71-mesh-adv",
+    "bc-eg71-mesh-adv-body",
+    "bc-eg71-mesh-adv-box",
+    "bc-eg71-mesh-adv-channels",
+    "bc-eg71-mesh-adv-nested",
+    "bc-eg71-mesh-adv-nested-grid",
     "bc-eg71-mesh-cascade",
     "bc-eg71-mesh-cascade-count",
     "bc-eg71-mesh-cascade-name",
@@ -271,8 +278,19 @@
     "bc-eg71-mesh-deploy-cards",
     "bc-eg71-mesh-deploy-extra",
     "bc-eg71-mesh-deploy-more",
+    "bc-eg71-mesh-dest",
+    "bc-eg71-mesh-dest-body",
+    "bc-eg71-mesh-dest-ca",
+    "bc-eg71-mesh-dest-status",
+    "bc-eg71-mesh-filter",
+    "bc-eg71-mesh-filter-add",
+    "bc-eg71-mesh-filter-body",
+    "bc-eg71-mesh-filter-group",
+    "bc-eg71-mesh-filter-range",
+    "bc-eg71-mesh-filter-range-to",
+    "bc-eg71-mesh-filter-sub",
+    "bc-eg71-mesh-filter-table",
     "bc-eg71-mesh-fleet",
-    "bc-eg71-mesh-fleet-body",
     "bc-eg71-mesh-fleet-check",
     "bc-eg71-mesh-fleet-detail",
     "bc-eg71-mesh-fleet-detail-label",
@@ -318,10 +336,20 @@
     "bc-eg71-mesh-module-stats",
     "bc-eg71-mesh-module-text",
     "bc-eg71-mesh-radio",
-    "bc-eg71-mesh-radio-body",
-    "bc-eg71-mesh-radio-id",
-    "bc-eg71-mesh-radio-mhz",
-    "bc-eg71-mesh-radio-row",
+    "bc-eg71-mesh-radio-adv-toggle",
+    "bc-eg71-mesh-radio-antenna",
+    "bc-eg71-mesh-radio-card",
+    "bc-eg71-mesh-radio-cardbody",
+    "bc-eg71-mesh-radio-chtable",
+    "bc-eg71-mesh-radio-crcrow",
+    "bc-eg71-mesh-radio-labelrow",
+    "bc-eg71-mesh-radio-sec-body",
+    "bc-eg71-mesh-radio-sec-head",
+    "bc-eg71-mesh-radio-sec-title",
+    "bc-eg71-mesh-radio-tipnote",
+    "bc-eg71-mesh-retrans",
+    "bc-eg71-mesh-retrans-body",
+    "bc-eg71-mesh-retrans-text",
     "bc-eg71-mesh-role",
     "bc-eg71-mesh-role-body",
     "bc-eg71-mesh-role-cert",
@@ -532,6 +560,7 @@
     "ms-form-label--required",
     "ms-form-section",
     "ms-form-section-title",
+    "ms-form-unit",
     "ms-grid-2",
     "ms-grid-3",
     "ms-grid-4",
@@ -658,6 +687,6 @@
     "ms-upload",
     "ms-upload-file"
   ],
-  "used_class_count": 605,
-  "registered_class_count": 925
+  "used_class_count": 636,
+  "registered_class_count": 935
 }

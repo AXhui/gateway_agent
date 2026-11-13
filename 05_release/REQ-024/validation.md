@@ -76,3 +76,53 @@
 ### 落分（第二轮）
 
 - 第二轮证据行零扣分：structure/interaction/visual/field 反推 100 写 90（§0.6）；component/structure/field 以第二轮脚本 --write 分为准（见 score_component.json / score_fidelity 输出）。
+
+## 三角色验收 · 第三轮（2026-11-13 Radio 对齐线上真机 v2）
+
+基线 = 线上真机 `http://192.168.40.211/lora/radio`（admin 登录，**全程只读**：仅导航 + DOM 取证，未对设备做任何写操作——用户红线）。浏览器实测（Playwright/Chromium，1440×960，file:// 直开，24 项交互检查全过 + 三 Tab 烟测）：
+
+### v2 变更面
+
+- `bc-eg71-mesh-radio` 整组件重写为**四卡组**（v2.0.0，major：ctx 契约 `freqs/title/actionsHtml` → `channels/antenna/lora/fsk/beacon/intervals/crc/custom/errors/advOpen`，事件 `eg71-mesh-radio-toggle` → `ch/sec/check/field/adv` 五族）：Antenna Settings（EIRP Alert + 必填增益 + tip）、Channel Settings（Multi ×8 表 + LoRa/FSK 子区）、Advanced Settings（默认折叠；ClassB/Intervals/Forward CRC 三子区）、Custom Configuration（卡头总闸 + textarea）。
+- 页面层：channels 数组化状态、harvest 免重渲染收集、radioDirty JSON 比对驱动 Apply 启停、radioSetField/validateRadio/onRadioApply 全链、导航往返 harvest 保持。
+- MS_FIGMA_EXPORT 补 6 个 Radio 状态（默认/频道编辑/子区启用/Advanced 展开校验失败/Custom 启用）。
+- SKILL.md v2.0.0 八章节重写（atoms 十原子 + ctx/事件契约）。
+
+### UED
+
+- [U2-3] Radio 四卡结构｜线上真机（只读核对）｜Antenna / Channel（Multi×8 + LoRa + FSK）/ Advanced（ClassB + Intervals + Forward CRC，默认折叠）/ Custom 四卡与线上一致｜0
+- [U3-3] 卡片标题形态｜AGENTS.md 标题契约 + 基准范式｜裸卡头走 `ms-card-title`（16px），与 REQ-001~004 基准并存用法一致；无 tag/describe/按钮解剖的标题不触发 B_ComTitle 行｜0
+- [U4-3] Alert 位置｜AGENTS.md Alert 位置④｜EIRP info Alert 在 Antenna 卡标题正下方、内容上方，随卡片 padding 缩进｜0
+- [U3-5] 表单项标签契约｜AGENTS.md label 契约｜单位 `ms-form-unit` gray-05（dBi/MHz/kHz/Hz/dBm/s/ms）；增益字段带 16px tip 钮（热区 24）；EIRP 长文案走 Alert 与 tipnote，不入 label 行｜0
+- [U3-6] 双列布局｜business-specific §5.2｜ClassB 8 项 > 6 走 `ms-grid-2 bc-com-form-grid`；Intervals 3 项、LoRa/FSK 3 项单列（≤6 且含频率宽控件）｜0
+- [U5-2] 纯净性｜page-assembly §5｜可见 UI 无评审注记/装配痕迹/校验徽标｜0
+
+### DEV
+
+- [D1-3] score_component.py --report｜scoring.md ②｜component 83（②覆盖 95%·未注册 34 个为 mesh 系列结构类族、③手写函数 9 个为 modal/drawer 基建设施与上轮同集、⑤令牌 69%），明细 score_component.json｜见脚本分
+- [D2-3] 组件映射｜page-assembly §0｜`Radio 四卡卡组 → bc-eg71-mesh-radio v2 + ctx(channels/antenna/lora/fsk/beacon/intervals/crc/custom)`；按 SKILL.md §二 契约调用，非仅内联｜0
+- [D3-3] 自造类复核｜naming/R2｜新增 `bc-eg71-mesh-radio-*` 结构类族 + `bc-eg71-form-item-tip`（BEM 范式，SKILL.md 契约登记；registry 源头冻结，demo 内联演进）｜0
+- [D4-3] 装配完整性｜assembly-integrity §2｜令牌活性断言通过；Radio/General/Fleet 三 Tab 零 console error、零 pageerror｜0
+- [D5-1] runtime 偏差｜spacing §7｜未新增偏差清单条目；ico16/按钮 gap 12 沿袭已修正基线｜0
+
+### TEST
+
+- [T1-3] 交互链五段｜interaction-completeness §1｜入口（Tab）→操作（开关/输入/折叠）→反馈（校验错误 + error class）→结果态（Apply 启用→保存 toast→再禁用）→边界（必填清空报错）实测通过（24/24）｜0
+- [T2-3] 必备状态集｜§1.1 表单类｜未填默认/校验失败/提交反馈/pristine-禁用四态齐｜0
+- [T3-4] 启停状态保持｜business-specific §6.2｜LoRa/FSK/Custom 总闸 off → `--disabled` 灰显 + aria-disabled、值不清空；切页往返 loraFreq 原样保持｜0
+- [T4-4] 字段对齐｜线上真机清单｜增益/8 频道/LoRa·FSK（Freq/BW/DR）/Beacon 8 字段/Intervals 3/CRC 3 态/Custom 全量在位；线上空值项补合理默认（Sync Type=GPS、Beacon BW=125000）｜0
+- [T5-4] 联动边界｜§1 + 组件契约｜Mesh 视角频段 chips 7 个 = Radio 启用频道（F8 off 正确排除）；Advanced aria 展开/tipnote aria 同步｜0
+
+### 差异核对（interaction-completeness §2.5，本轮「需求」=线上真机，非飞书 PRD 文档）
+
+| 差异点 | 线上形态 | demo 实现 | 归因 |
+|---|---|---|---|
+| Beacon Time Sync Type / BW 等线上空值下拉 | 无取值展示 | GPS/RTC、125000/500000 合理枚举 | demo 侧补全（不发评论） |
+| Advanced 默认折叠 | 折叠 | 折叠一致 | 真源对齐，无差异 |
+| 线上 Antd 表单单列 | 单列 | 子区 ≤6 项单列、ClassB >6 双列（business-specific §5.2） | demo 侧契约优先（不发） |
+
+本轮无「需求侧逻辑漏洞」候选（真机为唯一真源，无正文矛盾可引）。
+
+### 落分（第三轮）
+
+- structure/interaction/visual/field 证据行零扣分：反推 100 写 90（§0.6）；component/structure/field 以第三轮脚本 --write 分为准（原始分见两脚本 JSON，写入值按 §0.6 钳制 [80,90]）。
